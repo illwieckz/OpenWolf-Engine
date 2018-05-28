@@ -2352,8 +2352,7 @@ R_CreateImage
 Wrapper for R_CreateImage2(), for the old parameters.
 ================
 */
-image_t* R_CreateImage( StringEntry name, U8* pic, S32 width, S32 height,
-                        imgType_t type, S32/*imgFlags_t*/ flags, S32 internalFormat )
+image_t* R_CreateImage( StringEntry name, U8* pic, S32 width, S32 height, imgType_t type, S32/*imgFlags_t*/ flags, S32 internalFormat )
 {
     return R_CreateImage2( name, pic, width, height, GL_RGBA8, 0, type, flags, internalFormat );
 }

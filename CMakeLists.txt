@@ -100,6 +100,7 @@ set( SHAREDLIST_SOURCES
 )
 
 set( GPURENDERER_HEADERS 
+  ${MOUNT_DIR}/GPURenderer/r_allocator.h
   ${MOUNT_DIR}/GPURenderer/iqm.h
   ${MOUNT_DIR}/GPURenderer/r_common.h
   ${MOUNT_DIR}/GPURenderer/r_dsa.h
@@ -113,6 +114,7 @@ set( GPURENDERER_HEADERS
 )
 
 set( GPURENDERER_SOURCES
+  ${MOUNT_DIR}/GPURenderer/r_allocator.cpp
   ${MOUNT_DIR}/GPURenderer/r_animation.cpp
   ${MOUNT_DIR}/GPURenderer/r_backend.cpp
   ${MOUNT_DIR}/GPURenderer/r_bsp.cpp
@@ -125,6 +127,7 @@ set( GPURENDERER_SOURCES
   ${MOUNT_DIR}/GPURenderer/r_flares.cpp
   ${MOUNT_DIR}/GPURenderer/r_font.cpp
   ${MOUNT_DIR}/GPURenderer/r_glsl.cpp
+  ${MOUNT_DIR}/GPURenderer/r_glsl_parse.cpp
   ${MOUNT_DIR}/GPURenderer/r_image.cpp
   ${MOUNT_DIR}/GPURenderer/r_image_dds.cpp
   ${MOUNT_DIR}/GPURenderer/r_image_jpg.cpp
@@ -152,12 +155,18 @@ set( GPURENDERER_SOURCES
 
 set( GPUWORKERS_HEADERS
   ${MOUNT_DIR}/GPUWorker/GPUWorker.h
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_Backend.h
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_CLCache.h
   ${MOUNT_DIR}/GPUWorker/GPUWorker_Local.h
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_OpenCL.h
   ${MOUNT_DIR}/GPUWorker/GPUWorker_Program.h
 )
 
 set( GPUWORKERS_SOURCES
   ${MOUNT_DIR}/GPUWorker/GPUWorker.cpp
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_Backend.cpp
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_CLCache.cpp
+  ${MOUNT_DIR}/GPUWorker/GPUWorker_CLManager.cpp
   ${MOUNT_DIR}/GPUWorker/GPUWorker_Error.cpp
   ${MOUNT_DIR}/GPUWorker/GPUWorker_Program.cpp
 )

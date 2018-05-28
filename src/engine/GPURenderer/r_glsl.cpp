@@ -29,6 +29,26 @@
 
 #include <GPURenderer/r_local.h>
 #include <GPURenderer/r_dsa.h>
+#include <GPURenderer/r_allocator.h>
+
+const GPUProgramDesc fallback_bokehProgram;
+const GPUProgramDesc fallback_calclevels4xProgram;
+const GPUProgramDesc fallback_depthblurProgram;
+const GPUProgramDesc fallback_dlightProgram;
+const GPUProgramDesc fallback_down4xProgram;
+const GPUProgramDesc fallback_fogpassProgram;
+const GPUProgramDesc fallback_gaussian_blurProgram;
+const GPUProgramDesc fallback_genericProgram;
+const GPUProgramDesc fallback_lightallProgram;
+const GPUProgramDesc fallback_pshadowProgram;
+const GPUProgramDesc fallback_shadowfillProgram;
+const GPUProgramDesc fallback_shadowmaskProgram;
+const GPUProgramDesc fallback_ssaoProgram;
+const GPUProgramDesc fallback_texturecolorProgram;
+const GPUProgramDesc fallback_tonemapProgram;
+const GPUProgramDesc fallback_dglow_downsampleProgram;
+const GPUProgramDesc fallback_dglow_upsampleProgram;
+const GPUProgramDesc fallback_surface_spritesProgram;
 
 struct uniformInfo_t
 {
@@ -208,7 +228,7 @@ static void GLSL_PrintLog( U32 programOrShader, glslPrintLog_t type, bool develo
     
 }
 
-static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, UTF8* dest, S32 size )
+static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLine, UTF8* dest, S64 size )
 {
     F32 fbufWidthScale, fbufHeightScale;
     
@@ -344,7 +364,7 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, UTF8* dest,
     
     // OK we added a lot of stuff but if we do something bad in the GLSL shaders then we want the proper line
     // so we have to reset the line counting
-    Q_strcat( dest, size, "#line 0\n" );
+    Q_strcat( dest, size, va( "#line %d\n", firstLine - 1 ) );
 }
 
 static S32 GLSL_CompileGPUShader( U32 program, U32* prevShader, StringEntry buffer, S32 size, U32 shaderType )
@@ -383,13 +403,47 @@ static S32 GLSL_CompileGPUShader( U32 program, U32* prevShader, StringEntry buff
     return 1;
 }
 
-static S32 GLSL_LoadGPUShaderText( StringEntry name, U32 shaderType, UTF8* dest, S32 destSize )
+Block* FindBlock( StringEntry name, Block* blocks, S64 numBlocks )
 {
-    UTF8            filename[MAX_QPATH];
-    UTF8*			buffer = NULL;
-    StringEntry	shaderText = NULL;
-    S32             size;
-    S32             result;
+    for( S64 i = 0; i < numBlocks; ++i )
+    {
+        Block* block = blocks + i;
+        if( Q_stricmpn( block->blockHeaderTitle, name, block->blockHeaderTitleLength ) == 0 )
+        {
+            return block;
+        }
+    }
+    
+    return nullptr;
+}
+
+static const GPUProgramDesc* LoadProgramSource( StringEntry programName, Allocator& allocator, const GPUProgramDesc& fallback )
+{
+    const GPUProgramDesc* result = &fallback;
+    UTF8* buffer;
+    UTF8 programPath[MAX_QPATH];
+    
+    Com_sprintf( programPath, sizeof( programPath ), "renderProgs/%s.glsl", programName );
+    
+    S64 size = FS_ReadFile( programPath, ( void** )&buffer );
+    if( size )
+    {
+        GPUProgramDesc* externalProgramDesc = ojkAlloc<GPUProgramDesc>( allocator );
+        *externalProgramDesc = ParseProgramSource( allocator, buffer );
+        result = externalProgramDesc;
+        FS_FreeFile( buffer );
+    }
+    
+    return result;
+}
+
+static S32 GLSL_LoadGPUShaderText( StringEntry name, StringEntry fallback, U32 shaderType, UTF8* dest, S32 destSize )
+{
+    char            filename[MAX_QPATH];
+    GLcharARB*      buffer = NULL;
+    const GLcharARB* shaderText = NULL;
+    int             size;
+    int             result;
     
     if( shaderType == GL_VERTEX_SHADER )
     {
@@ -402,18 +456,33 @@ static S32 GLSL_LoadGPUShaderText( StringEntry name, U32 shaderType, UTF8* dest,
     
     size = FS_ReadFile( filename, ( void** )&buffer );
     
-    CL_RefPrintf( PRINT_DEVELOPER, "...loading '%s'\n", filename );
-    shaderText = buffer;
-    size += 1;
+    if( !buffer )
+    {
+        if( fallback )
+        {
+            CL_RefPrintf( PRINT_DEVELOPER, "...loading built-in '%s'\n", filename );
+            shaderText = fallback;
+            size = strlen( shaderText );
+        }
+        else
+        {
+            CL_RefPrintf( PRINT_DEVELOPER, "couldn't load '%s'\n", filename );
+            return 0;
+        }
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_DEVELOPER, "...loading '%s'\n", filename );
+        shaderText = buffer;
+    }
     
     if( size > destSize )
     {
-        CL_RefPrintf( PRINT_DEVELOPER, "Failed loading glsl shader, it's too big!\n" );
         result = 0;
     }
     else
     {
-        Q_strncpyz( dest, shaderText, size );
+        Q_strncpyz( dest, shaderText, size + 1 );
         result = 1;
     }
     
@@ -546,7 +615,7 @@ static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 
     return 1;
 }
 
-static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 attribs, bool fragmentShader, StringEntry extra, bool addHeader )
+static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 attribs, bool fragmentShader, StringEntry extra, bool addHeader, const GPUProgramDesc& programDesc )
 {
     UTF8 vpCode[32000];
     UTF8 fpCode[32000];
@@ -554,10 +623,14 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
     S32 size;
     S32 result;
     
+    assert( programDesc.numShaders == 2 );
+    assert( programDesc.shaders[0].type == GPUSHADER_VERTEX );
+    assert( programDesc.shaders[1].type == GPUSHADER_FRAGMENT );
+    
     size = sizeof( vpCode );
     if( addHeader )
     {
-        GLSL_GetShaderHeader( GL_VERTEX_SHADER, extra, vpCode, size );
+        GLSL_GetShaderHeader( GL_VERTEX_SHADER, extra, programDesc.shaders[0].firstLine, vpCode, size );
         postHeader = &vpCode[strlen( vpCode )];
         size -= strlen( vpCode );
     }
@@ -566,7 +639,7 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
         postHeader = &vpCode[0];
     }
     
-    if( !GLSL_LoadGPUShaderText( name, GL_VERTEX_SHADER, postHeader, size ) )
+    if( !GLSL_LoadGPUShaderText( name, programDesc.shaders[0].source, GL_VERTEX_SHADER, postHeader, size ) )
     {
         return 0;
     }
@@ -576,7 +649,7 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
         size = sizeof( fpCode );
         if( addHeader )
         {
-            GLSL_GetShaderHeader( GL_FRAGMENT_SHADER, extra, fpCode, size );
+            GLSL_GetShaderHeader( GL_FRAGMENT_SHADER, extra, programDesc.shaders[0].firstLine, fpCode, size );
             postHeader = &fpCode[strlen( fpCode )];
             size -= strlen( fpCode );
         }
@@ -585,7 +658,7 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
             postHeader = &fpCode[0];
         }
         
-        if( !GLSL_LoadGPUShaderText( name, GL_FRAGMENT_SHADER, postHeader, size ) )
+        if( !GLSL_LoadGPUShaderText( name, programDesc.shaders[1].source, GL_FRAGMENT_SHADER, postHeader, size ) )
         {
             return 0;
         }
@@ -860,6 +933,12 @@ void idRenderSystemLocal::InitGPUShaders( void )
     
     startTime = CL_ScaledMilliseconds();
     
+    Allocator allocator( 512 * 1024 );
+    const GPUProgramDesc* programDesc;
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "generic", allocator, fallback_genericProgram );
+    
     for( i = 0; i < GENERICDEF_COUNT; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD | ATTR_LIGHTCOORD | ATTR_NORMAL | ATTR_COLOR;
@@ -886,7 +965,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( i & GENERICDEF_USE_RGBAGEN )
             Q_strcat( extradefines, 1024, "#define USE_RGBAGEN\n" );
             
-        if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load generic shader!" );
         }
@@ -900,11 +979,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numGenShaders++;
     }
+    allocator.Reset();
     
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "texturecolor", allocator, fallback_texturecolorProgram );
     
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     
-    if( !GLSL_InitGPUShader( &tr.textureColorShader, "texturecolor", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.textureColorShader, "texturecolor", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load texturecolor shader!" );
     }
@@ -928,7 +1010,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( i & FOGDEF_USE_VERTEX_ANIMATION )
             Q_strcat( extradefines, 1024, "#define USE_VERTEX_ANIMATION\n" );
             
-        if( !GLSL_InitGPUShader( &tr.fogShader[i], "fogpass", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.fogShader[i], "fogpass", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load fogpass shader!" );
         }
@@ -938,8 +1020,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numEtcShaders++;
     }
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "dlight", allocator, fallback_dlightProgram );
     for( i = 0; i < DLIGHTDEF_COUNT; i++ )
     {
         attribs = ATTR_POSITION | ATTR_NORMAL | ATTR_TEXCOORD;
@@ -950,7 +1034,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             Q_strcat( extradefines, 1024, "#define USE_DEFORM_VERTEXES\n" );
         }
         
-        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load dlight shader!" );
         }
@@ -963,8 +1047,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numEtcShaders++;
     }
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "lightall", allocator, fallback_lightallProgram );
     for( i = 0; i < LIGHTDEF_COUNT; i++ )
     {
         S32 lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
@@ -1080,7 +1166,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             }
         }
         
-        if( !GLSL_InitGPUShader( &tr.lightallShader[i], "lightall", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.lightallShader[i], "lightall", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load lightall shader!" );
         }
@@ -1099,12 +1185,15 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numLightShaders++;
     }
+    allocator.Reset();
     
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "shadowfill", allocator, fallback_shadowfillProgram );
     attribs = ATTR_POSITION | ATTR_POSITION2 | ATTR_NORMAL | ATTR_NORMAL2 | ATTR_TEXCOORD;
     
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.shadowmapShader, "shadowfill", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.shadowmapShader, "shadowfill", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load shadowfill shader!" );
     }
@@ -1113,13 +1202,16 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.shadowmapShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "pshadow", allocator, fallback_pshadowProgram );
     attribs = ATTR_POSITION | ATTR_NORMAL;
     extradefines[0] = '\0';
     
     Q_strcat( extradefines, 1024, "#define USE_PCF\n#define USE_DISCARD\n" );
     
-    if( !GLSL_InitGPUShader( &tr.pshadowShader, "pshadow", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.pshadowShader, "pshadow", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load pshadow shader!" );
     }
@@ -1131,12 +1223,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.pshadowShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "down4x", allocator, fallback_down4xProgram );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.down4xShader, "down4x", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.down4xShader, "down4x", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load down4x shader!" );
     }
@@ -1148,12 +1242,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.down4xShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "bokeh", allocator, fallback_bokehProgram );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.bokehShader, "bokeh", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.bokehShader, "bokeh", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bokeh shader!" );
     }
@@ -1165,12 +1261,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.bokehShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "tonemap", allocator, fallback_tonemapProgram );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.tonemapShader, "tonemap", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.tonemapShader, "tonemap", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load tonemap shader!" );
     }
@@ -1183,8 +1281,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.tonemapShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "calclevels4x", allocator, fallback_calclevels4xProgram );
     for( i = 0; i < 2; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1193,7 +1293,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( !i )
             Q_strcat( extradefines, 1024, "#define FIRST_PASS\n" );
             
-        if( !GLSL_InitGPUShader( &tr.calclevels4xShader[i], "calclevels4x", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.calclevels4xShader[i], "calclevels4x", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load calclevels4x shader!" );
         }
@@ -1206,8 +1306,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numEtcShaders++;
     }
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "shadowmask", allocator, fallback_shadowmaskProgram );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1224,7 +1326,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     Q_strcat( extradefines, 1024, va( "#define r_shadowCascadeZFar %f\n", r_shadowCascadeZFar->value ) );
     
     
-    if( !GLSL_InitGPUShader( &tr.shadowmaskShader, "shadowmask", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.shadowmaskShader, "shadowmask", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load shadowmask shader!" );
     }
@@ -1240,12 +1342,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.shadowmaskShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "ssao", allocator, fallback_ssaoProgram );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.ssaoShader, "ssao", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.ssaoShader, "ssao", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load ssao shader!" );
     }
@@ -1257,8 +1361,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
     GLSL_FinishGPUShader( &tr.ssaoShader );
     
     numEtcShaders++;
+    allocator.Reset();
     
-    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "depthBlur", allocator, fallback_depthblurProgram );
     for( i = 0; i < 4; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1273,7 +1379,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             Q_strcat( extradefines, 1024, "#define USE_DEPTH\n" );
             
             
-        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthBlur", attribs, true, extradefines, true ) )
+        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthBlur", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load depthBlur shader!" );
         }
@@ -1287,12 +1393,13 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         numEtcShaders++;
     }
+    allocator.Reset();
     
 #if 0
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.testcubeShader, "testcube", attribs, true, extradefines, true ) )
+    if( !GLSL_InitGPUShader( &tr.testcubeShader, "testcube", attribs, true, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load testcube shader!" );
     }
@@ -1305,7 +1412,6 @@ void idRenderSystemLocal::InitGPUShaders( void )
     
     numEtcShaders++;
 #endif
-    
     
     endTime = CL_ScaledMilliseconds();
     

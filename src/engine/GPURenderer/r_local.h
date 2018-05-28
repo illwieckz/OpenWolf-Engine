@@ -667,6 +667,41 @@ enum
     GLSL_MAT16
 };
 
+#define MAX_BLOCKS (32)
+#define MAX_BLOCK_NAME_LEN (32)
+struct Block
+{
+    const char* blockText;
+    size_t blockTextLength;
+    int blockTextFirstLine;
+    
+    const char* blockHeaderTitle;
+    size_t blockHeaderTitleLength;
+    
+    const char* blockHeaderText;
+    size_t blockHeaderTextLength;
+};
+
+enum GPUShaderType
+{
+    GPUSHADER_VERTEX,
+    GPUSHADER_FRAGMENT
+};
+
+struct GPUShaderDesc
+{
+    GPUShaderType type;
+    const char* source;
+    int firstLine;
+};
+
+struct GPUProgramDesc
+{
+    size_t numShaders;
+    GPUShaderDesc* shaders;
+};
+
+
 typedef enum
 {
     UNIFORM_DIFFUSEMAP = 0,
@@ -754,6 +789,18 @@ typedef enum
     UNIFORM_CUBEMAPINFO,
     
     UNIFORM_ALPHATEST,
+    
+    // UQ1: Added...
+    UNIFORM_DIMENSIONS,
+    UNIFORM_HEIGHTMAP,
+    UNIFORM_LOCAL0,
+    UNIFORM_LOCAL1,
+    UNIFORM_LOCAL2,
+    UNIFORM_LOCAL3,
+    UNIFORM_TEXTURE0,
+    UNIFORM_TEXTURE1,
+    UNIFORM_TEXTURE2,
+    UNIFORM_TEXTURE3,
     
     UNIFORM_COUNT
 } uniform_t;
@@ -1797,9 +1844,6 @@ extern	cvar_t*	r_lodCurveError;
 extern	cvar_t*	r_skipBackEnd;
 
 extern	cvar_t*	r_anaglyphMode;
-
-//extern  cvar_t*  r_externalGLSL;
-
 extern  cvar_t*  r_hdr;
 extern  cvar_t*  r_floatLightmap;
 extern  cvar_t*  r_postProcess;
@@ -2471,6 +2515,9 @@ void R_AddPostProcessCmd( void );
 void RE_EndFrame( S32* frontEndMsec, S32* backEndMsec );
 void RE_SaveJPG( UTF8* filename, S32 quality, S32 image_width, S32 image_height, U8* image_buffer, S32 padding );
 U64 RE_SaveJPGToBuffer( U8* buffer, U64 bufSize, S32 quality, S32 image_width, S32 image_height, U8* image_buffer, S32 padding );
+
+class Allocator;
+GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text );
 
 //
 // idRenderSystemLocal

@@ -2783,10 +2783,8 @@ void R_RenderMissingCubemaps( void )
     {
         if( !tr.cubemaps[i].image )
         {
-            tr.cubemaps[i].image = R_CreateImage( va( "*cubeMap%d", i ), NULL,
-                                                  r_cubemapSize->integer, r_cubemapSize->integer,
-                                                  IMGTYPE_COLORALPHA, flags, GL_RGBA8 );
-                                                  
+            tr.cubemaps[i].image = R_CreateImage( va( "*cubeMap%d", i ), NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8 );
+            
             for( j = 0; j < 6; j++ )
             {
                 renderSystemLocal.ClearScene();

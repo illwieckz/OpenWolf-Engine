@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
-// Copyright(C) 1999 - 2010 id Software LLC, a ZeniMax Media company.
 // Copyright(C) 2011 - 2012 Justin Marshall <justinmarshall20@gmail.com>
-// Copyright(C) 2011 - 2018 Dusan Jocic <dusanjocic@msn.com>
+// Copyright(C) 2012 - 2018 Dusan Jocic <dusanjocic@msn.com>
 //
 // This file is part of the OpenWolf GPL Source Code.
 // OpenWolf Source Code is free software: you can redistribute it and/or modify
@@ -28,7 +27,7 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   GPUWorkerProgram.h
+// File name:   GPUWorker_CLCache.h
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -36,62 +35,22 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __GPUWORKER_PROGGRAM_H__
-#define __GPUWORKER_PROGGRAM_H__
-
-#ifndef __R_LOCAL_H__
-#include "../GPURenderer/r_local.h"
-#endif
-#ifndef __UTIL_STR_H__
-#include "../OWLib/util_str.h"
-#endif
-#ifndef __CL_PLATFORM_H
-#include <cl/cl_platform.h>
-#endif
-
-#define GPUWORKER_FOLDER "renderWorkerProgs"
-#define GPUWORKER_EXT ".opencl"
-
-// ----------------------------------
-typedef void* gpuWorkerProgramHandle_t;
-typedef void* gpuWorkerMemoryPtr_t;
-typedef void* gpuWorkerKernelHandle_t;
-// ----------------------------------
+#include <GPUWorker/GPUWorker.h>
 
 //
-// owGPUWorkerProgram
+// owCacheGPUWorker
 //
-class owGPUWorkerProgram
+class owCacheGPUWorker : public owGPUWorkerProgram
 {
 public:
-    // Loads in the worker program.
     virtual void					LoadWorkerProgram( StringEntry path );
-    // Frees the render program handles.
-    virtual void					Free( void );
-    // Returns the name of the current worker program.
-    StringEntry 					Name()
-    {
-        return name.c_str();
-    };
-    // strings in case of the error.
-#ifndef DEDICATED
-    StringEntry                     clErrorString( cl_int err );
-#endif
-protected:
-    gpuWorkerProgramHandle_t		deviceHandle;		// Handle to the gpu program device handle.
-    
-    // Uploads memory to the GPU.
-    virtual void					UploadMemory( gpuWorkerMemoryPtr_t memhandle, void* data, S32 size );
-    
-    // Read memory from the GPU.
-    virtual void                    ReadMemory( gpuWorkerMemoryPtr_t memhandle, void* data, S32 size );
-    
-    // Creates a kernel handle(a kernel a function were going to execute at some point).
-    virtual gpuWorkerKernelHandle_t	CreateKernel( StringEntry kernelName );
-    virtual gpuWorkerMemoryPtr_t    CreateSharedTextureHandle( image_t* image );
-    
+    virtual void                    CreateSharedTexturePage( image_t* image );
+    virtual void                    UploadCache( void* buffer, S32 size );
 private:
-    idStr							name;
+    idList<gpuWorkerMemoryPtr_t>	clPageAddrPool;
+    
+    
+    gpuWorkerMemoryPtr_t			owCreateBuffer;
+    gpuWorkerMemoryPtr_t            UploadCLCache;
+    gpuWorkerKernelHandle_t			uploadTileKernel;
 };
-
-#endif // !__GPUWORKER_PROGGRAM_H__

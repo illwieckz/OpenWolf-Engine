@@ -63,7 +63,7 @@ owGpuWorker::Init
 */
 void owGpuWorkerLocal::Init( void )
 {
-    Com_Printf( "----------- R_GPUWorker_Init ----------\n" );
+    Com_Printf( "----------- owGpuWorkerLocal::Init ----------\n" );
     Com_Printf( "Init OpenCL...\n" );
     Com_Printf( "...Getting Device Platform ID.\n" );
     ID_GPUWORKER_CALLAPI( clGetPlatformIDs( 1, &platform, NULL ) );
@@ -128,7 +128,7 @@ owGpuWorkerLocal::Shutdown
 */
 void owGpuWorkerLocal::Shutdown( void )
 {
-    Com_Printf( "----------- R_GPUWorker_Shutdown ----------\n" );
+    Com_Printf( "----------- owGpuWorkerLocal::Shutdown ----------\n" );
     
     Com_Printf( "Clearing render program workers...\n" );
     for( S32 i = 0; i < programPool.Num(); i++ )

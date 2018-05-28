@@ -30,7 +30,9 @@
 
 #include <GPURenderer/r_local.h>
 #include <GPURenderer/r_dsa.h>
+#include <GPUWorker/GPUWorker_OpenCL.h>
 #include <GPUWorker/GPUWorker_Local.h>
+
 
 glconfig_t glConfig;
 glRefConfig_t glRefConfig;
@@ -47,7 +49,6 @@ cvar_t*         r_glCoreProfile;
 cvar_t*         r_glMajorVersion;
 cvar_t*         r_glMinorVersion;
 cvar_t*         r_glDebugProfile;
-
 cvar_t*	r_flareSize;
 cvar_t*	r_flareFade;
 cvar_t*	r_flareCoeff;
@@ -112,8 +113,6 @@ cvar_t*  r_arb_vertex_array_object;
 cvar_t*  r_ext_direct_state_access;
 
 cvar_t*  r_cameraExposure;
-
-//cvar_t*  r_externalGLSL;
 
 cvar_t*  r_hdr;
 cvar_t*  r_floatLightmap;
@@ -1529,7 +1528,13 @@ void R_Init( void )
     }
     
     //Init gpuWorker
-    gpuWorkerLocal.Init();
+    gpuWorker->Init();
+    
+    gpuWorkerCLManager->InitDevice();
+    
+    gpuWorkerCLManager->InitTexturefromCL();
+    
+    //Init GLSL
     renderSystemLocal.InitGPUShaders();
     
     R_InitVaos();
@@ -1543,7 +1548,6 @@ void R_Init( void )
     R_InitFreeType();
     
     R_InitQueries();
-    
     
     err = glGetError();
     if( err != GL_NO_ERROR )

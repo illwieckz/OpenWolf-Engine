@@ -150,6 +150,29 @@ gpuWorkerKernelHandle_t	owGPUWorkerProgram::CreateKernel( StringEntry kernelName
     return ( gpuWorkerKernelHandle_t )kernel;
 }
 
+
+/*
+========================
+owGPUWorkerProgram::CreateSharedTextureHandle
+Creates a shared texture handle.
+========================
+*/
+gpuWorkerMemoryPtr_t owGPUWorkerProgram::CreateSharedTextureHandle( image_t*	image )
+{
+    cl_mem ptr;
+    
+    // Create the shared gl texture2d object.
+    ptr = clCreateFromGLTexture2D( gpuWorkerLocal.GetDeviceContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image->texnum, &owGpuWorkerLocal::clError );
+    
+    if( ptr == NULL || ID_GPUWORKER_HASERROR )
+    {
+        CL_RefPrintf( PRINT_ALL, "CreateSharedTextureHandle: Failed to create shared handle from image %s\n", owGPUWorkerProgram::Name() );
+        return NULL;
+    }
+    
+    return ( gpuWorkerMemoryPtr_t )ptr;
+}
+
 /*
 ========================
 owGPUWorkerProgram::Free

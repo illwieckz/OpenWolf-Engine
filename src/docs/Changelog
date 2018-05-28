@@ -1,3 +1,8 @@
+2018-05-28 Dusan Jocic <dusanjocic@msn.com
+	* Partially rewrote loading of the GLSL files
+	* More work on the GPUWorkers
+	* Added "HelloWorld" renderWorkerProgs program
+
 2018-05-26 Dusan Jocic <dusanjocic@msn.com
 	* It had to be done #2
 

@@ -34,7 +34,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-__kernel void HelloWorld(__global char *pageData)
+__kernel void HelloWorld( __global char *imageData, __global char *deviceTextureData )
 {
 	//
 }

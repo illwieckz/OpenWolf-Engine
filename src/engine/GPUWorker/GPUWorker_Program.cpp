@@ -157,12 +157,12 @@ owGPUWorkerProgram::CreateSharedTextureHandle
 Creates a shared texture handle.
 ========================
 */
-gpuWorkerMemoryPtr_t owGPUWorkerProgram::CreateSharedTextureHandle( image_t*	image )
+gpuWorkerMemoryPtr_t owGPUWorkerProgram::CreateSharedTextureHandle( image_t* image )
 {
     cl_mem ptr;
     
     // Create the shared gl texture2d object.
-    ptr = clCreateFromGLTexture2D( gpuWorkerLocal.GetDeviceContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image->texnum, &owGpuWorkerLocal::clError );
+    ptr = clCreateFromGLTexture2D( gpuWorkerLocal.GetDeviceContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, NULL, &owGpuWorkerLocal::clError );
     
     if( ptr == NULL || ID_GPUWORKER_HASERROR )
     {

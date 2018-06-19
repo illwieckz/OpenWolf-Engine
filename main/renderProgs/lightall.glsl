@@ -460,6 +460,18 @@ vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 #endif
 }
 
+vec2 GetParallaxOffset(in vec2 texCoords, in vec3 E, in mat3 tangentToWorld )
+{
+#if defined(USE_PARALLAXMAP)
+	vec3 offsetDir = normalize(E * tangentToWorld);
+	offsetDir.xy *= -u_NormalScale.a / offsetDir.z;
+
+	return offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_NormalMap);
+#else
+	return vec2(0.0);
+#endif
+}
+
 vec3 EnvironmentBRDF(float roughness, float NE, vec3 specular)
 {
 	// from http://community.arm.com/servlet/JiveServlet/download/96891546-19496/siggraph2015-mmg-renaldas-slides.pdf
@@ -468,14 +480,43 @@ vec3 EnvironmentBRDF(float roughness, float NE, vec3 specular)
 	return vec3(v) + specular;
 }
 
-vec3 CalcSpecular(vec3 specular, float NH, float EH, float roughness)
+float spec_D( float NH, float roughness)
 {
-	// from http://community.arm.com/servlet/JiveServlet/download/96891546-19496/siggraph2015-mmg-renaldas-slides.pdf
-	float rr = roughness*roughness;
-	float rrrr = rr*rr;
-	float d = (NH * NH) * (rrrr - 1.0) + 1.0;
-	float v = (EH * EH) * (roughness + 0.5);
-	return specular * (rrrr / (4.0 * d * d * v));
+  // normal distribution
+  // from http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+  float alpha = roughness * roughness;
+  float quotient = alpha / max(1e-8,(NH*NH*(alpha*alpha-1.0)+1.0));
+  return (quotient * quotient) / M_PI;
+}
+
+vec3 spec_F( float EH, vec3 F0)
+{
+  // Fresnel
+  // from http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+  float pow2 = pow(2.0, (-5.55473*EH - 6.98316) * EH);
+  return F0 + (vec3(1.0) - F0) * pow2;
+}
+
+float G1(float NV, float k)
+{
+  return NV / (NV*(1.0-k) +  k);
+}
+
+float spec_G(float NL, float NE, float roughness )
+{
+  // GXX Schlick
+  // from http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+  float k = max(((roughness + 1.0) * (roughness + 1.0)) / 8.0, 1e-5);
+  return G1(NL,k)*G1(NE,k);
+ }
+
+vec3 CalcSpecular(vec3 specular, float NH, in float NL, in float NE, float EH, float roughness)
+{
+	float distrib = spec_D(NH,roughness);
+	
+	vec3 fresnel = spec_F(EH,specular);
+	float vis = spec_G(NL, NE, roughness);
+	return (distrib * fresnel * vis);
 }
 
 
@@ -524,9 +565,11 @@ void main()
 	vec2 texCoords = var_TexCoords.xy;
 
 #if defined(USE_PARALLAXMAP) || defined(USE_PARALLAXMAP_NONORMALS)
-	vec3 offsetDir = viewDir * tangentToWorld;
+	//vec3 offsetDir = viewDir * tangentToWorld;
 
-	offsetDir.xy *= -u_NormalScale.a / offsetDir.z;
+	//offsetDir.xy *= -u_NormalScale.a / offsetDir.z;
+
+	texCoords += GetParallaxOffset(texCoords, E, tangentToWorld);
 
 	//texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_NormalMap);
 #endif
@@ -656,13 +699,14 @@ void main()
 
 	reflectance  = CalcDiffuse(diffuse.rgb, NH, EH, roughness);
 	
-  #if defined(r_deluxeSpecular)
-    #if defined(USE_LIGHT_VECTOR)
-	reflectance += CalcSpecular(specular.rgb, NH, EH, roughness) * r_deluxeSpecular;
-    #else
-	reflectance += CalcSpecular(specular.rgb, NH, EH, pow(roughness, r_deluxeSpecular));
-    #endif
-  #endif
+    H  = normalize(L + E);
+    NL = clamp(dot(N, L), 0.0, 1.0);
+    NL = max(1e-8, abs(NL) );
+    EH = max(1e-8, dot(E, H));
+    NH = max(1e-8, dot(N, H));
+    NE = abs(dot(N, E)) + 1e-5;
+
+    reflectance += CalcSpecular(specular.rgb, NH, NL, NE, EH, roughness);
 
 	gl_FragColor.rgb  = lightColor   * reflectance * (attenuation * NL);
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
@@ -683,6 +727,15 @@ void main()
 	//vec3 cubeLightDiffuse = max(textureCubeLod(u_CubeMap, N, ROUGHNESS_MIPS).rgb, 0.5 / 255.0);
 	//cubeLightColor /= dot(cubeLightDiffuse, vec3(0.2125, 0.7154, 0.0721));
 
+	float horiz = 1.0;
+	// from http://marmosetco.tumblr.com/post/81245981087
+	#if defined(HORIZON_FADE)
+		const float horizonFade = HORIZON_FADE;
+		horiz = clamp( 1.0 + horizonFade * dot(R,var_Normal.xyz), 0.0, 1.0 );
+		horiz = 1.0 - horiz;
+		horiz *= horiz;
+	#endif
+
     #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;
     #endif
@@ -691,10 +744,10 @@ void main()
 	// not technically correct, but helps make reflections look less unnatural
 	//cubeLightColor *= lightColor * (attenuation * NL) + ambientColor;
 
-	gl_FragColor.rgb += cubeLightColor * reflectance;
+	gl_FragColor.rgb += cubeLightColor * reflectance * horiz;
   #endif
 
-  #if defined(USE_PRIMARY_LIGHT) || defined(SHADOWMAP_MODULATE)
+ #if defined(USE_PRIMARY_LIGHT) || defined(SHADOWMAP_MODULATE)
 	vec3 L2, H2;
 	float NL2, EH2, NH2;
 
@@ -704,19 +757,20 @@ void main()
 	//sqrLightDist = dot(L2, L2);
 	//L2 /= sqrt(sqrLightDist);
 
+	H2  = normalize(L2 + E); 
 	NL2 = clamp(dot(N, L2), 0.0, 1.0);
-	H2 = normalize(L2 + E);
-	EH2 = clamp(dot(E, H2), 0.0, 1.0);
-	NH2 = clamp(dot(N, H2), 0.0, 1.0);
+	NL2 = max(1e-8, abs(NL2) );
+	EH2 = max(1e-8, dot(E, H2));
+	NH2 = max(1e-8, dot(N, H2));
 
-	reflectance  = CalcSpecular(specular.rgb, NH2, EH2, roughness);
+	reflectance  = CalcSpecular(specular.rgb, NH2, NL2, NE, EH2, roughness);
 
 	// bit of a hack, with modulated shadowmaps, ignore diffuse
     #if !defined(SHADOWMAP_MODULATE)
 	reflectance += CalcDiffuse(diffuse.rgb, NH2, EH2, roughness);
     #endif
 
-	lightColor = u_PrimaryLightColor;
+	lightColor = u_PrimaryLightColor * var_Color.rgb;
 
     #if defined(USE_SHADOWMAP)
 	lightColor *= shadowValue;
@@ -735,6 +789,11 @@ void main()
   gl_FragColor.a = diffuse.a * var_Color.a;
   
 #else
+  lightColor = var_Color.rgb;
+
+  #if defined(USE_LIGHTMAP) 
+    lightColor *= lightmapColor.rgb;
+  #endif
 
   gl_FragColor.rgb = diffuse.rgb * lightColor;
 

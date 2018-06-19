@@ -357,6 +357,13 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
         Q_strcat( dest, size, va( "#define ROUGHNESS_MIPS float(%d)\n", numRoughnessMips ) );
     }
     
+    if( r_horizonFade->integer )
+    {
+        F32 fade = 1 + ( 0.1 * r_horizonFade->integer );
+        Q_strcat( dest, size, va( "#define HORIZON_FADE float(%f)\n", fade ) );
+    }
+    
+    
     if( extra )
     {
         Q_strcat( dest, size, extra );
@@ -439,11 +446,10 @@ static const GPUProgramDesc* LoadProgramSource( StringEntry programName, Allocat
 
 static S32 GLSL_LoadGPUShaderText( StringEntry name, StringEntry fallback, U32 shaderType, UTF8* dest, S32 destSize )
 {
-    char            filename[MAX_QPATH];
+    UTF8            filename[MAX_QPATH];
     GLcharARB*      buffer = NULL;
     const GLcharARB* shaderText = NULL;
-    int             size;
-    int             result;
+    S32             size, result;
     
     if( shaderType == GL_VERTEX_SHADER )
     {

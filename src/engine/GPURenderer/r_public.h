@@ -62,14 +62,14 @@ typedef struct
     F32 s2;
     F32 t2;
     qhandle_t glyph;  // handle to the shader with the glyph
-    char shaderName[32];
+    UTF8 shaderName[32];
 } glyphInfo_t;
 
 typedef struct
 {
     glyphInfo_t glyphs [GLYPHS_PER_FONT];
     F32 glyphScale;
-    char name[MAX_QPATH];
+    UTF8 name[MAX_QPATH];
 } fontInfo_t;
 
 //
@@ -106,7 +106,7 @@ public:
     virtual void ModelBounds( qhandle_t model, vec3_t mins, vec3_t maxs ) = 0;
     virtual void RegisterFont( StringEntry fontName, S32 pointSize, fontInfo_t* font ) = 0;
     virtual void RemapShader( StringEntry oldShader, StringEntry newShader, StringEntry offsetTime ) = 0;
-    virtual bool GetEntityToken( char* buffer, S32 size ) = 0;
+    virtual bool GetEntityToken( UTF8* buffer, S32 size ) = 0;
     virtual bool inPVS( const vec3_t p1, const vec3_t p2 ) = 0;
     virtual void TakeVideoFrame( S32 h, S32 w, U8* captureBuffer, U8* encodeBuffer, bool motionJpeg ) = 0;
 };

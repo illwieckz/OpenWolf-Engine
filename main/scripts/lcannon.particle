@@ -18,14 +18,14 @@ ejector
       accelerationMagnitude	50000
       //acceleration		0 -1 0 0
       accelerationPoint -100 0 0 ~0
-      
+
       parentVelocityFraction 0.0
 
       radius 0.0 1.0 -
       alpha 0.0 1.0 1.0
       bounce 0.0
       rotation 0.0 0.0 -
-      lifeTime 500.0
+      lifeTime 1000.0
 
       childTrailSystem		lucymuzzletrail
     }
@@ -45,7 +45,7 @@ ejector
       velocityDir		linear
       velocityMagnitude		500
       velocity			0 0 1 ~360
-      
+
       radius 0 0.5 0.5
       alpha 0 1.0 1.0
       bounce cull
@@ -66,23 +66,58 @@ LucyPrimaryExtras
   {
     particle
     {
-      shader sync gfx/weapons/lucy_swirl
+      displacement 0 0 0 ~0.0
+
+      normalDisplacement  3.0
+
+      velocityType      static //cent //tag
+      velocityDir       linear
+      velocityMagnitude 250
+      velocity 0 0 1 ~90
+
+      accelerationType      static
+      accelerationDir       linear
+      accelerationMagnitude 800
+      acceleration          0 0 -1 0
+
+      radius 0 1.0 -
+      bounce 0.5
+
+      lifeTime 500
+
+
+    }
+
+    count 1~2
+    delay 0
+    period 0 - ~0%
+  }
+}
+LucyPrimaryExtras2
+{
+  ejector
+  {
+    particle
+    {
+      //shader sync gfx/weapons/lucy_swirl
+      shader sync flame3 flame4 flame5 flame6 flame7 flame8 flame9 flame10 flame11 flame12 flame13 flame14 flame15 flame16 flame17 flame18 flame19 flame20 flame21 flame22 flame23 flame24 flame25
+      //shader sync gfx/blaster/orange_particle
 
       displacement 0 0 0 0.0
 
       velocityType      static
       velocityDir       linear
-      velocityMagnitude 0
-      velocity          0 0 1 0
+      velocityMagnitude 150~75%
+      velocity          0 0 1 ~25
 
-      radius 0 0.0 5~5.0
+      radius 0 0.0 20~30.0
       alpha  0 1.0 0.0
-      rotation 0 ~360 ~360
+      rotation 0 0 0
       bounce 0.0
 
-      lifeTime 125
+      lifeTime 500
     }
-    particle
+  /*  particle
     {
       shader sync gfx/weapons/lasgunspark1 gfx/weapons/lasgunspark2 gfx/weapons/lasgunspark3 gfx/weapons/lasgunspark4 gfx/weapons/lasgunspark5 gfx/weapons/lasgunspark6
 
@@ -106,7 +141,7 @@ LucyPrimaryExtras
       bounce 0.0
 
       lifeTime 500
-    }
+    }*/
     count 1
     delay 0
     period 0 - ~0%
@@ -132,7 +167,7 @@ LucyMissileSecondary
       accelerationMagnitude	50000
       //acceleration		0 -1 0 0
       accelerationPoint -100 0 0 ~0
-      
+
       parentVelocityFraction 0.0
 
       radius 0 50 15
@@ -148,12 +183,11 @@ LucyMissileSecondary
     period 300 - ~0%
   }
 }
-
 LucyMuzzleFlash
 {
   ejector
   {
-    particle
+    /*particle
     {
       //shader sync gfx/sprites/smoke
 	//shader sync gfx/grenade/smoke
@@ -179,7 +213,7 @@ LucyMuzzleFlash
       bounce 0.0
 
       lifeTime 150
-    }
+    }*/
     particle
     {
       //shader sync gfx/sprites/smoke
@@ -209,6 +243,94 @@ LucyMuzzleFlash
     }
 
     count 4~50%
+    delay 0
+    period 0 - ~0%
+  }
+}
+ImpactLucyPrimary
+{
+  ejector
+  {
+    particle
+    {
+      displacement 0 0 0 ~0.0
+
+      normalDisplacement  3.0
+
+      velocityType      normal //cent //tag
+      velocityDir       linear
+      velocityMagnitude 250
+      velocity 0 0 0 ~90
+
+      accelerationType      static
+      accelerationDir       linear
+      accelerationMagnitude 800
+      acceleration          0 0 -1 0
+
+      radius 0 1.0 -
+      bounce 0.5
+
+      lifeTime 500
+
+
+    }
+
+    count 5~5
+    delay 0
+    period 0 - ~0%
+  }
+  ejector
+  {
+    particle
+    {
+      shader sync gfx/weapons/smoke
+
+      displacement 0 0 0 ~4.0
+      normalDisplacement  2.0~3.0
+
+      velocityType      normal
+      velocityDir       linear
+      velocityMagnitude 15~30
+      velocity          0 0 1 0
+
+      accelerationType      static
+      accelerationDir       linear
+      accelerationMagnitude 20~10
+      acceleration          0 0 1 ~40
+
+      radius 0 6.0 30.0~50%
+      alpha  0 0.6 0.0
+      rotation 0 ~360 -
+      bounce 0.0
+
+      lifeTime 500
+    }
+    count 8
+    delay 215
+    period 35 - ~0%
+  }
+  ejector
+  {
+    particle
+    {
+      shader sync gfx/weapons/luci_shockwave_haze
+
+      displacement 0 0 8 ~0
+
+      velocityType      static
+      velocityDir       linear
+      velocityMagnitude 0
+      velocity          0 0 1 ~60
+
+      radius 0 5 50
+      alpha  0 1.0 0.0
+      rotation 0 ~360 -
+      bounce 0.0
+
+      lifeTime 150
+    }
+
+    count 1
     delay 0
     period 0 - ~0%
   }

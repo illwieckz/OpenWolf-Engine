@@ -61,7 +61,7 @@ static logfile_t logfile;
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
-void Log_Open( StringEntry filename )
+void Log_Open( UTF8* filename )
 {
     if( !LibVarValue( "log", "0" ) ) return;
     if( !filename || !strlen( filename ) )

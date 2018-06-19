@@ -55,7 +55,7 @@ T* ojkAllocArray( Allocator& allocator, U64 count )
     return static_cast<T*>( allocator.Alloc( sizeof( T ) * count ) );
 }
 
-inline char* ojkAllocString( Allocator& allocator, U64 stringLength )
+inline UTF8* ojkAllocString( Allocator& allocator, U64 stringLength )
 {
     return ojkAllocArray<UTF8>( allocator, stringLength + 1 );
 }

@@ -3066,6 +3066,7 @@ static void InitShader( StringEntry name, S32 lightmapIndex )
         if( r_pbr->integer )
         {
             stages[i].specularScale[0] = r_baseGloss->value;
+            stages[i].specularScale[2] = 1.0;
         }
         else
         {

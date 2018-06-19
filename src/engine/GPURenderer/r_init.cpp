@@ -137,6 +137,7 @@ cvar_t*  r_specularMapping;
 cvar_t*  r_deluxeMapping;
 cvar_t*  r_parallaxMapping;
 cvar_t*  r_cubeMapping;
+cvar_t*  r_horizonFade;
 cvar_t*  r_cubemapSize;
 cvar_t*  r_deluxeSpecular;
 cvar_t*  r_pbr;
@@ -1267,8 +1268,7 @@ void R_Register( void )
     
     r_toneMap = Cvar_Get( "r_toneMap", "1", CVAR_ARCHIVE );
     r_forceToneMap = Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
-    r_forceToneMapMin = Cvar_Get( "r_forceToneMapMin",
-                                  "-8.0", CVAR_CHEAT );
+    r_forceToneMapMin = Cvar_Get( "r_forceToneMapMin", "-8.0", CVAR_CHEAT );
     r_forceToneMapAvg = Cvar_Get( "r_forceToneMapAvg", "-2.0", CVAR_CHEAT );
     r_forceToneMapMax = Cvar_Get( "r_forceToneMapMax", "0.0", CVAR_CHEAT );
     
@@ -1287,6 +1287,7 @@ void R_Register( void )
     r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_cubeMapping = Cvar_Get( "r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_horizonFade = Cvar_Get( "r_horizonFade", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_cubemapSize = Cvar_Get( "r_cubemapSize", "128", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeSpecular = Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
     r_pbr = Cvar_Get( "r_pbr", "0", CVAR_ARCHIVE | CVAR_LATCH );

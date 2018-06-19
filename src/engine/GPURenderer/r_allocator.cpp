@@ -60,7 +60,7 @@ void* Allocator::Alloc( U64 allocSize )
     }
     
     void* result = mark;
-    size_t alignedSize = ( allocSize + 15 ) & ~15;
+    U64 alignedSize = ( allocSize + 15 ) & ~15;
     
     mark = ( UTF8* )mark + alignedSize;
     

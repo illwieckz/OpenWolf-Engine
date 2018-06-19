@@ -36,9 +36,9 @@
 
 namespace
 {
-Block* FindBlock( const char* name, Block* blocks, size_t numBlocks )
+Block* FindBlock( StringEntry name, Block* blocks, U64 numBlocks )
 {
-    for( size_t i = 0; i < numBlocks; ++i )
+    for( U64 i = 0; i < numBlocks; ++i )
     {
         Block* block = blocks + i;
         
@@ -146,8 +146,8 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
     
     theProgram.shaders = ojkAllocArray<GPUShaderDesc>( allocator, theProgram.numShaders );
     
-    char* vertexSource = ojkAllocString( allocator, vertexBlock->blockTextLength );
-    char* fragmentSource = ojkAllocString( allocator, fragmentBlock->blockTextLength );
+    UTF8* vertexSource = ojkAllocString( allocator, vertexBlock->blockTextLength );
+    UTF8* fragmentSource = ojkAllocString( allocator, fragmentBlock->blockTextLength );
     
     strncpy_s( vertexSource, vertexBlock->blockTextLength + 1, vertexBlock->blockText, vertexBlock->blockTextLength );
     strncpy_s( fragmentSource, fragmentBlock->blockTextLength + 1, fragmentBlock->blockText, fragmentBlock->blockTextLength );

@@ -671,15 +671,15 @@ enum
 #define MAX_BLOCK_NAME_LEN (32)
 struct Block
 {
-    const char* blockText;
-    size_t blockTextLength;
-    int blockTextFirstLine;
+    StringEntry blockText;
+    U64 blockTextLength;
+    S32 blockTextFirstLine;
     
-    const char* blockHeaderTitle;
-    size_t blockHeaderTitleLength;
+    StringEntry blockHeaderTitle;
+    U64 blockHeaderTitleLength;
     
-    const char* blockHeaderText;
-    size_t blockHeaderTextLength;
+    StringEntry blockHeaderText;
+    U64 blockHeaderTextLength;
 };
 
 enum GPUShaderType
@@ -691,13 +691,13 @@ enum GPUShaderType
 struct GPUShaderDesc
 {
     GPUShaderType type;
-    const char* source;
-    int firstLine;
+    StringEntry source;
+    S32 firstLine;
 };
 
 struct GPUProgramDesc
 {
-    size_t numShaders;
+    U64 numShaders;
     GPUShaderDesc* shaders;
 };
 
@@ -790,17 +790,6 @@ typedef enum
     
     UNIFORM_ALPHATEST,
     
-    // UQ1: Added...
-    UNIFORM_DIMENSIONS,
-    UNIFORM_HEIGHTMAP,
-    UNIFORM_LOCAL0,
-    UNIFORM_LOCAL1,
-    UNIFORM_LOCAL2,
-    UNIFORM_LOCAL3,
-    UNIFORM_TEXTURE0,
-    UNIFORM_TEXTURE1,
-    UNIFORM_TEXTURE2,
-    UNIFORM_TEXTURE3,
     
     UNIFORM_COUNT
 } uniform_t;
@@ -1369,12 +1358,10 @@ typedef struct model_s
     UTF8		name[MAX_QPATH];
     modtype_t	type;
     S32			index;		// model = tr.models[model->index]
-    
     S32			dataSize;	// just for listing purposes
     bmodel_t*	bmodel;		// only if type == MOD_BRUSH
     mdvModel_t*	mdv[MD3_MAX_LODS];	// only if type == MOD_MESH
-    void*	modelData;			// only if type == (MOD_MDR | MOD_IQM)
-    
+    void*	    modelData;			// only if type == (MOD_MDR | MOD_IQM)
     S32			 numLods;
 } model_t;
 
@@ -1869,6 +1856,7 @@ extern  cvar_t*  r_specularMapping;
 extern  cvar_t*  r_deluxeMapping;
 extern  cvar_t*  r_parallaxMapping;
 extern  cvar_t*  r_cubeMapping;
+extern  cvar_t*  r_horizonFade;
 extern  cvar_t*  r_cubemapSize;
 extern  cvar_t*  r_deluxeSpecular;
 extern  cvar_t*  r_pbr;

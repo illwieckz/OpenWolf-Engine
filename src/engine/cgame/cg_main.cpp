@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cgame/cg_local.h>
-#include <gui/gui_shared.h>
+#include <OWLIb/precompiled.h>
 
 // display context for new ui stuff
 displayContextDef_t cgDC;

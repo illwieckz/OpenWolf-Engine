@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <bgame/bg_public.h>
-#include <bgame/bg_local.h>
+#include <OWLIb/precompiled.h>
 
 idBothGamesLocal bgLocal;
 bgGame* bggame = &bgLocal;
@@ -39,7 +37,7 @@ S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );
 void trap_FS_Read( void* buffer, S32 len, fileHandle_t f );
 void trap_FS_Write( const void* buffer, S32 len, fileHandle_t f );
 void trap_FS_FCloseFile( fileHandle_t f );
-void trap_FS_Seek( fileHandle_t f, S64 offset, S32 origin );
+S32 trap_FS_Seek( fileHandle_t f, S64 offset, S32 origin );
 S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize );
 
 static const buildableAttributes_t bg_buildableList[ ] =

@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <bgame/bg_local.h>
-#include <bgame/bg_public.h>
+#include <OWLIb/precompiled.h>
 
 #ifdef GAME
 # define POOLSIZE ( 1024 * 1024 )

@@ -26,15 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __CG_API_H__
-#include <client/cg_api.h>
-#endif
-#ifndef __CG_LOCAL_H__
-#include <cgame/cg_local.h>
-#endif
-#ifndef __SPLINES_H__
-#include <OWLib/splines.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 #define PASSFLOAT(x) x
 

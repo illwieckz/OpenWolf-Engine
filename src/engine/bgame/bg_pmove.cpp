@@ -30,9 +30,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <bgame/bg_public.h>
-#include <bgame/bg_local.h>
+#include <OWLIb/precompiled.h>
 
 pmove_t*     pm;
 pml_t       pml;

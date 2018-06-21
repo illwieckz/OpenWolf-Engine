@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <bgame/bg_public.h>
-#include <bgame/bg_local.h>
+#include <OWLIb/precompiled.h>
 
 /*
 input: origin, velocity, bounds, groundPlane, trace function

@@ -29,7 +29,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cgame/cg_local.h>
+#include <OWLIb/precompiled.h>
 
 extern S32 sortedTeamPlayers[TEAM_MAXOVERLAY];
 extern S32 numSortedTeamPlayers;

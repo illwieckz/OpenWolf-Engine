@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cgame/cg_local.h>
+#include <OWLIb/precompiled.h>
 
 static baseTrailSystem_t  baseTrailSystems[ MAX_BASETRAIL_SYSTEMS ];
 static baseTrailBeam_t    baseTrailBeams[ MAX_BASETRAIL_BEAMS ];

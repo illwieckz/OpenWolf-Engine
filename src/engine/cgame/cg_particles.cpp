@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cgame/cg_local.h>
+#include <OWLIb/precompiled.h>
 
 static baseParticleSystem_t   baseParticleSystems[ MAX_BASEPARTICLE_SYSTEMS ];
 static baseParticleEjector_t  baseParticleEjectors[ MAX_BASEPARTICLE_EJECTORS ];

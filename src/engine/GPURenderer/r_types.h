@@ -31,7 +31,7 @@
 #define __R_TYPES_H__
 
 #ifndef __Q_SHARED_H__
-#include "../qcommon/q_shared.h"
+#include <qcommon/q_shared.h>
 #endif
 
 #define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces

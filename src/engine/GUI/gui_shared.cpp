@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <gui/gui_shared.h>
-#include <gui/gui_local.h>			// For CS settings/retrieval
-#include <cmath>
+#include <OWLIb/precompiled.h>
 
 #define SCROLL_TIME_START         500
 #define SCROLL_TIME_ADJUST        150

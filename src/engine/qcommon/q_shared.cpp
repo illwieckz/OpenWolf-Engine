@@ -2803,12 +2803,6 @@ void Com_Error( S32 level, StringEntry error, ... )
 }
 #endif
 
-F32 rint( F32 v )
-{
-    if( v >= 0.5f ) return ceilf( v );
-    else return floorf( v );
-}
-
 #if defined(_MSC_VER)
 /*
 =============

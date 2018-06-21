@@ -11,7 +11,8 @@ if( POLICY CMP0017 )
 endif()
 
 include( CMakeDependentOption )
- 
+include( cmake/precompiledHeaders.cmake )
+
 # This line has to appear before 'PROJECT' in order to be able to disable incremental linking
 set( MSVC_INCREMENTAL_DEFAULT ON )
 
@@ -442,6 +443,7 @@ set ( OWLIB_HEADERS
   ${MOUNT_DIR}/OWLib/math_vector.h
   ${MOUNT_DIR}/OWLib/q_splineshared.h
   ${MOUNT_DIR}/OWLib/splines.h
+  ${MOUNT_DIR}/OWLib/types.h
   ${MOUNT_DIR}/OWLib/util_list.h
   ${MOUNT_DIR}/OWLib/util_str.h
 )
@@ -510,6 +512,7 @@ set( QAGAMELIST_SOURCES
 )
 
 set( CGAMELIST_HEADERS
+  ${MOUNT_DIR}/OWLib/precompiled.h
   ${MOUNT_DIR}/client/cg_api.h
   ${MOUNT_DIR}/GUI/menudef.h
   ${MOUNT_DIR}/bgame/bg_local.h
@@ -522,6 +525,7 @@ set( CGAMELIST_HEADERS
 )
 
 set( CGAMELIST_SOURCES
+  ${MOUNT_DIR}/OWLib/precompiled.cpp
   ${MOUNT_DIR}/bgame/bg_alloc.cpp
   ${MOUNT_DIR}/bgame/bg_misc.cpp
   ${MOUNT_DIR}/bgame/bg_pmove.cpp
@@ -690,23 +694,18 @@ if( BUILD_GAME )
     LIBRARY_OUTPUT_DIRECTORY "main"
   )
   target_link_libraries( game )
-  
+
   add_library( cgame SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${CGAMELIST_HEADERS} ${CGAMELIST_SOURCES} )
   if( MSVC )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
 	SOURCE_GROUP( Header\ Files\\GameFiles                                FILES ${CGAMELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\GameFiles                                FILES ${CGAMELIST_SOURCES} )
-	
-	
+		
 	SET_TARGET_PROPERTIES( cgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/cgame/cgame.def" )
-    #find_library(ODBC32 odbc32 "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A/Lib/x64")
-    #find_library(ODBCCP32 odbccp32 "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A/Lib/x64")
-
-    #set( LINK_LIBS ${ODBC32} ${ODBCCP32} odbc32.lib odbccp32.lib )
   endif( MSVC )
   
-  #TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${LIB_DIR}/lua/include )
+  ADD_PRECOMPILED_HEADER(cgame "${MOUNT_DIR}/OWLib/precompiled.h" "${MOUNT_DIR}/OWLib/precompiled.cpp" )
   TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS CGAME _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
   set_target_properties( cgame PROPERTIES

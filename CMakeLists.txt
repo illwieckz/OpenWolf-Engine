@@ -21,7 +21,7 @@ set( CMAKE_BUILD_TYPE Release CACHE STRING "Build configuration (Debug, Release,
 project( OpenWolf C CXX )
 
 if( MSVC )
-  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /arch:SSE /fp:precise -Od" )
+  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /fp:precise -Od" )
 else()
   set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -pipe" )
   set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g" )
@@ -195,7 +195,7 @@ set( GUI_SOURCES
 
 set( SERVERLIST_HEADERS
   ${MOUNT_DIR}/server/server.h
-  ${MOUNT_DIR}/server/g_api.h
+  ${MOUNT_DIR}/sgame/sg_api.h
 )
 
 set( SERVERLIST_SOURCES
@@ -282,7 +282,7 @@ set( DATABASELIST_SOURCES
 )
 
 set( CLIENTLIST_HEADERS
-  ${MOUNT_DIR}/client/cg_api.h
+  ${MOUNT_DIR}/cgame/cg_api.h
   ${MOUNT_DIR}/client/client.h
   ${MOUNT_DIR}/client/keycodes.h
   ${MOUNT_DIR}/client/keys.h
@@ -384,10 +384,10 @@ set( BOTLIBLIST_HEADERS
   ${MOUNT_DIR}/botlib/l_script.h
   ${MOUNT_DIR}/botlib/l_struct.h
   ${MOUNT_DIR}/botlib/l_utils.h
-  ${MOUNT_DIR}/game/chars.h
-  ${MOUNT_DIR}/game/inv.h
-  ${MOUNT_DIR}/game/match.h
-  ${MOUNT_DIR}/game/syn.h
+  ${MOUNT_DIR}/sgame/chars.h
+  ${MOUNT_DIR}/sgame/inv.h
+  ${MOUNT_DIR}/sgame/match.h
+  ${MOUNT_DIR}/sgame/syn.h
 
 )
 
@@ -459,24 +459,24 @@ set ( OWLIB_SOURCES
 )
 
 set( QAGAMELIST_HEADERS
-  ${MOUNT_DIR}/game/sg_precompiled.h
+  ${MOUNT_DIR}/sgame/sg_precompiled.h
   ${MOUNT_DIR}/botai/ai_chat.h
   ${MOUNT_DIR}/botai/ai_local.h
   ${MOUNT_DIR}/bgame/bg_local.h
   ${MOUNT_DIR}/bgame/bg_public.h
-  ${MOUNT_DIR}/game/g_admin.h
-  ${MOUNT_DIR}/game/g_local.h
+  ${MOUNT_DIR}/sgame/sg_admin.h
+  ${MOUNT_DIR}/sgame/sg_local.h
   ${MOUNT_DIR}/qcommon/surfaceflags.h
-  ${MOUNT_DIR}/server/g_api.h
-  ${MOUNT_DIR}/game/tremulous.h
-  ${MOUNT_DIR}/game/chars.h
-  ${MOUNT_DIR}/game/inv.h
-  ${MOUNT_DIR}/game/match.h
-  ${MOUNT_DIR}/game/syn.h
+  ${MOUNT_DIR}/sgame/sg_api.h
+  ${MOUNT_DIR}/sgame/tremulous.h
+  ${MOUNT_DIR}/sgame/chars.h
+  ${MOUNT_DIR}/sgame/inv.h
+  ${MOUNT_DIR}/sgame/match.h
+  ${MOUNT_DIR}/sgame/syn.h
 )
 
 set( QAGAMELIST_SOURCES
-  ${MOUNT_DIR}/game/sg_precompiled.cpp
+  ${MOUNT_DIR}/sgame/sg_precompiled.cpp
   ${MOUNT_DIR}/botai/ai_alien.cpp
   ${MOUNT_DIR}/botai/ai_chat.cpp
   ${MOUNT_DIR}/botai/ai_human.cpp
@@ -487,35 +487,35 @@ set( QAGAMELIST_SOURCES
   ${MOUNT_DIR}/bgame/bg_pmove.cpp
   ${MOUNT_DIR}/bgame/bg_slidemove.cpp
   ${MOUNT_DIR}/bgame/bg_voice.cpp
-  ${MOUNT_DIR}/game/g_active.cpp
-  ${MOUNT_DIR}/game/g_admin.cpp
-  ${MOUNT_DIR}/game/g_api.cpp
-  ${MOUNT_DIR}/game/g_bot.cpp
-  ${MOUNT_DIR}/game/g_buildable.cpp
-  ${MOUNT_DIR}/game/g_client.cpp
-  ${MOUNT_DIR}/game/g_cmds.cpp
-  ${MOUNT_DIR}/game/g_combat.cpp
-  ${MOUNT_DIR}/game/g_main.cpp
-  ${MOUNT_DIR}/game/g_maprotation.cpp
-  ${MOUNT_DIR}/game/g_mem.cpp
-  ${MOUNT_DIR}/game/g_misc.cpp
-  ${MOUNT_DIR}/game/g_missile.cpp
-  ${MOUNT_DIR}/game/g_mover.cpp
-  ${MOUNT_DIR}/game/g_physics.cpp
-  ${MOUNT_DIR}/game/g_ptr.cpp
-  ${MOUNT_DIR}/game/g_session.cpp
-  ${MOUNT_DIR}/game/g_spawn.cpp
-  ${MOUNT_DIR}/game/g_svcmds.cpp
-  ${MOUNT_DIR}/game/g_target.cpp
-  ${MOUNT_DIR}/game/g_team.cpp
-  ${MOUNT_DIR}/game/g_trigger.cpp
-  ${MOUNT_DIR}/game/g_utils.cpp
-  ${MOUNT_DIR}/game/g_weapon.cpp
+  ${MOUNT_DIR}/sgame/sg_active.cpp
+  ${MOUNT_DIR}/sgame/sg_admin.cpp
+  ${MOUNT_DIR}/sgame/sg_api.cpp
+  ${MOUNT_DIR}/sgame/sg_bot.cpp
+  ${MOUNT_DIR}/sgame/sg_buildable.cpp
+  ${MOUNT_DIR}/sgame/sg_client.cpp
+  ${MOUNT_DIR}/sgame/sg_cmds.cpp
+  ${MOUNT_DIR}/sgame/sg_combat.cpp
+  ${MOUNT_DIR}/sgame/sg_main.cpp
+  ${MOUNT_DIR}/sgame/sg_maprotation.cpp
+  ${MOUNT_DIR}/sgame/sg_mem.cpp
+  ${MOUNT_DIR}/sgame/sg_misc.cpp
+  ${MOUNT_DIR}/sgame/sg_missile.cpp
+  ${MOUNT_DIR}/sgame/sg_mover.cpp
+  ${MOUNT_DIR}/sgame/sg_physics.cpp
+  ${MOUNT_DIR}/sgame/sg_ptr.cpp
+  ${MOUNT_DIR}/sgame/sg_session.cpp
+  ${MOUNT_DIR}/sgame/sg_spawn.cpp
+  ${MOUNT_DIR}/sgame/sg_svcmds.cpp
+  ${MOUNT_DIR}/sgame/sg_target.cpp
+  ${MOUNT_DIR}/sgame/sg_team.cpp
+  ${MOUNT_DIR}/sgame/sg_trigger.cpp
+  ${MOUNT_DIR}/sgame/sg_utils.cpp
+  ${MOUNT_DIR}/sgame/sg_weapon.cpp
 )
 
 set( CGAMELIST_HEADERS
   ${MOUNT_DIR}/cgame/cg_precompiled.h
-  ${MOUNT_DIR}/client/cg_api.h
+  ${MOUNT_DIR}/cgame/cg_api.h
   ${MOUNT_DIR}/GUI/menudef.h
   ${MOUNT_DIR}/bgame/bg_local.h
   ${MOUNT_DIR}/bgame/bg_public.h
@@ -675,28 +675,28 @@ endif()
 ###############################
 
 if( BUILD_GAME )
-  add_library( game SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${QAGAMELIST_HEADERS} ${QAGAMELIST_SOURCES} )
+  add_library( sgame SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${QAGAMELIST_HEADERS} ${QAGAMELIST_SOURCES} )
   if( MSVC )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
 	SOURCE_GROUP( Header\ Files\\GameFiles                                FILES ${QAGAMELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\GameFiles                                FILES ${QAGAMELIST_SOURCES} )
 	
-	target_link_libraries( game winmm.lib )
+	target_link_libraries( sgame winmm.lib )
 	
-	ADD_PRECOMPILED_HEADER( game "${MOUNT_DIR}/game/sg_precompiled.h" "${MOUNT_DIR}/game/sg_precompiled.cpp" )
-	SET_TARGET_PROPERTIES( game PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/game/game.def" )
+	ADD_PRECOMPILED_HEADER( sgame "${MOUNT_DIR}/sgame/sg_precompiled.h" "${MOUNT_DIR}/sgame/sg_precompiled.cpp" )
+	SET_TARGET_PROPERTIES( sgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/sgame/sgame.def" )
   endif( MSVC )
 
-  TARGET_INCLUDE_DIRECTORIES( game PRIVATE ${MOUNT_DIR} )
-  set_property( TARGET game PROPERTY COMPILE_DEFINITIONS GAME _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ GAMEDLL )
+  TARGET_INCLUDE_DIRECTORIES( sgame PRIVATE ${MOUNT_DIR} )
+  set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ GAMEDLL )
   
-  set_target_properties( game PROPERTIES
-    OUTPUT_NAME "qagame_mp_${BUILD_ARCH}"
+  set_target_properties( sgame PROPERTIES
+    OUTPUT_NAME "sgame${BUILD_ARCH}"
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY "main"
   )
-  target_link_libraries( game )
+  target_link_libraries( sgame )
 
   add_library( cgame SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${CGAMELIST_HEADERS} ${CGAMELIST_SOURCES} )
   if( MSVC )
@@ -710,14 +710,14 @@ if( BUILD_GAME )
   endif( MSVC )
   
   TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
-  set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS CGAME _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
+  set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
   set_target_properties( cgame PROPERTIES
-    OUTPUT_NAME "cgame_mp_${BUILD_ARCH}"
+    OUTPUT_NAME "cgame${BUILD_ARCH}"
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY "main"
   )
   target_link_libraries( cgame )
-  install( TARGETS game cgame
+  install( TARGETS sgame cgame
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 
 static vec3_t forward, right, up;
 static vec3_t muzzle;

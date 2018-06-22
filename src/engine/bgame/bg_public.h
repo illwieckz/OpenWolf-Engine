@@ -33,7 +33,7 @@
 
 //tremulous balance header
 #ifndef __TREMULOUS_H__
-#include <game/tremulous.h>
+#include <sgame/tremulous.h>
 #endif
 
 // because games can change separately from the main system version, we need a
@@ -1116,7 +1116,7 @@ typedef enum
 
 typedef struct voiceTrack_s
 {
-#ifdef CGAME
+#ifdef CGAMEDLL
     sfxHandle_t track;
     S32 duration;
 #endif

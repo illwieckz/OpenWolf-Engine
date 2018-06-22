@@ -1407,7 +1407,7 @@ S32 FS_FOpenFileRead( StringEntry filename, fileHandle_t* file, bool uniqueFILE 
                     Com_Printf( "SYS_DLLNAME_UI + %d: '%s'\n", SYS_DLLNAME_UI_SHIFT, FS_ShiftStr( "ui_mp_x86.dll" /*"ui.mp.i386.so"*/, SYS_DLLNAME_UI_SHIFT ) );
 #endif
                     // qagame dll
-                    if( !( pak->referenced & FS_QAGAME_REF ) && !Q_stricmp( filename, Sys_GetDLLName( "qagame" ) ) )
+                    if( !( pak->referenced & FS_QAGAME_REF ) && !Q_stricmp( filename, Sys_GetDLLName( "sgame" ) ) )
                     {
                         pak->referenced |= FS_QAGAME_REF;
                     }

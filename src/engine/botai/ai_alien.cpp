@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 
 #define AS_OVER_RT3 ((ALIENSENSE_RANGE*0.5f)/M_ROOT3)
 

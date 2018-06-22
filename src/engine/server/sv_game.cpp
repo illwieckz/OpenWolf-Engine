@@ -638,7 +638,7 @@ void SV_InitGameProgs( void )
     sv.num_tags = 0;
     
     // load the dll or bytecode
-    gvm = Sys_LoadDll( "qagame" );
+    gvm = Sys_LoadDll( "sgame" );
     if( !gvm )
     {
         Com_Error( ERR_FATAL, "VM_Create on game failed" );

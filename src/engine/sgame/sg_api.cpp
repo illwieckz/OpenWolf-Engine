@@ -26,7 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 
 gameImports_t* imports;
 idSoundSystem* soundSystem;

@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 
 #define TIME_BETWEENFINDINGENEMY 0.5
 #define TIME_BETWEENBUYINGAMMO  4

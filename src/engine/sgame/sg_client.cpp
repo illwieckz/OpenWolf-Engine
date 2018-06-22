@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 
 // g_client.c -- client functions that don't happen every frame
 

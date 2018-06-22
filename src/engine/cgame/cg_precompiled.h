@@ -26,7 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/cg_api.h>
+#include <cgame/cg_api.h>
 #include <cgame/cg_local.h>
 #include <qcommon/q_shared.h>
 #include <bgame/bg_public.h>

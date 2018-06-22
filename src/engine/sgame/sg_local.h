@@ -38,7 +38,7 @@
 #include <bgame/bg_public.h>
 #endif
 #ifndef __G_API_H__
-#include <server/g_api.h>
+#include <sgame/sg_api.h>
 #endif
 #ifndef __R_TYPES_H__
 #include <GPURenderer/r_types.h>
@@ -53,7 +53,7 @@
 typedef struct gclient_s gclient_t;
 
 #ifndef __G_ADMIN_H__
-#include <game/g_admin.h>
+#include <sgame/sg_admin.h>
 #endif
 
 //==================================================================

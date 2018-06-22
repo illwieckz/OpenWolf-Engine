@@ -1,5 +1,8 @@
 2018-06-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added precompiled headers for the cgame and for the sgame projects
+	* Renamed all "g_" files to the "sg_" files
+	* Fixed compiling game logic 
+	* Moved API files from the "client" and from the "server" folders, they do not belong there
 
 2018-06-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added precompiled header

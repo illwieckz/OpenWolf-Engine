@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
+#ifdef CGAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <sgame/sg_precompiled.h>
+#endif // !GAMEDLL
 
 // os x game bundles have no standard library links, and the defines are not always defined!
 

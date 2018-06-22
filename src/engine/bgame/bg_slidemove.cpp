@@ -31,7 +31,7 @@
 #ifndef GAMEDLL
 #include <cgame/cg_precompiled.h>
 #else
-#include <game/sg_precompiled.h>
+#include <sgame/sg_precompiled.h>
 #endif // !GAMEDLL
 
 /*

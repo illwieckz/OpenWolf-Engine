@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   precompiled.cpp
+// File name:   sg_precompiled.h
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -26,4 +26,17 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/sg_precompiled.h>
+#include <qcommon/q_shared.h>
+#include <bgame/bg_public.h>
+#include <bgame/bg_local.h>
+#include <OWLib/splines.h>
+#include <sgame/tremulous.h>
+#include <sgame/sg_local.h>
+#include <botai/ai_local.h>
+#include <sgame/sg_admin.h>
+#include <botai/ai_chat.h>
+#include <botlib/be_ai_gen.h>
+#include <sgame/chars.h>
+#include <sgame/inv.h>
+#include <sgame/syn.h>
+#include <sgame/match.h>

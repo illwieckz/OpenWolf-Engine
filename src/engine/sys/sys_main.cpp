@@ -511,15 +511,8 @@ Used to load a development dll instead of a virtual machine
 */
 UTF8* Sys_GetDLLName( StringEntry name )
 {
-#if defined _WIN32
-    return va( "%s_mp_" ARCH_STRING DLL_EXT, name );
-#elif defined (__linux__)
-    return va( "%s.mp." ARCH_STRING DLL_EXT, name );
-#elif defined MACOS_X
+	//Dushan - I have no idea what this mess is and what I made it before
     return va( "%s" ARCH_STRING DLL_EXT, name );
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-    return va( "%s_mp." ARCH_STRING DLL_EXT, name );
-#endif
 }
 
 /*
@@ -563,7 +556,7 @@ void* Sys_LoadDll( StringEntry name )
 #ifndef DEDICATED
     // if the server is pure, extract the dlls from the mp_bin.pk3 so
     // that they can be referenced
-    if( Cvar_VariableValue( "sv_pure" ) && Q_stricmp( name, "qagame" ) )
+    if( Cvar_VariableValue( "sv_pure" ) && Q_stricmp( name, "sgame" ) )
     {
         FS_CL_ExtractFromPakFile( homepath, gamedir, filename );
     }

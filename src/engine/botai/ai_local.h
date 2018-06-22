@@ -50,7 +50,7 @@
 #include <botlib/be_ai_chat.h>
 #endif
 #ifndef __CHARS_H__
-#include <game/chars.h>
+#include <sgame/chars.h>
 #endif
 
 #define MAX_ITEMS 256

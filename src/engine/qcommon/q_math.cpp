@@ -38,7 +38,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
+#ifdef CGAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <sgame/sg_precompiled.h>
+#endif // !GAMEDLL
 
 // *INDENT-OFF*
 vec3_t vec3_origin = {0, 0, 0};

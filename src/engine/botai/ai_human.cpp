@@ -28,10 +28,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-
-#include <botai/ai_local.h>
-#include <botai/ai_chat.h>
+#include <game/sg_precompiled.h>
 
 #define TIME_BETWEENFINDINGENEMY 0.5
 #define TIME_BETWEENBUYINGAMMO  4

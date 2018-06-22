@@ -1128,9 +1128,9 @@ void trap_FS_Read( void* buffer, S32 len, fileHandle_t f )
     FS_Read( buffer, len, f );
 }
 
-void trap_FS_Write( const void* buffer, S32 len, fileHandle_t f )
+S32 trap_FS_Write( const void* buffer, S32 len, fileHandle_t f )
 {
-    FS_Write( buffer, len, f );
+    return FS_Write( buffer, len, f );
 }
 
 void trap_FS_FCloseFile( fileHandle_t f )
@@ -1148,15 +1148,11 @@ S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf,
     return FS_GetFileList( path, extension, listbuf, bufsize );
 }
 
-//23.
-//return FS_Seek(args[1], args[2], args[3]);
-S32 trap_FS_Seek( fileHandle_t f, long offset, S32 origin )
+S32 trap_FS_Seek( fileHandle_t f, S64 offset, S32 origin )
 {
     return FS_Seek( f, offset, origin );
 }
 
-//24.
-//return re.RegisterModel(VMA(1));
 qhandle_t trap_R_RegisterModel( StringEntry name )
 {
     return renderSystem->RegisterModel( name );

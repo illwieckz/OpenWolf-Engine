@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-#include <botai/ai_local.h>
+#include <game/sg_precompiled.h>
 
 #define AS_OVER_RT3 ((ALIENSENSE_RANGE*0.5f)/M_ROOT3)
 

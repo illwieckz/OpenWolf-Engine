@@ -138,7 +138,7 @@
 #define POSITION						5
 #define NUMBER							5
 #define TIME							6
-#define NAME							6
+#define NAMES							6
 #define MORE							6
 
 #endif //!__MATCH_H__

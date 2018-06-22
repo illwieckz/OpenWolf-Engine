@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-#include <botai/ai_local.h>
-#include <game/g_admin.h>
+#include <game/sg_precompiled.h>
 
 static S32 g_numBots;
 static UTF8* g_botInfos[MAX_BOTS];

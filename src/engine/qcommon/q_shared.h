@@ -1801,7 +1801,7 @@ typedef enum
 typedef struct
 {
     UTF8      name[ MAX_EMOTICON_NAME_LEN ];
-#ifndef GAME
+#ifndef GAMEDLL
     S32       width;
     qhandle_t shader;
 #endif

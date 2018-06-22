@@ -30,7 +30,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#ifndef GAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <game/sg_precompiled.h>
+#endif // !GAMEDLL
 
 pmove_t*     pm;
 pml_t       pml;
@@ -3935,7 +3939,7 @@ void idBothGamesLocal::UpdateViewAngles( playerState_t* ps, const usercmd_t* cmd
             // Guard against speed hack
             temp[i] = ps->delta_angles[i];
             
-#ifdef CGAME
+#ifdef CGAMEDLL
             // Assert here so that if cmd->angles[ i ] becomes non-zero
             // for a legitimate reason we can tell where and why it's
             // being ignored
@@ -4042,7 +4046,7 @@ void idBothGamesLocal::UpdateViewAngles( playerState_t* ps, const usercmd_t* cmd
 idBothGamesLocal::PmoveSingle
 ================
 */
-#if defined CGAME || defined GAME
+#if defined CGAMEDLL || defined GAMEDLL
 void trap_SnapVector( F32* v );
 #endif
 
@@ -4281,7 +4285,7 @@ void idBothGamesLocal::PmoveSingle( pmove_t* pmove )
     WaterEvents( );
     
     // snap some parts of playerstate to save network bandwidth
-#if defined CGAME || defined GAME
+#if defined CGAMEDLL || defined GAMEDLL
     trap_SnapVector( pm->ps->velocity );
 #endif
 }

@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
+#include <game/sg_precompiled.h>
 
 #define POOLSIZE    (256 * 1024)
 #define FREEMEMCOOKIE  ((S32)0xDEADBE3F)  // Any unlikely to be used value

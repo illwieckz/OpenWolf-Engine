@@ -27,14 +27,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-//Includes
-#include <game/g_local.h>
-#include <botlib/be_ai_gen.h>
-#include <botai/ai_local.h>
-#include <game/chars.h>				// characteristics
-#include <game/inv.h>				// indexes into the inventory
-#include <game/syn.h>				// synonyms
-#include <game/match.h>				// string matching types and vars
+#include <game/sg_precompiled.h>
 
 #define TIME_BETWEENCHATTING	25
 

@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-#include <botai/ai_local.h>
+#include <game/sg_precompiled.h>
 
 level_locals_t  level;
 
@@ -544,13 +543,21 @@ void idGameLocal::MapConfigs( StringEntry mapname )
     if( trap_Cvar_VariableIntegerValue( "g_mapConfigsLoaded" ) )
         return;
         
-    trap_SendConsoleCommand( EXEC_APPEND,
-                             va( "exec \"%s/default.cfg\"\n", g_mapConfigs.string ) );
-                             
-    trap_SendConsoleCommand( EXEC_APPEND,
-                             va( "exec \"%s/%s.cfg\"\n", g_mapConfigs.string, mapname ) );
-                             
+    trap_SendConsoleCommand( EXEC_APPEND, va( "exec \"%s/default.cfg\"\n", g_mapConfigs.string ) );
+    
+    trap_SendConsoleCommand( EXEC_APPEND, va( "exec \"%s/%s.cfg\"\n", g_mapConfigs.string, mapname ) );
+    
     trap_Cvar_Set( "g_mapConfigsLoaded", "1" );
+}
+
+idGameLocal::idGameLocal( void )
+{
+
+}
+
+idGameLocal::~idGameLocal( void )
+{
+
 }
 
 /*
@@ -568,9 +575,9 @@ void idGameLocal::Init( S32 levelTime, S32 randomSeed, S32 restart )
     
     RegisterCvars();
     
-    Printf( "------- Game Initialization -------\n" );
-    Printf( "gamename: %s\n", GAME_VERSION );
-    Printf( "gamedate: %s\n", __DATE__ );
+    Printf( "------- idGameLocal::Init : Game Initialization -------\n" );
+    Printf( "idGameLocal::Init:Gamename: %s\n", GAME_VERSION );
+    Printf( "idGameLocal::Init:Gamedate: %s\n", __DATE__ );
     
     bggame->InitMemory();
     

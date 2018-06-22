@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-#include <botai/ai_local.h>
-#include <botai/ai_chat.h>
+#include <game/sg_precompiled.h>
 
 #ifndef MAX_PATH
 #define MAX_PATH 144

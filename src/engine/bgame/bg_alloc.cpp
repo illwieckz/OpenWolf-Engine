@@ -28,9 +28,13 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#ifndef GAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <game/sg_precompiled.h>
+#endif // !GAMEDLL
 
-#ifdef GAME
+#ifdef GAMEDLL
 # define POOLSIZE ( 1024 * 1024 )
 #else
 # define POOLSIZE ( 256 * 1024 )

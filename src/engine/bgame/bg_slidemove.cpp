@@ -28,7 +28,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#ifndef GAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <game/sg_precompiled.h>
+#endif // !GAMEDLL
 
 /*
 input: origin, velocity, bounds, groundPlane, trace function

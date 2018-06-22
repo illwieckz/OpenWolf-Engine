@@ -1632,6 +1632,9 @@ typedef enum
 class idCGameLocal : public idCGame
 {
 public:
+    idCGameLocal();
+    ~idCGameLocal();
+    
     virtual void Init( S32 serverMessageNum, S32 serverCommandSequence, S32 clientNum, bool demoPlayback );
     // called when the level loads or when the renderer is restarted
     // all media should be registered at this time

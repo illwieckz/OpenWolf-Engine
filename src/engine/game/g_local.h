@@ -32,29 +32,28 @@
 #define __G_LOCAL_H__
 
 #ifndef __Q_SHARED_H__
-#include "../qcommon/q_shared.h"
+#include <qcommon/q_shared.h>
 #endif
 #ifndef __BG_PUBLIC_H__
-#include "../bgame/bg_public.h"
+#include <bgame/bg_public.h>
 #endif
 #ifndef __G_API_H__
-#include "../server/g_api.h"
+#include <server/g_api.h>
 #endif
 #ifndef __R_TYPES_H__
-#include "../GPURenderer/r_types.h"
+#include <GPURenderer/r_types.h>
 #endif
 #ifndef __SPLINES_H__
-#include "../OWLib/splines.h"
+#include <OWLib/splines.h>
 #endif
 #ifndef __BE_AAS_H__
-#include "../botlib/be_aas.h"
+#include <botlib/be_aas.h>
 #endif
 
-typedef struct gentity_s gentity_t;
 typedef struct gclient_s gclient_t;
 
 #ifndef __G_ADMIN_H__
-#include "g_admin.h"
+#include <game/g_admin.h>
 #endif
 
 //==================================================================
@@ -914,6 +913,9 @@ extern vmCvar_t bot_fastchat;
 class idGameLocal : public idGame
 {
 public:
+    idGameLocal();
+    ~idGameLocal();
+    
     virtual void Init( S32 levelTime, S32 randomSeed, S32 restart );
     virtual void Shutdown( S32 restart );
     virtual void ClientBegin( S32 clientNum );

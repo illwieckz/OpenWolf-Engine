@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <cgame/cg_precompiled.h>
 
 // display context for new ui stuff
 displayContextDef_t cgDC;
@@ -1794,6 +1794,16 @@ void idCGameLocal::AssetCache( void )
     {
         cgDC.Assets.emoticonShaders[ i ] = trap_R_RegisterShaderNoMip( va( "emoticons/%s_%dx1.tga", cgDC.Assets.emoticons[ i ], cgDC.Assets.emoticonWidths[ i ] ) );
     }
+}
+
+idCGameLocal::idCGameLocal( void )
+{
+
+}
+
+idCGameLocal::~idCGameLocal( void )
+{
+
 }
 
 /*

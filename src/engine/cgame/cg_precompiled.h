@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   precompiled.cpp
+// File name:   precompiled.h
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -26,4 +26,12 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLib/precompiled.h>
+#include <client/cg_api.h>
+#include <cgame/cg_local.h>
+#include <qcommon/q_shared.h>
+#include <bgame/bg_public.h>
+#include <bgame/bg_local.h>
+#include <OWLib/splines.h>
+#include <gui/gui_shared.h>
+#include <gui/gui_local.h>
+#include <qcommon/q_shared.h>

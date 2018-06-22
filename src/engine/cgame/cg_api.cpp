@@ -26,7 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <cgame/cg_precompiled.h>
 
 #define PASSFLOAT(x) x
 
@@ -125,9 +125,9 @@ void trap_FS_Read( void* buffer, S32 len, fileHandle_t f )
     imports->FS_Read( buffer, len, f );
 }
 
-void trap_FS_Write( const void* buffer, S32 len, fileHandle_t f )
+S32 trap_FS_Write( const void* buffer, S32 len, fileHandle_t f )
 {
-    imports->FS_Write( buffer, len, f );
+    return imports->FS_Write( buffer, len, f );
 }
 
 void trap_FS_FCloseFile( fileHandle_t f )

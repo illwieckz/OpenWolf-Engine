@@ -1,4 +1,7 @@
 2018-06-21 Dusan Jocic <dusanjocic@msn.com>
+	* Added precompiled headers for the cgame and for the sgame projects
+
+2018-06-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added precompiled header
 
 2018-06-19 Dusan Jocic <dusanjocic@msn.com>

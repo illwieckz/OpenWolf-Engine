@@ -29,7 +29,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#ifndef GAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <game/sg_precompiled.h>
+#endif // !GAMEDLL
 
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );
 S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize );
@@ -38,7 +42,7 @@ S32 trap_PC_FreeSource( S32 handle );
 S32 trap_PC_ReadToken( S32 handle, pc_token_t* pc_token );
 S32 trap_PC_SourceFileAndLine( S32 handle, UTF8* filename, S32* line );
 
-#ifdef CGAME
+#ifdef CGAMEDLL
 sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed );
 S32 trap_S_SoundDuration( sfxHandle_t handle );
 #endif
@@ -344,7 +348,7 @@ voiceTrack_t* idBothGamesLocal::VoiceParseCommand( S32 handle )
         }
         else
         {
-#ifdef CGAME
+#ifdef CGAMEDLL
             voiceTracks->track = trap_S_RegisterSound( token.string, false );
             voiceTracks->duration = trap_S_SoundDuration( voiceTracks->track );
 #endif
@@ -509,7 +513,7 @@ void idBothGamesLocal::PrintVoices( voice_t* voices, S32 debugLevel )
                     Com_Printf( "    class -> %d\n", voiceTrack->_class );
                     Com_Printf( "    weapon -> %d\n", voiceTrack->weapon );
                     Com_Printf( "    enthusiasm -> %d\n", voiceTrack->enthusiasm );
-#ifdef CGAME
+#ifdef CGAMEDLL
                     Com_Printf( "    duration -> %d\n", voiceTrack->duration );
 #endif
                 }

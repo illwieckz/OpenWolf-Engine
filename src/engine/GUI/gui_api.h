@@ -106,7 +106,7 @@ void trap_Cmd_ExecuteText( S32 exec_when, StringEntry text );
 void trap_AddCommand( StringEntry cmdName );
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );
 void trap_FS_Read( void* buffer, S32 len, fileHandle_t f );
-void trap_FS_Write( const void* buffer, S32 len, fileHandle_t f );
+S32 trap_FS_Write( const void* buffer, S32 len, fileHandle_t f );
 void trap_FS_FCloseFile( fileHandle_t f );
 S32 trap_FS_Delete( UTF8* filename );
 S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize );

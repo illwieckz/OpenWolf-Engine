@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
+#include <game/sg_precompiled.h>
 
 bool idGameLocal::SpawnString( StringEntry key, StringEntry defaultString, UTF8** out )
 {

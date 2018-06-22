@@ -28,14 +28,18 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#ifndef GAMEDLL
+#include <cgame/cg_precompiled.h>
+#else
+#include <game/sg_precompiled.h>
+#endif // !GAMEDLL
 
 idBothGamesLocal bgLocal;
 bgGame* bggame = &bgLocal;
 
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );
 void trap_FS_Read( void* buffer, S32 len, fileHandle_t f );
-void trap_FS_Write( const void* buffer, S32 len, fileHandle_t f );
+S32 trap_FS_Write( const void* buffer, S32 len, fileHandle_t f );
 void trap_FS_FCloseFile( fileHandle_t f );
 S32 trap_FS_Seek( fileHandle_t f, S64 offset, S32 origin );
 S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize );
@@ -1504,7 +1508,7 @@ bool idBothGamesLocal::ParseClassFile( StringEntry filename, classConfig_t* cc )
     fileHandle_t f;
     F32 scale = 0.0f;
     S32 defined = 0;
-    enum
+    enum parseClass
     {
         MODEL = 1 << 0,
         SKIN = 1 << 1,
@@ -2995,7 +2999,7 @@ void idBothGamesLocal::AddPredictableEventToPlayerstate( S32 newEvent, S32 event
         
         if( atof( buf ) != 0 )
         {
-#ifdef GAME
+#ifdef GAMEDLL
             Com_Printf( " game event svt %5d -> %5d: num = %20s parm %d\n",
             ps->pmove_framecount/*ps->commandTime*/, ps->eventSequence,
             BG_EventName( newEvent ), eventParm );

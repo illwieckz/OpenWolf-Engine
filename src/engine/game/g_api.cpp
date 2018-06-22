@@ -26,7 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
+#include <game/sg_precompiled.h>
 
 gameImports_t* imports;
 idSoundSystem* soundSystem;
@@ -1055,4 +1055,14 @@ void trap_Database_FetchfieldbyID( S32 id, UTF8* buffer, S32 len )
 void trap_Database_FetchFieldByName( StringEntry name, UTF8* buffer, S32 len )
 {
     imports->databaseSystem->FetchFieldByName( name, buffer, len );
+}
+
+S32 trap_S_SoundDuration( sfxHandle_t handle )
+{
+    return imports->soundSystem->SoundDuration( handle );
+}
+
+sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
+{
+    return soundSystem->RegisterSound( sample, compressed );
 }

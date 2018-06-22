@@ -26,41 +26,17 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __CG_API_H__
-#include <client/cg_api.h>
-#endif
-#ifndef __CG_LOCAL_H__
-#include <cgame/cg_local.h>
-#endif
-#ifndef __SPLINES_H__
-#include <OWLib/splines.h>
-#endif
-#ifndef __GUI_SHARED_H__
-#include <gui/gui_shared.h>
-#endif
-#ifndef __GUI_LOCAL_H__
-#include <gui/gui_local.h>
-#endif
-#ifndef __Q_SHARED_H__
 #include <qcommon/q_shared.h>
-#endif
-#ifndef __BG_PUBLIC_H__
 #include <bgame/bg_public.h>
-#endif
-#ifndef __BG_LOCAL_H__
 #include <bgame/bg_local.h>
-#endif
-#ifndef __TREMULOUS_H__
+#include <OWLib/splines.h>
 #include <game/tremulous.h>
-#endif
-#ifndef __R_TYPES_H__
-#include <GPURenderer/r_types.h>
-#endif
-#ifndef __KEYCODES_H__
-#include <GUI/keycodes.h>
-#endif
-#ifndef __MENUDEF_H__
-#include <GUI/menudef.h>
-#endif
-
-#include <cmath>
+#include <game/g_local.h>
+#include <botai/ai_local.h>
+#include <game/g_admin.h>
+#include <botai/ai_chat.h>
+#include <botlib/be_ai_gen.h>
+#include <game/chars.h>
+#include <game/inv.h>
+#include <game/syn.h>
+#include <game/match.h>

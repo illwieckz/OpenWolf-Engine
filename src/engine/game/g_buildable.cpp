@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <game/g_local.h>
-#include <cmath>
+#include <game/sg_precompiled.h>
 
 /*
 ================
@@ -1995,9 +1994,9 @@ bool idGameLocal::HMGTurret_TrackEnemy( gentity_t* self )
     vectoangles( dirToTarget, self->turretAim );
     
     //fire if target is within accuracy
-    return ( abs( angularDiff[ YAW ] ) - angularSpeed <=
+    return ( fabs( angularDiff[ YAW ] ) - angularSpeed <=
              MGTURRET_ACCURACY_TO_FIRE ) &&
-           ( abs( angularDiff[ PITCH ] ) - angularSpeed <=
+           ( fabs( angularDiff[ PITCH ] ) - angularSpeed <=
              MGTURRET_ACCURACY_TO_FIRE );
 }
 

@@ -36,7 +36,7 @@
 #include <botlib/botlib.h>
 #endif
 
-#ifdef GAMEDLL
+#if defined (GAMEDLL)
 typedef struct gentity_s gentity_t;
 #else
 #define gentity_t sharedEntity_t
@@ -369,6 +369,8 @@ void trap_Database_FinishQuery( void );
 bool trap_Database_FetchRow( void );
 void trap_Database_FetchfieldbyID( S32 id, UTF8* buffer, S32 len );
 void trap_Database_FetchFieldByName( StringEntry name, UTF8* buffer, S32 len );
+sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed );
+S32 trap_S_SoundDuration( sfxHandle_t handle );
 
 //
 // idGame

@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <cgame/cg_precompiled.h>
 
 UTF8* cg_buildableSoundNames[ MAX_BUILDABLE_ANIMATIONS ] =
 {

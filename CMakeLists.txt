@@ -459,6 +459,7 @@ set ( OWLIB_SOURCES
 )
 
 set( QAGAMELIST_HEADERS
+  ${MOUNT_DIR}/game/sg_precompiled.h
   ${MOUNT_DIR}/botai/ai_chat.h
   ${MOUNT_DIR}/botai/ai_local.h
   ${MOUNT_DIR}/bgame/bg_local.h
@@ -475,6 +476,7 @@ set( QAGAMELIST_HEADERS
 )
 
 set( QAGAMELIST_SOURCES
+  ${MOUNT_DIR}/game/sg_precompiled.cpp
   ${MOUNT_DIR}/botai/ai_alien.cpp
   ${MOUNT_DIR}/botai/ai_chat.cpp
   ${MOUNT_DIR}/botai/ai_human.cpp
@@ -512,7 +514,7 @@ set( QAGAMELIST_SOURCES
 )
 
 set( CGAMELIST_HEADERS
-  ${MOUNT_DIR}/OWLib/precompiled.h
+  ${MOUNT_DIR}/cgame/cg_precompiled.h
   ${MOUNT_DIR}/client/cg_api.h
   ${MOUNT_DIR}/GUI/menudef.h
   ${MOUNT_DIR}/bgame/bg_local.h
@@ -525,7 +527,7 @@ set( CGAMELIST_HEADERS
 )
 
 set( CGAMELIST_SOURCES
-  ${MOUNT_DIR}/OWLib/precompiled.cpp
+  ${MOUNT_DIR}/cgame/cg_precompiled.cpp
   ${MOUNT_DIR}/bgame/bg_alloc.cpp
   ${MOUNT_DIR}/bgame/bg_misc.cpp
   ${MOUNT_DIR}/bgame/bg_pmove.cpp
@@ -680,8 +682,9 @@ if( BUILD_GAME )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\GameFiles                                FILES ${QAGAMELIST_SOURCES} )
 	
-	target_link_libraries(game winmm.lib)
+	target_link_libraries( game winmm.lib )
 	
+	ADD_PRECOMPILED_HEADER( game "${MOUNT_DIR}/game/sg_precompiled.h" "${MOUNT_DIR}/game/sg_precompiled.cpp" )
 	SET_TARGET_PROPERTIES( game PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/game/game.def" )
   endif( MSVC )
 
@@ -701,11 +704,11 @@ if( BUILD_GAME )
 	SOURCE_GROUP( Header\ Files\\GameFiles                                FILES ${CGAMELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\GameFiles                                FILES ${CGAMELIST_SOURCES} )
-		
+	
+    ADD_PRECOMPILED_HEADER( cgame "${MOUNT_DIR}/cgame/cg_precompiled.h" "${MOUNT_DIR}/cgame/cg_precompiled.cpp" )	
 	SET_TARGET_PROPERTIES( cgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/cgame/cgame.def" )
   endif( MSVC )
   
-  ADD_PRECOMPILED_HEADER(cgame "${MOUNT_DIR}/OWLib/precompiled.h" "${MOUNT_DIR}/OWLib/precompiled.cpp" )
   TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS CGAME _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
   set_target_properties( cgame PROPERTIES

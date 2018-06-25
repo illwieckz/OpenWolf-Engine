@@ -3516,7 +3516,11 @@ S32 Com_ModifyMsec( S32 msec )
         // of time.
         if( msec > 500 && msec < 500000 )
         {
-            Com_Printf( "Hitch warning: %i msec frame time\n", msec );
+            // hibernation mode cause this
+            if( !svs.hibernation.enabled )
+            {
+                Com_Printf( "Hitch warning: %i msec frame time\n", msec );
+            }
         }
         clampTime = 5000;
     }

@@ -333,6 +333,13 @@ typedef struct serverStatic_s
     // Dushan
     svstats_t		stats;
     S32				queryDone;
+    
+    struct
+    {
+        bool enabled;
+        S32 lastTimeDisconnected;
+        F32 sv_fps;
+    } hibernation;
 } serverStatic_t;
 
 #if defined (UPDATE_SERVER)
@@ -428,6 +435,8 @@ extern cvar_t*  sv_packetdelay;
 extern cvar_t*  sv_fullmsg;
 
 extern cvar_t*  sv_IPmaxGetstatusPerSecond;
+
+extern cvar_t*  sv_hibernateTime;
 
 //===========================================================
 

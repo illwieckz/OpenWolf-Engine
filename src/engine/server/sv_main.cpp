@@ -109,6 +109,8 @@ cvar_t*         sv_packetdelay;
 // fretn
 cvar_t*         sv_fullmsg;
 
+cvar_t*         sv_hibernateTime;
+
 void            SVC_GameCompleteStatus( netadr_t from );	// NERVE - SMF
 
 #define LL( x ) x = LittleLong( x )
@@ -1431,6 +1433,33 @@ void SV_Frame( S32 msec )
         SV_Shutdown( "Server was killed.\n" );
         Cvar_Set( "sv_killserver", "0" );
         return;
+    }
+    
+    if( svs.initialized && gvm )
+    {
+        S32 i = 0;
+        S32 players = 0;
+        for( i = 0; i < sv_maxclients->integer; i++ )
+        {
+            if( svs.clients[i].state >= CS_CONNECTED && svs.clients[i].netchan.remoteAddress.type != NA_BOT )
+            {
+                players++;
+            }
+        }
+        
+        //Check for hibernation mode
+        if( sv_hibernateTime->integer && !svs.hibernation.enabled && !players )
+        {
+            S32 elapsed_time = Sys_Milliseconds() - svs.hibernation.lastTimeDisconnected;
+            
+            if( elapsed_time >= sv_hibernateTime->integer )
+            {
+                Cvar_Set( "sv_fps", "1" );
+                sv_fps->value = svs.hibernation.sv_fps;
+                svs.hibernation.enabled = true;
+                Com_Printf( "Server switched to hibernation mode\n" );
+            }
+        }
     }
     
     if( !com_sv_running->integer )

@@ -9,6 +9,8 @@
 	* Updated maps
 	* Updated textures
 	* Added precompiled jpeg library for the Visual Studio 2015
+	* Hibernation mode
+		NOTE: it is a feature to send a server to hibernate mode it's empty
 
 2018-06-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added precompiled headers for the cgame and for the sgame projects

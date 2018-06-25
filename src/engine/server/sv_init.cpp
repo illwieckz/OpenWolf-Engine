@@ -1179,6 +1179,9 @@ void SV_Init( void )
     // ET://someserver.com
     sv_fullmsg = Cvar_Get( "sv_fullmsg", "Server is full.", CVAR_ARCHIVE );
     
+    sv_hibernateTime = Cvar_Get( "sv_hibernateTime", "0", CVAR_ARCHIVE );
+    svs.hibernation.sv_fps = sv_fps->value;
+    
     // initialize bot cvars so they arelisted and can be set before loading the botlib
     SV_BotInitCvars();
     

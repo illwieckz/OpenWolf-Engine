@@ -257,13 +257,13 @@ void SV_DirectConnect( netadr_t from )
         // never reject a LAN client based on ping
         if( !Sys_IsLANAddress( from ) )
         {
-            if( sv_minPing->value && ping < sv_minPing->value )
+            if( ( sv_minPing->value && ping < sv_minPing->value ) && !svs.hibernation.enabled )
             {
                 NET_OutOfBandPrint( NS_SERVER, from, "print\n[err_dialog]Server is for high pings only\n" );
                 Com_DPrintf( "Client %i rejected on a too low ping\n", i );
                 return;
             }
-            if( sv_maxPing->value && ping > sv_maxPing->value )
+            if( ( sv_maxPing->value && ping > sv_maxPing->value ) && !svs.hibernation.enabled )
             {
                 NET_OutOfBandPrint( NS_SERVER, from, "print\n[err_dialog]Server is for low pings only\n" );
                 Com_DPrintf( "Client %i rejected on a too high ping: %i\n", i, ping );
@@ -401,6 +401,10 @@ gotnewcl:
         Com_DPrintf( "Game rejected a connection: %s.\n", denied );
         return;
     }
+    
+    Cvar_SetValue( "sv_fps", svs.hibernation.sv_fps );
+    svs.hibernation.enabled = false;
+    Com_Printf( "Server restored from hibernation\n" );
     
     SV_UserinfoChanged( newcl );
     
@@ -541,6 +545,16 @@ void SV_DropClient( client_t* drop, StringEntry reason )
     // to the master so it is known the server is empty
     // send a heartbeat now so the master will get up to date info
     // if there is already a slot for this ip, reuse it
+    
+    S32 players = 0;
+    for( i = 0; i < sv_maxclients->integer; i++ )
+    {
+        if( svs.clients[i].state >= CS_CONNECTED && svs.clients[i].netchan.remoteAddress.type != NA_BOT )
+        {
+            players++;
+        }
+    }
+    
     for( i = 0; i < sv_maxclients->integer; i++ )
     {
         if( svs.clients[i].state >= CS_CONNECTED )
@@ -548,9 +562,15 @@ void SV_DropClient( client_t* drop, StringEntry reason )
             break;
         }
     }
+    
     if( i == sv_maxclients->integer )
     {
         SV_Heartbeat_f();
+    }
+    
+    if( players == 0 )
+    {
+        svs.hibernation.lastTimeDisconnected = Sys_Milliseconds();
     }
 }
 

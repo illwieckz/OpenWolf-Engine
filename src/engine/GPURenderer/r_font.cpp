@@ -73,14 +73,9 @@
 // defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and
 // uncheck the exclude from build check box in the FreeType2 area of the Renderer project.
 
-#include <GPURenderer/r_common.h>
-#include <GPURenderer/r_local.h>
-
-#include <qcommon/qcommon.h>
-#include <qcommon/q_shared.h>
+#include <OWLIb/precompiled.h>
 
 #ifdef BUILD_FREETYPE
-#include <freetype/ft2build.h>
 #include FT_FREETYPE_H
 #include FT_ERRORS_H
 #include FT_SYSTEM_H

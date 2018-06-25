@@ -27,43 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <SDL.h>
-#include <GPURenderer/r_local.h>
-#include <qcommon/qcommon.h>
-
-#include <SDL.h>
-
-#if !SDL_VERSION_ATLEAST(1, 2, 10)
-#define SDL_GL_ACCELERATED_VISUAL 15
-#define SDL_GL_SWAP_CONTROL 16
-#elif MINSDL_PATCH >= 10
-#error Code block no longer necessary, please remove
-#endif
-
-#ifdef SMP
-#	include <SDL_thread.h>
-#	ifdef SDL_VIDEO_DRIVER_X11
-#		include <X11/Xlib.h>
-#	endif
-#endif
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <algorithm>
-#include <GPURenderer/r_local.h>
-#include <qcommon/q_shared.h>
-#include <client/client.h>
-#include <sys/sys_local.h>
-#include <sys/sdl_icon.h>
-#include <SDL_syswm.h>
-
-#if defined(WIN32)
-#include <GL/wglew.h>
-#else
-#include <GL/glxew.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 static bool SDL_VIDEODRIVER_externallySet = false;
 

@@ -35,10 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPUWorker/GPUWorker_OpenCL.h>
-#include <GPUWorker/GPUWorker_Backend.h>
-#include <GPUWorker/GPUWorker_CLCache.h>
-#include <GPURenderer/r_local.h>
+#include <OWLIb/precompiled.h>
 
 owGPUWorkerCLManager	gpuWorkerCLManagerLocal;
 owGPUWorkerCLManager*	gpuWorkerCLManager = &gpuWorkerCLManagerLocal;

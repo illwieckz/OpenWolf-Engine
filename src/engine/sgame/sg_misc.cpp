@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 //  -------------------------------------------------------------------------------------
-// File name:   g_misc.cpp
+// File name:   sg_misc.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -433,4 +433,15 @@ void idGameLocal::SP_misc_light_flare( gentity_t* self )
         self->s.eFlags |= EF_NODRAW;
         
     trap_LinkEntity( self );
+}
+
+
+/*
+===============
+SP_misc_cubemap
+===============
+*/
+void idGameLocal::SP_misc_cubemap( gentity_t* ent )
+{
+    FreeEntity( ent );
 }

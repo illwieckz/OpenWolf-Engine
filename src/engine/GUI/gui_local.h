@@ -101,7 +101,7 @@ typedef struct
 pinglist_t;
 
 
-typedef struct serverStatus_s
+typedef struct guiServerStatus_s
 {
     pinglist_t pingList[MAX_PINGREQUESTS];
     S32    numqueriedservers;
@@ -131,7 +131,7 @@ typedef struct serverStatus_s
     S32    motdTime;
     UTF8  motd[MAX_STRING_CHARS];
 }
-serverStatus_t;
+guiServerStatus_t;
 
 
 typedef struct
@@ -276,7 +276,7 @@ typedef struct
     S32         upgrades;
     S32         credits;
     
-    serverStatus_t serverStatus;
+    guiServerStatus_t serverStatus;
     
     // for the showing the status of a server
     UTF8 serverStatusAddress[MAX_ADDRESSLENGTH];

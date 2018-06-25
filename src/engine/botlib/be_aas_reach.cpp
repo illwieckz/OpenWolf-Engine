@@ -35,21 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_log.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/l_libvar.h>
-#include <botlib/aasfile.h>
-#include <botlib/botlib.h>
-#include <botlib/be_aas.h>
-#include <botlib/be_aas_funcs.h>
-#include <botlib/be_aas_def.h>
+#include <OWLIb/precompiled.h>
 
 extern S32 Sys_MilliSeconds( void );
-
 
 extern botlib_import_t botimport;
 

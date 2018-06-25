@@ -35,10 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>
-#include <botlib/l_log.h>
-#include <botlib/be_interface.h>
+#include <OWLIb/precompiled.h>
 
 //#define MEMDEBUG
 //#define MEMORYMANEGER

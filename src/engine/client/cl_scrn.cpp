@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
+#include <OWLIb/precompiled.h>
 
 bool scr_initialized;	// ready to draw
 
@@ -615,8 +615,6 @@ void SCR_UpdateScreen( void )
     {
         return;					// not initialized yet
     }
-    
-    //CL_StartHunkUsers();
     
     if( ++recursive >= 2 )
     {

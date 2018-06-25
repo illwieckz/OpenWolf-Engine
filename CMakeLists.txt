@@ -44,9 +44,7 @@ option( BUILD_SERVER                   "Build OpenWolfded server"               
 option( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
 option( BUILD_GAME                     "Build game logic shared libraries"                     ON )
 option( USE_CURSES                     "Use the curses console"                                ON ) 
-option( USE_INTERNAL_CRYPTO            "Use internal Crypto (Nettle)"                          ON )
 option( NO_UNTRUSTED_PLUGINS           "Don't load native plugins from the user dir"           ON )
-option( USE_INTERNAL_JPEG              "Use internal JPEG"                                     ON )
 
 # Package info
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenWolf client" )
@@ -231,7 +229,6 @@ set( COLLISIONMODEL_SOURCES
 )
 
 set( QCOMMONLIST_HEADERS
-  ${MOUNT_DIR}/qcommon/crypto.h
   ${MOUNT_DIR}/qcommon/dl_local.h
   ${MOUNT_DIR}/qcommon/dl_public.h
   ${MOUNT_DIR}/qcommon/htable.h
@@ -249,7 +246,6 @@ set( QCOMMONLIST_HEADERS
 set( QCOMMONLIST_SOURCES
   ${MOUNT_DIR}/qcommon/cmd.cpp
   ${MOUNT_DIR}/qcommon/common.cpp
-  ${MOUNT_DIR}/qcommon/crypto.cpp
   ${MOUNT_DIR}/qcommon/cvar.cpp
   ${MOUNT_DIR}/qcommon/files.cpp
   ${MOUNT_DIR}/qcommon/htable.cpp
@@ -437,6 +433,7 @@ set( PHYSICLIB_SOURCES
 )
 
 set ( OWLIB_HEADERS
+  ${MOUNT_DIR}/OWLib/precompiled.h
   ${MOUNT_DIR}/OWLib/math_angles.h
   ${MOUNT_DIR}/OWLib/math_matrix.h
   ${MOUNT_DIR}/OWLib/math_quaternion.h
@@ -449,6 +446,7 @@ set ( OWLIB_HEADERS
 )
 
 set ( OWLIB_SOURCES
+  ${MOUNT_DIR}/OWLib/precompiled.cpp
   ${MOUNT_DIR}/OWLib/math_angles.cpp
   ${MOUNT_DIR}/OWLib/math_matrix.cpp
   ${MOUNT_DIR}/OWLib/math_vector.cpp
@@ -561,90 +559,6 @@ set( CGAMELIST_SOURCES
   ${MOUNT_DIR}/GUI/gui_shared.cpp
 )
 
-if( USE_INTERNAL_CRYPTO )
-  set( CRYPTOLIST_SOURCES
-    ${LIB_DIR}/nettle/nettle/bignum.c
-    ${LIB_DIR}/nettle/nettle/bignum-random.c
-    ${LIB_DIR}/nettle/nettle/buffer-init.c
-    ${LIB_DIR}/nettle/nettle/nettle-buffer.c
-    ${LIB_DIR}/nettle/nettle/nettle-internal.c
-    ${LIB_DIR}/nettle/nettle/rsa2sexp.c
-    ${LIB_DIR}/nettle/nettle/rsa.c
-    ${LIB_DIR}/nettle/nettle/rsa-decrypt.c
-    ${LIB_DIR}/nettle/nettle/rsa-encrypt.c
-    ${LIB_DIR}/nettle/nettle/rsa-keygen.c
-    ${LIB_DIR}/nettle/nettle/rsa-sign.c
-    ${LIB_DIR}/nettle/nettle/sexp2bignum.c
-    ${LIB_DIR}/nettle/nettle/sexp2rsa.c
-    ${LIB_DIR}/nettle/nettle/sexp.c
-    ${LIB_DIR}/nettle/nettle/sexp-format.c
-  )
-endif()
-
-if (USE_INTERNAL_JPEG)
-set( JPEG_HEADERS
-    ${LIB_DIR}/jpeg/jconfig.h
-    ${LIB_DIR}/jpeg/jdct.h
-    ${LIB_DIR}/jpeg/jerror.h
-    ${LIB_DIR}/jpeg/jinclude.h
-    ${LIB_DIR}/jpeg/jmemsys.h
-    ${LIB_DIR}/jpeg/jmorecfg.h
-    ${LIB_DIR}/jpeg/jpegint.h
-    ${LIB_DIR}/jpeg/jpeglib.h
-    ${LIB_DIR}/jpeg/jversion.h
-   )
-
-set( JPEG_SOURCES
-    ${LIB_DIR}/jpeg/jcapimin.c
-    ${LIB_DIR}/jpeg/jaricom.c
-    ${LIB_DIR}/jpeg/jcapimin.c
-    ${LIB_DIR}/jpeg/jcapistd.c
-    ${LIB_DIR}/jpeg/jcarith.c
-    ${LIB_DIR}/jpeg/jccoefct.c
-    ${LIB_DIR}/jpeg/jccolor.c
-    ${LIB_DIR}/jpeg/jcdctmgr.c
-    ${LIB_DIR}/jpeg/jchuff.c
-    ${LIB_DIR}/jpeg/jcinit.c
-    ${LIB_DIR}/jpeg/jcmainct.c
-    ${LIB_DIR}/jpeg/jcmarker.c
-    ${LIB_DIR}/jpeg/jcmaster.c
-    ${LIB_DIR}/jpeg/jcomapi.c
-    ${LIB_DIR}/jpeg/jcparam.c
-    ${LIB_DIR}/jpeg/jcprepct.c
-    ${LIB_DIR}/jpeg/jcsample.c
-    ${LIB_DIR}/jpeg/jctrans.c
-    ${LIB_DIR}/jpeg/jdapimin.c
-    ${LIB_DIR}/jpeg/jdapistd.c
-    ${LIB_DIR}/jpeg/jdarith.c
-    ${LIB_DIR}/jpeg/jdatadst.c
-    ${LIB_DIR}/jpeg/jdatasrc.c
-    ${LIB_DIR}/jpeg/jdcoefct.c
-    ${LIB_DIR}/jpeg/jdcolor.c
-    ${LIB_DIR}/jpeg/jddctmgr.c
-    ${LIB_DIR}/jpeg/jdhuff.c
-    ${LIB_DIR}/jpeg/jdinput.c
-    ${LIB_DIR}/jpeg/jdmainct.c
-    ${LIB_DIR}/jpeg/jdmarker.c
-    ${LIB_DIR}/jpeg/jdmaster.c
-    ${LIB_DIR}/jpeg/jdmerge.c
-    ${LIB_DIR}/jpeg/jdpostct.c
-    ${LIB_DIR}/jpeg/jdsample.c
-    ${LIB_DIR}/jpeg/jdtrans.c
-    ${LIB_DIR}/jpeg/jerror.c
-    ${LIB_DIR}/jpeg/jfdctflt.c
-    ${LIB_DIR}/jpeg/jfdctfst.c
-    ${LIB_DIR}/jpeg/jfdctint.c
-    ${LIB_DIR}/jpeg/jidctflt.c
-    ${LIB_DIR}/jpeg/jidctfst.c
-    ${LIB_DIR}/jpeg/jidctint.c
-    ${LIB_DIR}/jpeg/jmemmgr.c
-    ${LIB_DIR}/jpeg/jmemnobs.c
-    ${LIB_DIR}/jpeg/jquant1.c
-    ${LIB_DIR}/jpeg/jquant2.c
-    ${LIB_DIR}/jpeg/jutils.c
-)
-endif(USE_INTERNAL_JPEG)
-
 ####################
 # End of file list #
 ####################
@@ -736,9 +650,6 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GPURenderer                              FILES ${GPURENDERER_HEADERS} )
 	#SOURCE_GROUP( Header\ Files\\GPURenderer\\OpeneXRList                 FILES ${OPENEXRLIST_HEADERS} )
-if( USE_INTERNAL_JPEG )
-    SOURCE_GROUP( Header\ Files\\GPURenderer\\JPEG                        FILES ${JPEG_HEADERS} )
-endif( USE_INTERNAL_JPEG )
     SOURCE_GROUP( Header\ Files\\GPUWorkers                               FILES ${GPUWORKERS_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GUI                                      FILES ${GUI_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Server                                   FILES ${SERVERLIST_HEADERS} )
@@ -754,9 +665,6 @@ endif( USE_INTERNAL_JPEG )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\GPURenderer                              FILES ${GPURENDERER_SOURCES} )
 	#SOURCE_GROUP( Source\ Files\\GPURenderer\\OpeneXRList                 FILES ${OPENEXRLIST_SOURCES} )
-	if( USE_INTERNAL_JPEG )
-	    SOURCE_GROUP( Source\ Files\\GPURenderer\\JPEG                        FILES ${JPEG_SOURCES} )
-	endif( USE_INTERNAL_JPEG )
     SOURCE_GROUP( Source\ Files\\GPUWorkers                               FILES ${GPUWORKERS_SOURCES} )
     SOURCE_GROUP( Source\ Files\\GUI                                      FILES ${GUI_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Server                                   FILES ${SERVERLIST_SOURCES} )
@@ -768,18 +676,16 @@ endif( USE_INTERNAL_JPEG )
     SOURCE_GROUP( Source\ Files\\SDL                                      FILES ${SDLLIST} )
     SOURCE_GROUP( Source\ Files\\Botlib                                   FILES ${BOTLIBLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Physics                                  FILES ${PHYSICLIB_SOURCES} )
-if( USE_INTERNAL_CRYPTO )
-	SOURCE_GROUP( Source\ Files\\CryptoList                               FILES ${CRYPTOLIST_SOURCES} )
-endif( USE_INTERNAL_CRYPTO )
 	SOURCE_GROUP( Source\ Files\\OWLib                                    FILES ${OWLIB_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Database                                 FILES ${DATABASELIST_SOURCES} )
   endif( MSVC )
   
   add_executable( client ${SHAREDLIST_HEADERS} ${GPURENDERER_HEADERS} ${QCOMMONLIST_HEADERS} ${GPUWORKERS_HEADERS} ${GUI_HEADERS} ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${AUDIO_HEADERS} ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${GPURENDERER_SOURCES} ${GPUWORKERS_SOURCES} ${GUI_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} ${QCOMMONLIST_SOURCES} ${CLIENTLIST_SOURCES} ${AUDIO_SOURCES} ${SDLBASELIST} ${SDLLIST} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${DATABASELIST_SOURCES}
-  ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASELIST_SOURCES} ${SDLBASELIST_HEADERS} ${JPEG_HEADERS} ${JPEG_SOURCES} )
+  ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASELIST_SOURCES} ${SDLBASELIST_HEADERS} ${JPEG_INCLUDE_DIR} ${JPEG_SOURCES} )
 	
   target_link_libraries( client ${OS_LIBRARIES} )
-  set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ NDEBUG _WINDOWS USE_XREAL_RENDERER BOTLIB BOTLIB_STATIC USE_REFENTITY_ANIMATIONSYSTEM USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES USE_INTERNAL_JPEG __STDC_CONSTANT_MACROS _PHYSICSLIB USE_WEBP BUILD_FREETYPE )
+  set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ NDEBUG _WINDOWS BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE HAVE_BOOLEAN )
+  ADD_PRECOMPILED_HEADER( client "${MOUNT_DIR}/OWLib/precompiled.h" "${MOUNT_DIR}/OWLib/precompiled.cpp" )
   set_target_properties( client PROPERTIES OUTPUT_NAME "OpenWolf.${BUILD_ARCH}" PREFIX "" LINKER_LANGUAGE CXX )
   install( TARGETS client
     RUNTIME DESTINATION bin
@@ -789,10 +695,10 @@ endif( USE_INTERNAL_CRYPTO )
 
   # This section finds and provides REQUIRED dependencies to target client
   find_package( OpenGL REQUIRED )
+  find_package( Jpeg REQUIRED )
   find_package( SDL REQUIRED )
   find_package( Freetype REQUIRED )
   find_package( GLEW REQUIRED )
-  find_package( GMP REQUIRED )
   find_package( CURL REQUIRED )
   find_package( Bullet REQUIRED )
   find_package( Zlib REQUIRED )
@@ -803,18 +709,9 @@ endif( USE_INTERNAL_CRYPTO )
   find_package( OculusSDK REQUIRED )
   find_package( OculusKernelSDK REQUIRED )
   find_package( WebP REQUIRED )
-
-  if( USE_INTERNAL_CRYPTO )
-    # BEFORE is required to prevent system headers from being used
-    TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${LIB_DIR}/nettle )
-  else()
-    find_package( Nettle REQUIRED )
-    TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${NETTLE_INCLUDE_DIRS} )
-    target_link_libraries( client ${NETTLE_LIBRARIES} )
-  endif()
   
-  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${GMP_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${GMP_INCLUDE_DIR} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${LIB_DIR}/nettle ${SIXENSE_INCLUDE_DIRS} ${LIB_DIR}/jpeg ${PDCURSES_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${WEBP_INCLUDE_DIR} ${MOUNT_DIR} )
-  target_link_libraries( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${GMP_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${GMP_LIBRARY} ${PNG_LIBRARIES} ${BULLET_LIBRARIES} ${OpenCL_LIBRARY} ${SIXENSE_LIBRARIES} ${SIXENSE_LIBRARIES_UTILS} ${PDCURSES_LIBRARY} ${OVR_LIBRARIES} ${OVRKERNEL_LIBRARY_RELEASE} ${WEBP_LIBRARIES} ${LINK_LIBRARY})
+  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${SIXENSE_INCLUDE_DIRS} ${LIB_DIR}/jpeg ${PDCURSES_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} )
+  target_link_libraries( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PNG_LIBRARIES} ${BULLET_LIBRARIES} ${OpenCL_LIBRARY} ${SIXENSE_LIBRARIES} ${SIXENSE_LIBRARIES_UTILS} ${PDCURSES_LIBRARY} ${OVR_LIBRARIES} ${OVRKERNEL_LIBRARY_RELEASE} ${JPEG_LIBRARIES} ${LINK_LIBRARY})
 
   if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
     link_directories( /opt/local/lib )
@@ -864,22 +761,13 @@ if( BUILD_SERVER )
   )
   # The following section finds the REQUIRED dependencies and makes them available to the target
     find_package( SDL REQUIRED )
-    find_package( GMP REQUIRED )
     find_package( Bullet REQUIRED )
     find_package( CURL REQUIRED )
     find_package( Zlib REQUIRED )
 
-  if( USE_INTERNAL_CRYPTO )
-    # BEFORE is required to prevent system headers from being used
-    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${LIB_DIR}/nettle )
-  else()
-    find_package( Nettle REQUIRED )
-    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${NETTLE_INCLUDE_DIRS} )
-    target_link_libraries( server ${NETTLE_LIBRARIES} )
-  endif()
-
-    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${SDL_INCLUDE_DIR} ${GMP_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} )
-    target_link_libraries( server ${SDL_LIBRARY} ${GMP_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
+    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} )
+    target_link_libraries( server ${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
+	ADD_PRECOMPILED_HEADER( server "${MOUNT_DIR}/null/null_precompiled.h" "${MOUNT_DIR}/null/null_precompiled.cpp" )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
 
   if( USE_CURSES )
@@ -926,22 +814,12 @@ if( BUILD_AUTOUPDATE_SERVER )
   )
   # The following section finds the REQUIRED dependencies and makes them available to the target
     find_package( SDL REQUIRED )
-    find_package( GMP REQUIRED )
     find_package( Bullet REQUIRED )
     find_package( CURL REQUIRED )
     find_package( Zlib REQUIRED )
 
-  if( USE_INTERNAL_CRYPTO )
-    # BEFORE is required to prevent system headers from being used
-    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${LIB_DIR}/nettle )
-  else()
-    find_package( Nettle REQUIRED )
-    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${NETTLE_INCLUDE_DIRS} )
-    target_link_libraries( autoupdateserver ${NETTLE_LIBRARIES} )
-  endif()
-
-    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${SDL_INCLUDE_DIR} ${GMP_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} )
-    target_link_libraries( autoupdateserver ${SDL_LIBRARY} ${GMP_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
+    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} )
+    target_link_libraries( autoupdateserver ${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
 
   if( USE_CURSES )

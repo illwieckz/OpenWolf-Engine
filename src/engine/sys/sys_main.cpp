@@ -35,33 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <signal.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <math.h>
-#ifdef _WIN32
-#include <windows.h>
-#include <float.h>
-#pragma fenv_access (on)
-#else
-#include <fenv.h>
-#endif
-
-#ifndef DEDICATED
-#include <SDL.h>
-#endif
-
-#include <sys/sys_local.h>
-#include <sys/sys_loadlib.h>
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
+#include <OWLIb/precompiled.h>
 
 static UTF8 binaryPath[ MAX_OSPATH ] = { 0 };
 static UTF8 installPath[ MAX_OSPATH ] = { 0 };
@@ -71,7 +45,6 @@ static UTF8 libPath[ MAX_OSPATH ] = { 0 };
 static bool nocurses = false;
 void CON_Init_tty( void );
 #endif
-
 
 /*
 =================
@@ -511,7 +484,7 @@ Used to load a development dll instead of a virtual machine
 */
 UTF8* Sys_GetDLLName( StringEntry name )
 {
-	//Dushan - I have no idea what this mess is and what I made it before
+    //Dushan - I have no idea what this mess is and what I made it before
     return va( "%s" ARCH_STRING DLL_EXT, name );
 }
 

@@ -1,0 +1,9 @@
+[level]
+level   = 0
+name    = ^4Unknown Player
+flags   = iahC
+
+[level]
+level   = 1
+name    = ^4Test
+flags   = *

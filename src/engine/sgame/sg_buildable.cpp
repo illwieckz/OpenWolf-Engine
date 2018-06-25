@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_buildable.cpp
+// File name:   sg_buildable.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -106,7 +106,7 @@ gentity_t* idGameLocal::CheckSpawnPoint( S32 spawnNum, vec3_t origin, vec3_t nor
     if( tr.entityNum != ENTITYNUM_NONE )
         return &g_entities[ tr.entityNum ];
         
-    trap_Trace( &tr, localOrigin, cmins, cmaxs, localOrigin, -1, MASK_PLAYERSOLID );
+    trap_Trace( &tr, localOrigin, cmins, cmaxs, localOrigin, ENTITYNUM_NONE, MASK_PLAYERSOLID );
     
     if( tr.entityNum != ENTITYNUM_NONE )
         return &g_entities[ tr.entityNum ];

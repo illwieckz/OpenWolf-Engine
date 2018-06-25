@@ -24,10 +24,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-
-#include <curl/curl.h>
+#include <OWLIb/precompiled.h>
 
 #if defined(USE_HTTP)
 

@@ -1133,17 +1133,13 @@ void            CL_FlushMemory( void );
 
 // dump all memory on an error
 
-void            CL_StartHunkUsers( void );
-
-void DB_InitExportTable( void );
-void DB_ShutdownGameProgs( void );
-void DB_InitGameProgs( void );
+void            CL_StartHunkUsers( bool rendererOnly );
 
 // start all the client stuff using the hunk
 
 #if !defined(UPDATE_SERVER)
 void            CL_CheckAutoUpdate( void );
-bool        CL_NextUpdateServer( void );
+bool            CL_NextUpdateServer( void );
 void            CL_GetAutoUpdate( void );
 #endif
 
@@ -1192,13 +1188,13 @@ NON-PORTABLE SYSTEM SERVICES
 typedef enum
 {
     // bk001129 - make sure SE_NONE is zero
-    SE_NONE = 0,				// evTime is still valid
-    SE_KEY,						// evValue is a key code, evValue2 is the down flag
-    SE_CHAR,					// evValue is an ascii UTF8
-    SE_MOUSE,					// evValue and evValue2 are reletive signed x / y moves
-    SE_JOYSTICK_AXIS,			// evValue is an axis number and evValue2 is the current state (-127 to 127)
-    SE_CONSOLE,					// evPtr is a UTF8*
-    SE_PACKET					// evPtr is a netadr_t followed by data bytes to evPtrLength
+    SYSE_NONE = 0,				// evTime is still valid
+    SYSE_KEY,						// evValue is a key code, evValue2 is the down flag
+    SYSE_CHAR,					// evValue is an ascii UTF8
+    SYSE_MOUSE,					// evValue and evValue2 are reletive signed x / y moves
+    SYSE_JOYSTICK_AXIS,			// evValue is an axis number and evValue2 is the current state (-127 to 127)
+    SYSE_CONSOLE,				// evPtr is a UTF8*
+    SYSE_PACKET					// evPtr is a netadr_t followed by data bytes to evPtrLength
 } sysEventType_t;
 
 typedef struct sysEvent_s

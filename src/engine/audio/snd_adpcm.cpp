@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <audio/snd_local.h>
+#include <OWLIb/precompiled.h>
 
 void S_AdpcmEncode( S16 indata[], UTF8 outdata[], S32 len, struct adpcm_state* state )
 {

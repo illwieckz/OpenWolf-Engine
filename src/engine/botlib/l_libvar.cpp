@@ -35,9 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_libvar.h>
+#include <OWLIb/precompiled.h>
 
 //list with library variables
 libvar_t* libvarlist;

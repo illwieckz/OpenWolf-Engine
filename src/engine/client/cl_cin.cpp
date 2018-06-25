@@ -41,9 +41,7 @@
 // I need to ask Ryan if it's as simple as a constant index or
 // if some more coding needs to be done.
 
-
-#include <client/client.h>
-#include <audio/snd_local.h>
+#include <OWLIb/precompiled.h>
 
 #define MAXSIZE             8
 #define MINSIZE             4

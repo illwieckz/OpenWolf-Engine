@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_api.cpp
+// File name:   sg_api.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -995,11 +995,6 @@ void trap_BotResetWeaponState( S32 weaponstate )
 S32 trap_GeneticParentsAndChildSelection( S32 numranks, F32* ranks, S32* parent1, S32* parent2, S32* child )
 {
     return imports->botlib->ai.GeneticParentsAndChildSelection( numranks, ranks, parent1, parent2, child );
-}
-
-S32 trap_RSA_GenerateMessage( StringEntry public_key, UTF8* cleartext, UTF8* encrypted )
-{
-    return imports->RSAGenMsg( public_key, cleartext, encrypted );
 }
 
 S32 trap_AAS_AlternativeRouteGoals( vec3_t start, S32 startareanum, vec3_t goal, S32 goalareanum, S32 travelflags, aas_altroutegoal_s* altroutegoals, S32 maxaltroutegoals, S32 type )

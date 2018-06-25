@@ -26,8 +26,8 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __G_API_H__
-#define __G_API_H__
+#ifndef __SG_API_H__
+#define __SG_API_H__
 
 #ifndef __Q_SHARED_H__
 #include <qcommon/q_shared.h>
@@ -36,7 +36,8 @@
 #include <botlib/botlib.h>
 #endif
 
-#if defined (GAMEDLL)
+#ifdef GAMEDLL
+typedef struct gclient_s gclient_t;
 typedef struct gentity_s gentity_t;
 #else
 #define gentity_t sharedEntity_t
@@ -198,7 +199,6 @@ struct gameImports_t
     void( *BotGetUserCommand )( S32 clientNum, usercmd_t* ucmd );
     
     void( *SetConfigstringRestrictions )( S32 index, const clientList_t* clientList );
-    S32( *RSAGenMsg )( StringEntry pubkey, UTF8* cleartext, UTF8* encrypted );
     void( *UpdateSharedConfig )( U32 port, StringEntry rconpass );
     void ( *AddCommand )( StringEntry cmd_name, xcommand_t function );
     void ( *RemoveCommand )( StringEntry cmd_name );
@@ -342,7 +342,6 @@ void trap_Characteristic_String( S32 character, S32 index, UTF8* buf, S32 size )
 S32	trap_BotLoadCharacter( UTF8* charfile, S32 skill );
 S32	trap_BotLoadChatFile( S32 chatstate, UTF8* chatfile, UTF8* chatname );
 void trap_BotSetChatName( S32 chatstate, UTF8* name, S32 client );
-S32 trap_RSA_GenerateMessage( StringEntry public_key, UTF8* cleartext, UTF8* encrypted );
 S32 trap_BotLibShutdown( void );
 S32 trap_AAS_AlternativeRouteGoals( vec3_t start, S32 startareanum, vec3_t goal, S32 goalareanum, S32 travelflags, aas_altroutegoal_s* altroutegoals, S32 maxaltroutegoals, S32 type );
 void trap_PhysicsSetGravity( const idVec3& gravity );
@@ -396,4 +395,4 @@ public:
 
 extern idGame* game;
 
-#endif // !__G_API_H__
+#endif // !__SG_API_H__

@@ -27,9 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_dsa.h>
-#include <GPURenderer/r_allocator.h>
+#include <OWLIb/precompiled.h>
 
 const GPUProgramDesc fallback_bokehProgram;
 const GPUProgramDesc fallback_calclevels4xProgram;

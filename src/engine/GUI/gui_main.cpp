@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GUI/gui_local.h>
+#include <OWLIb/precompiled.h>
 
 extern bool g_waitingForKey;
 extern bool g_editingField;

@@ -26,16 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <database/db_local.h>
-#include <qcommon/qcommon.h>
-
-// Dushan
-#if defined(WIN32) || defined(_WIN64)
-#    include <winsock.h>
-#    include <mysql.h>
-#else
-#    include <mysql/mysql.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 idDatabaseSystemLocal databaseSystemLocal;
 idDatabaseSystem* databaseSystem = &databaseSystemLocal;

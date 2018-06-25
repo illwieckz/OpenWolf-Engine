@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_main.cpp
+// File name:   sg_main.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -137,7 +137,6 @@ vmCvar_t  g_adminLog;
 vmCvar_t  g_adminParseSay;
 vmCvar_t  g_adminNameProtect;
 vmCvar_t  g_adminTempBan;
-vmCvar_t  g_adminPubkeyID;
 vmCvar_t  g_dretchPunt;
 vmCvar_t  g_privateMessages;
 vmCvar_t  g_publicAdminMessages;
@@ -282,7 +281,6 @@ static cvarTable_t   gameCvarTable[ ] =
     { &g_adminParseSay, "g_adminParseSay", "1", CVAR_ARCHIVE, 0, false  },
     { &g_adminNameProtect, "g_adminNameProtect", "1", CVAR_ARCHIVE, 0, false  },
     { &g_adminTempBan, "g_adminTempBan", "2m", CVAR_ARCHIVE, 0, false  },
-    { &g_adminPubkeyID, "g_adminPubkeyID", "2", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, false },
     
     { &g_dretchPunt, "g_dretchPunt", "0", CVAR_ARCHIVE, 0, false  },
     
@@ -2773,12 +2771,6 @@ void idGameLocal::RunFrame( S32 levelTime )
     
     // seed the rng
     srand( level.framenum );
-    
-    // generate public-key messages
-    if( g_adminPubkeyID.integer )
-    {
-        adminLocal.AdminPubkey();
-    }
     
     // get any cvar changes
     UpdateCvars( );

@@ -35,9 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <server/server.h>
-#include <botlib/botlib.h>
-//#include <botai/botai.h>
+#include <OWLIb/precompiled.h>
 
 typedef struct bot_debugpoly_s
 {

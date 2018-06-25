@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
+#include <OWLIb/precompiled.h>
 
 S32 g_console_field_width = 78;
 
@@ -48,27 +48,27 @@ typedef struct
 {
     bool        initialized;
     
-    S16           text[CON_TEXTSIZE];
-    S32             current;	// line where next message will be printed
-    S32             x;			// offset in current line for next print
-    S32             display;	// bottom of console displays this line
+    S16         text[CON_TEXTSIZE];
+    S32         current;	// line where next message will be printed
+    S32         x;			// offset in current line for next print
+    S32         display;	// bottom of console displays this line
     
-    S32             linewidth;	// characters across screen
-    S32             totallines;	// total lines in console scrollback
+    S32         linewidth;	// characters across screen
+    S32         totallines;	// total lines in console scrollback
     
-    F32           xadjust;	// for wide aspect screens
+    F32         xadjust;	// for wide aspect screens
     
-    F32           displayFrac;	// aproaches finalFrac at scr_conspeed
-    F32           finalFrac;	// 0.0 to 1.0 lines of console to display
-    F32           desiredFrac;	// ydnar: for variable console heights
+    F32         displayFrac;	// aproaches finalFrac at scr_conspeed
+    F32         finalFrac;	// 0.0 to 1.0 lines of console to display
+    F32         desiredFrac;	// ydnar: for variable console heights
     
-    S32             vislines;	// in scanlines
+    S32         vislines;	// in scanlines
     
-    S32             times[NUM_CON_TIMES];	// cls.realtime time the line was generated
+    S32         times[NUM_CON_TIMES];	// cls.realtime time the line was generated
     // for transparent notify lines
-    vec4_t          color;
+    vec4_t      color;
     
-    S32             acLength;	// Arnout: autocomplete buffer length
+    S32          acLength;	// Arnout: autocomplete buffer length
 } console_t;
 
 console_t       con;

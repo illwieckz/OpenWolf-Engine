@@ -35,27 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_log.h>
-#include <botlib/l_libvar.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/aasfile.h>
-#include <botlib/botlib.h>
-#include <botlib/be_aas.h>
-#include <botlib/be_aas_funcs.h>
-#include <botlib/be_aas_def.h>
-#include <botlib/be_interface.h>
-#include <botlib/be_ea.h>
-#include <botlib/be_ai_weight.h>
-#include <botlib/be_ai_goal.h>
-#include <botlib/be_ai_move.h>
-#include <botlib/be_ai_weap.h>
-#include <botlib/be_ai_chat.h>
-#include <botlib/be_ai_char.h>
-#include <botlib/be_ai_gen.h>
+#include <OWLIb/precompiled.h>
 
 //library globals in a structure
 botlib_globals_t botlibglobals;

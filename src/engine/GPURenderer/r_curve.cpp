@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
+#include <OWLIb/precompiled.h>
 
 /*
 This file does all of the processing necessary to turn a raw grid of points

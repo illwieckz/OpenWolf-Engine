@@ -57,7 +57,7 @@
 #include <bgame/bg_public.h>
 #endif
 #ifndef __CG_API_H__
-#include <client/cg_api.h>
+#include <cgame/cg_api.h>
 #endif
 #if !defined ( DEDICATED ) && !defined ( UPDATE_SERVER ) && !defined ( BSPC )
 #ifndef __CL_HYDRAMANAGER_H__
@@ -487,13 +487,12 @@ extern cvar_t*  cl_consolePrompt;
 extern cvar_t*  cl_aviFrameRate;
 extern cvar_t*  cl_aviMotionJpeg;
 extern cvar_t*  cl_guidServerUniq;
-extern cvar_t*  cl_pubkeyID;
 
 //Dushan
 extern cvar_t*  cl_razerhydra;
 
 //bani
-extern bool sv_cheats;
+extern cvar_t* sv_cheats;
 
 //=================================================
 
@@ -510,7 +509,7 @@ void            CL_FlushMemory( void );
 void            CL_ShutdownAll( void );
 void            CL_AddReliableCommand( StringEntry cmd );
 
-void            CL_StartHunkUsers( void );
+void            CL_StartHunkUsers( bool rendererOnly );
 
 #if !defined(UPDATE_SERVER)
 void            CL_CheckAutoUpdate( void );
@@ -765,5 +764,17 @@ bool            CL_VideoRecording( void );
 //
 void            CL_WriteDemoMessage( msg_t* msg, S32 headerBytes );
 void            CL_RequestMotd( void );
+
+
+typedef struct serverStatus_s
+{
+    UTF8            string[BIG_INFO_STRING];
+    netadr_t        address;
+    S32             time, startTime;
+    bool        pending;
+    bool        print;
+    bool        retrieved;
+} serverStatus_t;
+
 
 #endif //!__CLIENT_H__

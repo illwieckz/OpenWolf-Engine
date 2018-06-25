@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
+#include <OWLIb/precompiled.h>
 
 /*
 key up events are sent even if in console mode
@@ -1836,7 +1836,7 @@ void CL_CharEvent( S32 key )
 {
     // the console key should never be used as a char
     // ydnar: added uk equivalent of shift+`
-    // the RIGHT way to do this would be to have certain keys disable the equivalent SE_CHAR event
+    // the RIGHT way to do this would be to have certain keys disable the equivalent SYSE_CHAR event
     
     // fretn - this should be fixed in Com_EventLoop
     // but I can't be arsed to leave this as is

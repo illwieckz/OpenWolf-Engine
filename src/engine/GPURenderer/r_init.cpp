@@ -28,11 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_dsa.h>
-#include <GPUWorker/GPUWorker_OpenCL.h>
-#include <GPUWorker/GPUWorker_Local.h>
-
+#include <OWLIb/precompiled.h>
 
 glconfig_t glConfig;
 glRefConfig_t glRefConfig;

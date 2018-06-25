@@ -53,18 +53,10 @@
 #include <botlib/l_memory.h>
 #include <botlib/l_script.h>
 #include <botlib/l_precomp.h>
-
-typedef enum {false, true}	bool;
 #endif //SCREWUP
 
 #ifdef BOTLIB
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>
-#include <botlib/be_interface.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_log.h>
+#include <OWLIb/precompiled.h>
 #endif //BOTLIB
 
 #ifdef MEQCC

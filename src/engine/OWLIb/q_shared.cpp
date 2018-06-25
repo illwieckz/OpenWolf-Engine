@@ -225,6 +225,7 @@ Com_HashString
 
 ================
 */
+#define FILE_HASH_SIZE 1024
 int Com_HashString( const char* fname )
 {
     int i;
@@ -324,7 +325,7 @@ void Com_DefaultExtension( char* path, int maxSize, const char* extension )
 
 ============================================================================
 */
-
+#if 0
 // can't just use function pointers, or dll linkage can
 // mess up when qcommon is included in multiple places
 static short( *_BigShort )( short l );
@@ -412,7 +413,7 @@ static float FloatNoSwap( float f )
 {
     return f;
 }
-
+#endif
 /*
 ================
 Swap_Init
@@ -420,6 +421,7 @@ Swap_Init
 */
 void Swap_Init( void )
 {
+#if 0
     byte swaptest[2] = {1, 0};
     
 // set the byte swapping variables in a portable manner
@@ -441,7 +443,7 @@ void Swap_Init( void )
         _BigFloat = FloatNoSwap;
         _LittleFloat = FloatSwap;
     }
-    
+#endif
 }
 
 /*
@@ -770,6 +772,7 @@ static char* Q_CleanStr( char* string )
     return string;
 }
 
+#if 0
 void Com_sprintf( char* dest, int size, const char* fmt, ... )
 {
     int len;
@@ -796,6 +799,7 @@ void Com_sprintf( char* dest, int size, const char* fmt, ... )
 #endif
     }
 }
+#endif
 
 #if 1
 /*
@@ -912,7 +916,7 @@ Info_NextPair
 Used to itterate through all the key/value pairs in an info string
 ===================
 */
-void Info_NextPair( const char * ( *head ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] )
+static void Info_NextPair( const char * ( *head ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] )
 {
     char*    o;
     const char*  s;
@@ -1050,6 +1054,7 @@ Info_SetValueForKey
 Changes or adds a key/value pair
 ==================
 */
+#if 0
 void Info_SetValueForKey( char* s, const char* key, const char* value )
 {
     char newi[MAX_INFO_STRING];
@@ -1103,7 +1108,7 @@ void Info_SetValueForKey( char* s, const char* key, const char* value )
     
     strcat( s, newi );
 }
-
+#endif
 //====================================================================
 
 

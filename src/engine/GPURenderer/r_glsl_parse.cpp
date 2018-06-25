@@ -26,9 +26,7 @@
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
-
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_allocator.h>
+#include <OWLIb/precompiled.h>
 
 #if defined(GLSL_BUILDTOOL)
 #include <iostream>

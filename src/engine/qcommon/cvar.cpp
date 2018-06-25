@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
+#include <OWLIb/precompiled.h>
 
 cvar_t*         cvar_vars;
 cvar_t*         cvar_cheats;

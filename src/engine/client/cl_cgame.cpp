@@ -35,10 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
-#include <botlib/botlib.h>
-#include <qcommon/crypto.h>
-#include <client/cg_api.h>
+#include <OWLIb/precompiled.h>
 
 extern botlib_export_t* botlib_export;
 
@@ -510,38 +507,6 @@ rescan:
         //    Menus_OpenByName(Cmd_Argv(1));
         //}
         //return false;
-    }
-    
-    if( cl_pubkeyID->integer && !strcmp( cmd, "pubkey_request" ) )
-    {
-        UTF8 buffer[ MAX_STRING_CHARS ] = "pubkey ";
-        mpz_get_str( buffer + 7, 16, public_key.n );
-        CL_AddReliableCommand( buffer );
-        return false;
-    }
-    
-    if( cl_pubkeyID->integer && !strcmp( cmd, "pubkey_decrypt" ) )
-    {
-        UTF8 buffer[ MAX_STRING_CHARS ] = "pubkey_identify ";
-        U32 msg_len = MAX_STRING_CHARS - 16;
-        mpz_t message;
-        
-        
-        if( argc == 1 )
-        {
-            Com_Printf( "^3Server sent a pubkey_decrypt command, but sent nothing to decrypt!\n" );
-            return false;
-        }
-        
-        mpz_init_set_str( message, Cmd_Argv( 1 ), 16 );
-        if( rsa_decrypt( &private_key, &msg_len, ( U8* ) buffer + 16, message ) )
-        {
-            nettle_mpz_set_str_256_u( message, msg_len, ( U8* ) buffer + 16 );
-            mpz_get_str( buffer + 16, 16, message );
-            CL_AddReliableCommand( buffer );
-        }
-        mpz_clear( message );
-        return false;
     }
     
     // we may want to put a "connect to other server" command here

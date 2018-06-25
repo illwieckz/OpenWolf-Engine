@@ -35,13 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
-#include <limits.h>
-#include <GPURenderer/r_public.h>
-#include <audio/snd_local.h>
-#include <sys/sys_loadlib.h>
-#include <sys/sys_local.h>
-#include <qcommon/crypto.h>
+#include <OWLIb/precompiled.h>
 
 cvar_t*         cl_wavefilerecord;
 cvar_t*         cl_nodelta;
@@ -122,8 +116,6 @@ cvar_t*         cl_debugTranslation;
 cvar_t*         cl_updateavailable;
 cvar_t*         cl_updatefiles;
 
-cvar_t*         cl_pubkeyID;
-
 // DHM - Nerve
 
 cvar_t*         cl_authserver;
@@ -141,16 +133,13 @@ cvar_t*         cl_waveoffset;	//bani
 
 cvar_t*         cl_packetloss;	//bani
 cvar_t*         cl_packetdelay;	//bani
-extern bool sv_cheats;		//bani
+//cvar_t*         sv_cheats;		//bani
 
 cvar_t*         cl_consoleKeys;
 cvar_t*         cl_consoleFont;
 cvar_t*         cl_consoleFontSize;
 cvar_t*         cl_consoleFontKerning;
 cvar_t*       	cl_consolePrompt;
-
-struct rsa_public_key public_key;
-struct rsa_private_key private_key;
 
 cvar_t*         cl_gamename;
 cvar_t*         cl_altTab;
@@ -165,16 +154,6 @@ clientStatic_t  cls;
 void*           cgvm;
 
 ping_t          cl_pinglist[MAX_PINGREQUESTS];
-
-typedef struct serverStatus_s
-{
-    UTF8            string[BIG_INFO_STRING];
-    netadr_t        address;
-    S32             time, startTime;
-    bool        pending;
-    bool        print;
-    bool        retrieved;
-} serverStatus_t;
 
 serverStatus_t  cl_serverStatusList[MAX_SERVERSTATUSREQUESTS];
 S32             serverStatusCount;
@@ -1062,7 +1041,7 @@ void CL_FlushMemory( void )
         Hunk_ClearToMark();
     }
     
-    CL_StartHunkUsers();
+    CL_StartHunkUsers( false );
 }
 
 /*
@@ -1237,7 +1216,7 @@ void CL_Disconnect( bool showMainMenu )
     }
     
     // allow cheats locally
-    Cvar_Set( "sv_cheats", "1" );
+    //Cvar_Set( "sv_cheats", "1" );
     
     // not connected to a pure server anymore
     cl_connectedToPureServer = false;
@@ -2042,58 +2021,61 @@ void CL_Vid_Restart_f( void )
     
     // don't let them loop during the restart
     soundSystem->StopAllSounds();
-    // shutdown the UI
-    CL_ShutdownUI();
-    // shutdown the CGame
-    CL_ShutdownCGame();
-    // shutdown the renderer and clear the renderer interface
-    CL_ShutdownRef();
-    // client is no longer pure untill new checksums are sent
-    CL_ResetPureClientAtServer();
-    // clear pak references
-    FS_ClearPakReferences( FS_UI_REF | FS_CGAME_REF );
-    // reinitialize the filesystem if the game directory or checksum has changed
-    FS_ConditionalRestart( clc.checksumFeed );
     
-    soundSystem->BeginRegistration();		// all sound handles are now invalid
-    
-    cls.rendererStarted = false;
-    cls.uiStarted = false;
-    cls.cgameStarted = false;
-    cls.soundRegistered = false;
-    autoupdateChecked = false;
-    
-    // unpause so the cgame definately gets a snapshot and renders a frame
-    Cvar_Set( "cl_paused", "0" );
-    
-    // if not running a server clear the whole hunk
-    if( !com_sv_running->integer )
+    if( !FS_ConditionalRestart( clc.checksumFeed ) )
     {
-        // clear the whole hunk
-        Hunk_Clear();
-    }
-    else
-    {
-        // clear all the client data on the hunk
-        Hunk_ClearToMark();
-    }
-    
-    // initialize the renderer interface
-    CL_InitRef();
-    
-    // startup all the client stuff
-    CL_StartHunkUsers();
-    
+        // shutdown the UI
+        CL_ShutdownUI();
+        // shutdown the CGame
+        CL_ShutdownCGame();
+        // shutdown the renderer and clear the renderer interface
+        CL_ShutdownRef();
+        // client is no longer pure untill new checksums are sent
+        CL_ResetPureClientAtServer();
+        // clear pak references
+        FS_ClearPakReferences( FS_CGAME_REF );
+        // reinitialize the filesystem if the game directory or checksum has changed
+        
+        soundSystem->BeginRegistration();		// all sound handles are now invalid
+        
+        cls.rendererStarted = false;
+        cls.uiStarted = false;
+        cls.cgameStarted = false;
+        cls.soundRegistered = false;
+        autoupdateChecked = false;
+        
+        // unpause so the cgame definately gets a snapshot and renders a frame
+        Cvar_Set( "cl_paused", "0" );
+        
+        // if not running a server clear the whole hunk
+        if( !com_sv_running->integer )
+        {
+            // clear the whole hunk
+            Hunk_Clear();
+        }
+        else
+        {
+            // clear all the client data on the hunk
+            Hunk_ClearToMark();
+        }
+        
+        // initialize the renderer interface
+        CL_InitRef();
+        
+        // startup all the client stuff
+        CL_StartHunkUsers( false );
+        
 #ifdef _WIN32
-    Sys_In_Restart_f();			// fretn
+        Sys_In_Restart_f();			// fretn
 #endif
-    // start the cgame if connected
-    if( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC )
-    {
-        cls.cgameStarted = true;
-        CL_InitCGame();
-        // send pure checksums
-        CL_SendPureChecksums();
+        // start the cgame if connected
+        if( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC )
+        {
+            cls.cgameStarted = true;
+            CL_InitCGame();
+            // send pure checksums
+            CL_SendPureChecksums();
+        }
     }
 }
 
@@ -3739,7 +3721,7 @@ After the server has cleared the hunk, these will need to be restarted
 This is the only place that any of these functions are called from
 ============================
 */
-void CL_StartHunkUsers( void )
+void CL_StartHunkUsers( bool rendererOnly )
 {
     if( !com_cl_running )
     {
@@ -3757,6 +3739,11 @@ void CL_StartHunkUsers( void )
         CL_InitRenderer();
     }
     
+    if( rendererOnly )
+    {
+        return;
+    }
+    
     if( !cls.soundStarted )
     {
         cls.soundStarted = true;
@@ -3767,6 +3754,11 @@ void CL_StartHunkUsers( void )
     {
         cls.soundRegistered = true;
         soundSystem->BeginRegistration();
+    }
+    
+    if( com_dedicated->integer )
+    {
+        return;
     }
     
     if( !cls.uiStarted )
@@ -4045,78 +4037,6 @@ void CL_LoadTranslations_f( void )
 // -NERVE - SMF
 #endif
 
-//===========================================================================================
-
-/*
-===============
-CL_GenerateRSAKey
-
-Check if the RSAKey file contains a valid RSA keypair
-If not then generate a new keypair
-===============
-*/
-static void CL_GenerateRSAKey( void )
-{
-    S32				len;
-    fileHandle_t	f;
-    void*			buf;
-    struct			nettle_buffer key_buffer;
-    S32				key_buffer_len = 0;
-    
-    rsa_public_key_init( &public_key );
-    rsa_private_key_init( &private_key );
-    
-    len = FS_SV_FOpenFileRead( RSAKEY_FILE, &f );
-    if( !f || len < 1 )
-    {
-        Com_Printf( "OpenWolf RSA public-key file not found, regenerating\n" );
-        goto new_key;
-    }
-    buf = Z_TagMalloc( len, TAG_CRYPTO );
-    FS_Read( buf, len, f );
-    FS_FCloseFile( f );
-    
-    if( !rsa_keypair_from_sexp( &public_key, &private_key, 0 , len, ( const U8* )buf ) )
-    {
-        Com_Printf( "Invalid RSA keypair in RSAKey, regenerating\n" );
-        Z_Free( buf );
-        goto new_key;
-    }
-    
-    Z_Free( buf );
-    Com_Printf( "OpenWolf RSA public-key found.\n" );
-    return;
-    
-new_key:
-    mpz_set_ui( public_key.e, RSA_PUBLIC_EXPONENT );
-    if( !rsa_generate_keypair( &public_key, &private_key, NULL, qnettle_random, NULL, NULL, RSA_KEY_LENGTH, 0 ) )
-        goto keygen_error;
-        
-    qnettle_buffer_init( &key_buffer, &key_buffer_len );
-    if( !rsa_keypair_to_sexp( &key_buffer, NULL, &public_key, &private_key ) )
-        goto keygen_error;
-        
-    f = FS_SV_FOpenFileWrite( RSAKEY_FILE );
-    if( !f )
-    {
-        Com_Printf( "OpenWolf RSA public-key could not open %s for write, RSA support will be disabled\n", RSAKEY_FILE );
-        Cvar_Set( "cl_pubkeyID", "0" );
-        Crypto_Shutdown();
-        return;
-    }
-    
-    FS_Write( key_buffer.contents, key_buffer.size, f );
-    nettle_buffer_clear( &key_buffer );
-    FS_FCloseFile( f );
-    Com_Printf( "OpenWolf RSA public-key generated\n" );
-    return;
-    
-keygen_error:
-    Com_Printf( "Error generating RSA keypair, RSA support will be disabled\n" );
-    Cvar_Set( "cl_pubkeyID", "0" );
-    Crypto_Shutdown();
-}
-
 /*
 ===============
 CL_GenerateQKey
@@ -4371,8 +4291,6 @@ void CL_Init( void )
 //  Cvar_Get ("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE );
     Cvar_Get( "cl_anonymous", "0", CVAR_USERINFO | CVAR_ARCHIVE );
     
-    cl_pubkeyID = Cvar_Get( "cl_pubkeyID", "1", CVAR_ARCHIVE | CVAR_USERINFO );
-    
     Cvar_Get( "password", "", CVAR_USERINFO );
     Cvar_Get( "cg_predictItems", "1", CVAR_ARCHIVE );
     
@@ -4487,11 +4405,6 @@ void CL_Init( void )
     CL_GenerateGUIDKey();
     Cvar_Get( "cl_guid", "", CVAR_USERINFO | CVAR_ROM );
     CL_UpdateGUID( NULL, 0 );
-    
-    if( cl_pubkeyID->integer )
-    {
-        CL_GenerateRSAKey();
-    }
     
     // DHM - Nerve
     autoupdateChecked = false;

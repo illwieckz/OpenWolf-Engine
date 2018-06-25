@@ -53,13 +53,7 @@
 
 #ifdef BOTLIB
 //include files for usage in the bot library
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>
-#include <botlib/be_interface.h>
-#include <botlib/l_script.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_log.h>
-#include <botlib/l_libvar.h>
+#include <OWLIb/precompiled.h>
 #endif //BOTLIB
 
 #ifdef MEQCC

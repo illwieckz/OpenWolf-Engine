@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_mem.cpp
+// File name:   sg_mem.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -211,7 +211,6 @@ void idGameLocal::DefragmentMemory( void )
 void idGameLocal::Svcmd_GameMem_f( void )
 {
     // Give a breakdown of memory
-    
     struct freememnode* fmn;
     
     Printf( "Game memory status: %i out of %i bytes allocated\n", POOLSIZE - freemem, POOLSIZE );

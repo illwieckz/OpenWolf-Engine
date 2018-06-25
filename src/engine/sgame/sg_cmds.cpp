@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_cmds.cpp
+// File name:   sg_cmds.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -2281,7 +2281,7 @@ void idGameLocal::Cmd_Sell_f( gentity_t* ent )
         
         //if we have this weapon selected, force a new selection
         if( weapon == selected )
-            ForceWeaponChange( ent, WP_NONE );
+            ForceWeaponChange( ent, WP_BLASTER );
     }
     else if( upgrade != UP_NONE )
     {
@@ -3096,51 +3096,6 @@ void idGameLocal::Cmd_EditBotInv_f( gentity_t* ent )
     EditPlayerInventory( spec_ent );
 }
 
-void idGameLocal::Cmd_Pubkey_f( gentity_t* ent )
-{
-    UTF8 buffer[ RSA_STRING_LENGTH ];
-    
-    g_admin_admin_t* admin = ent->client->pers.admin;
-    
-    if( !g_adminPubkeyID.integer || ent->client->pers.adminLevel < g_adminPubkeyID.integer || trap_Argc() != 2 )
-    {
-        return;
-    }
-    
-    if( admin->pubkey[0] )
-    {
-        return;
-    }
-    trap_Argv( 1, buffer, sizeof( buffer ) );
-    
-    Q_strncpyz( admin->pubkey, buffer, sizeof( admin->pubkey ) );
-    
-    admin->counter = -1;
-    adminLocal.AdminWriteConfig( );
-}
-
-void idGameLocal::Cmd_Pubkey_Identify_f( gentity_t* ent )
-{
-    UTF8 buffer[ MAX_STRING_CHARS ];
-    UTF8 userinfo[ MAX_INFO_STRING ];
-    g_admin_admin_t* admin = ent->client->pers.admin;
-    if( !g_adminPubkeyID.integer || ent->client->pers.admin->level < g_adminPubkeyID.integer || trap_Argc() != 2 )
-        return;
-    if( ent->client->pers.pubkey_authenticated != 0 || !admin->pubkey[0] || admin->counter == -1 || !ent->client->pers.pubkey_msg[0] )
-        return;
-    trap_Argv( 1, buffer, sizeof( buffer ) );
-    if( Q_strncmp( buffer, ent->client->pers.pubkey_msg, MAX_STRING_CHARS ) )
-        return;
-    ent->client->pers.pubkey_authenticated = 1;
-    ent->client->pers.pubkey_msg[0] = '\0';
-    ent->client->pers.adminLevel = admin->level;
-    trap_GetUserinfo( ent - g_entities, userinfo, sizeof( userinfo ) );
-    Q_strncpyz( ent->client->pers.guid, Info_ValueForKey( userinfo, "cl_guid" ), sizeof( ent->client->pers.guid ) );
-    Info_SetValueForKey( userinfo, "name", ent->client->pers.connect_name );
-    trap_SetUserinfo( ent - g_entities, userinfo );
-    gameLocal.ClientUserinfoChanged( ent - g_entities );
-}
-
 /*
 =================
 idGameLocal::Share_f
@@ -3397,9 +3352,6 @@ commands_t cmds[ ] =
     // game commands
     { "ptrcverify", 0, &idGameLocal::Cmd_PTRCVerify_f },
     { "ptrcrestore", 0, &idGameLocal::Cmd_PTRCRestore_f },
-    
-    { "pubkey", CMD_INTERMISSION, &idGameLocal::Cmd_Pubkey_f },
-    { "pubkey_identify", CMD_INTERMISSION, &idGameLocal::Cmd_Pubkey_Identify_f },
     
     { "follow", 0, &idGameLocal::Cmd_Follow_f },
     { "follownext", 0, &idGameLocal::Cmd_FollowCycle_f },

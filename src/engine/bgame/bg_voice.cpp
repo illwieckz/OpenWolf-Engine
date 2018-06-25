@@ -31,8 +31,10 @@
 
 #ifdef CGAMEDLL
 #include <cgame/cg_precompiled.h>
-#else
+#elif GAMEDLL
 #include <sgame/sg_precompiled.h>
+#else
+#include <OWLIb/precompiled.h>
 #endif // !GAMEDLL
 
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );

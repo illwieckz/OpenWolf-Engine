@@ -27,9 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <SDL.h>
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_dsa.h>
+#include <OWLIb/precompiled.h>
 
 void GLimp_InitExtraExtensions()
 {

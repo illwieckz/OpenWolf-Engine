@@ -110,9 +110,6 @@ typedef struct g_admin_admin
     UTF8 name[ MAX_NAME_LENGTH ];
     S32 level;
     UTF8 flags[ MAX_ADMIN_FLAGS ];
-    UTF8 pubkey[RSA_STRING_LENGTH];
-    UTF8 msg[RSA_STRING_LENGTH];
-    UTF8 msg2[RSA_STRING_LENGTH];
     S32 counter;
 } g_admin_admin_t;
 
@@ -169,7 +166,6 @@ public:
     bool AdminNameCheck( gentity_t* ent, UTF8* name, UTF8* err, S32 len );
     void AdminNamelogUpdate( gclient_t* ent, bool disconnect );
     g_admin_admin_t* Admin( gentity_t* ent );
-    void AdminPubkey( void );
     S32 AdminParseTime( StringEntry time );
     
     static bool AdminTime( gentity_t* ent, S32 skiparg );

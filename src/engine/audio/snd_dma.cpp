@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <audio/snd_local.h>
-#include <client/client.h>
+#include <OWLIb/precompiled.h>
 
 void S_Play_f( void );
 void S_SoundList_f( void );

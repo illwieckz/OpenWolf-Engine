@@ -40,11 +40,7 @@
 	* Add server as referring URL
 */
 
-#include <curl/curl.h>
-
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <qcommon/dl_public.h>
+#include <OWLIb/precompiled.h>
 
 #define APP_NAME        "ID_DOWNLOAD"
 #define APP_VERSION     "2.0"

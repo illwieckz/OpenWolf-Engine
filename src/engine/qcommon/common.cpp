@@ -35,21 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <setjmp.h>
-
-// htons
-#if defined __linux__ || defined __FreeBSD__ || MACOS_X
-#include <sys/types.h>
-#include <netinet/in.h>
-// getpid
-#include <unistd.h>
-#else
-#include <winsock.h>
-#endif
-
-#include <qcommon/crypto.h>
+#include <OWLIb/precompiled.h>
 
 S32 demo_protocols[] = { 66, 67, 68, 0 };
 
@@ -2447,7 +2433,7 @@ sysEvent_t Com_GetSystemEvent( void )
         len = strlen( s ) + 1;
         b = ( UTF8* )Z_Malloc( len );
         Q_strncpyz( b, s, len - 1 );
-        Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
+        Com_QueueEvent( 0, SYSE_CONSOLE, 0, 0, len, b );
     }
     
     // check for network packets
@@ -2463,7 +2449,7 @@ sysEvent_t Com_GetSystemEvent( void )
         buf = ( netadr_t* )Z_Malloc( len );
         *buf = adr;
         memcpy( buf + 1, &netmsg.data[netmsg.readcount], netmsg.cursize - netmsg.readcount );
-        Com_QueueEvent( 0, SE_PACKET, 0, 0, len, buf );
+        Com_QueueEvent( 0, SYSE_PACKET, 0, 0, len, buf );
     }
     
     // return if we have data
@@ -2499,7 +2485,7 @@ sysEvent_t	Com_GetRealEvent( void )
         {
             //Com_Error( ERR_FATAL, "Error reading from journal file" );
             com_journal->integer = 0;
-            ev.evType = SE_NONE;
+            ev.evType = SYSE_NONE;
         }
         if( ev.evPtrLength )
         {
@@ -2509,7 +2495,7 @@ sysEvent_t	Com_GetRealEvent( void )
             {
                 //Com_Error( ERR_FATAL, "Error reading from journal file" );
                 com_journal->integer = 0;
-                ev.evType = SE_NONE;
+                ev.evType = SYSE_NONE;
             }
         }
     }
@@ -2549,10 +2535,10 @@ Com_InitPushEvent
 void Com_InitPushEvent( void )
 {
     // clear the static buffer array
-    // this requires SE_NONE to be accepted as a valid but NOP event
+    // this requires SYSE_NONE to be accepted as a valid but NOP event
     memset( com_pushedEvents, 0, sizeof( com_pushedEvents ) );
     // reset counters while we are at it
-    // beware: GetEvent might still return an SE_NONE from the buffer
+    // beware: GetEvent might still return an SYSE_NONE from the buffer
     com_pushedEventsHead = 0;
     com_pushedEventsTail = 0;
 }
@@ -2665,7 +2651,7 @@ S32 Com_EventLoop( void )
         ev = Com_GetEvent();
         
         // if no more events are available
-        if( ev.evType == SE_NONE )
+        if( ev.evType == SYSE_NONE )
         {
             // manually send packet events for the loopback channel
             while( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) )
@@ -2692,12 +2678,12 @@ S32 Com_EventLoop( void )
                 // bk001129 - was ev.evTime
                 Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
                 break;
-            case SE_NONE:
+            case SYSE_NONE:
                 break;
-            case SE_KEY:
+            case SYSE_KEY:
                 CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime );
                 break;
-            case SE_CHAR:
+            case SYSE_CHAR:
 #ifndef DEDICATED
                 // fretn
                 // we just pressed the console button,
@@ -2712,17 +2698,17 @@ S32 Com_EventLoop( void )
 #endif
                 CL_CharEvent( ev.evValue );
                 break;
-            case SE_MOUSE:
+            case SYSE_MOUSE:
                 CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime );
                 break;
-            case SE_JOYSTICK_AXIS:
+            case SYSE_JOYSTICK_AXIS:
                 CL_JoystickEvent( ev.evValue, ev.evValue2, ev.evTime );
                 break;
-            case SE_CONSOLE:
+            case SYSE_CONSOLE:
                 Cbuf_AddText( ( UTF8* )ev.evPtr );
                 Cbuf_AddText( "\n" );
                 break;
-            case SE_PACKET:
+            case SYSE_PACKET:
                 // this cvar allows simulation of connections that
                 // drop a lot of packets.  Note that loopback connections
                 // don't go through here at all.
@@ -2786,12 +2772,12 @@ S32 Com_Milliseconds( void )
     {
     
         ev = Com_GetRealEvent();
-        if( ev.evType != SE_NONE )
+        if( ev.evType != SYSE_NONE )
         {
             Com_PushEvent( &ev );
         }
     }
-    while( ev.evType != SE_NONE );
+    while( ev.evType != SYSE_NONE );
     
     return ev.evTime;
 }
@@ -3358,15 +3344,6 @@ void Com_Init( UTF8* commandLine )
     SV_Init();
     Hist_Load();
     
-    if( !Crypto_Init() )
-    {
-        // Disable all crypto functions
-        Cvar_Get( "g_adminPubkeyID", "0", CVAR_ROM );
-#ifndef DEDICATED
-        Cvar_Get( "cl_pubkeyID", "0", CVAR_ROM );
-#endif
-    }
-    
     // Dushan
 #if !defined ( UPDATE_SERVER ) || !defined ( DEDICATED )
     databaseSystem->Init();
@@ -3396,7 +3373,7 @@ void Com_Init( UTF8* commandLine )
     // start in full screen ui mode
     Cvar_Set( "r_uiFullScreen", "1" );
     
-    CL_StartHunkUsers();
+    CL_StartHunkUsers( false );
     
     // NERVE - SMF - force recommendedSet and don't do vid_restart if in safe mode
     if( !com_recommendedSet->integer && !safeMode )

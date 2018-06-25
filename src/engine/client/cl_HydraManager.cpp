@@ -36,9 +36,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
-#include <client/cl_HydraManager.h>
-#include <OVR.h>
+#include <OWLIb/precompiled.h>
 
 using namespace OVR;
 

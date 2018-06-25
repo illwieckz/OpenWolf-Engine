@@ -35,14 +35,17 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef __SERVER_H__
+#define __SERVER_H__
+
 #ifndef __Q_SHARED_H__
 #include <qcommon/q_shared.h>
 #endif
 #ifndef __QCOMMON_H__
 #include <qcommon/qcommon.h>
 #endif
-#ifndef __G_API_H__
-#include <server/g_api.h>
+#ifndef __SG_API_H__
+#include <sgame/sg_api.h>
 #endif
 #ifndef __BG_PUBLIC_H__
 #include <bgame/bg_public.h>
@@ -69,7 +72,7 @@ typedef struct svEntity_s
     S32             originCluster;	// Gordon: calced upon linking, for origin only bmodel vis checks
 } svEntity_t;
 
-typedef enum
+typedef enum serverState_s
 {
     SS_DEAD,					// no map loaded
     SS_LOADING,					// spawning level entities
@@ -84,10 +87,10 @@ typedef struct configString_s
     clientList_t	clientList;
 } configString_t;
 
-typedef struct
+typedef struct server_s
 {
     serverState_t   state;
-    bool        restarting;	// if true, send configstring changes during SS_LOADING
+    bool            restarting;	// if true, send configstring changes during SS_LOADING
     S32             serverId;	// changes each server start
     S32             restartedServerId;	// serverId before a map_restart
     S32             checksumFeed;	// the feed key that we use to compute the pure checksum strings
@@ -99,7 +102,7 @@ typedef struct
     S32             nextFrameTime;	// when time > nextFrameTime, process world
     struct cmodel_s* models[MAX_MODELS];
     configString_t	configstrings[MAX_CONFIGSTRINGS];
-    bool        configstringsmodified[MAX_CONFIGSTRINGS];
+    bool            configstringsmodified[MAX_CONFIGSTRINGS];
     svEntity_t      svEntities[MAX_GENTITIES];
     
     UTF8*           entityParsePoint;	// used during game VM init
@@ -124,7 +127,7 @@ typedef struct
     S32             ubpsTotalBytes;
     S32             ubpsMaxBytes;
     
-    F32           ucompAve;
+    F32             ucompAve;
     S32             ucompNum;
     // -NERVE - SMF
     
@@ -135,14 +138,10 @@ typedef struct
     S32             num_tags;
 } server_t;
 
-
-
-
-
-typedef struct
+typedef struct clientSnapshot_s
 {
     S32             areabytes;
-    U8            areabits[MAX_MAP_AREA_BYTES];	// portalarea visibility bits
+    U8              areabits[MAX_MAP_AREA_BYTES];	// portalarea visibility bits
     playerState_t   ps;
     S32             num_entities;
     S32             first_entity;	// into the circular sv_packet_entities[]
@@ -165,7 +164,7 @@ typedef enum
 typedef struct netchan_buffer_s
 {
     msg_t           msg;
-    U8            msgBuffer[MAX_MSGLEN];
+    U8              msgBuffer[MAX_MSGLEN];
     UTF8            lastClientCommandString[MAX_STRING_CHARS];
     struct netchan_buffer_s* next;
 } netchan_buffer_t;
@@ -202,15 +201,15 @@ typedef struct client_s
     S32             downloadXmitBlock;	// last block we xmited
     U8*             downloadBlocks[MAX_DOWNLOAD_WINDOW];	// the buffers for the download blocks
     S32             downloadBlockSize[MAX_DOWNLOAD_WINDOW];
-    bool        downloadEOF;	// We have sent the EOF block
+    bool            downloadEOF;	// We have sent the EOF block
     S32             downloadSendTime;	// time we last got an ack from the client
     
     // www downloading
-    bool        bDlOK;		// passed from cl_wwwDownload CVAR_USERINFO, wether this client supports www dl
+    bool            bDlOK;		// passed from cl_wwwDownload CVAR_USERINFO, wether this client supports www dl
     UTF8            downloadURL[MAX_OSPATH];	// the URL we redirected the client to
-    bool        bWWWDl;		// we have a www download going
-    bool        bWWWing;	// the client is doing an ftp/http download
-    bool        bFallback;	// last www download attempt failed, fallback to regular download
+    bool            bWWWDl;		// we have a www download going
+    bool            bWWWing;	// the client is doing an ftp/http download
+    bool            bFallback;	// last www download attempt failed, fallback to regular download
     // note: this is one-shot, multiple downloads would cause a www download to be attempted again
     
     S32             deltaMessage;	// frame last client usercmd message
@@ -219,14 +218,14 @@ typedef struct client_s
     S32             lastPacketTime;	// svs.time when packet was last received
     S32             lastConnectTime;	// svs.time when connection started
     S32             nextSnapshotTime;	// send another snapshot when svs.time >= nextSnapshotTime
-    bool        rateDelayed;	// true if nextSnapshotTime was set based on rate instead of snapshotMsec
+    bool            rateDelayed;	// true if nextSnapshotTime was set based on rate instead of snapshotMsec
     S32             timeoutCount;	// must timeout a few frames in a row so debugging doesn't break
     clientSnapshot_t frames[PACKET_BACKUP];	// updates can be delta'd from here
     S32             ping;
     S32             rate;		// bytes / second
     S32             snapshotMsec;	// requests a snapshot every snapshotMsec unless rate choked
     S32             pureAuthentic;
-    bool        gotCP;		// TTimo - additional flag to distinguish between a bad pure checksum, and no cp command at all
+    bool            gotCP;		// TTimo - additional flag to distinguish between a bad pure checksum, and no cp command at all
     netchan_t       netchan;
     // TTimo
     // queuing outgoing fragmented messages to send them properly, without udp packet bursts
@@ -245,16 +244,16 @@ typedef struct client_s
 
 // Dushan
 #define	STATFRAMES	100
-typedef struct
+typedef struct svstats_s
 {
     F64	active;
     F64	idle;
-    S32		count;
-    S32		packets;
+    S32	count;
+    S32	packets;
     
     F64	latched_active;
     F64	latched_idle;
-    S32		latched_packets;
+    S32	latched_packets;
 } svstats_t;
 
 // MAX_CHALLENGES is made large to prevent a denial
@@ -266,12 +265,12 @@ typedef struct
 
 typedef struct
 {
-    netadr_t        adr;
-    S32             challenge;
-    S32             time;		// time the last packet was sent to the autherize server
-    S32             pingTime;	// time the challenge response was sent to client
-    S32             firstTime;	// time the adr was first used, for authorize timeout checks
-    S32             firstPing;	// Used for min and max ping checks
+    netadr_t    adr;
+    S32         challenge;
+    S32         time;		// time the last packet was sent to the autherize server
+    S32         pingTime;	// time the challenge response was sent to client
+    S32         firstTime;	// time the adr was first used, for authorize timeout checks
+    S32         firstPing;	// Used for min and max ping checks
     bool        connected;
 } challenge_t;
 
@@ -286,7 +285,7 @@ typedef struct
     netadr_t	adr;
     S32			time;
     S32			count;
-    bool	flood;
+    bool	    flood;
 } floodBan_t;
 
 // MAX_INFO_RECEIPTS is the maximum number of getstatus+getinfo responses that we send
@@ -308,7 +307,7 @@ typedef struct tempBan_s
 #define SERVER_PERFORMANCECOUNTER_SAMPLES   6
 
 // this structure will be cleared only when the game dll changes
-typedef struct
+typedef struct serverStatic_s
 {
     bool        initialized;	// sv_init has completed
     
@@ -624,3 +623,5 @@ void SV_Netchan_FreeQueue( client_t* client );
 #define DLNOTIFY_REDIRECT   0x00000001	// "Redirecting client ..."
 #define DLNOTIFY_BEGIN      0x00000002	// "clientDownload: 4 : beginning ..."
 #define DLNOTIFY_ALL        ( DLNOTIFY_REDIRECT | DLNOTIFY_BEGIN )
+
+#endif //!__SERVER_H__

@@ -69,8 +69,7 @@
  * 1.8   9 Jan 2004     - Added some comments on no distance codes case
  */
 
-#include <setjmp.h>             /* for setjmp(), longjmp(), and jmp_buf */
-#include "puff.h"		/* prototype for puff() */
+#include <OWLIb/precompiled.h>
 
 #define local static            /* for local function definitions */
 

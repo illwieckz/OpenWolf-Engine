@@ -1832,12 +1832,6 @@ enum
     AUTHORIZE_UNAVAILABLE,
 };
 
-/* This should not be changed because this value is
-* expected to be the same on the client and on the server */
-#define RSA_PUBLIC_EXPONENT 65537
-#define RSA_KEY_LENGTH 2048
-#define RSA_STRING_LENGTH (RSA_KEY_LENGTH / 4 + 1)
-
 #ifndef BSPC
 typedef enum
 {
@@ -1858,5 +1852,27 @@ void TransformToMatrix( const idVec3 origin, const idVec3 angles, idVec4 axis[4]
 #define SAY_ACTION      3
 #define SAY_ACTION_T    4
 #define SAY_ADMINS    5
+
+void Com_MatchToken( const char * ( *buf_p ), const char* match, bool warning = false );
+const char* Com_Parse( const char * ( *data_p ) );
+void Com_UngetToken( void );
+const char* Com_ParseOnLine( const char * ( *data_p ) );
+const char* Com_ParseRestOfLine( const char * ( *data_p ) );
+float Com_ParseFloat( const char * ( *buf_p ) );
+void Com_Parse1DMatrix( const char * ( *buf_p ), int x, float* m );
+void Com_Parse2DMatrix( const char * ( *buf_p ), int y, int x, float* m );
+void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m );
+
+// handy stuff when tracking isnan problems
+#ifndef NDEBUG
+#define CHECK_NAN( x ) assert( !IS_NAN( x ) )
+#define CHECK_NAN_VEC( v ) assert( !IS_NAN( v[0] ) && !IS_NAN( v[1] ) && !IS_NAN( v[2] ) )
+#else
+#define CHECK_NAN
+#define CHECK_NAN_VEC
+#endif
+
+void Com_BeginParseSession( const char* filename );
+void Com_EndParseSession( void );
 
 #endif //!__Q_SHARED_H__

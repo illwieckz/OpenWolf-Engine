@@ -35,13 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cm/cm_local.h>
-
-#ifdef _PHYSICSLIB
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <physicslib/physics_public.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 // always use bbox vs. bbox collision and never capsule vs. bbox or vice versa
 //#define ALWAYS_BBOX_VS_BBOX

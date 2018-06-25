@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
-#include <botlib/botlib.h>
+#include <OWLIb/precompiled.h>
 
 extern botlib_export_t* botlib_export;
 

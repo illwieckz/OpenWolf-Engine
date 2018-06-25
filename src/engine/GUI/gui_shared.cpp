@@ -28,10 +28,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CGAMEDLL
-#include <cgame/cg_precompiled.h>
+#ifdef CGAMEDLL
+#include <sgame/sg_precompiled.h>
 #else
-#endif
+#include <OWLIb/precompiled.h>
+#endif // !GAMEDLL
 
 #define SCROLL_TIME_START         500
 #define SCROLL_TIME_ADJUST        150
@@ -1236,7 +1237,7 @@ void Menu_UpdatePosition( menuDef_t* menu )
         Item_SetScreenCoords( menu->items[i], x, y );
 }
 
-static void Menu_AspectiseRect( S32 bias, Rectangle* rect )
+static void Menu_AspectiseRect( S32 bias, rectangle* rect )
 {
     switch( bias )
     {

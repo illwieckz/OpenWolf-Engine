@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_fbo.h>
-#include <GPURenderer/r_dsa.h>
+#include <OWLIb/precompiled.h>
 
 backEndData_t*	backEndData;
 backEndState_t	backEnd;

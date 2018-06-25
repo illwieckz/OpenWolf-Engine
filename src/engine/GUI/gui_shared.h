@@ -143,15 +143,15 @@ typedef struct
 }
 rectDef_t;
 
-typedef rectDef_t Rectangle;
+typedef rectDef_t rectangle;
 
 // FIXME: do something to separate text vs window stuff
 
 typedef struct
 {
-    Rectangle rect;                 // client coord rectangle
+    rectangle rect;                 // client coord rectangle
     S32 aspectBias;                 // direction in which to aspect compensate
-    Rectangle rectClient;           // screen coord rectangle
+    rectangle rectClient;           // screen coord rectangle
     StringEntry name;               //
     StringEntry group;              // if it belongs to a group
     StringEntry cinematicName;      // cinematic name
@@ -162,8 +162,8 @@ typedef struct
     S32 ownerDrawFlags;             // show flags for ownerdraw items
     F32 borderSize;               //
     S32 flags;                      // visible, focus, mouseover, cursor
-    Rectangle rectEffects;          // for various effects
-    Rectangle rectEffects2;         // for various effects
+    rectangle rectEffects;          // for various effects
+    rectangle rectEffects2;         // for various effects
     S32 offsetTime;                 // time based value for various effects
     S32 nextTime;                   // time next effect should cycle
     vec4_t foreColor;               // text color
@@ -282,7 +282,7 @@ modelDef_t;
 typedef struct itemDef_s
 {
     Window window;                 // common positional, border, style, layout info
-    Rectangle textRect;            // rectangle the text ( if any ) consumes
+    rectangle textRect;            // rectangle the text ( if any ) consumes
     S32 type;                      // text, button, radiobutton, checkbox, textfield, listbox, combo
     S32 alignment;                 // left center right
     S32 textalignment;             // ( optional ) alignment for text within rect based on text width

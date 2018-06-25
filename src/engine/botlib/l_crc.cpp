@@ -35,13 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>
-#include <botlib/be_interface.h> //for botimport.Print
+#include <OWLIb/precompiled.h>
 
 
 // FIXME: byte swap?

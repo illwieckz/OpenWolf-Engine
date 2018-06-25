@@ -35,13 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <physicslib/physics_local.h>
+#include <OWLIb/precompiled.h>
 
 #if !defined ( Q3MAP2 ) && !defined ( DEDICATED )
-
-#include <Windows.h>
-#include <GL/GL.h>
-#include <stdio.h> //printf debugging
 
 GLDebugDrawer::GLDebugDrawer()
     : m_debugMode( 0 )

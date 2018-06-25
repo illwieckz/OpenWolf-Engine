@@ -35,14 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>
-#include <botlib/be_interface.h>			//for botimport.Print
-#include <botlib/l_libvar.h>
+#include <OWLIb/precompiled.h>
 
 #define MAX_LOGFILENAMESIZE		1024
 

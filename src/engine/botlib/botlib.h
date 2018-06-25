@@ -38,6 +38,10 @@
 #ifndef __BOTLIB_H__
 #define __BOTLIB_H__
 
+#ifndef __Q_SHARED_H__
+#include <qcommon/q_shared.h>
+#endif
+
 #define	BOTLIB_API_VERSION		2
 
 struct aas_clientmove_s;

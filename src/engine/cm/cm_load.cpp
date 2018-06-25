@@ -35,12 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cm/cm_local.h>
-
-#ifdef _PHYSICSLIB
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 idCollisionModelManagerLocal collisionModelManagerLocal;
 idCollisionModelManager* collisionModelManager = &collisionModelManagerLocal;

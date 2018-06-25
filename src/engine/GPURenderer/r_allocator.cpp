@@ -27,10 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdlib>
-
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_allocator.h>
+#include <OWLIb/precompiled.h>
 
 Allocator::Allocator( U64 memorySize )
 #if defined(GLSL_BUILDTOOL)

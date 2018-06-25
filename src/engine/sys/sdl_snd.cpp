@@ -35,25 +35,19 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <OWLIb/precompiled.h>
 
-#include <SDL.h>
+bool snd_inited = false;
 
-#include <qcommon/q_shared.h>
-#include <audio/snd_local.h>
-
-bool        snd_inited = false;
-
-cvar_t*         s_sdlBits;
-cvar_t*         s_sdlSpeed;
-cvar_t*         s_sdlChannels;
-cvar_t*         s_sdlDevSamps;
-cvar_t*         s_sdlMixSamps;
+cvar_t* s_sdlBits;
+cvar_t* s_sdlSpeed;
+cvar_t* s_sdlChannels;
+cvar_t* s_sdlDevSamps;
+cvar_t* s_sdlMixSamps;
 
 /* The audio callback. All the magic happens here. */
-static S32      dmapos = 0;
-static S32      dmasize = 0;
+static S32 dmapos = 0;
+static S32 dmasize = 0;
 
 static bool use_custom_memset = false;
 

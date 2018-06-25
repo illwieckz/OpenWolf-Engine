@@ -35,9 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <client/keys.h>
+#include <OWLIb/precompiled.h>
 
 #define MAX_CMD_BUFFER  131072
 #define MAX_CMD_LINE    1024

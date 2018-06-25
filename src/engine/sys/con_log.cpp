@@ -35,9 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <sys/sys_local.h>
+#include <OWLIb/precompiled.h>
 
 #define MAX_LOG 32768
 

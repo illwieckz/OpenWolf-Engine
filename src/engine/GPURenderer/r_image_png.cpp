@@ -20,9 +20,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>
 ===========================================================================
 */
 
-#include "r_common.h"
-#include "../qcommon/puff.h"
-#include "r_local.h"
+#include <OWLIb/precompiled.h>
 
 // we could limit the png size to a lower value here
 #ifndef INT_MAX

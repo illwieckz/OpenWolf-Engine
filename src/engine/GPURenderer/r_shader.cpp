@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <qcommon/surfaceflags.h>
+#include <OWLIb/precompiled.h>
 
 static UTF8* s_shaderText;
 
@@ -1050,7 +1049,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             
             if( r_pbr->integer )
             {
-                //stage->specularScale[0] = 1.0f - exp2f( -3.0f * gloss );
+                stage->specularScale[0] = 1.0f - exp2f( -3.0f * gloss );
             }
             else
             {
@@ -1079,7 +1078,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             {
                 if( roughness >= 0.125 )
                 {
-                    //stage->specularScale[3] = log2f( 1.0f / roughness ) / 3.0f;
+                    stage->specularScale[3] = log2f( 1.0f / roughness ) / 3.0f;
                 }
                 else
                 {
@@ -2385,7 +2384,7 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
             
             // try a normalheight image first
             COM_StripExtension2( diffuseImg->imgName, normalName, MAX_QPATH );
-            Q_strcat( normalName, MAX_QPATH, "_nh" );
+            Q_strcat( normalName, MAX_QPATH, "_h" );
             
             normalImg = R_FindImageFile( normalName, IMGTYPE_NORMALHEIGHT, normalFlags );
             

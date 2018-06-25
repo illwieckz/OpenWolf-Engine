@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_bot.cpp
+// File name:   sg_bot.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015

@@ -35,20 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_libvar.h>
-#include <botlib/l_utils.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/l_log.h>
-#include <botlib/aasfile.h>
-#include <botlib/botlib.h>
-#include <botlib/be_aas.h>
-#include <botlib/be_aas_funcs.h>
-#include <botlib/be_interface.h>
-#include <botlib/be_aas_def.h>
+#include <OWLIb/precompiled.h>
 
 aas_t aasworld;
 
@@ -324,7 +311,9 @@ S32 AAS_StartFrame( F32 time )
     {
         if( LibVarGetValue( "showcacheupdates" ) )
         {
-            AAS_RoutingInfo();
+#ifdef DEBUG
+            //AAS_RoutingInfo();
+#endif
             LibVarSet( "showcacheupdates", "0" );
         } //end if
         if( LibVarGetValue( "showmemoryusage" ) )

@@ -36,20 +36,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <OWLib/util_list.h>
-#include <OWLib/util_str.h>
-#include <GPUWorker/GpuWorker_Local.h>
-
-#ifdef _WIN32
-#include <GL/wglew.h>
-#elif __LINUX__
-#include <GL/glxew.h>
-#elif __ANDROID__
-#include <GL/eglew.h>
-#else
-// Mac - I Have no idea
-#endif
+#include <OWLIb/precompiled.h>
 
 owGpuWorkerLocal		gpuWorkerLocal;
 owGpuWorker*			gpuWorker = &gpuWorkerLocal;

@@ -36,9 +36,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <cl/cl.h>
-#include <GPUWorker/GPUWorker.h>
+#include <OWLIb/precompiled.h>
 
 StringEntry owGPUWorkerProgram::clErrorString( cl_int err )
 {

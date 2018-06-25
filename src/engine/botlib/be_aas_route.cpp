@@ -35,23 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_utils.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_log.h>
-#include <botlib/l_crc.h>
-#include <botlib/l_libvar.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/aasfile.h>
-#include <botlib/botlib.h>
-#include <botlib/be_aas.h>
-#include <botlib/be_aas_funcs.h>
-#include <botlib/be_interface.h>
-#include <botlib/be_aas_def.h>
+#include <OWLIb/precompiled.h>
 
-#define ROUTING_DEBUG
+//#define ROUTING_DEBUG
 
 //travel time in hundreths of a second = distance * 100 / speed
 #define DISTANCEFACTOR_CROUCH		1.3f		//crouch speed = 100

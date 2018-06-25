@@ -27,13 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <SDL.h>
-#include <GPURenderer/r_local.h>
-#include <qcommon/qcommon.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 /*
 =================

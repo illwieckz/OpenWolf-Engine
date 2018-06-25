@@ -27,8 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_common.h>
-#include <GPURenderer/r_local.h>
+#include <OWLIb/precompiled.h>
 
 typedef struct ddsHeader_s
 {

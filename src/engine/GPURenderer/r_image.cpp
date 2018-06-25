@@ -28,8 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_dsa.h>
+#include <OWLIb/precompiled.h>
 
 static U8 s_intensitytable[256];
 static U8 s_gammatable[256];

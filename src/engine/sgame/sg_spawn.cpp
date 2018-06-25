@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_spawn.cpp
+// File name:   sg_spawn.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -231,6 +231,8 @@ spawn_t spawns[ ] =
     { "misc_particle_system",     &idGameLocal::SP_misc_particle_system },
     { "misc_anim_model",          &idGameLocal::SP_misc_anim_model },
     { "misc_light_flare",         &idGameLocal::SP_misc_light_flare },
+    
+    { "misc_cubemap",             &idGameLocal::SP_misc_cubemap },
     
     { NULL, 0 }
 };

@@ -368,10 +368,6 @@ typedef struct
     UTF8                voice[ MAX_VOICE_NAME_LEN ];
     bool                useUnlagged;
     g_admin_admin_t*    admin;
-    S32                 pubkey_authenticated; // -1 = does not have pubkey, 0 = not authenticated, 1 = authenticated
-    S32                 cl_pubkeyID;
-    UTF8                pubkey_msg[RSA_STRING_LENGTH];
-    UTF8                connect_name[MAX_NAME_LENGTH]; // Name of client before admin was removed with pubkey
     S32				    mysqlid;
 } clientPersistant_t;
 
@@ -895,7 +891,6 @@ extern vmCvar_t g_adminLog;
 extern vmCvar_t g_adminParseSay;
 extern vmCvar_t g_adminNameProtect;
 extern vmCvar_t g_adminTempBan;
-extern vmCvar_t g_adminPubkeyID;
 extern vmCvar_t g_dretchPunt;
 extern vmCvar_t g_privateMessages;
 extern vmCvar_t g_publicAdminMessages;
@@ -1349,6 +1344,7 @@ public:
     static void SP_use_light_flare( gentity_t* self, gentity_t* other, gentity_t* activator );
     static void findEmptySpot( vec3_t origin, F32 radius, vec3_t spot );
     static void SP_misc_light_flare( gentity_t* self );
+    static void SP_misc_cubemap( gentity_t* ent );
     void* Alloc( S32 size );
     void Free( void* ptr );
     void InitMemory( void );
@@ -1428,8 +1424,6 @@ public:
     static void Cmd_Test_f( gentity_t* ent );
     static void Cmd_Damage_f( gentity_t* ent );
     static void EditPlayerInventory( gentity_t* ent );
-    static void Cmd_Pubkey_f( gentity_t* ent );
-    static void Cmd_Pubkey_Identify_f( gentity_t* ent );
     static void Cmd_EditBotInv_f( gentity_t* ent );
     static bool NonSegModel( StringEntry filename );
     static void ClientCleanName( StringEntry in, UTF8* out, S32 outSize );

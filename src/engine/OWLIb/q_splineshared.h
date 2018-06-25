@@ -38,6 +38,8 @@
 #ifndef __Q_SHARED_H
 #define __Q_SHARED_H
 
+#if 0
+
 // q_splineshared.h -- included first by ALL program modules.
 // these are the definitions that have no dependance on
 // central system services, and can be used by any part
@@ -760,5 +762,7 @@ void Info_NextPair( const char * ( *s ), char key[MAX_INFO_KEY], char value[MAX_
 
 // get the flags class
 //#include "../shared/idflags.h"
+
+#endif
 
 #endif  // __Q_SHARED_H

@@ -28,28 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <sys/sys_local.h>
-#include <io.h>
-
-// curses.h defines COLOR_*, which are already defined in q_shared.h
-#undef COLOR_BLACK
-#undef COLOR_RED
-#undef COLOR_GREEN
-#undef COLOR_YELLOW
-#undef COLOR_BLUE
-#undef COLOR_MAGENTA
-#undef COLOR_CYAN
-#undef COLOR_WHITE
-
-#include <curses.h>
-#include <fcntl.h>
-#include <signal.h>
-#ifndef _WIN32
-#include <unistd.h>
-#include <sys/ioctl.h>
-#endif
+#include <OWLIb/precompiled.h>
 
 #ifdef _WIN32
 #ifndef STDIN_FILENO

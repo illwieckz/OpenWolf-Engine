@@ -1,3 +1,15 @@
+2018-06-25 Dusan Jocic <dusanjocic@msn.com>
+	* Cleaning
+	* Removed much of old libraries
+	* Removed pubkey
+	* Added precompiled header for the engine
+	* Fixed compiling for the Windows platform
+	* Updated binaries
+	* Updated binaries
+	* Updated maps
+	* Updated textures
+	* Added precompiled jpeg library for the Visual Studio 2015
+
 2018-06-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added precompiled headers for the cgame and for the sgame projects
 	* Renamed all "g_" files to the "sg_" files

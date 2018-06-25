@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <audio/snd_local.h>
+#include <OWLIb/precompiled.h>
 
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE];
 static S32 snd_vol;

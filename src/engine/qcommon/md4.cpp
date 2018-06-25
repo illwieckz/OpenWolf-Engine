@@ -27,9 +27,7 @@
 	$Id: mdfour.c,v 1.1 2002/08/23 22:03:27 abster Exp $
 */
 
-#include "../qcommon/q_shared.h"
-#include "qcommon.h"
-#include "md4.h"
+#include <OWLIb/precompiled.h>
 
 #ifdef USE_OPENSSL
 

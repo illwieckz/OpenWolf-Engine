@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <server/server.h>
-#include <qcommon/crypto.h>
+#include <OWLIb/precompiled.h>
 
 botlib_export_t* botlib_export;
 
@@ -178,41 +177,6 @@ void SV_GameDropClient( S32 clientNum, StringEntry reason, S32 length )
     {
         SV_TempBanNetAddress( svs.clients[clientNum].netchan.remoteAddress, length );
     }
-}
-
-/*
-===============
-SV_RSAGenMsg
-
-Generate an encrypted RSA message
-===============
-*/
-S32 SV_RSAGenMsg( StringEntry pubkey, UTF8* cleartext, UTF8* encrypted )
-{
-    struct rsa_public_key public_key;
-    mpz_t message;
-    U8 buffer[ RSA_KEY_LENGTH / 8 - 11 ];
-    S32 retval;
-    
-    Com_RandomBytes( buffer, RSA_KEY_LENGTH / 8 - 11 );
-    
-    nettle_mpz_init_set_str_256_u( message, RSA_KEY_LENGTH / 8 - 11, buffer );
-    mpz_get_str( cleartext, 16, message );
-    rsa_public_key_init( &public_key );
-    mpz_set_ui( public_key.e, RSA_PUBLIC_EXPONENT );
-    retval = mpz_set_str( public_key.n, pubkey, 16 ) + 1;
-    
-    if( retval )
-    {
-        rsa_public_key_prepare( &public_key );
-        retval = rsa_encrypt( &public_key, NULL, qnettle_random, RSA_KEY_LENGTH / 8 - 11, buffer, message );
-    }
-    
-    rsa_public_key_clear( &public_key );
-    mpz_get_str( encrypted, 16, message );
-    mpz_clear( message );
-    
-    return retval;
 }
 
 /*
@@ -540,7 +504,6 @@ void SV_InitExportTable( void )
     exports.LoadTag = SV_LoadTag;
     exports.BotLibSetup = SV_BotLibSetup;
     exports.BotLibShutdown = SV_BotLibShutdown;
-    exports.RSAGenMsg = SV_RSAGenMsg;
     exports.GetEntityToken = SV_GetEntityToken;
     exports.BotGetUserCommand = SV_BotGetUserCommand;
     exports.PhysicsSetGravity = SV_PhysicsSetGravity;

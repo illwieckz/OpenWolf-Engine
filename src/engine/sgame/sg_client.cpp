@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   g_client.cpp
+// File name:   sg_client.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -1280,18 +1280,6 @@ UTF8* idGameLocal::ClientConnect( S32 clientNum, bool firstTime, bool isBot )
     admin = adminLocal.Admin( ent );
     client->pers.admin = admin;
     
-    client->pers.pubkey_authenticated = -1;
-    client->pers.cl_pubkeyID = atoi( Info_ValueForKey( userinfo, "cl_pubkeyID" ) );
-    
-    if( g_adminPubkeyID.integer && admin )
-    {
-        if( admin->pubkey[0] && admin->counter != -1 && admin->level >= g_adminPubkeyID.integer )
-        {
-            // remove admin from client
-            client->pers.pubkey_authenticated = 0;
-        }
-    }
-    
     client->pers.connected = CON_CONNECTING;
     
     // read or initialize the session data
@@ -1439,19 +1427,6 @@ void idGameLocal::ClientBegin( S32 clientNum )
     
     // ask for identification
     admin = client->pers.admin;
-    if( g_adminPubkeyID.integer && admin && client->pers.cl_pubkeyID )
-    {
-        if( admin->level >= g_adminPubkeyID.integer && !admin->pubkey[0] )
-            trap_SendServerCommand( ent - g_entities, "pubkey_request" );
-        else if( client->pers.pubkey_authenticated == 0 )
-        {
-            trap_SendServerCommand( ent - g_entities, va( "pubkey_decrypt %s", admin->msg2 ) );
-            admin->counter++;
-            // copy the decrypted message because generating a new message will overwrite it
-            Q_strncpyz( client->pers.pubkey_msg, admin->msg, sizeof( client->pers.pubkey_msg ) );
-            adminLocal.AdminWriteConfig( );
-        }
-    }
     
     LogPrintf( "idGameLocal::ClientBegin: %i\n", clientNum );
     

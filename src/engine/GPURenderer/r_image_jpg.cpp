@@ -28,9 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <setjmp.h>
-#include <GPURenderer/r_local.h>
-#include <GPURenderer/r_common.h>
+#include <OWLIb/precompiled.h>
 
 /*
  * Include file for users of JPEG library.
@@ -40,17 +38,10 @@
  * You may also wish to include "jerror.h".
  */
 
-#ifdef USE_INTERNAL_JPEG
-#  define JPEG_INTERNALS
-#endif
-
+extern "C"
+{
 #include <jpeglib.h>
-
-#ifndef USE_INTERNAL_JPEG
-#  if JPEG_LIB_VERSION < 80 && !defined(MEM_SRCDST_SUPPORTED)
-#    error Need system libjpeg >= 80 or jpeg_mem_ support
-#  endif
-#endif
+}
 
 /* Catching errors, as done in libjpeg's example.c */
 typedef struct q_jpeg_error_mgr_s
@@ -62,7 +53,7 @@ typedef struct q_jpeg_error_mgr_s
 
 static void R_JPGErrorExit( j_common_ptr cinfo )
 {
-    UTF8 buffer[JMSG_LENGTH_MAX];
+    UTF8 buffer[200];
     
     /* cinfo->err really points to a q_jpeg_error_mgr_s struct, so coerce pointer */
     q_jpeg_error_mgr_t* jerr = ( q_jpeg_error_mgr_t* )cinfo->err;
@@ -77,7 +68,7 @@ static void R_JPGErrorExit( j_common_ptr cinfo )
 
 static void R_JPGOutputMessage( j_common_ptr cinfo )
 {
-    UTF8 buffer[JMSG_LENGTH_MAX];
+    UTF8 buffer[200];
     
     /* Create the message */
     ( *cinfo->err->format_message )( cinfo, buffer );
@@ -279,7 +270,6 @@ void R_LoadJPG( StringEntry filename, U8** pic, S32* width, S32* height )
     /* And we're done! */
 }
 
-
 /* Expanded data destination object for stdio output */
 
 typedef struct
@@ -298,15 +288,13 @@ typedef my_destination_mgr* my_dest_ptr;
  * before any data is actually written.
  */
 
-static void
-init_destination( j_compress_ptr cinfo )
+static void voidinit_destination( j_compress_ptr cinfo )
 {
     my_dest_ptr dest = ( my_dest_ptr ) cinfo->dest;
     
     dest->pub.next_output_byte = dest->outfile;
     dest->pub.free_in_buffer = dest->size;
 }
-
 
 /*
  * Empty the output buffer --- called whenever buffer fills up.
@@ -358,15 +346,13 @@ static void term_destination( j_compress_ptr cinfo )
 {
 }
 
-
 /*
  * Prepare for output to a stdio stream.
  * The caller must have already opened the stream, and is responsible
  * for closing it after finishing compression.
  */
 
-static void
-jpegDest( j_compress_ptr cinfo, U8* outfile, S32 size )
+static void jpegDest( j_compress_ptr cinfo, U8* outfile, S32 size )
 {
     my_dest_ptr dest;
     
@@ -384,7 +370,7 @@ jpegDest( j_compress_ptr cinfo, U8* outfile, S32 size )
     }
     
     dest = ( my_dest_ptr ) cinfo->dest;
-    dest->pub.init_destination = init_destination;
+    dest->pub.init_destination = voidinit_destination;
     dest->pub.empty_output_buffer = empty_output_buffer;
     dest->pub.term_destination = term_destination;
     dest->outfile = outfile;
@@ -399,15 +385,16 @@ Encodes JPEG from image in image_buffer and writes to buffer.
 Expects RGB input data
 =================
 */
-U64 RE_SaveJPGToBuffer( U8* buffer, U64 bufSize, S32 quality,
-                        S32 image_width, S32 image_height, U8* image_buffer, S32 padding )
+
+U64 RE_SaveJPGToBuffer( U8* buffer, U64 bufSize, S32 quality, S32 image_width, S32 image_height, U8* image_buffer, S32 padding )
 {
+    U64 outcount;
+    
     struct jpeg_compress_struct cinfo;
     q_jpeg_error_mgr_t jerr;
     JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
     my_dest_ptr dest;
     S32 row_stride;		/* physical row width in image buffer */
-    U64 outcount;
     
     /* Step 1: allocate and initialize JPEG compression object */
     cinfo.err = jpeg_std_error( &jerr.pub );

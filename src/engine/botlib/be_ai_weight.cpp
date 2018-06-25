@@ -35,20 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <botlib/l_memory.h>
-#include <botlib/l_log.h>
-#include <botlib/l_utils.h>
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/l_libvar.h>
-#include <botlib/aasfile.h>
-#include <botlib/botlib.h>
-#include <botlib/be_aas.h>
-#include <botlib/be_aas_funcs.h>
-#include <botlib/be_interface.h>
-#include <botlib/be_ai_weight.h>
+#include <OWLIb/precompiled.h>
 
 #define MAX_INVENTORYVALUE			999999
 #define EVALUATERECURSIVELY

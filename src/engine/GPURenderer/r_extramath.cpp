@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
+#include <OWLIb/precompiled.h>
 
 // Some matrix helper functions
 // FIXME: do these already exist in ioq3 and I don't know about them?

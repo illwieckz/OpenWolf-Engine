@@ -30,10 +30,12 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GAMEDLL
+#ifdef CGAMEDLL
 #include <cgame/cg_precompiled.h>
-#else
+#elif GAMEDLL
 #include <sgame/sg_precompiled.h>
+#else
+#include <OWLIb/precompiled.h>
 #endif // !GAMEDLL
 
 pmove_t*     pm;

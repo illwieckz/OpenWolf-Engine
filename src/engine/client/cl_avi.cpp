@@ -27,8 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <client/client.h>
-#include <audio/snd_local.h>
+#include <OWLIb/precompiled.h>
 
 #define INDEX_FILE_EXTENSION ".index.dat"
 

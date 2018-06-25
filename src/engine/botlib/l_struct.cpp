@@ -36,13 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef BOTLIB
-#include <qcommon/q_shared.h>
-#include <botlib/botlib.h>				//for the include of be_interface.h
-#include <botlib/l_script.h>
-#include <botlib/l_precomp.h>
-#include <botlib/l_struct.h>
-#include <botlib/l_utils.h>
-#include <botlib/be_interface.h>
+#include <OWLIb/precompiled.h>
 #endif //BOTLIB
 
 #ifdef BSPC

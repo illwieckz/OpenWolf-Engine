@@ -46,8 +46,7 @@ theora:
  * theora doxygen docs (1.0beta1)
 */
 
-#include "client.h"
-#include "../audio/snd_local.h"
+#include <OWLIb/precompiled.h>
 
 #if defined(USE_CODEC_VORBIS) && (defined(USE_CIN_XVID) || defined(USE_CIN_THEORA))
 

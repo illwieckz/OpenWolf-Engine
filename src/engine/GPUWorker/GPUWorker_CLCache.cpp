@@ -35,10 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <GPURenderer/r_local.h>
-#include <GPUWorker/GPUWorker_Local.h>
-#include <GPUWorker/GPUWorker_CLCache.h>
-#include <GPUWorker/GPUWorker_Backend.h>
+#include <OWLIb/precompiled.h>
 
 /*
 =============================

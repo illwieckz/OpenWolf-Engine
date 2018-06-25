@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cm/cm_local.h>
-#include <cm/cm_patch.h>
+#include <OWLIb/precompiled.h>
 
 S32 c_totalPatchBlocks, c_totalPatchSurfaces, c_totalPatchEdges;
 

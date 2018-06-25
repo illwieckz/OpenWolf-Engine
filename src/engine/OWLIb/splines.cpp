@@ -46,12 +46,14 @@ void FS_FCloseFile( fileHandle_t f );
 void Cbuf_AddText( const char* text );
 void Cbuf_Execute( void );
 
-float Q_fabs( float f )
+#if 0
+static float Q_fabs( float f )
 {
     int tmp = *( int* ) &f;
     tmp &= 0x7FFFFFFF;
     return *( float* ) &tmp;
 }
+#endif
 
 // (SA) making a list of cameras so I can use
 //		the splines as targets for other things.

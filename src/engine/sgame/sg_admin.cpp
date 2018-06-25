@@ -28,7 +28,7 @@
 // along with OpenWolf; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 // -------------------------------------------------------------------------------------
-// File name:   g_admin.cpp
+// File name:   sg_admin.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -550,12 +550,6 @@ void idAdminLocal::AdminWriteConfig( void )
         AdminWriteConfigInt( g_admin_admins[ i ]->level, f );
         trap_FS_Write( "flags   = ", 10, f );
         AdminWriteConfigString( g_admin_admins[ i ]->flags, f );
-        trap_FS_Write( "pubkey  = ", 10, f );
-        AdminWriteConfigString( g_admin_admins[i]->pubkey, f );
-        trap_FS_Write( "msg     = ", 10, f );
-        AdminWriteConfigString( g_admin_admins[i]->msg, f );
-        trap_FS_Write( "msg2    = ", 10, f );
-        AdminWriteConfigString( g_admin_admins[i]->msg2, f );
         trap_FS_Write( "counter = ", 10, f );
         AdminWriteConfigInt( g_admin_admins[i]->counter, f );
         trap_FS_Write( "\n", 1, f );
@@ -1307,65 +1301,6 @@ void idAdminLocal::AdminNamelogUpdate( gclient_t* client, bool disconnect )
 
 /*
 ===============
-idAdminLocal::AdminPubkey
-===============
-*/
-void idAdminLocal::AdminPubkey( void )
-{
-    S32 i;
-    g_admin_admin_t* highest = NULL;
-    
-    // Uncomment this if your server lags (shouldn't happen unless you are on a *very* old computer)
-    // Will only regenrate messages when there are no active client (When they are all loading the map)
-    for( i = 0; i < level.maxclients; i++ )
-    {
-        if( g_entities[ i ].client && g_entities[ i ].client->pers.connected == CON_CONNECTED )
-            return;
-    }
-    
-    // Only do 1 encryption per frame to avoid lag
-    for( i = 0; i < MAX_ADMIN_ADMINS && g_admin_admins[ i ]; i++ )
-    {
-        if( g_admin_admins[ i ]->counter == -1 && g_admin_admins[ i ]->pubkey[ 0 ] )
-        {
-            highest = g_admin_admins[ i ];
-            break;
-        }
-        else if( g_admin_admins[i]->counter == 0 || !g_admin_admins[i]->pubkey[0] )
-        {
-            continue;
-        }
-        else if( !highest )
-        {
-            highest = g_admin_admins[ i ];
-            continue;
-        }
-        else if( highest->counter < g_admin_admins[i]->counter )
-        {
-            highest = g_admin_admins[i];
-        }
-    }
-    if( highest )
-    {
-        if( trap_RSA_GenerateMessage( highest->pubkey, highest->msg, highest->msg2 ) )
-        {
-            highest->counter = 0;
-        }
-        else
-        {
-            // If the key generation failed it can only be because of a bad pubkey
-            // so we clear the pubkey and ask the client for a new one when he reconnects
-            highest->pubkey[ 0 ] = '\0';
-            highest->msg[ 0 ] = '\0';
-            highest->msg2[ 0 ] = '\0';
-            highest->counter = -1;
-        }
-        AdminWriteConfig( );
-    }
-}
-
-/*
-===============
 idAdminLocal::AdminReadConfig
 ===============
 */
@@ -1500,18 +1435,6 @@ bool idAdminLocal::AdminReadconfig( gentity_t* ent, S32 skiparg )
             {
                 adminLocal.AdminReadConfigString( &cnf, a->flags, sizeof( a->flags ) );
             }
-            else if( !Q_stricmp( t, "pubkey" ) )
-            {
-                adminLocal.AdminReadConfigString( &cnf, a->pubkey, sizeof( a->pubkey ) );
-            }
-            else if( !Q_stricmp( t, "msg" ) )
-            {
-                adminLocal.AdminReadConfigString( &cnf, a->msg, sizeof( a->msg ) );
-            }
-            else if( !Q_stricmp( t, "msg2" ) )
-            {
-                adminLocal.AdminReadConfigString( &cnf, a->msg2, sizeof( a->msg2 ) );
-            }
             else if( !Q_stricmp( t, "counter" ) )
             {
                 adminLocal.AdminReadConfigInt( &cnf, &a->counter );
@@ -1627,7 +1550,6 @@ bool idAdminLocal::AdminReadconfig( gentity_t* ent, S32 skiparg )
         if( level.clients[i].pers.connected != CON_DISCONNECTED )
         {
             level.clients[i].pers.admin = adminLocal.Admin( &g_entities[i] );
-            level.clients[i].pers.adminLevel = ( level.clients[i].pers.pubkey_authenticated && level.clients[i].pers.admin ? level.clients[i].pers.admin->level : 0 );
         }
     }
     return true;
@@ -1825,9 +1747,6 @@ bool idAdminLocal::AdminSetlevel( gentity_t* ent, S32 skiparg )
         Q_strncpyz( a->name, adminname, sizeof( a->name ) );
         Q_strncpyz( a->guid, guid, sizeof( a->guid ) );
         *a->flags = '\0';
-        *a->pubkey = '\0';
-        *a->msg = '\0';
-        *a->msg2 = '\0';
         a->counter = -1;
         g_admin_admins[ i ] = a;
     }
@@ -1838,10 +1757,6 @@ bool idAdminLocal::AdminSetlevel( gentity_t* ent, S32 skiparg )
     {
         vic->client->pers.admin = ( l ? a : NULL );
         vic->client->pers.adminLevel = l;
-        if( l && l >= g_adminPubkeyID.integer && !a->pubkey[0] && vic->client->pers.cl_pubkeyID )
-        {
-            trap_SendServerCommand( vic - g_entities, "pubkey_request" );
-        }
     }
     
     if( !g_admin.string[0] )

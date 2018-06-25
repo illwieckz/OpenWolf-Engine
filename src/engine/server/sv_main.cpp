@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <server/server.h>
+#include <OWLIb/precompiled.h>
 
 serverStatic_t  svs;			// persistant server info
 server_t        sv;				// local server

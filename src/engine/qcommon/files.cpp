@@ -35,18 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <qcommon/unzip.h>
+#include <OWLIb/precompiled.h>
 
 #define MP_LEGACY_PAK 0x7776DC09
-
-#ifdef _WIN32
-#include <direct.h>
-#endif
-#if defined __linux__ || defined __FreeBSD__
-#include <unistd.h>
-#endif
 
 /*
 =============================================================================

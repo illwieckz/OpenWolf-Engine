@@ -243,7 +243,7 @@ void owPhysicsManagerLocal::LoadBulletPhysicsFile( StringEntry fullpath )
     btBulletWorldImporter* fileLoader = new btBulletWorldImporter( dynamicsWorld );
     
     COM_StripExtension( fullpath, cmpath );
-    sprintf( cmpath, "%s.bullet", cmpath );
+    Com_sprintf( cmpath, sizeof( cmpath ), "%s.bullet", cmpath );
     
     S32 cmlen = FS_ReadFile( cmpath, &buffer );
     if( cmlen <= 0 || buffer == NULL )

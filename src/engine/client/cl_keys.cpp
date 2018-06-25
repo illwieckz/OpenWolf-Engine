@@ -1265,7 +1265,7 @@ void Key_EditBind_f( void )
     
     keyq = ( UTF8* )Com_QuoteStr( key ); // <- static buffer
     buf = ( UTF8* )malloc( 8 + strlen( keyq ) + strlen( binding ) );
-    sprintf( buf, "/bind %s %s", keyq, binding );
+    Com_sprintf( buf, sizeof( buf ), "/bind %s %s", keyq, binding );
     
     Con_OpenConsole_f();
     Field_Set( &g_consoleField, buf );

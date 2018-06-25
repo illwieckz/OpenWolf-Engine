@@ -913,8 +913,7 @@ void idCollisionModelManagerLocal::LoadCollisionModel( StringEntry qpath )
     void* buffer;
     
     COM_StripExtension( qpath, cmpath );
-    sprintf( cmpath, "%s.cm", cmpath );
-    
+    Com_sprintf( cmpath, sizeof( cmpath ), "%s.cm", cmpath );
     
     S32 cmlen = FS_ReadFile( cmpath, &buffer );
     if( cmlen <= 0 || buffer == NULL )

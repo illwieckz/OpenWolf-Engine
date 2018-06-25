@@ -160,7 +160,7 @@ void GLDebugDrawer::drawContactPoint( const btVector3& pointOnB, const btVector3
         
         glRasterPos3f( from.x(),  from.y(),  from.z() );
         UTF8 buf[12];
-        sprintf( buf, " %d", lifeTime );
+        Com_sprintf( buf, sizeof( buf ), " %d", lifeTime );
     }
 }
 

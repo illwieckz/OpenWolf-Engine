@@ -3005,7 +3005,7 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
             {
                 S32 j;
                 
-                sprintf( fileName, "primarylg%d.tga", i );
+                Com_sprintf( fileName, sizeof( fileName ), "primarylg%d.tga", i );
                 
                 out = buffer + 18;
                 for( j = 0; j < w->lightGridBounds[0] * w->lightGridBounds[1]; j++ )

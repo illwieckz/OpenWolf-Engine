@@ -1,0 +1,20 @@
+// menu defs
+//
+{
+  loadMenu { "gui/main.menu" }
+  loadMenu { "gui/joinserver.menu" }
+  loadMenu { "gui/options.menu" }
+  loadMenu { "gui/createserver.menu" }
+  loadMenu { "gui/mod.menu" }
+  loadMenu { "gui/credit.menu" }
+  loadMenu { "gui/connect.menu" }
+  loadMenu { "gui/password.menu" }
+  loadMenu { "gui/quit.menu" }
+  loadMenu { "gui/addfilter.menu" }
+  loadMenu { "gui/error.menu" }
+  loadMenu { "gui/drop.menu" }
+  loadMenu { "gui/serverinfo.menu" }
+  loadMenu { "gui/findplayer.menu" }
+  loadMenu { "gui/quitcredit.menu" }
+  loadMenu { "gui/createfavorite.menu" }
+}

@@ -41,10 +41,10 @@ glstate_t glState;
 static void GfxInfo_f( void );
 static void GfxMemInfo_f( void );
 
-cvar_t*         r_glCoreProfile;
-cvar_t*         r_glMajorVersion;
-cvar_t*         r_glMinorVersion;
-cvar_t*         r_glDebugProfile;
+cvar_t* r_glCoreProfile;
+cvar_t* r_glMajorVersion;
+cvar_t* r_glMinorVersion;
+cvar_t* r_glDebugProfile;
 cvar_t*	r_flareSize;
 cvar_t*	r_flareFade;
 cvar_t*	r_flareCoeff;
@@ -230,6 +230,26 @@ cvar_t*	r_marksOnTriangleMeshes;
 
 cvar_t*	r_aviMotionJpegQuality;
 cvar_t*	r_screenshotJpegQuality;
+
+cvar_t*	r_lensflare;
+cvar_t*	r_volumelight;
+cvar_t*	r_anamorphic;
+cvar_t*	r_anamorphicDarkenPower;
+cvar_t*	r_darkexpand;
+cvar_t* r_truehdr;
+cvar_t* r_dof;
+cvar_t* r_esharpening;
+cvar_t* r_esharpening2;
+cvar_t* r_multipost;
+cvar_t* r_textureClean;
+cvar_t* r_textureCleanSigma;
+cvar_t* r_textureCleanBSigma;
+cvar_t* r_textureCleanMSize;
+cvar_t* r_trueAnaglyph;
+cvar_t* r_trueAnaglyphSeparation;
+cvar_t* r_trueAnaglyphRed;
+cvar_t* r_trueAnaglyphGreen;
+cvar_t* r_trueAnaglyphBlue;
 
 cvar_t*	r_maxpolys;
 S32		max_polys;
@@ -1258,7 +1278,7 @@ void R_Register( void )
     r_greyscale = Cvar_Get( "r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH );
     Cvar_CheckRange( r_greyscale, 0, 1, false );
     
-    r_hdr = Cvar_Get( "r_hdr", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_hdr = Cvar_Get( "r_hdr", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_floatLightmap = Cvar_Get( "r_floatLightmap", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_postProcess = Cvar_Get( "r_postProcess", "1", CVAR_ARCHIVE );
     
@@ -1276,7 +1296,7 @@ void R_Register( void )
     r_cameraExposure = Cvar_Get( "r_cameraExposure", "0", CVAR_CHEAT );
     
     r_depthPrepass = Cvar_Get( "r_depthPrepass", "1", CVAR_ARCHIVE );
-    r_ssao = Cvar_Get( "r_ssao", "1", CVAR_LATCH | CVAR_ARCHIVE );
+    r_ssao = Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_ARCHIVE );
     
     r_normalMapping = Cvar_Get( "r_normalMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_specularMapping = Cvar_Get( "r_specularMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1289,7 +1309,7 @@ void R_Register( void )
     r_pbr = Cvar_Get( "r_pbr", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseNormalX = Cvar_Get( "r_baseNormalX", "1.0", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseNormalY = Cvar_Get( "r_baseNormalY", "1.0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_baseParallax = Cvar_Get( "r_baseParallax", "0.05", CVAR_ARCHIVE | CVAR_LATCH );
+    r_baseParallax = Cvar_Get( "r_baseParallax", "0.001", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseSpecular = Cvar_Get( "r_baseSpecular", "0.04", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseGloss = Cvar_Get( "r_baseGloss", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
     r_glossType = Cvar_Get( "r_glossType", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1301,7 +1321,7 @@ void R_Register( void )
     r_imageUpsampleType = Cvar_Get( "r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_genNormalMaps = Cvar_Get( "r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
-    r_forceSun = Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
+    r_forceSun = Cvar_Get( "r_forceSun", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_forceSunLightScale = Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
     r_forceSunAmbientScale = Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
     r_drawSunRays = Cvar_Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1315,6 +1335,26 @@ void R_Register( void )
     r_shadowCascadeZFar = Cvar_Get( "r_shadowCascadeZFar", "1024", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowCascadeZBias = Cvar_Get( "r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_ignoreDstAlpha = Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    
+    r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
+    r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );
+    r_anamorphic = Cvar_Get( "r_anamorphic", "1", CVAR_ARCHIVE );
+    r_anamorphicDarkenPower = Cvar_Get( "r_anamorphicDarkenPower", "256.0", CVAR_ARCHIVE );
+    r_darkexpand = Cvar_Get( "r_darkexpand", "1", CVAR_ARCHIVE );
+    r_truehdr = Cvar_Get( "r_truehdr", "1", CVAR_ARCHIVE );
+    r_dof = Cvar_Get( "r_dof", "0", CVAR_ARCHIVE );
+    r_esharpening = Cvar_Get( "r_esharpening", "1", CVAR_ARCHIVE );
+    r_esharpening2 = Cvar_Get( "r_esharpening2", "1", CVAR_ARCHIVE );
+    r_multipost = Cvar_Get( "r_multipost", "0", CVAR_ARCHIVE );
+    r_textureClean = Cvar_Get( "r_textureClean", "0", CVAR_ARCHIVE );
+    r_textureCleanSigma = Cvar_Get( "r_textureCleanSigma", "1.2", CVAR_ARCHIVE );
+    r_textureCleanBSigma = Cvar_Get( "r_textureCleanBSigma", "0.1", CVAR_ARCHIVE );
+    r_textureCleanMSize = Cvar_Get( "r_textureCleanMSize", "6.0", CVAR_ARCHIVE );
+    r_trueAnaglyph = Cvar_Get( "r_trueAnaglyph", "0", CVAR_ARCHIVE );
+    r_trueAnaglyphSeparation = Cvar_Get( "r_trueAnaglyphSeparation", "8.0", CVAR_ARCHIVE );
+    r_trueAnaglyphRed = Cvar_Get( "r_trueAnaglyphRed", "0.0", CVAR_ARCHIVE );
+    r_trueAnaglyphGreen = Cvar_Get( "r_trueAnaglyphGreen", "0.0", CVAR_ARCHIVE );
+    r_trueAnaglyphBlue = Cvar_Get( "r_trueAnaglyphBlue", "0.0", CVAR_ARCHIVE );
     
     //
     // temporary latched variables that can only change over a restart

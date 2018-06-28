@@ -49,7 +49,7 @@
 //avoid dropped goal time
 #define AVOID_DROPPED_TIME		10
 //
-#define TRAVELTIME_SCALE		0.01
+#define TRAVELTIME_SCALE		0.01f
 //item flags
 #define IFL_NOTFREE				1		//not in free for all
 #define IFL_NOTTEAM				2		//not in team play
@@ -138,7 +138,7 @@ fielddef_t iteminfo_fields[] =
     {"respawntime", ITEMINFO_OFS( respawntime ), FT_FLOAT},
     {"mins", ITEMINFO_OFS( mins ), FT_FLOAT | FT_ARRAY, 3},
     {"maxs", ITEMINFO_OFS( maxs ), FT_FLOAT | FT_ARRAY, 3},
-    {NULL, 0, 0}
+    {0, 0, 0}
 };
 
 structdef_t iteminfo_struct =
@@ -1370,7 +1370,7 @@ S32 BotChooseLTGItem( S32 goalstate, vec3_t origin, S32* inventory, S32 travelfl
             {
                 //if this item won't respawn before we get there
                 avoidtime = BotAvoidGoalTime( goalstate, li->number );
-                if( avoidtime - t * 0.009 > 0 )
+                if( avoidtime - t * 0.009f > 0 )
                     continue;
                 //
                 weight /= ( F32 ) t * TRAVELTIME_SCALE;
@@ -1647,7 +1647,7 @@ S32 BotItemGoalInVisButNotVisible( S32 viewer, vec3_t eye, vec3_t viewangles, bo
     if( !( goal->flags & GFL_ITEM ) ) return false;
     //
     VectorAdd( goal->mins, goal->mins, middle );
-    VectorScale( middle, 0.5, middle );
+    VectorScale( middle, 0.5f, middle );
     VectorAdd( goal->origin, middle, middle );
     //
     trace = AAS_Trace( eye, NULL, NULL, middle, viewer, CONTENTS_SOLID );
@@ -1780,7 +1780,7 @@ S32 BotSetupGoalAI( void )
     UTF8* filename;
     
     //check if teamplay is on
-    g_gametype = LibVarValue( "g_gametype", "0" );
+    g_gametype = ( S32 )LibVarValue( "g_gametype", "0" );
     //item configuration file
     filename = LibVarString( "itemconfig", "items.c" );
     //load the item configuration

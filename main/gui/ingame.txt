@@ -1,0 +1,9 @@
+// menu defs
+//
+{
+  loadMenu { "gui/ingame.menu" }
+  loadMenu { "gui/ingame_game.menu" }
+  loadMenu { "gui/ingame_options.menu" }
+  loadMenu { "gui/ingame_leave.menu" }
+  loadMenu { "gui/ingame_help.menu" }
+}

@@ -1982,6 +1982,17 @@ static bool ParseShader( UTF8** text )
             SkipRestOfLine( text );
             continue;
         }
+        // q3map_surfacelight deprecated as of 16 Jul 01
+        else if( !Q_stricmp( token, "surfacelight" ) || !Q_stricmp( token, "q3map_surfacelight" ) )
+        {
+            SkipRestOfLine( text );
+            continue;
+        }
+        else if( !Q_stricmp( token, "lightColor" ) )
+        {
+            SkipRestOfLine( text );
+            continue;
+        }
         else if( !Q_stricmp( token, "deformVertexes" ) )
         {
             ParseDeform( text );

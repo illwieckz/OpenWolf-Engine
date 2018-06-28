@@ -212,7 +212,7 @@ dlStatus_t DL_DownloadLoop()
     
     dl_request = NULL;
     
-    Cvar_Set( "ui_dl_running", "0" );
+    Cvar_Set( "gui_dl_running", "0" );
     
     if( err )
     {

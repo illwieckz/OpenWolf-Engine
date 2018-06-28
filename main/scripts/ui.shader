@@ -12,7 +12,7 @@ ui/assets/neutral/squad_v
 {
   nopicmip
   {
-    map ui/assets/neutral/squad_v.tga
+    map gui/assets/neutral/squad_v.tga
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbgen vertex
   }
@@ -21,7 +21,7 @@ ui/assets/neutral/squad_v
 ui/assets/cornerOut
 {
 	{
-		map ui/assets/corner.tga
+		map gui/assets/corner.tga
 		blendfunc	blend
 		rgbgen vertex
 	}
@@ -30,7 +30,7 @@ ui/assets/cornerOut
 ui/assets/cornerIn
 {
 	{
-		map ui/assets/cornerinv.tga
+		map gui/assets/cornerinv.tga
 		blendfunc	blend
 		rgbgen vertex
 	}

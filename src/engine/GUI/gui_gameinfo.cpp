@@ -348,21 +348,21 @@ void UI_ServerInfo( void )
     
     if( trap_GetConfigString( CS_SERVERINFO, info, sizeof( info ) ) )
     {
-        trap_Cvar_Set( "ui_serverinfo_mapname",
+        trap_Cvar_Set( "gui_serverinfo_mapname",
                        Info_ValueForKey( info, "mapname" ) );
-        trap_Cvar_Set( "ui_serverinfo_timelimit",
+        trap_Cvar_Set( "gui_serverinfo_timelimit",
                        Info_ValueForKey( info, "timelimit" ) );
-        trap_Cvar_Set( "ui_serverinfo_sd",
+        trap_Cvar_Set( "gui_serverinfo_sd",
                        Info_ValueForKey( info, "g_suddenDeathTime" ) );
-        trap_Cvar_Set( "ui_serverinfo_hostname",
+        trap_Cvar_Set( "gui_serverinfo_hostname",
                        Info_ValueForKey( info, "sv_hostname" ) );
-        trap_Cvar_Set( "ui_serverinfo_maxclients",
+        trap_Cvar_Set( "gui_serverinfo_maxclients",
                        Info_ValueForKey( info, "sv_maxclients" ) );
-        trap_Cvar_Set( "ui_serverinfo_version",
+        trap_Cvar_Set( "gui_serverinfo_version",
                        Info_ValueForKey( info, "version" ) );
-        trap_Cvar_Set( "ui_serverinfo_unlagged",
+        trap_Cvar_Set( "gui_serverinfo_unlagged",
                        Info_ValueForKey( info, "g_unlagged" ) );
-        trap_Cvar_Set( "ui_serverinfo_ff",
+        trap_Cvar_Set( "gui_serverinfo_ff",
                        Info_ValueForKey( info, "ff" ) );
     }
 }

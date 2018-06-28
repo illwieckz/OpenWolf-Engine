@@ -1115,6 +1115,12 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             backEnd.pc.c_genericDraws++;
         }
         
+        if( pStage->isWater )
+        {
+            sp = &tr.waterShader;
+            pStage->glslShaderGroup = &tr.waterShader;
+        }
+        
         GLSL_BindProgram( sp );
         
         GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
@@ -1532,6 +1538,18 @@ void RB_StageIteratorGeneric( void )
     {
         glEnable( GL_POLYGON_OFFSET_FILL );
     }
+    
+    //
+    // Set up any special shaders needed for this surface/contents type...
+    //
+    if( ( tess.shader->contentFlags & CONTENTS_WATER ) )
+    {
+        if( input->xstages[0]->isWater != true ) // In case it is already set, no need looping more then once on the same shader...
+            for( int stage = 0; stage < MAX_SHADER_STAGES; stage++ )
+                if( input->xstages[stage] )
+                    input->xstages[stage]->isWater = true;
+    }
+    
     
     //
     // render depth if in depthfill mode

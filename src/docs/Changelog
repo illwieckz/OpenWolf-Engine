@@ -1,3 +1,12 @@
+2018-06-27 Dusan Jocic <dusanjocic@msn.com>
+	* Updated renderer
+	* Updated GLSL shaders
+	* Added "Vega-Beta1" map
+		NOTE: there is still much work left to do there
+	* Updated collision files for the "excs" and for the "utcshd" maps
+	* Updated bullet collision files for the "excs" and for the "utcshd" maps
+	* Changed "ui" into "gui"
+
 2018-06-25 Dusan Jocic <dusanjocic@msn.com>
 	* Cleaning
 	* Removed much of old libraries

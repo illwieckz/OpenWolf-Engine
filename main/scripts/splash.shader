@@ -41,7 +41,7 @@ models/splash/trem_black
 //	}
 
 	{
-		map ui/assets/title.tga
+		map gui/assets/title.tga
 		blendfunc blend
 		//alphaFunc GE128
 		rgbGen identity

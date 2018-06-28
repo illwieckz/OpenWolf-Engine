@@ -1172,7 +1172,6 @@ const void*	RB_DrawSurfs( const void* data )
                 
                 RB_InstantQuad2( quadVerts, texCoords ); //, color, shaderProgram, invTexRes);
                 
-                
                 FBO_Bind( tr.screenSsaoFbo );
                 
                 glViewport( 0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height );
@@ -1590,6 +1589,75 @@ const void* RB_PostProcess( const void* data )
     
     if( srcFbo )
     {
+        if( r_darkexpand->integer )
+        {
+            for( S32 pass = 0; pass < 2; pass++ )
+            {
+                RB_DarkExpand( srcFbo, srcBox, tr.genericFbo, dstBox );
+                FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+            }
+        }
+        
+        if( r_textureClean->integer )
+        {
+            RB_TextureClean( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_esharpening->integer )
+        {
+            RB_ESharpening( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_esharpening2->integer )
+        {
+            RB_ESharpening2( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_multipost->integer )
+        {
+            RB_MultiPost( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_truehdr->integer )
+        {
+            RB_HDR( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_anamorphic->integer )
+        {
+            RB_Anamorphic( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_lensflare->integer )
+        {
+            RB_LensFlare( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_volumelight->integer )
+        {
+            RB_VolumetricDLight( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_dof->integer )
+        {
+            RB_DOF( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_trueAnaglyph->integer )
+        {
+            RB_Anaglyph( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
         if( r_hdr->integer && ( r_toneMap->integer || r_forceToneMap->integer ) )
         {
             autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
@@ -1617,8 +1685,6 @@ const void* RB_PostProcess( const void* data )
         
     if( 1 )
         RB_BokehBlur( NULL, srcBox, NULL, dstBox, backEnd.refdef.blurFactor );
-    else
-        RB_GaussianBlur( backEnd.refdef.blurFactor );
         
 #if 0
     if( 0 )

@@ -257,7 +257,7 @@ static cvarTable_t cvarTable[ ] =
     { &cg_disableCommandDialogs, "cg_disableCommandDialogs", "0", CVAR_ARCHIVE },
     { &cg_disableScannerPlane, "cg_disableScannerPlane", "0", CVAR_ARCHIVE },
     { &cg_tutorial, "cg_tutorial", "1", CVAR_ARCHIVE },
-    { &cg_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
+    { &cg_hudFiles, "cg_hudFiles", "gui/hud.txt", CVAR_ARCHIVE},
     { &cg_hudFilesEnable, "cg_hudFilesEnable", "0", CVAR_ARCHIVE},
     { NULL, "cg_alienConfig", "", CVAR_ARCHIVE },
     { NULL, "cg_humanConfig", "", CVAR_ARCHIVE },
@@ -270,13 +270,13 @@ static cvarTable_t cvarTable[ ] =
     
     { &cg_debugVoices, "cg_debugVoices", "0", 0 },
     
-    { &ui_currentClass, "ui_currentClass", "0", 0 },
-    { &ui_carriage, "ui_carriage", "", 0 },
-    { &ui_stage, "ui_stage", "0", 0 },
-    { &ui_dialog, "ui_dialog", "Text not set", 0 },
-    { &ui_voteActive, "ui_voteActive", "0", 0 },
-    { &ui_humanTeamVoteActive, "ui_humanTeamVoteActive", "0", 0 },
-    { &ui_alienTeamVoteActive, "ui_alienTeamVoteActive", "0", 0 },
+    { &ui_currentClass, "gui_currentClass", "0", 0 },
+    { &ui_carriage, "gui_carriage", "", 0 },
+    { &ui_stage, "gui_stage", "0", 0 },
+    { &ui_dialog, "gui_dialog", "Text not set", 0 },
+    { &ui_voteActive, "gui_voteActive", "0", 0 },
+    { &ui_humanTeamVoteActive, "gui_humanTeamVoteActive", "0", 0 },
+    { &ui_alienTeamVoteActive, "gui_alienTeamVoteActive", "0", 0 },
     
     { &cg_debugRandom, "cg_debugRandom", "0", 0 },
     
@@ -364,18 +364,18 @@ void idCGameLocal::SetUIVars( void )
             upgrades |= ( 1 << i );
     }
     
-    trap_Cvar_Set( "ui_carriage", va( "%d %d %d", cg.snap->ps.stats[ STAT_WEAPON ], upgrades, cg.snap->ps.persistant[ PERS_CREDIT ] ) );
+    trap_Cvar_Set( "gui_carriage", va( "%d %d %d", cg.snap->ps.stats[ STAT_WEAPON ], upgrades, cg.snap->ps.persistant[ PERS_CREDIT ] ) );
     
     switch( cg.snap->ps.stats[ STAT_TEAM ] )
     {
         case TEAM_NONE:
-            trap_Cvar_Set( "ui_stage", "0" );
+            trap_Cvar_Set( "gui_stage", "0" );
             break;
         case TEAM_ALIENS:
-            trap_Cvar_Set( "ui_stage", va( "%d", cgs.alienStage ) );
+            trap_Cvar_Set( "gui_stage", va( "%d", cgs.alienStage ) );
             break;
         case TEAM_HUMANS:
-            trap_Cvar_Set( "ui_stage", va( "%d", cgs.humanStage ) );
+            trap_Cvar_Set( "gui_stage", va( "%d", cgs.humanStage ) );
             break;
     }
 }
@@ -739,56 +739,56 @@ void idCGameLocal::RegisterGraphics( void )
     };
     static UTF8* buildWeaponTimerPieShaders[ 8 ] =
     {
-        "ui/assets/neutral/1_5pie",
-        "ui/assets/neutral/3_0pie",
-        "ui/assets/neutral/4_5pie",
-        "ui/assets/neutral/6_0pie",
-        "ui/assets/neutral/7_5pie",
-        "ui/assets/neutral/9_0pie",
-        "ui/assets/neutral/10_5pie",
-        "ui/assets/neutral/12_0pie",
+        "gui/assets/neutral/1_5pie",
+        "gui/assets/neutral/3_0pie",
+        "gui/assets/neutral/4_5pie",
+        "gui/assets/neutral/6_0pie",
+        "gui/assets/neutral/7_5pie",
+        "gui/assets/neutral/9_0pie",
+        "gui/assets/neutral/10_5pie",
+        "gui/assets/neutral/12_0pie",
     };
     static UTF8* alienAttackFeedbackShaders[ 11 ] =
     {
-        "ui/assets/alien/feedback/scratch_00",
-        "ui/assets/alien/feedback/scratch_01",
-        "ui/assets/alien/feedback/scratch_02",
-        "ui/assets/alien/feedback/scratch_03",
-        "ui/assets/alien/feedback/scratch_04",
-        "ui/assets/alien/feedback/scratch_05",
-        "ui/assets/alien/feedback/scratch_06",
-        "ui/assets/alien/feedback/scratch_07",
-        "ui/assets/alien/feedback/scratch_08",
-        "ui/assets/alien/feedback/scratch_09",
-        "ui/assets/alien/feedback/scratch_10"
+        "gui/assets/alien/feedback/scratch_00",
+        "gui/assets/alien/feedback/scratch_01",
+        "gui/assets/alien/feedback/scratch_02",
+        "gui/assets/alien/feedback/scratch_03",
+        "gui/assets/alien/feedback/scratch_04",
+        "gui/assets/alien/feedback/scratch_05",
+        "gui/assets/alien/feedback/scratch_06",
+        "gui/assets/alien/feedback/scratch_07",
+        "gui/assets/alien/feedback/scratch_08",
+        "gui/assets/alien/feedback/scratch_09",
+        "gui/assets/alien/feedback/scratch_10"
     };
     static UTF8* alienAttackFeedbackShadersFlipped[ 11 ] =
     {
-        "ui/assets/alien/feedback/scratchr_00",
-        "ui/assets/alien/feedback/scratchr_01",
-        "ui/assets/alien/feedback/scratchr_02",
-        "ui/assets/alien/feedback/scratchr_03",
-        "ui/assets/alien/feedback/scratchr_04",
-        "ui/assets/alien/feedback/scratchr_05",
-        "ui/assets/alien/feedback/scratchr_06",
-        "ui/assets/alien/feedback/scratchr_07",
-        "ui/assets/alien/feedback/scratchr_08",
-        "ui/assets/alien/feedback/scratchr_09",
-        "ui/assets/alien/feedback/scratchr_10"
+        "gui/assets/alien/feedback/scratchr_00",
+        "gui/assets/alien/feedback/scratchr_01",
+        "gui/assets/alien/feedback/scratchr_02",
+        "gui/assets/alien/feedback/scratchr_03",
+        "gui/assets/alien/feedback/scratchr_04",
+        "gui/assets/alien/feedback/scratchr_05",
+        "gui/assets/alien/feedback/scratchr_06",
+        "gui/assets/alien/feedback/scratchr_07",
+        "gui/assets/alien/feedback/scratchr_08",
+        "gui/assets/alien/feedback/scratchr_09",
+        "gui/assets/alien/feedback/scratchr_10"
     };
     static UTF8* alienRangedAttackFeedbackShaders[ 11 ] =
     {
-        "ui/assets/alien/feedback/rangefeedback_00",
-        "ui/assets/alien/feedback/rangefeedback_01",
-        "ui/assets/alien/feedback/rangefeedback_02",
-        "ui/assets/alien/feedback/rangefeedback_03",
-        "ui/assets/alien/feedback/rangefeedback_04",
-        "ui/assets/alien/feedback/rangefeedback_05",
-        "ui/assets/alien/feedback/rangefeedback_06",
-        "ui/assets/alien/feedback/rangefeedback_07",
-        "ui/assets/alien/feedback/rangefeedback_08",
-        "ui/assets/alien/feedback/rangefeedback_09",
-        "ui/assets/alien/feedback/rangefeedback_10"
+        "gui/assets/alien/feedback/rangefeedback_00",
+        "gui/assets/alien/feedback/rangefeedback_01",
+        "gui/assets/alien/feedback/rangefeedback_02",
+        "gui/assets/alien/feedback/rangefeedback_03",
+        "gui/assets/alien/feedback/rangefeedback_04",
+        "gui/assets/alien/feedback/rangefeedback_05",
+        "gui/assets/alien/feedback/rangefeedback_06",
+        "gui/assets/alien/feedback/rangefeedback_07",
+        "gui/assets/alien/feedback/rangefeedback_08",
+        "gui/assets/alien/feedback/rangefeedback_09",
+        "gui/assets/alien/feedback/rangefeedback_10"
     };
     
     // clear any references to old media
@@ -829,15 +829,15 @@ void idCGameLocal::RegisterGraphics( void )
         cgs.media.alienRangedAttackFeedbackShaders[i] = trap_R_RegisterShader( alienRangedAttackFeedbackShaders[i] );
         
     // player health cross shaders
-    cgs.media.healthCross               = trap_R_RegisterShader( "ui/assets/neutral/cross.tga" );
-    cgs.media.healthCross2X             = trap_R_RegisterShader( "ui/assets/neutral/cross2.tga" );
-    cgs.media.healthCross3X             = trap_R_RegisterShader( "ui/assets/neutral/cross3.tga" );
-    cgs.media.healthCrossMedkit         = trap_R_RegisterShader( "ui/assets/neutral/cross_medkit.tga" );
-    cgs.media.healthCrossPoisoned       = trap_R_RegisterShader( "ui/assets/neutral/cross_poison.tga" );
+    cgs.media.healthCross               = trap_R_RegisterShader( "gui/assets/neutral/cross.tga" );
+    cgs.media.healthCross2X             = trap_R_RegisterShader( "gui/assets/neutral/cross2.tga" );
+    cgs.media.healthCross3X             = trap_R_RegisterShader( "gui/assets/neutral/cross3.tga" );
+    cgs.media.healthCrossMedkit         = trap_R_RegisterShader( "gui/assets/neutral/cross_medkit.tga" );
+    cgs.media.healthCrossPoisoned       = trap_R_RegisterShader( "gui/assets/neutral/cross_poison.tga" );
     
     // squad markers
-    cgs.media.squadMarkerH              = trap_R_RegisterShader( "ui/assets/neutral/squad_h" );
-    cgs.media.squadMarkerV              = trap_R_RegisterShader( "ui/assets/neutral/squad_v" );
+    cgs.media.squadMarkerH              = trap_R_RegisterShader( "gui/assets/neutral/squad_h" );
+    cgs.media.squadMarkerV              = trap_R_RegisterShader( "gui/assets/neutral/squad_v" );
     
     cgs.media.upgradeClassIconShader    = trap_R_RegisterShader( "icons/icona_upgrade.tga" );
     
@@ -874,8 +874,8 @@ void idCGameLocal::RegisterGraphics( void )
     cgs.media.alienBleedPS              = RegisterParticleSystem( "alienBleedPS" );
     cgs.media.humanBleedPS              = RegisterParticleSystem( "humanBleedPS" );
     
-    BuildableStatusParse( "ui/assets/human/buildstat.cfg", &cgs.humanBuildStat );
-    BuildableStatusParse( "ui/assets/alien/buildstat.cfg", &cgs.alienBuildStat );
+    BuildableStatusParse( "gui/assets/human/buildstat.cfg", &cgs.humanBuildStat );
+    BuildableStatusParse( "gui/assets/alien/buildstat.cfg", &cgs.alienBuildStat );
     
     // register the inline models
     cgs.numInlineModels = trap_CM_NumInlineModels( );
@@ -1279,7 +1279,7 @@ void idCGameLocal::ParseMenu( StringEntry menuFile )
     handle = trap_PC_LoadSource( menuFile );
     
     if( !handle )
-        handle = trap_PC_LoadSource( "ui/testhud.menu" );
+        handle = trap_PC_LoadSource( "gui/testhud.menu" );
         
     if( !handle )
         return;
@@ -1360,7 +1360,7 @@ void idCGameLocal::LoadMenus( StringEntry menuFile )
     if( !f )
     {
         trap_Error( va( S_COLOR_YELLOW "menu file not found: %s, using default\n", menuFile ) );
-        len = trap_FS_FOpenFile( "ui/hud.txt", &f, FS_READ );
+        len = trap_FS_FOpenFile( "gui/hud.txt", &f, FS_READ );
         
         if( !f )
             trap_Error( va( S_COLOR_RED "default menu file not found: ui/hud.txt, unable to continue!\n" ) );
@@ -1403,7 +1403,7 @@ void idCGameLocal::LoadMenus( StringEntry menuFile )
         }
     }
     
-    //Com_Printf( "UI menu load time = %d milli seconds\n", trap_Milliseconds( ) - start );
+    //Com_Printf( "gui menu load time = %d milli seconds\n", trap_Milliseconds( ) - start );
 }
 
 bool idCGameLocal::OwnerDrawHandleKey( S32 ownerDraw, S32 flags, F32* special, S32 key )
@@ -1760,7 +1760,7 @@ void idCGameLocal::LoadHudMenu( void )
 //  hudSet = buff;
 
 //  if( !cg_hudFilesEnable.integer || hudSet[ 0 ] == '\0' )
-    hudSet = "ui/hud.txt";
+    hudSet = "gui/hud.txt";
     
     LoadMenus( hudSet );
     cgDC.hudloading = false;

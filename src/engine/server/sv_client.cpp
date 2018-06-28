@@ -1294,10 +1294,6 @@ static void SV_VerifyPaks_f( client_t* cl )
         nChkSum1 = nChkSum2 = 0;
         
         bGood = ( bool )( FS_FileIsInPAK( Sys_GetDLLName( "cgame" ), &nChkSum1 ) == 1 );
-        if( bGood )
-        {
-            bGood = ( bool )( FS_FileIsInPAK( Sys_GetDLLName( "ui" ), &nChkSum2 ) == 1 );
-        }
         
         nClientPaks = Cmd_Argc();
         // start at arg 2 ( skip serverId cl_paks )

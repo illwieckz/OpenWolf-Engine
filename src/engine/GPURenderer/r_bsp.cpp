@@ -2269,7 +2269,6 @@ static	void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
 /*
 ================
 R_LoadLightGrid
-
 ================
 */
 void R_LoadLightGrid( lump_t* l )

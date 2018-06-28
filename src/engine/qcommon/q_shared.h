@@ -458,21 +458,6 @@ extern vec4_t colorMdGrey;
 extern vec4_t colorDkGrey;
 extern vec4_t colorMdRed;
 extern vec4_t colorMdGreen;
-extern vec4_t colorDkGreen;
-extern vec4_t colorMdCyan;
-extern vec4_t colorMdYellow;
-extern vec4_t colorMdOrange;
-extern vec4_t colorMdBlue;
-
-extern vec4_t clrBrown;
-extern vec4_t clrBrownDk;
-extern vec4_t clrBrownLine;
-extern vec4_t clrBrownText;
-extern vec4_t clrBrownTextDk;
-extern vec4_t clrBrownTextDk2;
-extern vec4_t clrBrownTextLt;
-extern vec4_t clrBrownTextLt2;
-extern vec4_t clrBrownLineFull;
 
 #define GAME_INIT_FRAMES    6
 #define FRAMETIME           100                 // msec

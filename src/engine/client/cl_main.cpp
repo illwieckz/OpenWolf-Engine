@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////////////
 // Copyright(C) 1999 - 2010 id Software LLC, a ZeniMax Media company.
 // Copyright(C) 2011 - 2018 Dusan Jocic <dusanjocic@msn.com>
 //
@@ -1813,7 +1813,7 @@ void CL_Connect_f( void )
     
     // starting to load a map so we get out of full screen ui mode
     Cvar_Set( "r_uiFullScreen", "0" );
-    Cvar_Set( "ui_connecting", "1" );
+    Cvar_Set( "gui_connecting", "1" );
     
     // fire a message off to the motd server
     CL_RequestMotd();
@@ -1840,7 +1840,7 @@ void CL_Connect_f( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "ui_connecting", "0" );
+        Cvar_Set( "gui_connecting", "0" );
         return;
     }
     if( clc.serverAddress.port == 0 )
@@ -1892,9 +1892,9 @@ void CL_Connect_f( void )
     Cvar_Set( "mp_team", "0" );
     Cvar_Set( "mp_currentTeam", "0" );
     
-    Cvar_Set( "ui_limboOptions", "0" );
-    Cvar_Set( "ui_limboPrevOptions", "0" );
-    Cvar_Set( "ui_limboObjective", "0" );
+    Cvar_Set( "gui_limboOptions", "0" );
+    Cvar_Set( "gui_limboPrevOptions", "0" );
+    Cvar_Set( "gui_limboObjective", "0" );
     // -NERVE - SMF
     
 }
@@ -2690,8 +2690,8 @@ void CL_DisconnectPacket( netadr_t from )
     else
     {
         CL_Disconnect( false );
-        Cvar_Set( "ui_connecting", "1" );
-        Cvar_Set( "ui_dl_running", "1" );
+        Cvar_Set( "gui_connecting", "1" );
+        Cvar_Set( "gui_dl_running", "1" );
     }
 }
 
@@ -3921,7 +3921,7 @@ void CL_GetAutoUpdate( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "ui_connecting", "0" );
+        Cvar_Set( "gui_connecting", "0" );
         return;
     }
     
@@ -4195,9 +4195,9 @@ void CL_Init( void )
     // -2 - login in progress
     // 0 - invalid login
     // 1 - logged in
-    Cvar_Get( "ui_logged_in", "-1", CVAR_ROM );
+    Cvar_Get( "gui_logged_in", "-1", CVAR_ROM );
     //force ui_logged in to -1 so we can't reset it on the command line
-    Cvar_Set( "ui_logged_in", "-1" );
+    Cvar_Set( "gui_logged_in", "-1" );
 #endif
     
     m_pitch = Cvar_Get( "m_pitch", "0.022", CVAR_ARCHIVE );
@@ -4331,7 +4331,7 @@ void CL_Init( void )
     Cmd_AddCommand( "snd_reload", CL_Snd_Reload_f );
     Cmd_AddCommand( "snd_restart", CL_Snd_Restart_f );
     Cmd_AddCommand( "vid_restart", CL_Vid_Restart_f );
-    Cmd_AddCommand( "ui_restart", CL_UI_Restart_f );	// NERVE - SMF
+    Cmd_AddCommand( "gui_restart", CL_UI_Restart_f );	// NERVE - SMF
     Cmd_AddCommand( "disconnect", CL_Disconnect_f );
     Cmd_AddCommand( "record", CL_Record_f );
     Cmd_AddCommand( "demo", CL_PlayDemo_f );

@@ -47,6 +47,23 @@ const GPUProgramDesc fallback_tonemapProgram;
 const GPUProgramDesc fallback_dglow_downsampleProgram;
 const GPUProgramDesc fallback_dglow_upsampleProgram;
 const GPUProgramDesc fallback_surface_spritesProgram;
+const GPUProgramDesc fallback_truehdr;
+const GPUProgramDesc fallback_volumelight;
+const GPUProgramDesc fallback_anaglyph;
+const GPUProgramDesc fallback_lightVolume_omni;
+const GPUProgramDesc fallback_uniquesky_vp;
+const GPUProgramDesc fallback_uniquewater_vp;
+const GPUProgramDesc fallback_ssao2;
+const GPUProgramDesc fallback_esharpening;
+const GPUProgramDesc fallback_esharpening2;
+const GPUProgramDesc fallback_textureclean;
+const GPUProgramDesc fallback_depthOfField;
+const GPUProgramDesc fallback_anamorphic_darken;
+const GPUProgramDesc fallback_anamorphic_blur;
+const GPUProgramDesc fallback_anamorphic_combine;
+const GPUProgramDesc fallback_darkexpand;
+const GPUProgramDesc fallback_lensflare;
+const GPUProgramDesc fallback_multipost;
 
 struct uniformInfo_t
 {
@@ -103,6 +120,7 @@ static uniformInfo_t uniformsInfo[] =
     { "u_LightUp",       GLSL_VEC3 },
     { "u_LightRight",    GLSL_VEC3 },
     { "u_LightOrigin",   GLSL_VEC4 },
+    { "u_LightColor",   GLSL_VEC4, },
     { "u_ModelLightDir", GLSL_VEC3 },
     { "u_LightRadius",   GLSL_FLOAT },
     { "u_AmbientLight",  GLSL_VEC3 },
@@ -142,6 +160,17 @@ static uniformInfo_t uniformsInfo[] =
     { "u_CubeMapInfo", GLSL_VEC4 },
     
     { "u_AlphaTest", GLSL_INT },
+    
+    { "u_Dimensions",           GLSL_VEC2 },
+    { "u_HeightMap",			GLSL_INT },
+    { "u_Local0",				GLSL_VEC4 },
+    { "u_Local1",				GLSL_VEC4 },
+    { "u_Local2",				GLSL_VEC4 },
+    { "u_Local3",				GLSL_VEC4 },
+    { "u_Texture0",				GLSL_INT },
+    { "u_Texture1",				GLSL_INT },
+    { "u_Texture2",				GLSL_INT },
+    { "u_Texture3",				GLSL_INT },
 };
 
 typedef enum
@@ -232,6 +261,7 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
     
     dest[0] = '\0';
     
+#if 1
     // HACK: abuse the GLSL preprocessor to turn GLSL 1.20 shaders into 1.30 ones
     if( glRefConfig.glslMajorVersion > 1 || ( glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 30 ) )
     {
@@ -258,6 +288,19 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
         Q_strcat( dest, size, "#version 120\n" );
         Q_strcat( dest, size, "#define shadow2D(a,b) shadow2D(a,b).r \n" );
     }
+#else
+    Q_strcat( dest, size, "#version 150 core\n" );
+    
+    if( shaderType == GL_VERTEX_SHADER )
+    {
+        Q_strcat( dest, size, "#define attribute in\n" );
+        Q_strcat( dest, size, "#define varying out\n" );
+    }
+    else
+    {
+        Q_strcat( dest, size, "#define varying in\n" );
+    }
+#endif
     
     // HACK: add some macros to avoid extra uniforms and save speed and code maintenance
     //Q_strcat(dest, size,
@@ -1399,6 +1442,465 @@ void idRenderSystemLocal::InitGPUShaders( void )
     }
     allocator.Reset();
     
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "darkexpand", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.darkexpandShader, "darkexpand", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load darkexpand shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.darkexpandShader );
+    GLSL_SetUniformInt( &tr.darkexpandShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.darkexpandShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.darkexpandShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.darkexpandShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.darkexpandShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "gaussian_blur", allocator, fallback_pshadowProgram );
+    attribs = 0;
+    extradefines[0] = '\0';
+    Q_strcat( extradefines, sizeof( extradefines ), "#define BLUR_X" );
+    
+    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[0], "gaussian_blur", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load gaussian_blur (X-direction) shader!" );
+    }
+    
+    attribs = 0;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[1], "gaussian_blur", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load gaussian_blur (Y-direction) shader!" );
+    }
+    
+    for( i = 0; i < 2; i++ )
+    {
+        GLSL_InitUniforms( &tr.gaussianBlurShader[i] );
+        GLSL_FinishGPUShader( &tr.gaussianBlurShader[i] );
+        
+        numEtcShaders++;
+    }
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "multipost", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.multipostShader, "multipost", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load darkexpand shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.multipostShader );
+    GLSL_SetUniformInt( &tr.multipostShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.multipostShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "volumelight", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.volumelightShader, "volumelight", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load volumelight shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.volumelightShader );
+    GLSL_SetUniformInt( &tr.volumelightShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.volumelightShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "lensflare", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.lensflareShader, "lensflare", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load lensflare shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.lensflareShader );
+    GLSL_SetUniformInt( &tr.lensflareShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.lensflareShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "anamorphic_darken", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.anamorphicDarkenShader, "anamorphic_darken", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load anamorphic_darken shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.anamorphicDarkenShader );
+    GLSL_SetUniformInt( &tr.anamorphicDarkenShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.anamorphicDarkenShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "anamorphic_blur", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.anamorphicBlurShader, "anamorphic_blur", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load anamorphic_blur shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.anamorphicBlurShader );
+    GLSL_SetUniformInt( &tr.anamorphicBlurShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.anamorphicBlurShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "anamorphic_combine", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.anamorphicCombineShader, "anamorphic_combine", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load anamorphic_combine shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.anamorphicCombineShader );
+    GLSL_SetUniformInt( &tr.anamorphicCombineShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_SetUniformInt( &tr.anamorphicCombineShader, UNIFORM_NORMALMAP, TB_NORMALMAP );
+    GLSL_FinishGPUShader( &tr.anamorphicCombineShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "truehdr", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.hdrShader, "truehdr", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load hdr shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.hdrShader );
+    GLSL_SetUniformInt( &tr.hdrShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.hdrShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.hdrShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.hdrShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.hdrShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "depthOfField", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.dofShader, "depthOfField", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load depthOfField shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.dofShader );
+    GLSL_SetUniformInt( &tr.dofShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.dofShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.dofShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.dofShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.dofShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "esharpening", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.esharpeningShader, "esharpening", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load esharpening shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.esharpeningShader );
+    GLSL_SetUniformInt( &tr.esharpeningShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.esharpeningShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.esharpeningShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.esharpeningShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.esharpeningShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "esharpening2", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.esharpening2Shader, "esharpening2", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load esharpening2 shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.esharpening2Shader );
+    GLSL_SetUniformInt( &tr.esharpening2Shader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.esharpening2Shader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.esharpening2Shader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.esharpening2Shader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.esharpening2Shader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "textureclean", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.texturecleanShader, "textureclean", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load textureclean shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.texturecleanShader );
+    GLSL_SetUniformInt( &tr.texturecleanShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.texturecleanShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.texturecleanShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.texturecleanShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.texturecleanShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "anaglyph", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.anaglyphShader, "anaglyph", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load anaglyph shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.anaglyphShader );
+    GLSL_SetUniformInt( &tr.anaglyphShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.anaglyphShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.anaglyphShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.anaglyphShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    {
+        vec4_t local0;
+        VectorSet4( local0, r_trueAnaglyphSeparation->value, r_trueAnaglyphRed->value, r_trueAnaglyphGreen->value, r_trueAnaglyphBlue->value );
+        GLSL_SetUniformVec4( &tr.anaglyphShader, UNIFORM_LOCAL0, local0 );
+    }
+    
+    GLSL_FinishGPUShader( &tr.anaglyphShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "uniquewater", allocator, fallback_pshadowProgram );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD | ATTR_NORMAL | ATTR_COLOR;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.waterShader, "uniquewater", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load water shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.waterShader );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_LIGHTMAP, TB_LIGHTMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_NORMALMAP, TB_NORMALMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_DELUXEMAP, TB_DELUXEMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_SPECULARMAP, TB_SPECULARMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_SHADOWMAP, TB_SHADOWMAP );
+    GLSL_SetUniformInt( &tr.waterShader, UNIFORM_CUBEMAP, TB_CUBEMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.waterShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.waterShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.waterShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
 #if 0
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
@@ -1463,6 +1965,21 @@ void idRenderSystemLocal::ShutdownGPUShaders( void )
     
     for( i = 0; i < 4; i++ )
         GLSL_DeleteGPUShader( &tr.depthBlurShader[i] );
+        
+    GLSL_DeleteGPUShader( &tr.darkexpandShader );
+    GLSL_DeleteGPUShader( &tr.multipostShader );
+    GLSL_DeleteGPUShader( &tr.volumelightShader );
+    GLSL_DeleteGPUShader( &tr.lensflareShader );
+    GLSL_DeleteGPUShader( &tr.anamorphicDarkenShader );
+    GLSL_DeleteGPUShader( &tr.anamorphicBlurShader );
+    GLSL_DeleteGPUShader( &tr.anamorphicCombineShader );
+    GLSL_DeleteGPUShader( &tr.hdrShader );
+    GLSL_DeleteGPUShader( &tr.dofShader );
+    GLSL_DeleteGPUShader( &tr.esharpeningShader );
+    GLSL_DeleteGPUShader( &tr.esharpening2Shader );
+    GLSL_DeleteGPUShader( &tr.texturecleanShader );
+    GLSL_DeleteGPUShader( &tr.anaglyphShader );
+    GLSL_DeleteGPUShader( &tr.waterShader );
 }
 
 

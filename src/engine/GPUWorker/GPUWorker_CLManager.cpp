@@ -47,8 +47,6 @@ owGPUWorkerCLManager::InitDevice
 */
 void owGPUWorkerCLManager::InitDevice( void )
 {
-    image_t* image;
-    
     CL_RefPrintf( PRINT_ALL, "----------- owGPUWorkerCLManager::InitDevice -----------\n" );
     
     clWorkerBackEnd.InitDevice();

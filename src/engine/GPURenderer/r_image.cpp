@@ -264,25 +264,25 @@ void R_ImageList_f( void )
                 // 2 bytes per pixel?
                 estSize *= 2;
                 break;
-            case GL_SRGB_EXT:
-            case GL_SRGB8_EXT:
+            case GL_SRGB:
+            case GL_SRGB8:
                 format = "sRGB   ";
                 // 3 bytes per pixel?
                 estSize *= 3;
                 break;
-            case GL_SRGB_ALPHA_EXT:
-            case GL_SRGB8_ALPHA8_EXT:
+            case GL_SRGB_ALPHA:
+            case GL_SRGB8_ALPHA8:
                 format = "sRGBA  ";
                 // 4 bytes per pixel?
                 estSize *= 4;
                 break;
-            case GL_SLUMINANCE_EXT:
-            case GL_SLUMINANCE8_EXT:
+            case GL_SLUMINANCE:
+            case GL_SLUMINANCE8:
                 format = "sL     ";
                 // 1 byte per pixel?
                 break;
-            case GL_SLUMINANCE_ALPHA_EXT:
-            case GL_SLUMINANCE8_ALPHA8_EXT:
+            case GL_SLUMINANCE_ALPHA:
+            case GL_SLUMINANCE8_ALPHA8:
                 format = "sLA    ";
                 // 2 byte per pixel?
                 estSize *= 2;
@@ -2047,16 +2047,15 @@ static U32 PixelDataFormatFromInternalFormat( U32 internalFormat )
     }
 }
 
-static void RawImage_UploadTexture( U32 texture, U8* data, S32 x, S32 y,
-                                    S32 width, S32 height, U32 target, U32 picFormat,
+static void RawImage_UploadTexture( U32 texture, U8* data, S32 x, S32 y, S32 width, S32 height, U32 target, U32 picFormat,
                                     S32 numMips, U32 internalFormat, imgType_t type, S32/*imgFlags_t*/ flags, bool subtexture )
 {
     U32 dataFormat, dataType;
+    S32 size, miplevel;
     bool rgtc = internalFormat == GL_COMPRESSED_RG_RGTC2;
     bool rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
     bool rgba = rgba8 || picFormat == GL_RGBA16;
     bool mipmap = !!( flags & IMGFLAG_MIPMAP );
-    S32 size, miplevel;
     bool lastMip = false;
     
     dataFormat = PixelDataFormatFromInternalFormat( internalFormat );
@@ -2123,8 +2122,8 @@ Upload32
 */
 static void Upload32( U8* data, S32 x, S32 y, S32 width, S32 height, U32 picFormat, S32 numMips, image_t* image, bool scaled )
 {
-    S32			i, c;
-    U8*		scan;
+    S32 i, c;
+    U8*	scan;
     
     imgType_t type = image->type;
     S32/*imgFlags_t*/ flags = image->flags;
@@ -2203,16 +2202,16 @@ This is the only way any image_t are created
 */
 image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 picFormat, S32 numMips, imgType_t type, S32/*imgFlags_t*/ flags, S32 internalFormat )
 {
-    U8*       resampledBuffer = NULL;
-    image_t*    image;
-    bool    isLightmap = false, scaled = false;
-    S64        hash;
-    S32         glWrapClampMode, mipWidth, mipHeight, miplevel;
-    bool    rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
-    bool    mipmap = !!( flags & IMGFLAG_MIPMAP );
-    bool    cubemap = !!( flags & IMGFLAG_CUBEMAP );
-    bool    picmip = !!( flags & IMGFLAG_PICMIP );
-    bool    lastMip;
+    U8* resampledBuffer = NULL;
+    image_t* image;
+    bool isLightmap = false, scaled = false;
+    S64 hash;
+    S32 glWrapClampMode, mipWidth, mipHeight, miplevel;
+    bool rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
+    bool mipmap = !!( flags & IMGFLAG_MIPMAP );
+    bool cubemap = !!( flags & IMGFLAG_CUBEMAP );
+    bool picmip = !!( flags & IMGFLAG_PICMIP );
+    bool lastMip;
     U32 textureTarget = cubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
     U32 dataFormat;
     
@@ -2241,6 +2240,7 @@ image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 p
     
     image->width = width;
     image->height = height;
+    
     if( flags & IMGFLAG_CLAMPTOEDGE )
         glWrapClampMode = GL_CLAMP_TO_EDGE;
     else
@@ -2319,9 +2319,9 @@ image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 p
     switch( internalFormat )
     {
         case GL_DEPTH_COMPONENT:
-        case GL_DEPTH_COMPONENT16_ARB:
-        case GL_DEPTH_COMPONENT24_ARB:
-        case GL_DEPTH_COMPONENT32_ARB:
+        case GL_DEPTH_COMPONENT16:
+        case GL_DEPTH_COMPONENT24:
+        case GL_DEPTH_COMPONENT32:
             // Fix for sampling depth buffer on old nVidia cards.
             // from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
             glTextureParameterfEXT( image->texnum, textureTarget, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
@@ -2893,7 +2893,7 @@ void R_CreateBuiltinImages( void )
         
         hdrFormat = GL_RGBA8;
         if( r_hdr->integer && glRefConfig.textureFloat )
-            hdrFormat = GL_RGBA16F_ARB;
+            hdrFormat = GL_RGBA16F;
             
         rgbFormat = GL_RGBA8;
         
@@ -2912,6 +2912,12 @@ void R_CreateBuiltinImages( void )
             
         tr.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24_ARB );
         tr.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24_ARB );
+        
+        tr.genericFBOImage = R_CreateImage( "_generic", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        
+        tr.anamorphicRenderFBOImage[0] = R_CreateImage( "_anamorphic0", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.anamorphicRenderFBOImage[1] = R_CreateImage( "_anamorphic1", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.anamorphicRenderFBOImage[2] = R_CreateImage( "_anamorphic2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
         {
             U8* p;

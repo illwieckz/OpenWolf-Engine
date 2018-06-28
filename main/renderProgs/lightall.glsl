@@ -593,6 +593,7 @@ void main()
 			discard;
 	}
 
+
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 	L = var_LightDir.xyz;
   #if defined(USE_DELUXEMAP)

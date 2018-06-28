@@ -1392,11 +1392,6 @@ S32 FS_FOpenFileRead( StringEntry filename, fileHandle_t* file, bool uniqueFILE 
                     // for OS client/server interoperability, we expect binaries for .so and .dll to be in the same pk3
                     // so that when we reference the DLL files on any platform, this covers everyone else
                     
-#if 0 // TTimo: use that stuff for shifted strings
-                    Com_Printf( "SYS_DLLNAME_QAGAME + %d: '%s'\n", SYS_DLLNAME_QAGAME_SHIFT, FS_ShiftStr( "qagame_mp_x86.dll" /*"qagame.mp.i386.so"*/, SYS_DLLNAME_QAGAME_SHIFT ) );
-                    Com_Printf( "SYS_DLLNAME_CGAME + %d: '%s'\n", SYS_DLLNAME_CGAME_SHIFT, FS_ShiftStr( "cgame_mp_x86.dll" /*"cgame.mp.i386.so"*/, SYS_DLLNAME_CGAME_SHIFT ) );
-                    Com_Printf( "SYS_DLLNAME_UI + %d: '%s'\n", SYS_DLLNAME_UI_SHIFT, FS_ShiftStr( "ui_mp_x86.dll" /*"ui.mp.i386.so"*/, SYS_DLLNAME_UI_SHIFT ) );
-#endif
                     // qagame dll
                     if( !( pak->referenced & FS_QAGAME_REF ) && !Q_stricmp( filename, Sys_GetDLLName( "sgame" ) ) )
                     {
@@ -1406,11 +1401,6 @@ S32 FS_FOpenFileRead( StringEntry filename, fileHandle_t* file, bool uniqueFILE 
                     if( !( pak->referenced & FS_CGAME_REF ) && !Q_stricmp( filename, Sys_GetDLLName( "cgame" ) ) )
                     {
                         pak->referenced |= FS_CGAME_REF;
-                    }
-                    // ui dll
-                    if( !( pak->referenced & FS_UI_REF ) && !Q_stricmp( filename, Sys_GetDLLName( "ui" ) ) )
-                    {
-                        pak->referenced |= FS_UI_REF;
                     }
                     
 //#if !defined(PRE_RELEASE_DEMO) && !defined(DO_LIGHT_DEDICATED)

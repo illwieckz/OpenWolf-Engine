@@ -456,6 +456,8 @@ typedef enum
 typedef struct
 {
     bool		active;
+    bool		isDetail;
+    bool        isWater;
     
     textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
     
@@ -465,13 +467,11 @@ typedef struct
     waveForm_t		alphaWave;
     alphaGen_t		alphaGen;
     
-    U8			constantColor[4];			// for CGEN_CONST and AGEN_CONST
+    U8			    constantColor[4];			// for CGEN_CONST and AGEN_CONST
     
-    U32		stateBits;					// GLS_xxxx mask
+    U32		        stateBits;					// GLS_xxxx mask
     
     acff_t			adjustColorsForFog;
-    
-    bool		isDetail;
     
     stageType_t     type;
     struct shaderProgram_s* glslShaderGroup;
@@ -750,6 +750,7 @@ typedef enum
     UNIFORM_LIGHTUP,
     UNIFORM_LIGHTRIGHT,
     UNIFORM_LIGHTORIGIN,
+    UNIFORM_LIGHTCOLOR,
     UNIFORM_MODELLIGHTDIR,
     UNIFORM_LIGHTRADIUS,
     UNIFORM_AMBIENTLIGHT,
@@ -790,6 +791,16 @@ typedef enum
     
     UNIFORM_ALPHATEST,
     
+    UNIFORM_DIMENSIONS,
+    UNIFORM_HEIGHTMAP,
+    UNIFORM_LOCAL0,
+    UNIFORM_LOCAL1,
+    UNIFORM_LOCAL2,
+    UNIFORM_LOCAL3,
+    UNIFORM_TEXTURE0,
+    UNIFORM_TEXTURE1,
+    UNIFORM_TEXTURE2,
+    UNIFORM_TEXTURE3,
     
     UNIFORM_COUNT
 } uniform_t;
@@ -1503,6 +1514,7 @@ typedef struct
     
     bool vertexArrayObject;
     bool directStateAccess;
+    bool immutableTextures;
 } glRefConfig_t;
 
 
@@ -1672,7 +1684,32 @@ typedef struct
     shaderProgram_t ssaoShader;
     shaderProgram_t depthBlurShader[4];
     shaderProgram_t testcubeShader;
+    shaderProgram_t gaussianBlurShader[2];
+    shaderProgram_t glowCompositeShader;
     
+    shaderProgram_t darkexpandShader;
+    shaderProgram_t hdrShader;
+    shaderProgram_t dofShader;
+    shaderProgram_t anaglyphShader;
+    //shaderProgram_t uniqueskyShader;
+    shaderProgram_t waterShader;
+    shaderProgram_t esharpeningShader;
+    shaderProgram_t esharpening2Shader;
+    shaderProgram_t texturecleanShader;
+    shaderProgram_t lensflareShader;
+    shaderProgram_t multipostShader;
+    shaderProgram_t anamorphicDarkenShader;
+    shaderProgram_t anamorphicBlurShader;
+    shaderProgram_t anamorphicCombineShader;
+    shaderProgram_t volumelightShader;
+    
+    image_t*        bloomRenderFBOImage[3];
+    image_t*        anamorphicRenderFBOImage[3];
+    image_t*        genericFBOImage;
+    
+    FBO_t*          bloomRenderFBO[3];
+    FBO_t*          anamorphicRenderFBO[3];
+    FBO_t*	   	    genericFbo;
     
     // -----------------------------------------
     
@@ -1903,6 +1940,26 @@ extern	cvar_t*	r_debugSort;
 extern	cvar_t*	r_printShaders;
 
 extern cvar_t*	r_marksOnTriangleMeshes;
+
+extern cvar_t* r_lensflare;
+extern cvar_t* r_volumelight;
+extern cvar_t* r_anamorphic;
+extern cvar_t* r_anamorphicDarkenPower;
+extern cvar_t* r_darkexpand;
+extern cvar_t* r_truehdr;
+extern cvar_t* r_dof;
+extern cvar_t* r_esharpening;
+extern cvar_t* r_esharpening2;
+extern cvar_t* r_multipost;
+extern cvar_t* r_textureClean;
+extern cvar_t* r_textureCleanSigma;
+extern cvar_t* r_textureCleanBSigma;
+extern cvar_t* r_textureCleanMSize;
+extern cvar_t* r_trueAnaglyph;
+extern cvar_t* r_trueAnaglyphSeparation;
+extern cvar_t* r_trueAnaglyphRed;
+extern cvar_t* r_trueAnaglyphGreen;
+extern cvar_t* r_trueAnaglyphBlue;
 
 //====================================================================
 

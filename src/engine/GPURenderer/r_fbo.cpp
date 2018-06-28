@@ -37,7 +37,7 @@ R_CheckFBO
 */
 bool R_CheckFBO( const FBO_t* fbo )
 {
-    GLenum code = glCheckNamedFramebufferStatusEXT( fbo->frameBuffer, GL_FRAMEBUFFER );
+    GLenum code = glCheckNamedFramebufferStatus( fbo->frameBuffer, GL_FRAMEBUFFER );
     
     if( code == GL_FRAMEBUFFER_COMPLETE )
         return true;
@@ -130,19 +130,19 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         case GL_RGBA:
         case GL_RGB8:
         case GL_RGBA8:
-        case GL_RGB16F_ARB:
-        case GL_RGBA16F_ARB:
-        case GL_RGB32F_ARB:
-        case GL_RGBA32F_ARB:
+        case GL_RGB16F:
+        case GL_RGBA16F:
+        case GL_RGB32F:
+        case GL_RGBA32F:
             fbo->colorFormat = format;
             pRenderBuffer = &fbo->colorBuffers[index];
             attachment = GL_COLOR_ATTACHMENT0 + index;
             break;
             
         case GL_DEPTH_COMPONENT:
-        case GL_DEPTH_COMPONENT16_ARB:
-        case GL_DEPTH_COMPONENT24_ARB:
-        case GL_DEPTH_COMPONENT32_ARB:
+        case GL_DEPTH_COMPONENT16:
+        case GL_DEPTH_COMPONENT24:
+        case GL_DEPTH_COMPONENT32:
             fbo->depthFormat = format;
             pRenderBuffer = &fbo->depthBuffer;
             attachment = GL_DEPTH_ATTACHMENT;
@@ -175,20 +175,20 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         glGenRenderbuffers( 1, pRenderBuffer );
         
     if( multisample && glRefConfig.framebufferMultisample )
-        glNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
+        glNamedRenderbufferStorageMultisample( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
     else
-        glNamedRenderbufferStorageEXT( *pRenderBuffer, format, fbo->width, fbo->height );
+        glNamedRenderbufferStorage( *pRenderBuffer, format, fbo->width, fbo->height );
         
     if( absent )
     {
         if( attachment == 0 )
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT,   GL_RENDERBUFFER, *pRenderBuffer );
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbuffer( fbo->frameBuffer, GL_DEPTH_ATTACHMENT,   GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbuffer( fbo->frameBuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
         }
         else
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbuffer( fbo->frameBuffer, attachment, GL_RENDERBUFFER, *pRenderBuffer );
         }
     }
 }
@@ -205,14 +205,13 @@ void FBO_AttachImage( FBO_t* fbo, image_t* image, GLenum attachment, GLuint cube
     S32 index;
     
     if( image->flags & IMGFLAG_CUBEMAP )
-        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + cubemapside;
+        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemapside;
         
     glNamedFramebufferTexture2DEXT( fbo->frameBuffer, attachment, target, image->texnum, 0 );
     index = attachment - GL_COLOR_ATTACHMENT0;
     if( index >= 0 && index <= 15 )
         fbo->colorImage[index] = image;
 }
-
 
 /*
 ============
@@ -263,7 +262,7 @@ void idRenderSystemLocal::FBOInit( void )
     
     hdrFormat = GL_RGBA8;
     if( r_hdr->integer && glRefConfig.textureFloat )
-        hdrFormat = GL_RGBA16F_ARB;
+        hdrFormat = GL_RGBA16F;
         
     if( glRefConfig.framebufferMultisample )
         glGetIntegerv( GL_MAX_SAMPLES, &multisample );
@@ -277,6 +276,33 @@ void idRenderSystemLocal::FBOInit( void )
     if( multisample != r_ext_framebuffer_multisample->integer )
         Cvar_SetValue( "r_ext_framebuffer_multisample", ( F32 )multisample );
         
+    //
+    // Generic FBO...
+    //
+    {
+        tr.genericFbo = FBO_Create( "_generic", tr.genericFBOImage->width, tr.genericFBOImage->height );
+        FBO_Bind( tr.genericFbo );
+        FBO_AttachImage( tr.genericFbo, tr.genericFBOImage, GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.genericFbo );
+    }
+    
+    //
+    // Anamorphic VBO's...
+    //
+    {
+        tr.anamorphicRenderFBO[0] = FBO_Create( "_anamorphic0", tr.anamorphicRenderFBOImage[0]->width, tr.anamorphicRenderFBOImage[0]->height );
+        FBO_AttachImage( tr.anamorphicRenderFBO[0], tr.anamorphicRenderFBOImage[0], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.anamorphicRenderFBO[0] );
+        
+        tr.anamorphicRenderFBO[1] = FBO_Create( "_anamorphic1", tr.anamorphicRenderFBOImage[1]->width, tr.anamorphicRenderFBOImage[1]->height );
+        FBO_AttachImage( tr.anamorphicRenderFBO[1], tr.anamorphicRenderFBOImage[1], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.anamorphicRenderFBO[1] );
+        
+        tr.anamorphicRenderFBO[2] = FBO_Create( "_anamorphic2", tr.anamorphicRenderFBOImage[2]->width, tr.anamorphicRenderFBOImage[2]->height );
+        FBO_AttachImage( tr.anamorphicRenderFBO[2], tr.anamorphicRenderFBOImage[2], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.anamorphicRenderFBO[2] );
+    }
+    
     // only create a render FBO if we need to resolve MSAA or do HDR
     // otherwise just render straight to the screen (tr.renderFbo = NULL)
     if( multisample && glRefConfig.framebufferMultisample )
@@ -291,7 +317,7 @@ void idRenderSystemLocal::FBOInit( void )
         FBO_AttachImage( tr.msaaResolveFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0 );
         R_CheckFBO( tr.msaaResolveFbo );
     }
-    else if( r_hdr->integer )
+    else
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
         FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0 );
@@ -407,7 +433,7 @@ void idRenderSystemLocal::FBOInit( void )
     {
         tr.renderCubeFbo = FBO_Create( "_renderCubeFbo", tr.renderCubeImage->width, tr.renderCubeImage->height );
         FBO_AttachImage( tr.renderCubeFbo, tr.renderCubeImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_CreateBuffer( tr.renderCubeFbo, GL_DEPTH_COMPONENT24_ARB, 0, 0 );
+        FBO_CreateBuffer( tr.renderCubeFbo, GL_DEPTH_COMPONENT24, 0, 0 );
         R_CheckFBO( tr.renderCubeFbo );
     }
     
@@ -659,5 +685,28 @@ void FBO_FastBlit( FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, S32 b
                        buffers, filter );
                        
     GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glState.currentFBO = NULL;
+}
+
+void FBO_FastBlitIndexed( FBO_t* src, FBO_t* dst, S32 srcReadBuffer, S32 dstDrawBuffer, S32 buffers, S32 filter )
+{
+    assert( src != NULL );
+    assert( dst != NULL );
+    
+    glBindFramebuffer( GL_READ_FRAMEBUFFER, src->frameBuffer );
+    glReadBuffer( GL_COLOR_ATTACHMENT0 + srcReadBuffer );
+    
+    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, dst->frameBuffer );
+    glDrawBuffer( GL_COLOR_ATTACHMENT0 + dstDrawBuffer );
+    
+    glBlitFramebuffer( 0, 0, src->width, src->height,
+                       0, 0, dst->width, dst->height,
+                       buffers, filter );
+                       
+    glReadBuffer( GL_COLOR_ATTACHMENT0 );
+    
+    glState.currentFBO = dst;
+    
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     glState.currentFBO = NULL;
 }

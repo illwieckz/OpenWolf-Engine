@@ -40,8 +40,8 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
 # Options
 option( BUILD_CLIENT                   "Build OpenWolf client"                                 ON )
-option( BUILD_SERVER                   "Build OpenWolfded server"                              ON )
-option( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
+#option( BUILD_SERVER                   "Build OpenWolfded server"                              ON )
+o#ption( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
 option( BUILD_GAME                     "Build game logic shared libraries"                     ON )
 option( USE_CURSES                     "Use the curses console"                                ON ) 
 option( NO_UNTRUSTED_PLUGINS           "Don't load native plugins from the user dir"           ON )

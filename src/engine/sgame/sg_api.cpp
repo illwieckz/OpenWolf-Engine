@@ -327,9 +327,9 @@ void trap_RemoveCommand( StringEntry cmdName )
     imports->RemoveCommand( cmdName );
 }
 
-bool trap_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* or )
+bool trap_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* _or )
 {
-    return imports->GetTag( clientNum, tagFileNumber, tagname, or );
+    return imports->GetTag( clientNum, tagFileNumber, tagname, _or );
 }
 
 bool trap_LoadTag( StringEntry filename )

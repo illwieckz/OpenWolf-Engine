@@ -39,10 +39,13 @@
 #include <sys/ioctl.h>
 #endif
 
-#include <io.h>
 #include <fcntl.h>
 #include <algorithm>
+#ifdef _WIN32
 #include <SDL_syswm.h>
+#else
+#include <SDL/SDL_syswm.h>
+#endif
 
 #include <signal.h>
 #include <limits.h>
@@ -54,6 +57,7 @@
 #include <math.h>
 
 #ifdef _WIN32
+#include <io.h>
 #include <shellapi.h>
 #include <timeapi.h>
 #include <windows.h>
@@ -93,9 +97,13 @@
 
 #include <database/db_local.h>
 
+#ifdef _WIN32
 #include <SDL.h>
+#else
+#include <SDL/SDL.h>
+#endif
 #include <curl/curl.h>
-#include <cl/cl.h>
+#include <CL/cl.h>
 #include <sys/resource.h>
 
 #include <botlib/botlib.h>

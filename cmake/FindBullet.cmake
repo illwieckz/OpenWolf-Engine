@@ -20,7 +20,7 @@ message(STATUS "Looking for Bullet...")
 
 set(BULLET_ROOT ${LIB_DIR}/bullet-2.80-rev2531 CACHE PATH "Bullet install dir, parent of both header files and binaries.")
 set(BULLET_BUILD_DIR ${LIB_DIR}/bullet-2.80-rev2531 CACHE PATH "Parent directory of Bullet binary file directories such as src/BulletCollision.")
-set(BULLET_SOURCE_DIR ${LIB_DIR}/bullet-2.80-rev2531 CACHE PATH "Parent directory of Bullet header file directories such as src or include.")
+set(BULLET_SOURCE_DIR ${LIB_DIR}/bullet-2.80-rev2531/src CACHE PATH "Parent directory of Bullet header file directories such as src or include.")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         set(OSX TRUE)
@@ -31,13 +31,15 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
                 ${BULLET_ROOT}/src
                 ${BULLET_ROOT}/Extras
                 ${BULLET_SOURCE_DIR}
-				${LIB_DIR}/bullet-2.80-rev2531/src
 				${LIB_DIR}/bullet-2.80-rev2531/Extras
+				${LIB_DIR}/bullet-2.80-rev2531/src
 				)
 else()
         set(HINT_PATHS
                 ${BULLET_ROOT}
                 ${BULLET_SOURCE_DIR}
+				${LIB_DIR}/bullet-2.80-rev2531/Extras
+				${LIB_DIR}/bullet-2.80-rev2531/src
                 /usr/include/bullet
                 /usr/local/include/bullet)
 endif()
@@ -48,31 +50,31 @@ endif()
 find_path(BULLET_INCLUDE_DIR btBulletCollisionCommon.h
           PATHS ${HINT_PATHS})
 
-set(BULLET_INCLUDE_COLLISION_DIR ${BULLET_INCLUDE_DIR}/BulletCollision)
-set(BULLET_INCLUDE_DYNAMICS_DIR ${BULLET_INCLUDE_DIR}/BulletDynamics)
+set(BULLET_INCLUDE_COLLISION_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletCollision)
+set(BULLET_INCLUDE_DYNAMICS_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletDynamics)
 set(BULLET_INCLUDE_WORLDIMPORTER_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/Serialize/BulletWorldImporter)
 set(BULLET_INCLUDE_FILELOADER_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/Serialize/BulletFileLoader)
 
-find_path(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ConvexDecomposition/ConvexDecomposition.h
-          PATHS ${HINT_PATHS})
+#find_path(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ConvexDecomposition/ConvexDecomposition.h
+ #         PATHS ${HINT_PATHS})
 
-if(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
-        set(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR}/ConvexDecomposition)
-endif()
+#if(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
+        set(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/ConvexDecomposition)
+#endif()
 
-find_path(BULLET_INCLUDE_SOFTBODY_DIR BulletSoftBody/btSoftBody.h
-          PATHS ${HINT_PATHS})
+#find_path(BULLET_INCLUDE_SOFTBODY_DIR BulletSoftBody/btSoftBody.h
+#          PATHS ${HINT_PATHS})
 
-if(BULLET_INCLUDE_SOFTBODY_DIR)
-        set(BULLET_INCLUDE_SOFTBODY_DIR ${BULLET_INCLUDE_SOFTBODY_DIR}/BulletSoftBody)
-endif()
+#if(BULLET_INCLUDE_SOFTBODY_DIR)
+        set(BULLET_INCLUDE_SOFTBODY_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletSoftBody)
+#endif()
 
-find_path(BULLET_INCLUDE_LINEARMATH_DIR LinearMath/btScalar.h
-          PATHS ${HINT_PATHS})
+#find_path(BULLET_INCLUDE_LINEARMATH_DIR LinearMath/btScalar.h
+#          PATHS ${HINT_PATHS})
 
-if(BULLET_INCLUDE_LINEARMATH_DIR)
-        set(BULLET_INCLUDE_LINEARMATH_DIR ${BULLET_INCLUDE_LINEARMATH_DIR}/LinearMath)
-endif()
+#if(BULLET_INCLUDE_LINEARMATH_DIR)
+        set(BULLET_INCLUDE_LINEARMATH_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/LinearMath)
+#endif()
 
 mark_as_advanced(BULLET_INCLUDE_COLLISION_DIR
                  BULLET_INCLUDE_DYNAMICS_DIR
@@ -116,26 +118,36 @@ set(BULLET_INCLUDE_DIRS
 
 message(STATUS "BULLET_INCLUDE_DIRS: ${BULLET_INCLUDE_DIRS}")
 
-find_library(BULLET_COLLISION_LIBRARY BulletCollision)
-mark_as_advanced(BULLET_COLLISION_LIBRARY)
+if(LINUX)
+set(BULLET_COLLISION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletCollision.a)
+set(BULLET_DYNAMICS_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletDynamics.a)
+set(BULLET_FILELOADER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletFileLoader.a)
+set(BULLET_SOFTBODY_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletSoftBody.a)
+set(BULLET_WORLDIMPORTER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletWorldImporter.a)
+set(BULLET_CONVEXDECOMPOSITION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libConvexDecomposition.a)
+set(BULLET_LINEARMATH_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libLinearMath.a)
+endif(LINUX)
 
-find_library(BULLET_DYNAMICS_LIBRARY BulletDynamics)
-mark_as_advanced(BULLET_DYNAMICS_LIBRARY)
+#find_library(BULLET_COLLISION_LIBRARY libBulletCollision)
+#mark_as_advanced(BULLET_COLLISION_LIBRARY)
 
-find_library(BULLET_CONVEXDECOMPOSITION_LIBRARY ConvexDecomposition)
-mark_as_advanced(BULLET_CONVEXDECOMPOSITION_LIBRARY)
+#find_library(BULLET_DYNAMICS_LIBRARY libBulletDynamics)
+#mark_as_advanced(BULLET_DYNAMICS_LIBRARY)
 
-find_library(BULLET_SOFTBODY_LIBRARY BulletSoftBody)
-mark_as_advanced(BULLET_SOFTBODY_LIBRARY)
+#find_library(BULLET_CONVEXDECOMPOSITION_LIBRARY libConvexDecomposition)
+#mark_as_advanced(BULLET_CONVEXDECOMPOSITION_LIBRARY)
 
-find_library(BULLET_LINEARMATH_LIBRARY LinearMath)
-mark_as_advanced(BULLET_LINEARMATH_LIBRARY)
+#find_library(BULLET_SOFTBODY_LIBRARY libBulletSoftBody)
+#mark_as_advanced(BULLET_SOFTBODY_LIBRARY)
 
-find_library(BULLET_FILELOADER_LIBRARY FileLoader)
-mark_as_advanced(BULLET_FILELOADER_LIBRARY)
+#find_library(BULLET_LINEARMATH_LIBRARY libLinearMath)
+#mark_as_advanced(BULLET_LINEARMATH_LIBRARY)
 
-find_library(BULLET_WORLDIMPORTER_LIBRARY WorldImporter)
-mark_as_advanced(BULLET_WORLDIMPORTER_LIBRARY)
+#find_library(BULLET_FILELOADER_LIBRARY libFileLoader)
+#mark_as_advanced(BULLET_FILELOADER_LIBRARY)
+
+#find_library(BULLET_WORLDIMPORTER_LIBRARY libWorldImporter)
+#mark_as_advanced(BULLET_WORLDIMPORTER_LIBRARY)
 
 if(BULLET_INCLUDE_DIR AND NOT OSX)
         set(BULLET_EXTRAS_INCLUDE_DIRS ${BULLET_INCLUDE_DIR}/../Extras)
@@ -189,6 +201,7 @@ message(STATUS "Looking for ${LIBNAME}...")
             ./libs/${DIRNAME}
             ./libs
             ./lib
+            ${LIB_DIR}/bullet-2.80-rev2531/libs
             ./lib/Debug) # v2.76, new location for build tree libs on Windows
 
 #    message(STATUS ${BULLET_${LIBNAME}_LIBRARY} ${BULLET_${LIBNAME}_LIBRARY_debug})

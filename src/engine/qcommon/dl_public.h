@@ -38,7 +38,7 @@
 #ifndef _DL_PUBLIC_H_
 #define _DL_PUBLIC_H_
 
-#include <OWLIb/types.h>
+#include <OWLib/types.h>
 
 typedef enum
 {

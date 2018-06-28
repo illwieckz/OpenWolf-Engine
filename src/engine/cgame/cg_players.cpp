@@ -2408,7 +2408,7 @@ void idCGameLocal::Corpse( centity_t* cent )
 idCGameLocal::GetTag
 ===============
 */
-bool idCGameLocal::GetTag( S32 clientNum, UTF8* tagname, orientation_t* or )
+bool idCGameLocal::GetTag( S32 clientNum, UTF8* tagname, orientation_t* _or )
 {
     clientInfo_t*    ci;
     centity_t*       cent;
@@ -2438,14 +2438,14 @@ bool idCGameLocal::GetTag( S32 clientNum, UTF8* tagname, orientation_t* or )
     
     for( i = 0 ; i < 3 ; i++ )
     {
-        VectorMA( org, or ->origin[i], refent->axis[i], org );
+        VectorMA( org, _or->origin[i], refent->axis[i], org );
     }
     
-    VectorCopy( org, or ->origin );
+    VectorCopy( org, _or->origin );
     
     // rotate with entity
-    AxisMultiply( refent->axis, or ->axis, tempAxis );
-    memcpy( or ->axis, tempAxis, sizeof( vec3_t ) * 3 );
+    AxisMultiply( refent->axis, _or->axis, tempAxis );
+    ::memcpy( _or->axis, tempAxis, sizeof( vec3_t ) * 3 );
     
     return true;
 }

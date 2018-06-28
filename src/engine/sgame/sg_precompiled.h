@@ -40,3 +40,4 @@
 #include <sgame/inv.h>
 #include <sgame/syn.h>
 #include <sgame/match.h>
+#include <GUI/gui_shared.h>

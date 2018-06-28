@@ -38,6 +38,8 @@
 
 #include <OWLIb/precompiled.h>
 
+#ifdef _WIN32
+
 using namespace OVR;
 
 // flags that the controller manager system can set to tell the graphics system to draw the instructions
@@ -154,3 +156,5 @@ bool idHydraManagerLocal::isDocked( S32 controllerIndex ) const
     
     return true;
 }
+
+#endif

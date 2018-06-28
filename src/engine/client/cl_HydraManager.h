@@ -39,7 +39,7 @@
 #ifndef __CL_HYDRAMANAGER_H__
 #define __CL_HYDRAMANAGER_H__
 
-#if !defined ( DEDICATED ) && !defined ( UPDATE_SERVER )
+#if defined _WIN32 && !defined ( DEDICATED ) && !defined ( UPDATE_SERVER )
 
 #ifndef SIXENSE_UTILS_DERIVATIVES_HPP
 #include <sixense_utils/derivatives.hpp>

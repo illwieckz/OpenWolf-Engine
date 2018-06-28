@@ -32,6 +32,6 @@
 #include <bgame/bg_public.h>
 #include <bgame/bg_local.h>
 #include <OWLib/splines.h>
-#include <gui/gui_shared.h>
-#include <gui/gui_local.h>
+#include <GUI/gui_shared.h>
+#include <GUI/gui_local.h>
 #include <qcommon/q_shared.h>

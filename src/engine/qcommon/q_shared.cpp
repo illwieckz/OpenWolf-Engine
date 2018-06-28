@@ -40,7 +40,7 @@
 #elif GAMEDLL
 #include <sgame/sg_precompiled.h>
 #else
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 #endif // !GAMEDLL
 
 // os x game bundles have no standard library links, and the defines are not always defined!

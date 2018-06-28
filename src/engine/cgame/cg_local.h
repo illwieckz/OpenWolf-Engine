@@ -1670,7 +1670,7 @@ public:
     
     virtual void EventHandling( S32 type, bool fForced );
     
-    virtual bool GetTag( S32 clientNum, UTF8* tagname, orientation_t* or );
+    virtual bool GetTag( S32 clientNum, UTF8* tagname, orientation_t* _or );
     
     virtual bool CheckExecKey( S32 key );
     

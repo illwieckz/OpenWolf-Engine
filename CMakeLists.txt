@@ -21,13 +21,13 @@ set( CMAKE_BUILD_TYPE Release CACHE STRING "Build configuration (Debug, Release,
 project( OpenWolf C CXX )
 
 if( MSVC )
-  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /fp:precise -Od" )
+  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /fp:precise" )
 else()
-  set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -pipe" )
+  set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -pipe -Wno-write-strings -Wno-narrowing -fpermissive" )
   set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g" )
-  set( CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG -Od" )
-  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG -Od -ffast-math -fomit-frame-pointer -fno-strict-aliasing" )
-  set( CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG -Od -ffast-math -fomit-frame-pointer -fno-strict-aliasing -g" )
+  set( CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG" )
+  set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG -ffast-math -fomit-frame-pointer -fno-strict-aliasing" )
+  set( CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG -ffast-math -fomit-frame-pointer -fno-strict-aliasing -g" )
 endif()
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS}" )
@@ -41,7 +41,7 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 # Options
 option( BUILD_CLIENT                   "Build OpenWolf client"                                 ON )
 #option( BUILD_SERVER                   "Build OpenWolfded server"                              ON )
-o#ption( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
+#option( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
 option( BUILD_GAME                     "Build game logic shared libraries"                     ON )
 option( USE_CURSES                     "Use the curses console"                                ON ) 
 option( NO_UNTRUSTED_PLUGINS           "Don't load native plugins from the user dir"           ON )
@@ -260,7 +260,7 @@ set( QCOMMONLIST_SOURCES
   ${MOUNT_DIR}/qcommon/net_ip.cpp
   ${MOUNT_DIR}/qcommon/parse.cpp
   ${MOUNT_DIR}/qcommon/puff.cpp
-  ${MOUNT_DIR}/qcommon/Unzip.cpp
+  ${MOUNT_DIR}/qcommon/unzip.cpp
 )
 
 if(USE_OPENSSL)
@@ -603,8 +603,11 @@ if( BUILD_GAME )
   endif( MSVC )
 
   TARGET_INCLUDE_DIRECTORIES( sgame PRIVATE ${MOUNT_DIR} )
+if(MSVC)
   set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ GAMEDLL )
-  
+elseif( UNIX )
+  set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ GAMEDLL )
+endif()
   set_target_properties( sgame PROPERTIES
     OUTPUT_NAME "sgame${BUILD_ARCH}"
     PREFIX ""
@@ -624,7 +627,12 @@ if( BUILD_GAME )
   endif( MSVC )
   
   TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
+if(MSVC)
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
+elseif( UNIX )
+  set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ GAMEDLL )
+endif()
+  
   set_target_properties( cgame PROPERTIES
     OUTPUT_NAME "cgame${BUILD_ARCH}"
     PREFIX ""
@@ -684,7 +692,12 @@ if( BUILD_CLIENT )
   ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASELIST_SOURCES} ${SDLBASELIST_HEADERS} ${JPEG_INCLUDE_DIR} ${JPEG_SOURCES} )
 	
   target_link_libraries( client ${OS_LIBRARIES} )
+    
+if(MSVC)
   set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ NDEBUG _WINDOWS BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE HAVE_BOOLEAN )
+elseif( UNIX )
+  set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS NDEBUG __LINUX__ LINUX BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE HAVE_BOOLEAN )
+endif()
   ADD_PRECOMPILED_HEADER( client "${MOUNT_DIR}/OWLib/precompiled.h" "${MOUNT_DIR}/OWLib/precompiled.cpp" )
   set_target_properties( client PROPERTIES OUTPUT_NAME "OpenWolf.${BUILD_ARCH}" PREFIX "" LINKER_LANGUAGE CXX )
   install( TARGETS client
@@ -695,7 +708,7 @@ if( BUILD_CLIENT )
 
   # This section finds and provides REQUIRED dependencies to target client
   find_package( OpenGL REQUIRED )
-  find_package( Jpeg REQUIRED )
+  find_package( JPEG REQUIRED )
   find_package( SDL REQUIRED )
   find_package( Freetype REQUIRED )
   find_package( GLEW REQUIRED )
@@ -705,13 +718,16 @@ if( BUILD_CLIENT )
   find_package( PNG REQUIRED )
   find_package( BZ2 REQUIRED )
   find_package( OpenCL REQUIRED )
+if( MSVC )
+  #Dushan - only for the Windows platform now
   find_package( Sixense REQUIRED )
   find_package( OculusSDK REQUIRED )
   find_package( OculusKernelSDK REQUIRED )
-  find_package( WebP REQUIRED )
+endif( MSVC )
   
-  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${SIXENSE_INCLUDE_DIRS} ${LIB_DIR}/jpeg ${PDCURSES_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} )
-  target_link_libraries( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PNG_LIBRARIES} ${BULLET_LIBRARIES} ${OpenCL_LIBRARY} ${SIXENSE_LIBRARIES} ${SIXENSE_LIBRARIES_UTILS} ${PDCURSES_LIBRARY} ${OVR_LIBRARIES} ${OVRKERNEL_LIBRARY_RELEASE} ${JPEG_LIBRARIES} ${LINK_LIBRARY})
+  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${PDCURSES_INCLUDE_DIR} 
+  ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} )
+  target_link_libraries( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PNG_LIBRARIES} ${BULLET_LIBRARIES} ${OpenCL_LIBRARY} ${PDCURSES_LIBRARY} ${JPEG_LIBRARIES} ${LINK_LIBRARY})
 
   if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
     link_directories( /opt/local/lib )

@@ -150,7 +150,7 @@
 #include <float.h>
 
 #ifndef __TYPES_H__
-#include <OWLIb/types.h>
+#include <OWLib/types.h>
 #endif
 
 #include <qcommon/q_platform.h>

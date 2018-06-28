@@ -38,7 +38,7 @@
 #ifndef _DL_LOCAL_H_
 #define _DL_LOCAL_H_
 
-#include <OWLIb/types.h>
+#include <OWLib/types.h>
 
 //bani
 #if defined __GNUC__ || defined __clang__

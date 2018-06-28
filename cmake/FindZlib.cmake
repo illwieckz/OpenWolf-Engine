@@ -49,12 +49,13 @@ if (NOT ZLIB_INCLUDE_DIR OR NOT ZLIB_LIBRARY)
 		   "${ZLIB_INCLUDEDIR}"
 			${ZLIB_HINTS}/include
 			${ZLIB_HINTS}
+			/usr/include/zlib.h
 		PATHS
 			"[HKEY_LOCAL_MACHINE\\SOFTWARE\\GnuWin32\\Zlib;InstallPath]/include"
 			${LIB_DIR}/zlibwapi/include
 	)
 
-	SET(ZLIB_NAMES z zlib zdll zlib1 zlibd zlibd1 zlibwapi)
+	SET(ZLIB_NAMES z zlib zdll zlib1 zlibd zlibd1 zlibwapi libz)
 	FIND_LIBRARY(ZLIB_LIBRARY
 	   NAMES
 			${ZLIB_NAMES}
@@ -62,6 +63,7 @@ if (NOT ZLIB_INCLUDE_DIR OR NOT ZLIB_LIBRARY)
 			"${ZLIB_LIBDIR}"
 			${ZLIB_HINTS}/lib
 			${ZLIB_HINTS}
+			/usr/lib/x86_64-linux-gnu/
 		PATHS
 			"[HKEY_LOCAL_MACHINE\\SOFTWARE\\GnuWin32\\Zlib;InstallPath]/lib"
 			${LIB_DIR}/zlibwapi/lib

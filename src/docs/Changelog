@@ -1,6 +1,7 @@
 2018-06-28 Dusan Jocic <dusanjocic@msn.com>
 	* Disabled compiling server and autoupdate server from the cmake
 		NOTE: it is broken when I introducted precompiled headers
+    * Semifixed compiling on the Linux platform
 
 2018-06-27 Dusan Jocic <dusanjocic@msn.com>
 	* Updated renderer

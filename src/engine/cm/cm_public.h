@@ -45,7 +45,7 @@
 #include <cm/cm_header.h>
 #endif
 #ifndef __CM_TRACEMODEL_H__
-#include <cm/cm_tracemodel.h>
+#include <cm/cm_traceModel.h>
 #endif
 
 // plane types are used to speed some tests

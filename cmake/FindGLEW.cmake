@@ -105,10 +105,12 @@ if (${CMAKE_HOST_UNIX})
     )
     find_library( GLEW_LIBRARY
         NAMES
-            GLEW glew
+            GLEW glew libGLEW libGLEW.so.2.0 libGLEW.so.2.0.0
+
         PATHS
             ${GLEW_LOCATION}/lib
             $ENV{GLEW_LOCATION}/lib
+            /usr/lib/x86_64-linux-gnu
             /usr/lib64
             /usr/lib
             /usr/local/lib64

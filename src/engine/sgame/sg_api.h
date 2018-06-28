@@ -191,7 +191,7 @@ struct gameImports_t
     
     S32( *RealTime )( qtime_t* qtime );
     
-    bool ( *GetTag )( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* or );
+    bool ( *GetTag )( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* _or );
     
     S32( *BotGetSnapshotEntity )( S32 client, S32 ent );
     S32( *BotGetConsoleMessage )( S32 client, UTF8* buf, S32 size );

@@ -11,6 +11,7 @@ FIND_PATH(CURL_INCLUDE_DIR curl/curl.h
   "$ENV{LIB_DIR}/include"
   /usr/local/include
   /usr/include
+  /usr/include/x86_64-linux-gnu/
   #mingw
   c:/msys/local/include
   #Dushan
@@ -21,9 +22,10 @@ FIND_PATH(CURL_INCLUDE_DIR curl/curl.h
 MARK_AS_ADVANCED(CURL_INCLUDE_DIR)
 
 # Look for the library.
-FIND_LIBRARY(CURL_LIBRARY NAMES curl libcurl_imp libcurl PATHS
+FIND_LIBRARY(CURL_LIBRARY NAMES curl libcurl_imp libcurl libcurl4 PATHS
   $ENV{LIB}
   "$ENV{LIB_DIR}/lib"
+  /usr/lib/x86_64-linux-gnu/
   /usr/local/lib
   /usr/lib
   c:/msys/local/lib

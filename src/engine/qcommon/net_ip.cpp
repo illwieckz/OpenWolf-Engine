@@ -1449,35 +1449,35 @@ static void NET_GetLocalAddress( void )
     UTF8				hostname[256];
     struct addrinfo	hint;
     struct addrinfo*	res = NULL;
-    
+
     numIP = 0;
-    
+
     if( gethostname( hostname, 256 ) == SOCKET_ERROR )
         return;
-        
+
     Com_Printf( "Hostname: %s\n", hostname );
-    
+
     memset( &hint, 0, sizeof( hint ) );
-    
+
     hint.ai_family = AF_UNSPEC;
     hint.ai_socktype = SOCK_DGRAM;
-    
+
     if( !getaddrinfo( hostname, NULL, &hint, &res ) )
     {
         struct sockaddr_in mask4;
         struct sockaddr_in6 mask6;
         struct addrinfo* search;
-        
+
         /* On operating systems where it's more difficult to find out the configured interfaces, we'll just assume a
          * netmask with all bits set. */
-        
+
         memset( &mask4, 0, sizeof( mask4 ) );
         memset( &mask6, 0, sizeof( mask6 ) );
         mask4.sin_family = AF_INET;
         memset( &mask4.sin_addr.s_addr, 0xFF, sizeof( mask4.sin_addr.s_addr ) );
         mask6.sin6_family = AF_INET6;
         memset( &mask6.sin6_addr, 0xFF, sizeof( mask6.sin6_addr ) );
-        
+
         // add all IPs from returned list.
         for( search = res; search; search = search->ai_next )
         {
@@ -1486,10 +1486,10 @@ static void NET_GetLocalAddress( void )
             else if( search->ai_family == AF_INET6 )
                 NET_AddLocalAddress( "", search->ai_addr, ( struct sockaddr* ) &mask6 );
         }
-        
+
         Sys_ShowIP();
     }
-    
+
     if( res )
         freeaddrinfo( res );
 }

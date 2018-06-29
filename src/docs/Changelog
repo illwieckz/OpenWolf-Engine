@@ -2,6 +2,7 @@
     * Fixed compiling the engine on the Linux platform
         NOTE: Segmentation fault (core dumped) right after starting and initializing the game window
     * Fixed compiling the game logics on the Linux platform
+	* Fixed compiling on the Windows platform
         
 2018-06-28 Dusan Jocic <dusanjocic@msn.com>
 	* Disabled compiling server and autoupdate server from the cmake

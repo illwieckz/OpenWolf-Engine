@@ -73,10 +73,10 @@ static void mdfour64( U32* M )
     U32 AA, BB, CC, DD;
     U32 X[16];
     U32 A, B, C, D;
-    
+
     for( j = 0; j < 16; j++ )
         X[j] = M[j];
-        
+
     A = m->A;
     B = m->B;
     C = m->C;
@@ -85,7 +85,7 @@ static void mdfour64( U32* M )
     BB = B;
     CC = C;
     DD = D;
-    
+
     ROUND1( A, B, C, D,  0,  3 );
     ROUND1( D, A, B, C,  1,  7 );
     ROUND1( C, D, A, B,  2, 11 );
@@ -102,7 +102,7 @@ static void mdfour64( U32* M )
     ROUND1( D, A, B, C, 13,  7 );
     ROUND1( C, D, A, B, 14, 11 );
     ROUND1( B, C, D, A, 15, 19 );
-    
+
     ROUND2( A, B, C, D,  0,  3 );
     ROUND2( D, A, B, C,  4,  5 );
     ROUND2( C, D, A, B,  8,  9 );
@@ -119,7 +119,7 @@ static void mdfour64( U32* M )
     ROUND2( D, A, B, C,  7,  5 );
     ROUND2( C, D, A, B, 11,  9 );
     ROUND2( B, C, D, A, 15, 13 );
-    
+
     ROUND3( A, B, C, D,  0,  3 );
     ROUND3( D, A, B, C,  8,  9 );
     ROUND3( C, D, A, B,  4, 11 );
@@ -136,15 +136,15 @@ static void mdfour64( U32* M )
     ROUND3( D, A, B, C, 11,  9 );
     ROUND3( C, D, A, B,  7, 11 );
     ROUND3( B, C, D, A, 15, 15 );
-    
+
     A += AA;
     B += BB;
     C += CC;
     D += DD;
-    
+
     for( j = 0; j < 16; j++ )
         X[j] = 0;
-        
+
     m->A = A;
     m->B = B;
     m->C = C;
@@ -154,7 +154,7 @@ static void mdfour64( U32* M )
 static void copy64( U32* M, U8* in )
 {
     S32 i;
-    
+
     for( i = 0; i < 16; i++ )
         M[i] = ( in[i * 4 + 3] << 24 ) | ( in[i * 4 + 2] << 16 ) |
                ( in[i * 4 + 1] << 8 ) | ( in[i * 4 + 0] << 0 );
@@ -182,15 +182,15 @@ static void mdfour_tail( U8* in, S32 n )
     U8 buf[128];
     U32 M[16];
     U32 b;
-    
+
     m->totalN += n;
-    
+
     b = m->totalN * 8;
-    
+
     ::memset( buf, 0, 128 );
     if( n ) ::memcpy( buf, in, n );
     buf[n] = 0x80;
-    
+
     if( n <= 55 )
     {
         copy4( buf + 56, b );
@@ -210,11 +210,11 @@ static void mdfour_tail( U8* in, S32 n )
 static void mdfour_update( struct mdfour* md, U8* in, S32 n )
 {
     U32 M[16];
-    
+
     m = md;
-    
+
     if( n == 0 ) mdfour_tail( in, n );
-    
+
     while( n >= 64 )
     {
         copy64( M, in );
@@ -223,14 +223,14 @@ static void mdfour_update( struct mdfour* md, U8* in, S32 n )
         n -= 64;
         m->totalN += 64;
     }
-    
+
     mdfour_tail( in, n );
 }
 
 static void mdfour_result( struct mdfour* md, U8* out )
 {
     m = md;
-    
+
     copy4( out, m->A );
     copy4( out + 4, m->B );
     copy4( out + 8, m->C );
@@ -248,7 +248,7 @@ void mdfour( U8* out, U8* in, S32 n )
 void mdfour_hex( const U8 md4[16], S32 hex[32] )
 {
     static const UTF8 digits[] = "0123456789abcdef";
-    
+
     S32 i, j, t;
     for( i = 0, j = 0; i < 16; i += 1, j += 2 )
     {
@@ -267,11 +267,11 @@ U32 Com_BlockChecksum( const void* buffer, S32 length )
 {
     S32				digest[4];
     U32	val;
-    
+
     mdfour( ( U8* )digest, ( U8* )buffer, length );
-    
+
     val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-    
+
     return val;
 }
 

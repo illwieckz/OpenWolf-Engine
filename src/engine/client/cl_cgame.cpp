@@ -786,7 +786,7 @@ void CL_CreateExportTable( void )
     exports.startCamera = CL_startCamera;
     exports.stopCamera = CL_stopCamera;
     
-    exports.getCameraInfo = ( bool( QDECL* )( S32, S32, vec3_t( * ), vec3_t( * ), F32* ) )getCameraInfo;
+    exports.getCameraInfo = ( bool( QDECL* )( S32, S32, vec3_t(* ), vec3_t(* ), F32* ) )getCameraInfo;
     
     exports.Key_GetBindingBuf = Key_GetBindingBuf;
     exports.Key_SetBinding = Key_SetBinding;

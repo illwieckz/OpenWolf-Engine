@@ -37,21 +37,21 @@ find_path(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ConvexDecomposition/ConvexDecom
 
 if(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
         set(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/ConvexDecomposition)
-endif()
+endif(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
 
 find_path(BULLET_INCLUDE_SOFTBODY_DIR BulletSoftBody/btSoftBody.h
           PATHS ${HINT_PATHS})
 
 if(BULLET_INCLUDE_SOFTBODY_DIR)
         set(BULLET_INCLUDE_SOFTBODY_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletSoftBody)
-endif()
+endif(BULLET_INCLUDE_SOFTBODY_DIR)
 
 find_path(BULLET_INCLUDE_LINEARMATH_DIR LinearMath/btScalar.h
           PATHS ${HINT_PATHS})
 
 if(BULLET_INCLUDE_LINEARMATH_DIR)
         set(BULLET_INCLUDE_LINEARMATH_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/LinearMath)
-endif()
+endif(BULLET_INCLUDE_LINEARMATH_DIR)
 
 mark_as_advanced(BULLET_INCLUDE_COLLISION_DIR
                  BULLET_INCLUDE_DYNAMICS_DIR
@@ -105,26 +105,26 @@ set(BULLET_CONVEXDECOMPOSITION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux
 set(BULLET_LINEARMATH_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libLinearMath.a)
 endif(UNIX)
 
-#find_library(BULLET_COLLISION_LIBRARY libBulletCollision)
-#mark_as_advanced(BULLET_COLLISION_LIBRARY)
+find_library(BULLET_COLLISION_LIBRARY BulletCollision)
+mark_as_advanced(BULLET_COLLISION_LIBRARY)
 
-#find_library(BULLET_DYNAMICS_LIBRARY libBulletDynamics)
-#mark_as_advanced(BULLET_DYNAMICS_LIBRARY)
+find_library(BULLET_DYNAMICS_LIBRARY BulletDynamics)
+mark_as_advanced(BULLET_DYNAMICS_LIBRARY)
 
-#find_library(BULLET_CONVEXDECOMPOSITION_LIBRARY libConvexDecomposition)
-#mark_as_advanced(BULLET_CONVEXDECOMPOSITION_LIBRARY)
+find_library(BULLET_CONVEXDECOMPOSITION_LIBRARY ConvexDecomposition)
+mark_as_advanced(BULLET_CONVEXDECOMPOSITION_LIBRARY)
 
-#find_library(BULLET_SOFTBODY_LIBRARY libBulletSoftBody)
-#mark_as_advanced(BULLET_SOFTBODY_LIBRARY)
+find_library(BULLET_SOFTBODY_LIBRARY BulletSoftBody)
+mark_as_advanced(BULLET_SOFTBODY_LIBRARY)
 
-#find_library(BULLET_LINEARMATH_LIBRARY libLinearMath)
-#mark_as_advanced(BULLET_LINEARMATH_LIBRARY)
+find_library(BULLET_LINEARMATH_LIBRARY LinearMath)
+mark_as_advanced(BULLET_LINEARMATH_LIBRARY)
 
-#find_library(BULLET_FILELOADER_LIBRARY libFileLoader)
-#mark_as_advanced(BULLET_FILELOADER_LIBRARY)
+find_library(BULLET_FILELOADER_LIBRARY FileLoader)
+mark_as_advanced(BULLET_FILELOADER_LIBRARY)
 
-#find_library(BULLET_WORLDIMPORTER_LIBRARY libWorldImporter)
-#mark_as_advanced(BULLET_WORLDIMPORTER_LIBRARY)
+find_library(BULLET_WORLDIMPORTER_LIBRARY WorldImporter)
+mark_as_advanced(BULLET_WORLDIMPORTER_LIBRARY)
 
 if(BULLET_INCLUDE_DIR AND NOT OSX)
         set(BULLET_EXTRAS_INCLUDE_DIRS ${BULLET_INCLUDE_DIR}/../Extras)

@@ -2246,7 +2246,7 @@ CURVE TESSELATION
 #define PATCH_STITCHING
 
 void R_SubdividePatchToGrid( srfBspSurface_t* grid, S32 width, S32 height,
-                             srfVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE] );
+                             srfVert_t points[MAX_PATCH_SIZE* MAX_PATCH_SIZE] );
 void R_GridInsertColumn( srfBspSurface_t* grid, S32 column, S32 row, vec3_t point, F32 loderror );
 void R_GridInsertRow( srfBspSurface_t* grid, S32 row, S32 column, vec3_t point, F32 loderror );
 

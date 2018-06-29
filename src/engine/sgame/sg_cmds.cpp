@@ -2442,7 +2442,7 @@ void idGameLocal::Cmd_Build_f( gentity_t* ent )
         //these are the errors displayed when the builder first selects something to use
         switch( CanBuild( ent, buildable, dist, origin ) )
         {
-            // can place right away, set the blueprint and the valid togglebit
+                // can place right away, set the blueprint and the valid togglebit
             case IBE_NONE:
             case IBE_TNODEWARN:
             case IBE_RPTNOREAC:
@@ -2451,7 +2451,7 @@ void idGameLocal::Cmd_Build_f( gentity_t* ent )
                 ent->client->ps.stats[ STAT_BUILDABLE ] = ( buildable | SB_VALID_TOGGLEBIT );
                 break;
                 
-            // can't place yet but maybe soon: start with valid togglebit off
+                // can't place yet but maybe soon: start with valid togglebit off
             case IBE_NORMAL:
             case IBE_HOVELEXIT:
             case IBE_NOCREEP:
@@ -2461,7 +2461,7 @@ void idGameLocal::Cmd_Build_f( gentity_t* ent )
                 ent->client->ps.stats[ STAT_BUILDABLE ] = buildable;
                 break;
                 
-            // more serious errors just pop a menu
+                // more serious errors just pop a menu
             case IBE_NOALIENBP:
                 TriggerMenu( ent->client->ps.clientNum, MN_A_NOBP );
                 break;

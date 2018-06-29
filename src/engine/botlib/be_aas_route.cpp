@@ -1162,7 +1162,7 @@ void AAS_InitReachabilityAreas( void )
         numareas = 0;
         switch( reach->traveltype & TRAVELTYPE_MASK )
         {
-            //trace areas from start to end
+                //trace areas from start to end
             case TRAVEL_BARRIERJUMP:
             case TRAVEL_WATERJUMP:
                 VectorCopy( reach->start, end );
@@ -1178,7 +1178,7 @@ void AAS_InitReachabilityAreas( void )
                 numareas = AAS_TraceAreas( reach->start, reach->end, areas, NULL, MAX_REACHABILITYPASSAREAS );
                 break;
                 
-            //trace arch
+                //trace arch
             case TRAVEL_JUMP:
                 break;
             case TRAVEL_ROCKETJUMP:
@@ -1188,14 +1188,14 @@ void AAS_InitReachabilityAreas( void )
             case TRAVEL_JUMPPAD:
                 break;
                 
-            //trace from reach->start to entity center, along entity movement
-            //and from entity center to reach->end
+                //trace from reach->start to entity center, along entity movement
+                //and from entity center to reach->end
             case TRAVEL_ELEVATOR:
                 break;
             case TRAVEL_FUNCBOB:
                 break;
                 
-            //no areas in between
+                //no areas in between
             case TRAVEL_WALK:
                 break;
             case TRAVEL_CROUCH:

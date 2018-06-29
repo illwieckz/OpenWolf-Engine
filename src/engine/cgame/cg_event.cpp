@@ -474,9 +474,9 @@ void idCGameLocal::EntityEvent( centity_t* cent, vec3_t position )
     
     switch( event )
     {
-        //
-        // movement generated events
-        //
+            //
+            // movement generated events
+            //
         case EV_FOOTSTEP:
             if( cg_footsteps.integer && ci->footsteps != FOOTSTEP_NONE )
             {
@@ -677,7 +677,7 @@ void idCGameLocal::EntityEvent( centity_t* cent, vec3_t position )
             trap_S_StartSound( NULL, es->number, CHAN_AUTO, CustomSound( es->number, "*gasp.wav" ) );
             break;
             
-        // weapon events
+            // weapon events
         case EV_NOAMMO:
             trap_S_StartSound( NULL, es->number, CHAN_WEAPON,
                                cgs.media.weaponEmptyClick );
@@ -723,7 +723,7 @@ void idCGameLocal::EntityEvent( centity_t* cent, vec3_t position )
             HandleAlienFeedback( cent, AFEEDBACK_RANGED_TEAMHIT );
             break;
             
-        // other events
+            // other events
         case EV_PLAYER_TELEPORT_IN:
             //deprecated
             break;
@@ -751,9 +751,9 @@ void idCGameLocal::EntityEvent( centity_t* cent, vec3_t position )
                 trap_S_StartSound( NULL, es->number, CHAN_AUTO, cgs.media.hardBounceSound2 );
             break;
             
-        //
-        // missile impacts
-        //
+            //
+            // missile impacts
+            //
         case EV_MISSILE_HIT:
             ByteToDir( es->eventParm, dir );
             MissileHitPlayer( ( weapon_t )es->weapon, ( weaponMode_t )es->generic1, position, dir, es->otherEntityNum, es->torsoAnim );

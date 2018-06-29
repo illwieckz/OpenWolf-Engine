@@ -646,7 +646,7 @@ static struct tentry_t* _HT_CreateEntry(
     // Allocate new entry
     struct tentry_t* t_entry;
     U64	entry_size = sizeof( struct tentry_t );
-    entry_size += ( table->flags & HT_FLAG_INTABLE ) ? table->item_size : sizeof( void* );
+    entry_size += ( table->flags& HT_FLAG_INTABLE ) ? table->item_size : sizeof( void* );
     t_entry = ( tentry_t* )Z_Malloc( entry_size );
     t_entry->hash = hash;
     

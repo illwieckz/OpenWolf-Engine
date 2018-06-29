@@ -1557,7 +1557,7 @@ extern int ZEXPORT unzOpenCurrentFile3( unzFile file, int* method,
     if( ( s->cur_file_info.compression_method == Z_BZIP2ED ) && ( !raw ) )
     {
 #ifdef HAVE_BZIP2
-        pfile_in_zip_read_info->bstream.bzalloc = ( void* ( * )( void*, int, int ) )0;
+        pfile_in_zip_read_info->bstream.bzalloc = ( void * (* )( void*, int, int ) )0;
         pfile_in_zip_read_info->bstream.bzfree = ( free_func )0;
         pfile_in_zip_read_info->bstream.opaque = ( voidpf )0;
         pfile_in_zip_read_info->bstream.state = ( voidpf )0;

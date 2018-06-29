@@ -20,7 +20,7 @@ set( CMAKE_BUILD_TYPE Release CACHE STRING "Build configuration (Debug, Release,
 
 project( OpenWolf C CXX )
 
-if( MSVC )
+if( WIN32 )
   set( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /fp:precise" )
 else()
   set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -pipe -Wno-write-strings -Wno-narrowing -fpermissive -I/usr/include/freetype2" )
@@ -58,17 +58,17 @@ set( TOOLS_DIR ${CMAKE_SOURCE_DIR}/src/tools )
 
 find_package( PkgConfig )
 
-if( MSVC )
+if( WIN32 )
   add_definitions( -D_CRT_SECURE_NO_WARNINGS )
 endif()
 
 set( CONSOLE "tty" )
 
 # Determine platform
-if( MSVC )
+if( WIN32 )
   set( PLATFORM "win32" )
   set( CONSOLE "win32" )
-# elseif( UNIX )
+elseif( UNIX )
   if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
     add_definitions( -DMACOS_X -DMACOS_X_ACCELERATION_HACK -D USE_FILE32API -DMACOS_X_CURSOR_HACK )
   endif()
@@ -565,7 +565,7 @@ set( CGAMELIST_SOURCES
 # End of file list #
 ####################
 
-if( MSVC )
+if( WIN32 )
   add_definitions( -DWINVER=0x501 )
   #set( OS_LIBRARIES m winmm wsock32 gdi32 ole32 ws2_32 psapi Iphlpapi advapi32 shell32 user32 )
   set( OS_LIBRARIES winmm ws2_32 psapi )
@@ -592,7 +592,7 @@ endif()
 
 if( BUILD_GAME )
   add_library( sgame SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${QAGAMELIST_HEADERS} ${QAGAMELIST_SOURCES} )
-  if( MSVC )
+  if( WIN32 )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
 	SOURCE_GROUP( Header\ Files\\GameFiles                                FILES ${QAGAMELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
@@ -602,10 +602,10 @@ if( BUILD_GAME )
 	
 	ADD_PRECOMPILED_HEADER( sgame "${MOUNT_DIR}/sgame/sg_precompiled.h" "${MOUNT_DIR}/sgame/sg_precompiled.cpp" )
 	SET_TARGET_PROPERTIES( sgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/sgame/sgame.def" )
-  endif( MSVC )
+  endif( WIN32 )
 
   TARGET_INCLUDE_DIRECTORIES( sgame PRIVATE ${MOUNT_DIR} )
-if(MSVC)
+if(WIN32)
   set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ GAMEDLL )
 elseif( UNIX )
   set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ GAMEDLL )
@@ -618,7 +618,7 @@ endif()
   target_link_libraries( sgame )
 
   add_library( cgame SHARED ${SHAREDLIST_HEADERS} ${SHAREDLIST_SOURCES} ${CGAMELIST_HEADERS} ${CGAMELIST_SOURCES} )
-  if( MSVC )
+  if( WIN32 )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
 	SOURCE_GROUP( Header\ Files\\GameFiles                                FILES ${CGAMELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
@@ -626,10 +626,10 @@ endif()
 	
     ADD_PRECOMPILED_HEADER( cgame "${MOUNT_DIR}/cgame/cg_precompiled.h" "${MOUNT_DIR}/cgame/cg_precompiled.cpp" )	
 	SET_TARGET_PROPERTIES( cgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/cgame/cgame.def" )
-  endif( MSVC )
+  endif( WIN32 )
   
   TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
-if(MSVC)
+if(WIN32)
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
 elseif(UNIX)
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ CGAMEDLL )
@@ -656,7 +656,7 @@ if( BUILD_CLIENT )
   # Setup target client
   
   # Dushan - This is how visual studio directories (or filters) are generated
-  if( MSVC )
+  if( WIN32 )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GPURenderer                              FILES ${GPURENDERER_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GPUWorkers                               FILES ${GPUWORKERS_HEADERS} )
@@ -686,12 +686,12 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Source\ Files\\Physics                                  FILES ${PHYSICLIB_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\OWLib                                    FILES ${OWLIB_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Database                                 FILES ${DATABASELIST_SOURCES} )
-  endif( MSVC )
+  endif( WIN32 )
   
   add_executable( client ${SHAREDLIST_HEADERS} ${GPURENDERER_HEADERS} ${QCOMMONLIST_HEADERS} ${GPUWORKERS_HEADERS} ${GUI_HEADERS} ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${AUDIO_HEADERS} ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${GPURENDERER_SOURCES} ${GPUWORKERS_SOURCES} ${GUI_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} ${QCOMMONLIST_SOURCES} ${CLIENTLIST_SOURCES} ${AUDIO_SOURCES} ${SDLBASELIST} ${SDLLIST} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${DATABASELIST_SOURCES}
   ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASELIST_SOURCES} ${SDLBASELIST_HEADERS} ${JPEG_INCLUDE_DIR} ${JPEG_SOURCES} )
 	    
-if(MSVC)
+if(WIN32)
   set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ NDEBUG _WINDOWS BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE HAVE_BOOLEAN )
 elseif( UNIX )
   set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS NDEBUG __LINUX__ LINUX BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE )
@@ -718,16 +718,21 @@ endif()
   find_package( PNG REQUIRED )
   find_package( BZ2 REQUIRED )
   find_package( OpenCL REQUIRED )
-if( MSVC )
+if( WIN32 )
   #Dushan - only for the Windows platform now
   find_package( Sixense REQUIRED )
   find_package( OculusSDK REQUIRED )
   find_package( OculusKernelSDK REQUIRED )
-endif( MSVC )
-  
-  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${PDCURSES_INCLUDE_DIR} 
-  ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} )
-  target_link_libraries( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PNG_LIBRARIES} ${OpenCL_LIBRARY} ${PDCURSES_LIBRARY} ${JPEG_LIBRARIES} ${LINK_LIBRARY})
+endif( WIN32 )
+
+  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${SIXENSE_INCLUDE_DIRS}  )
+#if( WIN32 )
+#  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${SIXENSE_INCLUDE_DIRS} )
+#endif( WIN32 )
+  TARGET_LINK_LIBRARIES( client ${OPENGL_LIBRARIES} ${SDL_LIBRARY} ${GLEW_LIBRARY} ${FREETYPE_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PNG_LIBRARIES} ${OpenCL_LIBRARY} ${PDCURSES_LIBRARY} ${JPEG_LIBRARIES} ${LINK_LIBRARY} ${SIXENSE_LIBRARIES} ${SIXENSE_LIBRARIES_UTILS} ${OVR_LIBRARIES} ${OVRKERNEL_LIBRARY_RELEASE} ${BULLET_LIBRARIES} )
+#if( WIN32 )
+#  TARGET_LINK_LIBRARIES( client ${SIXENSE_LIBRARIES} ${SIXENSE_LIBRARIES_UTILS} ${OVR_LIBRARIES} ${OVRKERNEL_LIBRARY_RELEASE} )
+#endif( WIN32 )
 
   if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
     link_directories( /opt/local/lib )
@@ -740,7 +745,7 @@ endif( MSVC )
   if( USE_CURSES )
     set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
     # Determine platform
-    if( MSVC )
+    if( WIN32 )
         find_package( PDCurses REQUIRED )
     elseif( UNIX )
         find_package( Curses REQUIRED )
@@ -750,7 +755,7 @@ endif( MSVC )
     target_link_libraries( client ${CURSES_LIBRARIES} )
   endif()
   
-if ( MSVC)
+if ( WIN32)
   target_link_libraries( client ${OS_LIBRARIES} )
 else ( UNIX )
   target_link_libraries( client ${OS_LIBRARIES} ${BULLET_COLLISION_LIBRARY} ${BULLET_DYNAMICS_LIBRARY} ${BULLET_FILELOADER_LIBRARY} ${BULLET_SOFTBODY_LIBRARY} ${BULLET_WORLDIMPORTER_LIBRARY} ${BULLET_CONVEXDECOMPOSITION_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
@@ -799,7 +804,7 @@ if( BUILD_SERVER )
   if( USE_CURSES )
     set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
     # Determine platform
-    if( MSVC )
+    if( WIN32 )
         find_package( PDCurses REQUIRED )
     elseif( UNIX )
         find_package( Curses REQUIRED )
@@ -851,7 +856,7 @@ if( BUILD_AUTOUPDATE_SERVER )
   if( USE_CURSES )
     set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
     # Determine platform
-    if( MSVC )
+    if( WIN32 )
         find_package( PDCurses REQUIRED )
     elseif( UNIX )
         find_package( Curses REQUIRED )

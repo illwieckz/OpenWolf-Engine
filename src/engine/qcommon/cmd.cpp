@@ -533,13 +533,13 @@ static modifierMask_t getModifierMask( StringEntry mods )
     modifierMask_t mask;
     StringEntry ptr;
     static const modifierMask_t none;
-    
+
     mask = none;
-    
+
     --mods;
     while( *++mods == ' ' ) /* skip leading spaces */;
     ptr = mods;
-    
+
     while( *ptr )
     {
         S32 invert = ( *ptr == '!' );
@@ -577,7 +577,7 @@ static modifierMask_t getModifierMask( StringEntry mods )
             return none;
         }
     }
-    
+
     for( i = 0; i < NUM_RECOGNISED_MODIFIERS; ++i )
     {
         if( mask.up & ( 1 << i ) )
@@ -589,7 +589,7 @@ static modifierMask_t getModifierMask( StringEntry mods )
             ++mask.bits;
         }
     }
-    
+
     return mask;
 }
 
@@ -607,7 +607,7 @@ static S32 checkKeysDown( modifierMask_t mask )
             return 0; // should not be pressed, is pressed
         }
     }
-    
+
     return 1; // all (not) pressed as requested
 }
 
@@ -627,17 +627,17 @@ void Cmd_ModCase_f( void )
     S32   max = 0;
     S32   count = ( argc - 1 ) / 2; // round down :-)
     UTF8* v;
-    
+
     S32 mods[1 << NUM_RECOGNISED_MODIFIERS];
     // want 'modifierMask_t mods[argc / 2 - 1];' (variable array, C99)
     // but MSVC apparently doesn't like that
-    
+
     if( argc < 3 )
     {
         Com_Printf( "modcase <modifiers> <command> [<modifiers> <command>] ... [<command>]\n" );
         return;
     }
-    
+
     while( index < count )
     {
         modifierMask_t mask = getModifierMask( Cmd_Argv( 2 * index + 1 ) );
@@ -648,10 +648,10 @@ void Cmd_ModCase_f( void )
             max = mods[index];
         ++index;
     }
-    
+
     // If we have a tail command, use it as default
     v = ( argc & 1 ) ? NULL : Cmd_Argv( argc - 1 );
-    
+
     // Search for a suitable command to execute.
     // Search is done as if the commands are sorted by modifier count
     // (descending) then parameter index no. (ascending).
@@ -667,7 +667,7 @@ void Cmd_ModCase_f( void )
             }
         }
     }
-    
+
 found:
     if( v )
     {

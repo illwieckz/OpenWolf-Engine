@@ -548,30 +548,30 @@ int Com_GetCurrentParseLine( void );
 // ParseOnLine will return empty if there isn't another token on this line
 
 // this funny typedef just means a moving pointer into a const char * buffer
-const char* Com_Parse( const char* ( *data_p ) );
-const char* Com_ParseOnLine( const char* ( *data_p ) );
-const char* Com_ParseRestOfLine( const char* ( *data_p ) );
+const char* Com_Parse( const char * ( *data_p ) );
+const char* Com_ParseOnLine( const char * ( *data_p ) );
+const char* Com_ParseRestOfLine( const char * ( *data_p ) );
 
 void Com_UngetToken( void );
 
 #ifdef __cplusplus
-void Com_MatchToken( const char* ( *buf_p ), const char* match, bool warning = false );
+void Com_MatchToken( const char * ( *buf_p ), const char* match, bool warning = false );
 #else
-void Com_MatchToken( const char* ( *buf_p ), const char* match, bool warning );
+void Com_MatchToken( const char * ( *buf_p ), const char* match, bool warning );
 #endif
 
 void Com_ScriptError( const char* msg, ... );
 void Com_ScriptWarning( const char* msg, ... );
 
-void Com_SkipBracedSection( const char* ( *program ) );
-void Com_SkipRestOfLine( const char* ( *data ) );
+void Com_SkipBracedSection( const char * ( *program ) );
+void Com_SkipRestOfLine( const char * ( *data ) );
 
-float Com_ParseFloat( const char* ( *buf_p ) );
-int Com_ParseInt( const char* ( *buf_p ) );
+float Com_ParseFloat( const char * ( *buf_p ) );
+int Com_ParseInt( const char * ( *buf_p ) );
 
-void Com_Parse1DMatrix( const char* ( *buf_p ), int x, float* m );
-void Com_Parse2DMatrix( const char* ( *buf_p ), int y, int x, float* m );
-void Com_Parse3DMatrix( const char* ( *buf_p ), int z, int y, int x, float* m );
+void Com_Parse1DMatrix( const char * ( *buf_p ), int x, float* m );
+void Com_Parse2DMatrix( const char * ( *buf_p ), int y, int x, float* m );
+void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m );
 
 //=====================================================================================
 void QDECL Com_sprintf( char* dest, int size, const char* fmt, ... );
@@ -749,7 +749,7 @@ static char* Info_ValueForKey( const char* s, const char* key );
 static void Info_RemoveKey( char* s, const char* key );
 static void Info_SetValueForKey( char* s, const char* key, const char* value );
 static bool Info_Validate( const char* s );
-static void Info_NextPair( const char* ( *s ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] );
+static void Info_NextPair( const char * ( *s ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] );
 
 // get cvar defs, collision defs, etc
 //#include "../shared/interface.h"

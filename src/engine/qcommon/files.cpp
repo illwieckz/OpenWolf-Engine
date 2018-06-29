@@ -2090,8 +2090,8 @@ S32 FS_Seek( fileHandle_t f, S64 offset, S32 origin )
             case FS_SEEK_SET:
                 unzSetOffset( fsh[f].handleFiles.file.z, fsh[f].zipFilePos );
                 unzOpenCurrentFile( fsh[f].handleFiles.file.z );
-            //fallthrough
-            
+                //fallthrough
+                
             case FS_SEEK_CUR:
                 while( remainder > PK3_SEEK_BUFFER_SIZE )
                 {
@@ -4434,9 +4434,9 @@ StringEntry FS_LoadedPakChecksums( void )
 {
     static UTF8 info[BIG_INFO_STRING];
     searchpath_t*    search;
-    
+
     info[0] = 0;
-    
+
     for( search = fs_searchpaths ; search ; search = search->next )
     {
         // is the element a pak file?
@@ -4444,7 +4444,7 @@ StringEntry FS_LoadedPakChecksums( void )
         {
             continue;
         }
-        
+
         if( strcmp( search->pack->pakBasename, "pak0" ) )
         {
             // this is a regular pk3
@@ -4456,7 +4456,7 @@ StringEntry FS_LoadedPakChecksums( void )
             Q_strcat( info, sizeof( info ), va( "%s ", pak_checksums ) );
         }
     }
-    
+
     return info;
 }
 
@@ -4475,9 +4475,9 @@ StringEntry FS_LoadedPakNames( void )
 {
     static UTF8 info[BIG_INFO_STRING];
     searchpath_t*    search;
-    
+
     info[0] = 0;
-    
+
     for( search = fs_searchpaths ; search ; search = search->next )
     {
         // is the element a pak file?
@@ -4485,7 +4485,7 @@ StringEntry FS_LoadedPakNames( void )
         {
             continue;
         }
-        
+
         if( *info )
         {
             Q_strcat( info, sizeof( info ), " " );
@@ -4501,7 +4501,7 @@ StringEntry FS_LoadedPakNames( void )
             Q_strcat( info, sizeof( info ), pak_names );
         }
     }
-    
+
     return info;
 }
 
@@ -4528,9 +4528,9 @@ StringEntry FS_LoadedPakPureChecksums( void )
 {
     static UTF8 info[BIG_INFO_STRING];
     searchpath_t*    search;
-    
+
     info[0] = 0;
-    
+
     for( search = fs_searchpaths ; search ; search = search->next )
     {
         // is the element a pak file?
@@ -4538,7 +4538,7 @@ StringEntry FS_LoadedPakPureChecksums( void )
         {
             continue;
         }
-        
+
         if( strcmp( search->pack->pakBasename, "pak0" ) )
         {
             // this is a regular pk3
@@ -4553,7 +4553,7 @@ StringEntry FS_LoadedPakPureChecksums( void )
             //Q_strcat( info, sizeof( info ), va("%s ", pak_purechecksums[lookup_randomized[feed_index]] ) );
         }
     }
-    
+
     return info;
 }
 
@@ -4578,9 +4578,9 @@ StringEntry FS_ReferencedPakChecksums( void )
 {
     static UTF8 info[BIG_INFO_STRING];
     searchpath_t* search;
-    
+
     info[0] = 0;
-    
+
     for( search = fs_searchpaths ; search ; search = search->next )
     {
         // is the element a pak file?
@@ -4596,7 +4596,7 @@ StringEntry FS_ReferencedPakChecksums( void )
             }
         }
     }
-    
+
     return info;
 }
 
@@ -4615,9 +4615,9 @@ StringEntry FS_ReferencedPakNames( void )
 {
     static UTF8 info[BIG_INFO_STRING];
     searchpath_t*    search;
-    
+
     info[0] = 0;
-    
+
     // we want to return ALL pk3's from the fs_game path
     // and referenced one's from baseq3
     for( search = fs_searchpaths ; search ; search = search->next )
@@ -4641,7 +4641,7 @@ StringEntry FS_ReferencedPakNames( void )
             }
         }
     }
-    
+
     return info;
 }
 

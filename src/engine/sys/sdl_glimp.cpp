@@ -106,15 +106,15 @@ static QGLContext opengl_context;
 static void GLimp_GetCurrentContext( void )
 {
     SDL_SysWMinfo info;
-    
+
     SDL_VERSION( &info.version );
-    
+
     if( !SDL_GetWMInfo( &info ) )
     {
         CL_RefPrintf( PRINT_WARNING, "Failed to obtain HWND from SDL (InputRegistry)" );
         return;
     }
-    
+
     opengl_context.hDC = GetDC( info.window );
     opengl_context.hGLRC = info.hglrc;
 }

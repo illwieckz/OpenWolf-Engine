@@ -355,7 +355,7 @@ void idBotLocal::BotCheckEvents( bot_state_t* bs, entityState_t* state )
     
     switch( event )
     {
-        //client obituary event
+            //client obituary event
         case EV_OBITUARY:
         {
             S32 target, attacker, mod;
@@ -422,22 +422,22 @@ void idBotLocal::BotCheckEvents( bot_state_t* bs, entityState_t* state )
         //case EV_FOOTSPLASH:
         //case EV_FOOTWADE:
         case EV_SWIM:
-        //case EV_FALL_SHORT:
-        //case EV_FALL_MEDIUM:
-        //case EV_FALL_FAR:
-        //case EV_STEP_4:
-        //case EV_STEP_8:
-        //case EV_STEP_12:
-        //case EV_STEP_16:
-        //case EV_JUMP_PAD:
+            //case EV_FALL_SHORT:
+            //case EV_FALL_MEDIUM:
+            //case EV_FALL_FAR:
+            //case EV_STEP_4:
+            //case EV_STEP_8:
+            //case EV_STEP_12:
+            //case EV_STEP_16:
+            //case EV_JUMP_PAD:
         case EV_JUMP:
         case EV_TAUNT:
-        //case EV_WATER_TOUCH:
-        //case EV_WATER_LEAVE:
-        //case EV_WATER_UNDER:
-        //case EV_WATER_CLEAR:
-        //case EV_ITEM_PICKUP:
-        //case EV_GLOBAL_ITEM_PICKUP:
+            //case EV_WATER_TOUCH:
+            //case EV_WATER_LEAVE:
+            //case EV_WATER_UNDER:
+            //case EV_WATER_CLEAR:
+            //case EV_ITEM_PICKUP:
+            //case EV_GLOBAL_ITEM_PICKUP:
         case EV_NOAMMO:
         case EV_CHANGE_WEAPON:
         case EV_FIRE_WEAPON:
@@ -549,9 +549,9 @@ UTF8* idBotLocal::BotGetMenuText( S32 menu, S32 arg )
             return "Your building rights have been revoked";
         case MN_B_SURRENDER:
             return "Building is denied to traitorous cowards";
-        //      longMsg   = "Your team has decided to admit defeat and concede the game:"
-        //                  "traitors and cowards are not allowed to build.";
-        //                  // too harsh? <- LOL
+            //      longMsg   = "Your team has decided to admit defeat and concede the game:"
+            //                  "traitors and cowards are not allowed to build.";
+            //                  // too harsh? <- LOL
         case MN_H_NOBP:
             return "There is no power remaining";
         case MN_H_NOTPOWERED:

@@ -35,7 +35,7 @@ static void     byteReverse( U8* buf, U32 longs );
 static void byteReverse( U8* buf, U32 longs )
 {
     U32        t;
-    
+
     do
     {
         t = ( U32 )( ( U32 )buf[3] << 8 | buf[2] ) << 16 | ( ( U32 )buf[1] << 8 | buf[0] );

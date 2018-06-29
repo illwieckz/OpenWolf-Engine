@@ -37,7 +37,7 @@
 
 #include <OWLib/precompiled.h>
 
-#ifdef _WIn32
+#ifdef _WIN32
 
 #define QCONSOLE_HISTORY 32
 

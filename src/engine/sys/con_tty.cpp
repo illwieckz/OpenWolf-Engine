@@ -37,6 +37,8 @@
 
 #include <OWLib/precompiled.h>
 
+#ifdef __LINUX__
+
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
@@ -432,3 +434,5 @@ void CON_Print( const char* msg )
         
     CON_Show( );
 }
+
+#endif

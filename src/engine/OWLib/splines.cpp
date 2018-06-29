@@ -46,7 +46,7 @@ void FS_FCloseFile( fileHandle_t f );
 void Cbuf_AddText( const char* text );
 void Cbuf_Execute( void );
 
-#if 0
+#ifdef __LINUX__
 static float Q_fabs( float f )
 {
     int tmp = *( int* ) &f;

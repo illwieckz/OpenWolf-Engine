@@ -504,7 +504,7 @@ R_SubdividePatchToGrid
 =================
 */
 void R_SubdividePatchToGrid( srfBspSurface_t* grid, S32 width, S32 height,
-                             srfVert_t points[MAX_PATCH_SIZE* MAX_PATCH_SIZE] )
+                             srfVert_t points[MAX_PATCH_SIZE * MAX_PATCH_SIZE] )
 {
     S32			i, j, k, l;
     srfVert_t_cleared( prev );

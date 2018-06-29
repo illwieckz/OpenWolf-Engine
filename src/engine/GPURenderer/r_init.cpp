@@ -375,7 +375,8 @@ static const vidmode_t r_vidModes[] =
     { "1280x768  (16:10)", 1280,  768, 1 },
     { "1280x800  (16:10)", 1280,  800, 1 },
     { "1280x1024",         1280, 1024, 1 },
-    { "1360x768  (16:9)",  1360,  768,  1 },
+    { "1360x768  (16:9)",  1360,  768, 1 },
+    { "1366x768  (16:9)",  1366,  768, 1 },
     { "1440x900  (16:10)", 1440,  900, 1 },
     { "1680x1050 (16:10)", 1680, 1050, 1 },
     { "1600x1200",         1600, 1200, 1 },
@@ -1264,8 +1265,8 @@ void R_Register( void )
     Cvar_CheckRange( r_ext_multisample, 0, 4, true );
     r_overBrightBits = Cvar_Get( "r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ignorehwgamma = Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_mode = Cvar_Get( "r_mode", "-1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
+    r_mode = Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
+    r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE );
     r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_width = Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_height = Cvar_Get( "r_height", "0", CVAR_ARCHIVE | CVAR_LATCH );

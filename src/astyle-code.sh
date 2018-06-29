@@ -1,5 +1,4 @@
 #!/bin/sh
-astyle -v --options=astyle-options.ini --recursive *.cpp *.h *.c *.m *.java
-
+./astyle -v --options=astyle-options.ini --exclude="libs" --exclude="docs" --recursive *.cpp *.h *.c
 
 #pause

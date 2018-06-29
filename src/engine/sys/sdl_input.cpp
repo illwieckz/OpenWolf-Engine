@@ -461,8 +461,8 @@ static StringEntry IN_TranslateSDLToQ3Key( SDL_keysym* keysym, keyNum_t* key, bo
                     *buf = CTRL( 'h' );
                     break;
                 }
-                // fallthrough
-                
+            // fallthrough
+            
             default:
                 *buf = ch;
                 break;

@@ -2850,7 +2850,7 @@ void UI_ScreenChange( UTF8** args )
     }
     
     // Sort the list
-    qsort( screenshots, maxscreens, MAX_QPATH, ( S32(* )( const void*, const void* ) )strcmp );
+    qsort( screenshots, maxscreens, MAX_QPATH, ( S32( * )( const void*, const void* ) )strcmp );
     
     // Get the modifier & find the screen index
     if( String_Parse( args, &string ) )

@@ -568,7 +568,7 @@ UTF8* CON_Input( void )
                 if( input_field.cursor <= 0 )
                     continue;
                 input_field.cursor--;
-                // Fall through
+            // Fall through
             case KEY_DC:
                 if( input_field.cursor < strlen( input_field.buffer ) )
                 {

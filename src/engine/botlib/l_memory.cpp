@@ -347,7 +347,7 @@ void* GetMemory( U64 size )
 {
     void* ptr;
     U64* memid;
-
+    
     ptr = botimport.GetMemory( size + sizeof( U64 ) );
     if( !ptr ) return NULL;
     memid = ( U64* ) ptr;
@@ -389,7 +389,7 @@ void* GetHunkMemory( U64 size )
 {
     void* ptr;
     U64* memid;
-
+    
     ptr = botimport.HunkAlloc( size + sizeof( U64 ) );
     if( !ptr ) return NULL;
     memid = ( U64* ) ptr;
@@ -426,9 +426,9 @@ void* GetClearedHunkMemory( U64 size )
 void FreeMemory( void* ptr )
 {
     U64* memid;
-
+    
     memid = ( U64* )( ( UTF8* ) ptr - sizeof( U64 ) );
-
+    
     if( *memid == MEM_ID )
     {
         botimport.FreeMemory( memid );

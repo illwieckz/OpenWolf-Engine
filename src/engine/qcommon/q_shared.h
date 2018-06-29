@@ -1838,15 +1838,15 @@ void TransformToMatrix( const idVec3 origin, const idVec3 angles, idVec4 axis[4]
 #define SAY_ACTION_T    4
 #define SAY_ADMINS    5
 
-void Com_MatchToken( const char * ( *buf_p ), const char* match, bool warning = false );
-const char* Com_Parse( const char * ( *data_p ) );
+void Com_MatchToken( const char* ( *buf_p ), const char* match, bool warning = false );
+const char* Com_Parse( const char* ( *data_p ) );
 void Com_UngetToken( void );
-const char* Com_ParseOnLine( const char * ( *data_p ) );
-const char* Com_ParseRestOfLine( const char * ( *data_p ) );
-float Com_ParseFloat( const char * ( *buf_p ) );
-void Com_Parse1DMatrix( const char * ( *buf_p ), int x, float* m );
-void Com_Parse2DMatrix( const char * ( *buf_p ), int y, int x, float* m );
-void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m );
+const char* Com_ParseOnLine( const char* ( *data_p ) );
+const char* Com_ParseRestOfLine( const char* ( *data_p ) );
+float Com_ParseFloat( const char* ( *buf_p ) );
+void Com_Parse1DMatrix( const char* ( *buf_p ), int x, float* m );
+void Com_Parse2DMatrix( const char* ( *buf_p ), int y, int x, float* m );
+void Com_Parse3DMatrix( const char* ( *buf_p ), int z, int y, int x, float* m );
 
 // handy stuff when tracking isnan problems
 #ifndef NDEBUG
@@ -1861,13 +1861,13 @@ void Com_BeginParseSession( const char* filename );
 void Com_EndParseSession( void );
 
 #if (defined _MSC_VER)
-	#define Q_EXPORT __declspec(dllexport)
+#define Q_EXPORT __declspec(dllexport)
 #elif (defined __SUNPRO_C)
-	#define Q_EXPORT __global
+#define Q_EXPORT __global
 #elif ((__GNUC__ >= 3) && (!__EMX__) && (!sun))
-	#define Q_EXPORT __attribute__((visibility("default")))
+#define Q_EXPORT __attribute__((visibility("default")))
 #else
-	#define Q_EXPORT
+#define Q_EXPORT
 #endif
 
 #endif //!__Q_SHARED_H__

@@ -4078,10 +4078,10 @@ bool Item_HandleKey( itemDef_t* item, S32 key, bool down )
         case ITEM_TYPE_SLIDER:
             return Item_Slider_HandleKey( item, key, down );
             break;
-            //case ITEM_TYPE_IMAGE:
-            //  Item_Image_Paint(item);
-            //  break;
-            
+        //case ITEM_TYPE_IMAGE:
+        //  Item_Image_Paint(item);
+        //  break;
+        
         default:
             return false;
             break;
@@ -4762,7 +4762,7 @@ static StringEntry Item_Text_Wrap( StringEntry text, F32 scale, F32 width )
 
 typedef struct
 {
-    UTF8      text[ MAX_WRAP_TEXT* MAX_WRAP_LINES ];  //FIXME: augment with hash?
+    UTF8      text[ MAX_WRAP_TEXT * MAX_WRAP_LINES ]; //FIXME: augment with hash?
     rectDef_t rect;
     F32     scale;
     UTF8      lines[ MAX_WRAP_LINES ][ MAX_WRAP_TEXT ];
@@ -6400,10 +6400,10 @@ void Item_Paint( itemDef_t* item )
             Item_ListBox_Paint( item );
             break;
             
-            //case ITEM_TYPE_IMAGE:
-            //  Item_Image_Paint(item);
-            //  break;
-            
+        //case ITEM_TYPE_IMAGE:
+        //  Item_Image_Paint(item);
+        //  break;
+        
         case ITEM_TYPE_MODEL:
             Item_Model_Paint( item );
             break;

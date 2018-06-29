@@ -2350,7 +2350,7 @@ void R_LoadPNG( StringEntry name, U8** pic, S32* width, S32* height )
             /*
              *  All other ColourTypes should not have tRNS chunks
              */
-            
+        
             default :
             {
                 CloseBufferedFile( ThePNG );

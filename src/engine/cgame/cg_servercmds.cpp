@@ -537,11 +537,11 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             type      = DT_COMMAND;
             break;
             
-            //===============================
-            
-            // Since cheating commands have no default binds, they will often be done
-            // via console. In light of this, perhaps opening a menu is
-            // counterintuitive
+        //===============================
+        
+        // Since cheating commands have no default binds, they will often be done
+        // via console. In light of this, perhaps opening a menu is
+        // counterintuitive
         case MN_CMD_CHEAT:
             //longMsg   = "This action is considered cheating. It can only be used "
             //            "in cheat mode, which is not enabled on this server.";
@@ -587,8 +587,8 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             break;
             
             
-            //===============================
-            
+        //===============================
+        
         case MN_B_NOROOM:
             longMsg   = "There is no room to build here. Move until the structure turns "
                         "translucent green indicating a valid build location.";
@@ -610,7 +610,7 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             type      = DT_BUILD;
             break;
             
-            // FIXME: MN_H_ and MN_A_?
+        // FIXME: MN_H_ and MN_A_?
         case MN_B_LASTSPAWN:
             longMsg   = "This action would remove your team's last spawn point, "
                         "which often quickly results in a loss. Try building more "
@@ -641,8 +641,8 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             shortMsg  = "Building is denied to traitorous cowards";
             break;
             
-            //===============================
-            
+        //===============================
+        
         case MN_H_NOBP:
             if( cgs.markDeconstruct )
                 longMsg   = "There is no power remaining. Free up power by marking "
@@ -755,8 +755,8 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             type      = DT_COMMAND;
             break;
             
-            //===============================
-            
+        //===============================
+        
         case MN_A_NOCREEP:
             longMsg   = "There is no creep here. You must build near existing Eggs or "
                         "the Overmind. Alien structures will not support themselves.";

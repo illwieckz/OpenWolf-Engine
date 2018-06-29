@@ -69,9 +69,9 @@ static S32 R_MDRCullModel( mdrHeader_t* header, trRefEntity_t* ent )
         {
             switch( R_CullLocalPointAndRadius( newFrame->localOrigin, newFrame->radius ) )
             {
-                    // Ummm... yeah yeah I know we don't really have an md3 here.. but we pretend
-                    // we do. After all, the purpose of mdrs are not that different, are they?
-                    
+                // Ummm... yeah yeah I know we don't really have an md3 here.. but we pretend
+                // we do. After all, the purpose of mdrs are not that different, are they?
+                
                 case CULL_OUT:
                     tr.pc.c_sphere_cull_md3_out++;
                     return CULL_OUT;

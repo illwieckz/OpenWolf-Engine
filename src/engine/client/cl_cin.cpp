@@ -92,7 +92,7 @@ typedef enum
 
 typedef struct
 {
-    U8            linbuf[DEFAULT_CIN_WIDTH* DEFAULT_CIN_HEIGHT * 4 * 2];
+    U8            linbuf[DEFAULT_CIN_WIDTH * DEFAULT_CIN_HEIGHT * 4 * 2];
     U8            file[65536];
     S16           sqrTable[256];
     
@@ -1196,8 +1196,8 @@ static void initRoQ( void )
 {
     if( currentHandle < 0 ) return;
     
-    cinTable[currentHandle].VQNormal = ( void (* )( U8*, void* ) )blitVQQuad32fs;
-    cinTable[currentHandle].VQBuffer = ( void (* )( U8*, void* ) )blitVQQuad32fs;
+    cinTable[currentHandle].VQNormal = ( void ( * )( U8*, void* ) )blitVQQuad32fs;
+    cinTable[currentHandle].VQBuffer = ( void ( * )( U8*, void* ) )blitVQQuad32fs;
     cinTable[currentHandle].samplesPerPixel = 4;
     ROQ_GenYUVTables();
     RllSetupTable();

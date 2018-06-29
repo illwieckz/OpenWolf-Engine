@@ -456,8 +456,8 @@ UTF8* idBotLocal::BotWeaponNameForMeansOfDeath( S32 mod )
             return "Acid Tube";
         case MOD_OVERMIND:
             return "Overmind";
-            //Dushan - maybe more?
-            
+        //Dushan - maybe more?
+        
         default:
             return "[unknown weapon]";
     }

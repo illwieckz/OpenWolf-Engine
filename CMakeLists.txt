@@ -632,7 +632,7 @@ endif()
 if(MSVC)
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
 elseif(UNIX)
-  set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ CGAMEDLL )
+  set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS LINUX __LINUX__ CGAMEDLL )
 endif()
   
   set_target_properties( cgame PROPERTIES
@@ -659,7 +659,6 @@ if( BUILD_CLIENT )
   if( MSVC )
     SOURCE_GROUP( Header\ Files\\SharedList                               FILES ${SHAREDLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GPURenderer                              FILES ${GPURENDERER_HEADERS} )
-	#SOURCE_GROUP( Header\ Files\\GPURenderer\\OpeneXRList                 FILES ${OPENEXRLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GPUWorkers                               FILES ${GPUWORKERS_HEADERS} )
     SOURCE_GROUP( Header\ Files\\GUI                                      FILES ${GUI_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Server                                   FILES ${SERVERLIST_HEADERS} )
@@ -674,7 +673,6 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Header\ Files\\Database                                 FILES ${DATABASELIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\GPURenderer                              FILES ${GPURENDERER_SOURCES} )
-	#SOURCE_GROUP( Source\ Files\\GPURenderer\\OpeneXRList                 FILES ${OPENEXRLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\GPUWorkers                               FILES ${GPUWORKERS_SOURCES} )
     SOURCE_GROUP( Source\ Files\\GUI                                      FILES ${GUI_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Server                                   FILES ${SERVERLIST_SOURCES} )
@@ -703,7 +701,7 @@ endif()
   set_target_properties( client PROPERTIES OUTPUT_NAME "OpenWolf.${BUILD_ARCH}" PREFIX "" LINKER_LANGUAGE CXX )
   
   install( TARGETS client
-    RUNTIME DESTINATION bin/linux-x86_64
+    RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
   )

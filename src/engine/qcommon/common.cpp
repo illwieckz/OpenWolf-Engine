@@ -465,7 +465,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     calledSysError = true;
     Sys_Error( "%s", com_errorMessage );
 }
-
+ 
 // *INDENT-OFF*
 //bani - moved
 void            CL_ShutdownCGame( void );
@@ -1425,48 +1425,48 @@ typedef struct memstatic_s
 } memstatic_t;
 
 // bk001204 - initializer brackets
-memstatic_t     emptystring = { {( sizeof( memblock_t ) + 2 + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+memstatic_t     emptystring = { {( sizeof( memblock_t ) + 2 + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
     , {'\0', '\0'}
 };
 memstatic_t     numberstring[] =
 {
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'0', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'1', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'2', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'3', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'4', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'5', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'6', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'7', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'8', '\0'}
     }
     ,
-    {   {( sizeof( memstatic_t ) + 3 )& ~3, TAG_STATIC, NULL, NULL, ZONEID}
+    {   {( sizeof( memstatic_t ) + 3 ) & ~3, TAG_STATIC, NULL, NULL, ZONEID}
         , {'9', '\0'}
     }
 };

@@ -741,7 +741,7 @@ void idCGameLocal::DrawStack( rectDef_t* rect, vec4_t color, F32 fill, S32 align
                     start = ( i * ( 1 + nudge ) + frac ) / fmax;
                     break;
                 case VALIGN_CENTER:
-                    // TODO (fallthrough for now)
+                // TODO (fallthrough for now)
                 default:
                 case VALIGN_BOTTOM:
                     start = 1 - ( val - i - ( i + fmax - val ) * nudge ) / fmax;
@@ -759,7 +759,7 @@ void idCGameLocal::DrawStack( rectDef_t* rect, vec4_t color, F32 fill, S32 align
                          rect->w, each, cgs.media.whiteShader );
                 break;
             case VALIGN_CENTER:
-                // fallthrough
+            // fallthrough
             default:
             case VALIGN_BOTTOM:
                 DrawPic( rect->x, rect->y + rect->h *
@@ -802,7 +802,7 @@ void idCGameLocal::DrawStack( rectDef_t* rect, vec4_t color, F32 fill, S32 align
                     start = ( i * ( 1 + nudge ) + frac ) / fmax;
                     break;
                 case ALIGN_CENTER:
-                    // TODO (fallthrough for now)
+                // TODO (fallthrough for now)
                 default:
                 case ALIGN_RIGHT:
                     start = 1 - ( val - i - ( i + fmax - val ) * nudge ) / fmax;
@@ -820,7 +820,7 @@ void idCGameLocal::DrawStack( rectDef_t* rect, vec4_t color, F32 fill, S32 align
                          each, rect->h, cgs.media.whiteShader );
                 break;
             case ALIGN_CENTER:
-                // fallthrough
+            // fallthrough
             default:
             case ALIGN_RIGHT:
                 DrawPic( rect->x + rect->w *
@@ -2829,7 +2829,7 @@ void idCGameLocal::OwnerDraw( F32 x, F32 y, F32 w, F32 h, F32 text_x, F32 text_y
             DrawSquadMarkers( foreColor );
             break;
             
-            //loading screen
+        //loading screen
         case CG_LOAD_LEVELSHOT:
             DrawLevelShot( &rect );
             break;

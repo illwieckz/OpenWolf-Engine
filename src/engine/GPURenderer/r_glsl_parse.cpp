@@ -34,11 +34,13 @@
 #endif
 
 #if defined (__LINUX__)
-S32 strcpy_s(UTF8 *dest,U64 destsz,StringEntry src){
-    if(strlen(src)>=destsz){
+S32 strcpy_s( UTF8* dest, U64 destsz, StringEntry src )
+{
+    if( strlen( src ) >= destsz )
+    {
         return 1;
     }
-    strcpy(dest,src);
+    strcpy( dest, src );
     return 0;
 }
 #endif

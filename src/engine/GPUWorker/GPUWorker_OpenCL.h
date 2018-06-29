@@ -46,5 +46,5 @@ public:
     void InitDevice( void );
     void InitTexturefromCL( void );
 };
-    
+
 extern owGPUWorkerCLManager*	gpuWorkerCLManager;

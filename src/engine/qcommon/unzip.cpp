@@ -63,8 +63,7 @@
 
 */
 
-#include "../client/client.h"
-
+#include <OWLib/precompiled.h>
 
 #include <stdio.h>
 #include <stdlib.h>

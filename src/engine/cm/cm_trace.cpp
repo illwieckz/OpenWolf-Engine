@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 // always use bbox vs. bbox collision and never capsule vs. bbox or vice versa
 //#define ALWAYS_BBOX_VS_BBOX

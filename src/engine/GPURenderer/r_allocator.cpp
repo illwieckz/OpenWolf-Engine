@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 Allocator::Allocator( U64 memorySize )
 #if defined(GLSL_BUILDTOOL)

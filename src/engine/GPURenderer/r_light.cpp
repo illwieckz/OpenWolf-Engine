@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #define	DLIGHT_AT_RADIUS		16
 // at the edge of a dlight's influence, this amount of light will be added

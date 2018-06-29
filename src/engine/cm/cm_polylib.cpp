@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 // counters are only bumped when running single threaded,
 // because they are an awful coherence problem

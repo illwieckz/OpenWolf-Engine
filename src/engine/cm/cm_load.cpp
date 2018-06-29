@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 idCollisionModelManagerLocal collisionModelManagerLocal;
 idCollisionModelManager* collisionModelManager = &collisionModelManagerLocal;

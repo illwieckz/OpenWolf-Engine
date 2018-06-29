@@ -170,7 +170,7 @@
 #include <GUI/gui_local.h>
 
 #include <GPUWorker/GPUWorker.h>
-#include <GPUWorker/GpuWorker_Local.h>
+#include <GPUWorker/GPUWorker_Local.h>
 #include <GPUWorker/GPUWorker_CLCache.h>
 #include <GPUWorker/GPUWorker_Backend.h>
 #include <GPUWorker/GPUWorker_OpenCL.h>
@@ -181,9 +181,15 @@
 #include <cgame/cg_api.h>
 
 #include <client/cl_HydraManager.h>
+#ifdef _WIN32
 #include <OVR.h>
+#endif
 
+#ifdef _WIN32
 #include <freetype/ft2build.h>
+#else
+#include <freetype2/ft2build.h>
+#endif
 #undef getch
 
 // Dushan
@@ -194,9 +200,13 @@
 #include <mysql/mysql.h>
 #endif
 
-#include <OWLIb/types.h>
+#include <OWLib/types.h>
 #include <OWLib/util_list.h>
 #include <OWLib/util_str.h>
+
+#ifdef __LINUX__
+#include <CL/cl_gl.h>
+#endif
 
 // curses.h defines COLOR_*, which are already defined in q_shared.h
 #undef COLOR_BLACK

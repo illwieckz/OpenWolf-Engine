@@ -35,7 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
+
+#ifdef _WIn32
 
 #define QCONSOLE_HISTORY 32
 
@@ -326,3 +328,5 @@ void CON_Print( StringEntry msg )
     
     CON_Show( );
 }
+
+#endif

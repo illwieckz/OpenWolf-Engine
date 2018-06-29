@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #define ARRAYLEN(x) (sizeof(x)/sizeof(x[0]))
 
@@ -1587,10 +1587,11 @@ void IN_Init( void )
     }
     
     //Dushan
+#ifdef _WIN32
     Com_DPrintf( "\n------- Razer Hydra Initialization -------\n" );
     HydraManagerLocal.Initialize();
     HydraManagerLocal.isDocked( false );
-    
+#endif
     appState = SDL_GetAppState( );
     Cvar_SetValue( "com_unfocused",	!( appState & SDL_APPINPUTFOCUS ) );
     Cvar_SetValue( "com_minimized", !( appState & SDL_APPACTIVE ) );
@@ -1607,7 +1608,9 @@ IN_Shutdown
 void IN_Shutdown( void )
 {
     //Dushan
+#ifdef _WIN32
     HydraManagerLocal.Exit();
+#endif
     IN_DeactivateMouse( );
     mouseAvailable = false;
     

@@ -1860,4 +1860,14 @@ void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m )
 void Com_BeginParseSession( const char* filename );
 void Com_EndParseSession( void );
 
+#if (defined _MSC_VER)
+	#define Q_EXPORT __declspec(dllexport)
+#elif (defined __SUNPRO_C)
+	#define Q_EXPORT __global
+#elif ((__GNUC__ >= 3) && (!__EMX__) && (!sun))
+	#define Q_EXPORT __attribute__((visibility("default")))
+#else
+	#define Q_EXPORT
+#endif
+
 #endif //!__Q_SHARED_H__

@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/types.h>
+#include <OWLib/types.h>
 
 //
 // owGPUWorkerCLManager
@@ -46,5 +46,5 @@ public:
     void InitDevice( void );
     void InitTexturefromCL( void );
 };
-
+    
 extern owGPUWorkerCLManager*	gpuWorkerCLManager;

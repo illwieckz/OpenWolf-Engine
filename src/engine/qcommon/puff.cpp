@@ -69,7 +69,7 @@
  * 1.8   9 Jan 2004     - Added some comments on no distance codes case
  */
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #define local static            /* for local function definitions */
 

@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <OWLib/q_splineshared.h>
-#include <OWLIb/splines.h>
+#include <OWLib/splines.h>
 
 int FS_Write( const void* buffer, int len, fileHandle_t h );
 int FS_ReadFile( const char* qpath, void** buffer );
@@ -46,7 +46,7 @@ void FS_FCloseFile( fileHandle_t f );
 void Cbuf_AddText( const char* text );
 void Cbuf_Execute( void );
 
-#if 0
+#if 1
 static float Q_fabs( float f )
 {
     int tmp = *( int* ) &f;

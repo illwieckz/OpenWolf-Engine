@@ -26,10 +26,21 @@
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
-#include <OWLIb/precompiled.h>
+
+#include <OWLib/precompiled.h>
 
 #if defined(GLSL_BUILDTOOL)
 #include <iostream>
+#endif
+
+#if defined (__LINUX__)
+S32 strcpy_s(UTF8 *dest,U64 destsz,StringEntry src){
+    if(strlen(src)>=destsz){
+        return 1;
+    }
+    strcpy(dest,src);
+    return 0;
+}
 #endif
 
 namespace
@@ -147,8 +158,13 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
     UTF8* vertexSource = ojkAllocString( allocator, vertexBlock->blockTextLength );
     UTF8* fragmentSource = ojkAllocString( allocator, fragmentBlock->blockTextLength );
     
+#ifdef _WIN32
     strncpy_s( vertexSource, vertexBlock->blockTextLength + 1, vertexBlock->blockText, vertexBlock->blockTextLength );
     strncpy_s( fragmentSource, fragmentBlock->blockTextLength + 1, fragmentBlock->blockText, fragmentBlock->blockTextLength );
+#else
+    strncpy( vertexSource, vertexBlock->blockText, vertexBlock->blockTextLength );
+    strncpy( fragmentSource, fragmentBlock->blockText, fragmentBlock->blockTextLength );
+#endif
     
     theProgram.shaders[0].type = GPUSHADER_VERTEX;
     theProgram.shaders[0].source = vertexSource;

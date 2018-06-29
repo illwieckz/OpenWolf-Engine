@@ -40,7 +40,7 @@
 #define __GPUWORKER_H__
 
 #ifndef __GPUWORKER_PROGGRAM_H__
-#include <GPUWorker/GpuWorker_Program.h>
+#include <GPUWorker/GPUWorker_Program.h>
 #endif
 
 /*

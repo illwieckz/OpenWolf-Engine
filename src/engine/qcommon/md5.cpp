@@ -15,7 +15,7 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 typedef struct MD5Context
 {

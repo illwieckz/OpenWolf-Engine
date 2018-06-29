@@ -27,7 +27,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 const GPUProgramDesc fallback_bokehProgram;
 const GPUProgramDesc fallback_calclevels4xProgram;

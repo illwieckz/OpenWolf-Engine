@@ -35,9 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <sys/sys_local.h>
+#include <OWLib/precompiled.h>
 
 #include <unistd.h>
 #include <signal.h>

@@ -55,7 +55,7 @@ static float Com_Clamp( float min, float max, float value )
 Com_StringContains
 ============
 */
-const char* Com_StringContains( const char* str1, const char* str2, int casesensitive )
+static const char* Com_StringContains( const char* str1, const char* str2, int casesensitive )
 {
     int len, i, j;
     
@@ -92,7 +92,7 @@ const char* Com_StringContains( const char* str1, const char* str2, int casesens
 Com_Filter
 ============
 */
-int Com_Filter( const char* filter, const char* name, int casesensitive )
+static int Com_Filter( const char* filter, const char* name, int casesensitive )
 {
     char buf[MAX_TOKEN_CHARS];
     const char* ptr;
@@ -226,7 +226,7 @@ Com_HashString
 ================
 */
 #define FILE_HASH_SIZE 1024
-int Com_HashString( const char* fname )
+static int Com_HashString( const char* fname )
 {
     int i;
     long hash;
@@ -258,7 +258,7 @@ int Com_HashString( const char* fname )
 Com_SkipPath
 ============
 */
-char* Com_SkipPath( char* pathname )
+static char* Com_SkipPath( char* pathname )
 {
     char*    last;
     
@@ -279,7 +279,7 @@ char* Com_SkipPath( char* pathname )
 Com_StripExtension
 ============
 */
-void Com_StripExtension( const char* in, char* out )
+static void Com_StripExtension( const char* in, char* out )
 {
     while( *in && *in != '.' )
     {
@@ -294,7 +294,7 @@ void Com_StripExtension( const char* in, char* out )
 Com_DefaultExtension
 ==================
 */
-void Com_DefaultExtension( char* path, int maxSize, const char* extension )
+static void Com_DefaultExtension( char* path, int maxSize, const char* extension )
 {
     char oldPath[MAX_QPATH];
     char*    src;
@@ -419,7 +419,7 @@ static float FloatNoSwap( float f )
 Swap_Init
 ================
 */
-void Swap_Init( void )
+static void Swap_Init( void )
 {
 #if 0
     byte swaptest[2] = {1, 0};
@@ -451,7 +451,7 @@ void Swap_Init( void )
 Com_ParseInfos
 ===============
 */
-int Com_ParseInfos( const char* buf, int max, char infos[][MAX_INFO_STRING] )
+static int Com_ParseInfos( const char* buf, int max, char infos[][MAX_INFO_STRING] )
 {
     const char*  token;
     int count;
@@ -590,7 +590,7 @@ Safe strncpy that ensures a trailing zero
 =============
 */
 #if defined (_DEBUG)
-void Q_strncpyz( char* dest, const char* src, int destsize )
+static void Q_strncpyz( char* dest, const char* src, int destsize )
 #else
 static void Q_strncpyz( char* dest, const char* src, int destsize )
 #endif
@@ -811,7 +811,7 @@ varargs versions of all text functions.
 FIXME: make this buffer size safe someday
 ============
 */
-char* va( char* format, ... )
+static char* va( char* format, ... )
 {
     va_list argptr;
     static char string[2][32000];       // in case va is called by nested functions

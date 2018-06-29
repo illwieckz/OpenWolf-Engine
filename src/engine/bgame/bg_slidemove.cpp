@@ -33,7 +33,7 @@
 #elif GAMEDLL
 #include <sgame/sg_precompiled.h>
 #else
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 #endif // !GAMEDLL
 
 /*

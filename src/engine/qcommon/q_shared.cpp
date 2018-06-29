@@ -35,13 +35,13 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef CGAMEDLL
+#if defined (CGAMEDLL)
 #include <cgame/cg_precompiled.h>
-#elif GAMEDLL
+#elif defined (GAMEDLL)
 #include <sgame/sg_precompiled.h>
 #else
 #include <OWLib/precompiled.h>
-#endif // !GAMEDLL
+#endif
 
 // os x game bundles have no standard library links, and the defines are not always defined!
 

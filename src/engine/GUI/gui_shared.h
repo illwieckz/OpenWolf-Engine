@@ -174,7 +174,7 @@ typedef struct
 }
 windowDef_t;
 
-typedef windowDef_t Window;
+typedef windowDef_t WinDow;
 
 typedef struct
 {
@@ -281,7 +281,7 @@ modelDef_t;
 
 typedef struct itemDef_s
 {
-    Window window;                 // common positional, border, style, layout info
+    WinDow window;                 // common positional, border, style, layout info
     rectangle textRect;            // rectangle the text ( if any ) consumes
     S32 type;                      // text, button, radiobutton, checkbox, textfield, listbox, combo
     S32 alignment;                 // left center right
@@ -318,7 +318,7 @@ itemDef_t;
 
 typedef struct
 {
-    Window window;
+    WinDow window;
     StringEntry  font;                // font
     bool fullScreen;              // covers entire screen
     S32 itemCount;                    // number of items;

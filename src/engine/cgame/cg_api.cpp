@@ -35,7 +35,7 @@ idSoundSystem* soundSystem;
 idRenderSystem* renderSystem;
 idCollisionModelManager* collisionModelManager;
 
-idCGame* dllEntry( cgameImports_t* cgimports )
+Q_EXPORT idCGame* dllEntry( cgameImports_t* cgimports )
 {
     imports = cgimports;
     

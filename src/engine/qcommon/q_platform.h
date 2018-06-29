@@ -121,6 +121,9 @@
 #define DLL_PREFIX ""
 #define DLL_EXT ".dll"
 
+#undef QDECL
+#define QDECL __cdecl
+
 #elif defined(__WIN32__) || defined(_WIN32)
 
 #define MAC_STATIC
@@ -183,6 +186,9 @@
 #define DLL_DIRECTORY "libs"
 #define DLL_PREFIX "lib"
 #define DLL_EXT ".dylib"
+
+#undef QDECL
+#define QDECL
 
 #endif
 
@@ -249,6 +255,9 @@
 #define DLL_DIRECTORY "libs"
 #define DLL_PREFIX "lib"
 #define DLL_EXT ".so"
+
+#undef QDECL
+#define QDECL
 
 #endif
 

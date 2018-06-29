@@ -56,7 +56,7 @@
 #endif //SCREWUP
 
 #ifdef BOTLIB
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 #endif //BOTLIB
 
 #ifdef MEQCC

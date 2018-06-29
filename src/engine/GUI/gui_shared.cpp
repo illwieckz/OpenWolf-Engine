@@ -31,7 +31,7 @@
 #ifdef CGAMEDLL
 #include <sgame/sg_precompiled.h>
 #else
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 #endif // !GAMEDLL
 
 #define SCROLL_TIME_START         500
@@ -1018,7 +1018,7 @@ Initializes a window structure ( windowDef_t ) with defaults
 
 ==================
 */
-void Window_Init( Window* w )
+void Window_Init( WinDow* w )
 {
     ::memset( w, 0, sizeof( windowDef_t ) );
     w->borderSize = 1;
@@ -1059,7 +1059,7 @@ void Fade( S32* flags, F32* f, F32 clamp, S32* nextTime, S32 offsetTime, bool bF
 
 
 
-static void Window_Paint( Window* w, F32 fadeAmount, F32 fadeClamp, F32 fadeCycle )
+static void Window_Paint( WinDow* w, F32 fadeAmount, F32 fadeClamp, F32 fadeCycle )
 {
     vec4_t color;
     rectDef_t fillRect = w->rect;
@@ -1129,7 +1129,7 @@ static void Window_Paint( Window* w, F32 fadeAmount, F32 fadeClamp, F32 fadeCycl
     }
 }
 
-static void Border_Paint( Window* w )
+static void Border_Paint( WinDow* w )
 {
     if( w == NULL || ( w->style == 0 && w->border == 0 ) )
         return;

@@ -27,7 +27,7 @@
 	$Id: mdfour.c,v 1.1 2002/08/23 22:03:27 abster Exp $
 */
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #ifdef USE_OPENSSL
 

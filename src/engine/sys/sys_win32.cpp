@@ -35,7 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
+
+#ifdef _WIN32
 
 // Used to determine where to store user-specific files
 static UTF8 homePath[ MAX_OSPATH ] = { 0 };
@@ -987,3 +989,4 @@ bool Sys_IsNumLockDown( void )
     return false;
 }
 
+#endif

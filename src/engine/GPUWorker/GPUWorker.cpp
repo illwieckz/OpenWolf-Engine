@@ -36,7 +36,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 owGpuWorkerLocal		gpuWorkerLocal;
 owGpuWorker*			gpuWorker = &gpuWorkerLocal;
@@ -65,7 +65,6 @@ void owGpuWorkerLocal::Init( void )
         CL_GL_CONTEXT_KHR, ( cl_context_properties ) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, ( cl_context_properties ) wglGetCurrentDC(),
 #elif __LINUX__
-        //Dushan - this should be for Linux
         CL_GL_CONTEXT_KHR, ( cl_context_properties ) glXGetCurrentContext(),
         CL_GLX_DISPLAY_KHR, ( cl_context_properties ) glXGetCurrentDisplay(),
 #elif __ANDROID__

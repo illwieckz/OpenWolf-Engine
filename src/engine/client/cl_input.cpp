@@ -35,12 +35,14 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 U32 frame_msec;
 S32 old_com_frameTime;
 
+#if defined _WIN32
 idHydraManagerLocal HydraManagerLocal;
+#endif
 
 /*
 ===============================================================================
@@ -1119,7 +1121,7 @@ void CL_FinishMove( usercmd_t* cmd )
 CL_RazorHydra
 =================
 */
-#if !defined( __ANDROID__ )
+#if defined _WIN32
 static void CL_RazorHydra( usercmd_t* cmd )
 {
     F32 joyx, joyy, trigger, yaw, pitch, roll;
@@ -1231,11 +1233,12 @@ usercmd_t CL_CreateCmd( void )
     // get basic movement from mouse
     CL_MouseMove( &cmd );
     
-    
     // Siense SDK update
     if( cl_razerhydra->integer )
     {
+#if defined _WIN32
         CL_RazorHydra( &cmd );
+#endif
     }
     
     // get basic movement from mouse

@@ -18,63 +18,40 @@
 
 message(STATUS "Looking for Bullet...")
 
-set(BULLET_ROOT ${LIB_DIR}/bullet-2.80-rev2531 CACHE PATH "Bullet install dir, parent of both header files and binaries.")
-set(BULLET_BUILD_DIR ${LIB_DIR}/bullet-2.80-rev2531 CACHE PATH "Parent directory of Bullet binary file directories such as src/BulletCollision.")
-set(BULLET_SOURCE_DIR ${LIB_DIR}/bullet-2.80-rev2531/src CACHE PATH "Parent directory of Bullet header file directories such as src or include.")
+mark_as_advanced(BULLET_INCLUDE_DIR)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(OSX TRUE)
-        set(HINT_PATHS /usr/local/include/bullet)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        set(HINT_PATHS
-                ${BULLET_ROOT}
-                ${BULLET_ROOT}/src
-                ${BULLET_ROOT}/Extras
-                ${BULLET_SOURCE_DIR}
-				${LIB_DIR}/bullet-2.80-rev2531/Extras
-				${LIB_DIR}/bullet-2.80-rev2531/src
-				)
-else()
-        set(HINT_PATHS
-                ${BULLET_ROOT}
-                ${BULLET_SOURCE_DIR}
-				${LIB_DIR}/bullet-2.80-rev2531/Extras
-				${LIB_DIR}/bullet-2.80-rev2531/src
-                /usr/include/bullet
-                /usr/local/include/bullet)
-endif()
-
-#unset(BULLET_INCLUDE_DIR CACHE)
-#mark_as_advanced(BULLET_INCLUDE_DIR)
-
-find_path(BULLET_INCLUDE_DIR btBulletCollisionCommon.h
-          PATHS ${HINT_PATHS})
-
+set(BULLET_INCLUDE_DIR ${LIB_DIR}/bullet-2.80-rev2531/src)
+set(BULLET_INCLUDE_LINEARMATH_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/LinearMath)
+set(BULLET_INCLUDE_SOFTBODY_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletSoftBody)
 set(BULLET_INCLUDE_COLLISION_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletCollision)
 set(BULLET_INCLUDE_DYNAMICS_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletDynamics)
 set(BULLET_INCLUDE_WORLDIMPORTER_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/Serialize/BulletWorldImporter)
 set(BULLET_INCLUDE_FILELOADER_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/Serialize/BulletFileLoader)
+set(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/ConvexDecomposition)
 
-#find_path(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ConvexDecomposition/ConvexDecomposition.h
- #         PATHS ${HINT_PATHS})
+find_path(BULLET_INCLUDE_DIR btBulletCollisionCommon.h
+          PATHS ${HINT_PATHS})
 
-#if(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
+find_path(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ConvexDecomposition/ConvexDecomposition.h
+          PATHS ${HINT_PATHS})
+
+if(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR)
         set(BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR ${LIB_DIR}/bullet-2.80-rev2531/Extras/ConvexDecomposition)
-#endif()
+endif()
 
-#find_path(BULLET_INCLUDE_SOFTBODY_DIR BulletSoftBody/btSoftBody.h
-#          PATHS ${HINT_PATHS})
+find_path(BULLET_INCLUDE_SOFTBODY_DIR BulletSoftBody/btSoftBody.h
+          PATHS ${HINT_PATHS})
 
-#if(BULLET_INCLUDE_SOFTBODY_DIR)
+if(BULLET_INCLUDE_SOFTBODY_DIR)
         set(BULLET_INCLUDE_SOFTBODY_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/BulletSoftBody)
-#endif()
+endif()
 
-#find_path(BULLET_INCLUDE_LINEARMATH_DIR LinearMath/btScalar.h
-#          PATHS ${HINT_PATHS})
+find_path(BULLET_INCLUDE_LINEARMATH_DIR LinearMath/btScalar.h
+          PATHS ${HINT_PATHS})
 
-#if(BULLET_INCLUDE_LINEARMATH_DIR)
+if(BULLET_INCLUDE_LINEARMATH_DIR)
         set(BULLET_INCLUDE_LINEARMATH_DIR ${LIB_DIR}/bullet-2.80-rev2531/src/LinearMath)
-#endif()
+endif()
 
 mark_as_advanced(BULLET_INCLUDE_COLLISION_DIR
                  BULLET_INCLUDE_DYNAMICS_DIR
@@ -118,15 +95,15 @@ set(BULLET_INCLUDE_DIRS
 
 message(STATUS "BULLET_INCLUDE_DIRS: ${BULLET_INCLUDE_DIRS}")
 
-if(LINUX)
-set(BULLET_COLLISION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletCollision.a)
-set(BULLET_DYNAMICS_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletDynamics.a)
-set(BULLET_FILELOADER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletFileLoader.a)
-set(BULLET_SOFTBODY_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletSoftBody.a)
-set(BULLET_WORLDIMPORTER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libBulletWorldImporter.a)
-set(BULLET_CONVEXDECOMPOSITION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libConvexDecomposition.a)
-set(BULLET_LINEARMATH_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/src/libs/linux64/libLinearMath.a)
-endif(LINUX)
+if(UNIX)
+set(BULLET_COLLISION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libBulletCollision.a)
+set(BULLET_DYNAMICS_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libBulletDynamics.a)
+set(BULLET_FILELOADER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libBulletFileLoader.a)
+set(BULLET_SOFTBODY_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libBulletSoftBody.a)
+set(BULLET_WORLDIMPORTER_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libBulletWorldImporter.a)
+set(BULLET_CONVEXDECOMPOSITION_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libConvexDecomposition.a)
+set(BULLET_LINEARMATH_LIBRARY ${LIB_DIR}/bullet-2.80-rev2531/libs/linux64/libLinearMath.a)
+endif(UNIX)
 
 #find_library(BULLET_COLLISION_LIBRARY libBulletCollision)
 #mark_as_advanced(BULLET_COLLISION_LIBRARY)
@@ -170,7 +147,8 @@ message(STATUS "Looking for ${LIBNAME}...")
             $ENV{BULLET_BUILD_DIR}
             "C:/Program Files/BULLET_PHYSICS"
 			${LIB_DIR}/bullet-2.80-rev2531/libs
-        PATH_SUFFIXES x64 x86
+			${LIB_DIR}/bullet-2.80-rev2531/src/libs
+        PATH_SUFFIXES x64
             ./src/${DIRNAME}
             ./Extras/${DIRNAME}
             ./Demos/${DIRNAME}
@@ -180,6 +158,7 @@ message(STATUS "Looking for ${LIBNAME}...")
             ./libs/${DIRNAME}
             ./libs
             ./lib
+            ./libs/Linuxt64
             ./lib/Release) # v2.76, new location for build tree libs on Windows
 
     find_library(BULLET_${LIBNAME}_LIBRARY_debug
@@ -191,7 +170,7 @@ message(STATUS "Looking for ${LIBNAME}...")
             $ENV{BULLET_BUILD_DIR}
             "C:/Program Files/BULLET_PHYSICS"
 			${LIB_DIR}/bullet-2.80-rev2531/libs
-        PATH_SUFFIXES x64 x86
+        PATH_SUFFIXES x64
             ./src/${DIRNAME}
             ./Extras/${DIRNAME}
             ./Demos/${DIRNAME}

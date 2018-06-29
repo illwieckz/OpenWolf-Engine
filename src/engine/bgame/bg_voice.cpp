@@ -34,7 +34,7 @@
 #elif GAMEDLL
 #include <sgame/sg_precompiled.h>
 #else
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 #endif // !GAMEDLL
 
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode );

@@ -26,7 +26,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 idDatabaseSystemLocal databaseSystemLocal;
 idDatabaseSystem* databaseSystem = &databaseSystemLocal;

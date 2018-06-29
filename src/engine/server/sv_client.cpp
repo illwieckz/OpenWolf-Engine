@@ -35,8 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <server/server.h>
-#include <qcommon/md4.h>
+#include <OWLib/precompiled.h>
 
 static void     SV_CloseDownload( client_t* cl );
 

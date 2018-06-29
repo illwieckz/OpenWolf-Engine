@@ -46,7 +46,7 @@ theora:
  * theora doxygen docs (1.0beta1)
 */
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #if defined(USE_CODEC_VORBIS) && (defined(USE_CIN_XVID) || defined(USE_CIN_THEORA))
 

@@ -20,7 +20,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>
 ===========================================================================
 */
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 // we could limit the png size to a lower value here
 #ifndef INT_MAX

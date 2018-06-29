@@ -41,7 +41,7 @@
 // I need to ask Ryan if it's as simple as a constant index or
 // if some more coding needs to be done.
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #define MAXSIZE             8
 #define MINSIZE             4

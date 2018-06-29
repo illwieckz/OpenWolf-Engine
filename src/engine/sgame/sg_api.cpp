@@ -37,7 +37,7 @@ idDatabaseSystem* databaseSystem;
 //
 // dllEntry
 //
-idGame* dllEntry( gameImports_t* gimports )
+Q_EXPORT idGame* dllEntry( gameImports_t* gimports )
 {
     imports = gimports;
     

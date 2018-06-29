@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 extern botlib_export_t* botlib_export;
 
@@ -786,7 +786,7 @@ void CL_CreateExportTable( void )
     exports.startCamera = CL_startCamera;
     exports.stopCamera = CL_stopCamera;
     
-    exports.getCameraInfo = ( bool( __cdecl* )( S32, S32, vec3_t(* ), vec3_t(* ), F32* ) )getCameraInfo;
+    exports.getCameraInfo = ( bool( QDECL* )( S32, S32, vec3_t(* ), vec3_t(* ), F32* ) )getCameraInfo;
     
     exports.Key_GetBindingBuf = Key_GetBindingBuf;
     exports.Key_SetBinding = Key_SetBinding;
@@ -956,7 +956,7 @@ void CL_InitCGame( void )
         Com_Error( ERR_DROP, "cgvm on cgame failed" );
     }
     // Load in the entry point.
-    cgdllEntry = ( idCGame * ( __cdecl* )( cgameImports_t* ) )Sys_GetProcAddress( cgvm, "dllEntry" );
+    cgdllEntry = ( idCGame * (QDECL* )( cgameImports_t* ) )Sys_GetProcAddress( cgvm, "dllEntry" );
     if( !cgdllEntry )
     {
         Com_Error( ERR_DROP, "cgdllEntry on cgame failed" );
@@ -1344,13 +1344,13 @@ void CL_SetCGameTime( void )
 CL_GetTag
 ====================
 */
-bool CL_GetTag( S32 clientNum, UTF8* tagname, orientation_t* or )
+bool CL_GetTag( S32 clientNum, UTF8* tagname, orientation_t* _or )
 {
     if( !cgvm )
     {
         return false;
     }
     
-    return cgame->GetTag( clientNum, tagname, or );
+    return cgame->GetTag( clientNum, tagname, _or );
 }
 

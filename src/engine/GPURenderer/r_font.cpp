@@ -73,7 +73,7 @@
 // defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and
 // uncheck the exclude from build check box in the FreeType2 area of the Renderer project.
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 #ifdef BUILD_FREETYPE
 #include FT_FREETYPE_H

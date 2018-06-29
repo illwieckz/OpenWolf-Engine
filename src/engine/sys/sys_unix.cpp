@@ -35,9 +35,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <qcommon/q_shared.h>
-#include <qcommon/qcommon.h>
-#include <sys_local.h>
+#include <OWLib/precompiled.h>
+
+#ifdef __LINUX__
 
 #include <signal.h>
 #include <sys/types.h>
@@ -155,7 +155,7 @@ S32 Sys_Milliseconds( void )
 Sys_RandomBytes
 ==================
 */
-bool Sys_RandomBytes( byte* string, S32 len )
+bool Sys_RandomBytes( U8* string, S32 len )
 {
     FILE* fp;
     
@@ -163,7 +163,7 @@ bool Sys_RandomBytes( byte* string, S32 len )
     if( !fp )
         return false;
         
-    if( !fread( string, sizeof( byte ), len, fp ) )
+    if( !fread( string, sizeof( U8 ), len, fp ) )
     {
         fclose( fp );
         return false;
@@ -1078,3 +1078,5 @@ UTF8* Sys_StripAppBundle( UTF8* dir )
     return cwd;
 }
 #endif // MACOS_X
+
+#endif

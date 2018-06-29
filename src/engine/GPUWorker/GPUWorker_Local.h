@@ -40,13 +40,17 @@
 #define __GPUWORKER_LOCAL_H__
 
 #ifndef __OPENCL_H
-#include <cl/Opencl.h>
+#ifdef _WIN32
+#include <CL/OpenCL.h>
+#else
+#include <CL/cl.h>
 #endif
 #ifndef __UTIL_LIST_H__
 #include <OWLib/util_list.h>
 #endif
 #ifndef __GPUWORKER_H__
 #include <GPUWorker/GPUWorker.h>
+#endif
 #endif
 
 #define ID_GPUWORKER_CALLAPI( x )	owGpuWorkerLocal::clError = x

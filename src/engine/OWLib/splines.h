@@ -48,6 +48,7 @@
 #ifndef __MATH_VECTOR_H__
 #include <OWLib/math_vector.h>
 #endif
+#include <cassert>
 
 typedef int fileHandle_t;
 

@@ -38,7 +38,7 @@
 #ifndef __Q_SHARED_H
 #define __Q_SHARED_H
 
-#if 0
+#if __LINUX__
 
 // q_splineshared.h -- included first by ALL program modules.
 // these are the definitions that have no dependance on
@@ -514,7 +514,7 @@ float TriangleArea( vec3_c a, vec3_c b, vec3_c c );
 
 //=============================================
 
-float Com_Clamp( float min, float max, float value );
+static float Com_Clamp( float min, float max, float value );
 
 #define FILE_HASH_SIZE      1024
 int Com_HashString( const char* fname );
@@ -595,27 +595,27 @@ typedef enum
 
 //=============================================
 
-int Q_isprint( int c );
-int Q_islower( int c );
-int Q_isupper( int c );
-int Q_isalpha( int c );
+static int Q_isprint( int c );
+static int Q_islower( int c );
+static int Q_isupper( int c );
+static int Q_isalpha( int c );
 
 // portable case insensitive compare
-int     Q_stricmp( const char* s1, const char* s2 );
-int     Q_strncmp( const char* s1, const char* s2, int n );
-int     Q_stricmpn( const char* s1, const char* s2, int n );
-char*    Q_strlwr( char* s1 );
-char*    Q_strupr( char* s1 );
-char*    Q_strrchr( const char* string, int c );
+static int     Q_stricmp( const char* s1, const char* s2 );
+static int     Q_strncmp( const char* s1, const char* s2, int n );
+static int     Q_stricmpn( const char* s1, const char* s2, int n );
+static char*    Q_strlwr( char* s1 );
+static char*    Q_strupr( char* s1 );
+static char*    Q_strrchr( const char* string, int c );
 
 // buffer size safe library replacements
-void    Q_strncpyz( char* dest, const char* src, int destsize );
-void    Q_strcat( char* dest, int size, const char* src );
+static void    Q_strncpyz( char* dest, const char* src, int destsize );
+static void    Q_strcat( char* dest, int size, const char* src );
 
 // strlen that discounts Quake color sequences
-int Q_PrintStrlen( const char* string );
+static int Q_PrintStrlen( const char* string );
 // removes color sequences from string
-char* Q_CleanStr( char* string );
+static char* Q_CleanStr( char* string );
 
 //int			Com_Filter( const char *filter, const char *name, int casesensitive );
 //const char *Com_StringContains( const char *str1, const char *str2, int casesensitive );
@@ -745,11 +745,11 @@ void QDECL Com_DPrintf( const char* msg, ... );
 //
 // key / value info strings
 //
-char* Info_ValueForKey( const char* s, const char* key );
-void Info_RemoveKey( char* s, const char* key );
-void Info_SetValueForKey( char* s, const char* key, const char* value );
-bool Info_Validate( const char* s );
-void Info_NextPair( const char * ( *s ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] );
+static char* Info_ValueForKey( const char* s, const char* key );
+static void Info_RemoveKey( char* s, const char* key );
+static void Info_SetValueForKey( char* s, const char* key, const char* value );
+static bool Info_Validate( const char* s );
+static void Info_NextPair( const char * ( *s ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] );
 
 // get cvar defs, collision defs, etc
 //#include "../shared/interface.h"

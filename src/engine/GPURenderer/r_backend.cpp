@@ -28,7 +28,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 backEndData_t*	backEndData;
 backEndState_t	backEnd;

@@ -35,7 +35,7 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLIb/precompiled.h>
+#include <OWLib/precompiled.h>
 
 botlib_export_t* botlib_export;
 
@@ -608,7 +608,7 @@ void SV_InitGameProgs( void )
     }
     
     // Get the entry point.
-    gameDllEntry = ( idGame * ( __cdecl* )( gameImports_t* ) )Sys_GetProcAddress( gvm, "dllEntry" );
+    gameDllEntry = ( idGame * ( QDECL* )( gameImports_t* ) )Sys_GetProcAddress( gvm, "dllEntry" );
     if( !gameDllEntry )
     {
         Com_Error( ERR_FATAL, "gameDllEntry on game failed.\n" );
@@ -668,9 +668,9 @@ SV_GetTag
 return false if unable to retrieve tag information for this client
 ====================
 */
-extern bool CL_GetTag( S32 clientNum, UTF8* tagname, orientation_t* or );
+extern bool CL_GetTag( S32 clientNum, UTF8* tagname, orientation_t* _or );
 
-bool SV_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* or )
+bool SV_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* _or )
 {
     S32 i;
     
@@ -680,10 +680,10 @@ bool SV_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* 
         {
             if( !Q_stricmp( sv.tags[i].name, tagname ) )
             {
-                VectorCopy( sv.tags[i].origin, or ->origin );
-                VectorCopy( sv.tags[i].axis[0], or ->axis[0] );
-                VectorCopy( sv.tags[i].axis[1], or ->axis[1] );
-                VectorCopy( sv.tags[i].axis[2], or ->axis[2] );
+                VectorCopy( sv.tags[i].origin, _or->origin );
+                VectorCopy( sv.tags[i].axis[0], _or->axis[0] );
+                VectorCopy( sv.tags[i].axis[1], _or->axis[1] );
+                VectorCopy( sv.tags[i].axis[2], _or->axis[2] );
                 return true;
             }
         }
@@ -697,7 +697,7 @@ bool SV_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* 
         return false;
     }
     
-    return CL_GetTag( clientNum, tagname, or );
+    return CL_GetTag( clientNum, tagname, _or );
 #else
     return false;
 #endif

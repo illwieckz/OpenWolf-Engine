@@ -4,6 +4,7 @@
     * Fixed compiling the game logics on the Linux platform
 	* Fixed compiling on the Windows platform
     * Yet again fixed compiling on the Linux platform
+	* Updated "readme.cmake" file with the building instructions for the Windows and for the Linux platform
     
 2018-06-28 Dusan Jocic <dusanjocic@msn.com>
 	* Disabled compiling server and autoupdate server from the cmake

@@ -2,7 +2,8 @@
 	* Allow parallax on non-map surfaces
 	* Updated GPURenderer
 	* Added some multitheading to some places in the code that it is safe
-
+    * Added -fopenmp compile flag to the Linux cMake
+	
 2018-06-29 Dusan Jocic <dusanjocic@msn.com>
     * Fixed compiling the engine on the Linux platform
         NOTE: Segmentation fault (core dumped) right after starting and initializing the game window

@@ -1,7 +1,7 @@
 /*[Vertex]*/
 attribute vec4 attr_TexCoord0;
-uniform vec4   u_Local1; // 0, 0, 0, 0
-varying vec4	var_Local1; // 0, 0, 0, 0
+uniform vec4   u_Local1; // parallaxScale, 0, 0, 0
+varying vec4	var_Local1; // parallaxScale, 0, 0, 0
 uniform vec4	u_Local2;
 varying vec4	var_Local2; // surfaceType, time, 0, 0
 uniform vec2	u_Dimensions;
@@ -270,6 +270,8 @@ void main()
 }
 
 /*[Fragment]*/
+#define FAST_PARALLAX
+
 uniform sampler2D u_DiffuseMap;
 varying vec4	var_Local1; // surfaceType, 0, 0, 0
 varying vec4	var_Local2; // surfaceType, 0, 0, 0
@@ -370,21 +372,41 @@ varying vec4      var_PrimaryLightDir;
   #if defined(USE_PARALLAXMAP_NONORMALS)
 	float SampleDepth(sampler2D normalMap, vec2 t)
 	{
-		vec3 color = texture2D(u_DiffuseMap, t).rgb * 2.0;
-		color = clamp(color, 0.0, 1.0);
+		vec3 color = texture2D(u_DiffuseMap, t).rgb;
+
+#define const_1 ( 16.0 / 255.0)
+#define const_2 (255.0 / 219.0)
+		color = ((color - const_1) * const_2);
+
+		vec3 orig_color = color * 2.0;
+		//color += 0.2;
+		//color = clamp(color, 0.0, 1.0);
+		//color -= vec3(0.4, 0.4, 0.4);
+		//color = clamp(color, 0.0, 1.0);
+		//color += vec3(0.2, 0.2, 0.2);
+		//color = clamp(color, 0.0, 1.0);
+		//color *= 1.8;
+		//color = clamp(color, 0.0, 1.0);
 	
-		float combined_color = color.r + color.g + color.b;
-		combined_color /= 4.0;
-		//if (combined_color > 3.0) combined_color /= 4.0;
-		//else if (combined_color > 2.0) combined_color /= 3.0;
-		//else if (combined_color > 1.0) combined_color /= 2.0;
+		//float combined_color = color.r + color.g + color.b;
+		//combined_color /= 3.0;
   
-		return clamp(1.0 - combined_color, 0.0, 1.0);
+		//return clamp(1.0 - combined_color, 0.0, 1.0);
+
+		orig_color = clamp(orig_color, 0.0, 1.0);
+		float combined_color2 = orig_color.r + orig_color.g + orig_color.b;
+		combined_color2 /= 4.0;
+
+		//float out_color = (clamp(1.0 - combined_color, 0.0, 1.0) + clamp(1.0 - combined_color2, 0.0, 1.0)) / 2.0;
+		//return out_color;
+
+		return clamp(1.0 - combined_color2, 0.0, 1.0);
 	}
   #endif //USE_PARALLAXMAP_NONORMALS
 
 float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 {
+#if !defined(FAST_PARALLAX)
 	const int linearSearchSteps = 16;
 	const int binarySearchSteps = 6;
 
@@ -443,9 +465,13 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	}
 #endif
 
-	return bestDepth;
+	return bestDepth * var_Local1.x;
+#else //FAST_PARALLAX
+	float depth = SampleDepth(normalMap, dp) - 1.0;
+	return depth * var_Local1.x;
+#endif //FAST_PARALLAX
 }
-#endif
+#endif //USE_PARALLAXMAP || USE_PARALLAXMAP_NONORMALS
 
 vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 {

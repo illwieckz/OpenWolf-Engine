@@ -34,7 +34,6 @@ void main()
 	var_LightOrg = NDC;
 }
 
-
 /*[Fragment]*/
 uniform sampler2D	u_DiffuseMap;
 

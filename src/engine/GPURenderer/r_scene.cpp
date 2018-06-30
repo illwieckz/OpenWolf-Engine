@@ -35,7 +35,7 @@ S32			r_firstSceneDrawSurf;
 S32			r_numdlights;
 S32			r_firstSceneDlight;
 
-S32			r_numentities;
+S64			r_numentities;
 S32			r_firstSceneEntity;
 
 S32			r_numpolys;

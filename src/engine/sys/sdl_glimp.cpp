@@ -571,8 +571,7 @@ static void GLimp_InitOpenGL3xContext()
     // to request the desired version.
 #if defined( WIN32 )
     
-    if( WGLEW_ARB_create_context_profile &&
-            ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
+    if( WGLEW_ARB_create_context_profile && ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
     {
         S32 attribs[ 256 ]; // should be really enough
         S32 numAttribs;
@@ -636,11 +635,11 @@ static void GLimp_InitOpenGL3xContext()
             CL_RefPrintf( PRINT_WARNING, "Could not initialize requested OpenGL profile\n" );
         }
     }
+#endif
+#if 0 //Dushan - FIX ME
+#elif defined( __LINUX__ )
     
-#elif defined( __linux__ )
-    
-    if( GLXEW_ARB_create_context_profile &&
-            ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
+    if( GLXEW_ARB_create_context_profile && ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
     {
         S32         numAttribs;
         S32         attribs[ 256 ];
@@ -982,8 +981,6 @@ static S32 GLimp_SetMode( S32 mode, S32 fullscreen, S32 noborder )
             CL_RefPrintf( PRINT_DEVELOPER, "SDL_SetVideoMode failed: %s\n", SDL_GetError() );
             continue;
         }
-        
-        GLimp_GetCurrentContext();
         
         CL_RefPrintf( PRINT_ALL, "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n",
                       sdlcolorbits, sdlcolorbits, sdlcolorbits, tdepthbits, tstencilbits );

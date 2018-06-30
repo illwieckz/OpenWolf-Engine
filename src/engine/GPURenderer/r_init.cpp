@@ -250,6 +250,7 @@ cvar_t* r_trueAnaglyphSeparation;
 cvar_t* r_trueAnaglyphRed;
 cvar_t* r_trueAnaglyphGreen;
 cvar_t* r_trueAnaglyphBlue;
+cvar_t* r_vibrancy;
 
 cvar_t*	r_maxpolys;
 S32		max_polys;
@@ -1356,6 +1357,7 @@ void R_Register( void )
     r_trueAnaglyphRed = Cvar_Get( "r_trueAnaglyphRed", "0.0", CVAR_ARCHIVE );
     r_trueAnaglyphGreen = Cvar_Get( "r_trueAnaglyphGreen", "0.0", CVAR_ARCHIVE );
     r_trueAnaglyphBlue = Cvar_Get( "r_trueAnaglyphBlue", "0.0", CVAR_ARCHIVE );
+    r_vibrancy = Cvar_Get( "r_vibrancy", "0.4", CVAR_ARCHIVE );
     
     //
     // temporary latched variables that can only change over a restart

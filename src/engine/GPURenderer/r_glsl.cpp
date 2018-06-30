@@ -64,6 +64,7 @@ const GPUProgramDesc fallback_anamorphic_combine;
 const GPUProgramDesc fallback_darkexpand;
 const GPUProgramDesc fallback_lensflare;
 const GPUProgramDesc fallback_multipost;
+const GPUProgramDesc fallback_vibrancy;
 
 struct uniformInfo_t
 {
@@ -1012,6 +1013,9 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( i & GENERICDEF_USE_RGBAGEN )
             Q_strcat( extradefines, 1024, "#define USE_RGBAGEN\n" );
             
+        if( r_parallaxMapping->integer ) // Parallax without normal maps...
+            Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
+            
         if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load generic shader!" );
@@ -1081,7 +1085,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             Q_strcat( extradefines, 1024, "#define USE_DEFORM_VERTEXES\n" );
         }
         
-        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, extradefines, false, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load dlight shader!" );
         }
@@ -1152,22 +1156,32 @@ void idRenderSystemLocal::InitGPUShaders( void )
                 
                 attribs |= ATTR_TANGENT;
                 
-                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer )
-                {
+                if( r_normalMapping->integer == 3 )
+                    Q_strcat( extradefines, 1024, "#define USE_RELIEFMAP\n" );
+                    
+                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer == 1 )
                     Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP\n" );
-                    if( r_parallaxMapping->integer > 1 )
-                        Q_strcat( extradefines, 1024, "#define USE_RELIEFMAP\n" );
-                }
+                else if( r_parallaxMapping->integer == 2 ) // Parallax without normal maps...
+                    Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
+            }
+            else if( r_parallaxMapping->integer ) // Parallax without normal maps...
+            {
+                Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
             }
             
             if( r_specularMapping->integer )
+            {
                 Q_strcat( extradefines, 1024, "#define USE_SPECULARMAP\n" );
-                
-            if( r_cubeMapping->integer )
-                Q_strcat( extradefines, 1024, "#define USE_CUBEMAP\n" );
+            }
             else if( r_deluxeSpecular->value > 0.000001f )
+            {
                 Q_strcat( extradefines, 1024, va( "#define r_deluxeSpecular %f\n", r_deluxeSpecular->value ) );
-                
+            }
+            if( r_cubeMapping->integer )
+            {
+                Q_strcat( extradefines, 1024, "#define USE_CUBEMAP\n" );
+            }
+            
             switch( r_glossType->integer )
             {
                 case 0:
@@ -1475,7 +1489,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.darkexpandShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.darkexpandShader );
@@ -1642,7 +1656,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.hdrShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.hdrShader );
@@ -1682,7 +1696,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.dofShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.dofShader );
@@ -1722,7 +1736,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.esharpeningShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.esharpeningShader );
@@ -1762,7 +1776,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.esharpening2Shader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.esharpening2Shader );
@@ -1802,10 +1816,35 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.texturecleanShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.texturecleanShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "vibrancy", allocator, fallback_vibrancy );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.vibrancyShader, "vibrancy", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load vibrancy shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.vibrancyShader );
+    GLSL_SetUniformInt( &tr.vibrancyShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.vibrancyShader, UNIFORM_DIMENSIONS, screensize );
+    }
+    
+    GLSL_FinishGPUShader( &tr.vibrancyShader );
     
     numEtcShaders++;
     allocator.Reset();
@@ -1842,7 +1881,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.anaglyphShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     {
@@ -1893,7 +1932,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         
         GLSL_SetUniformVec2( &tr.waterShader, UNIFORM_DIMENSIONS, screensize );
         
-        //ri->Printf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
     }
     
     GLSL_FinishGPUShader( &tr.waterShader );

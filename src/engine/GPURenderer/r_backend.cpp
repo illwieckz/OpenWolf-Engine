@@ -441,20 +441,18 @@ RB_RenderDrawSurfList
 void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
 {
     shader_t*		shader, *oldShader;
-    S32				fogNum, oldFogNum;
-    S32				entityNum, oldEntityNum;
-    S32				dlighted, oldDlighted;
-    S32				pshadowed, oldPshadowed;
-    S32             cubemapIndex, oldCubemapIndex;
-    bool		depthRange, oldDepthRange, isCrosshair, wasCrosshair;
-    S32				i;
+    S64				fogNum, oldFogNum;
+    S64				entityNum, oldEntityNum;
+    S64				dlighted, oldDlighted;
+    S64				pshadowed, oldPshadowed;
+    S64             cubemapIndex, oldCubemapIndex;
+    bool			depthRange, oldDepthRange, isCrosshair, wasCrosshair;
+    S64				i;
     drawSurf_t*		drawSurf;
-    S32				oldSort;
+    U64				oldSort;
     FBO_t*			fbo = NULL;
-    bool		inQuery = false;
-    
-    F32			depth[2];
-    
+    bool			inQuery = false;
+    F32				depth[2];
     
     // save original time for entity shader offsets
     F64 originalTime = backEnd.refdef.floatTime;
@@ -471,7 +469,7 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     oldDlighted = false;
     oldPshadowed = false;
     oldCubemapIndex = -1;
-    oldSort = -1;
+    oldSort = ( U64 ) - 1;
     
     depth[0] = 0.f;
     depth[1] = 1.f;
@@ -648,7 +646,6 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     
     glDepthRange( 0, 1 );
 }
-
 
 /*
 ============================================================================
@@ -1646,10 +1643,19 @@ const void* RB_PostProcess( const void* data )
             FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
         }
         
+        if( r_vibrancy->value > 0.0 )
+        {
+            RB_Vibrancy( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
         if( r_dof->integer )
         {
-            RB_DOF( srcFbo, srcBox, tr.genericFbo, dstBox );
-            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+            for( S32 pass_num = 0; pass_num < 3; pass_num++ )
+            {
+                RB_DOF( srcFbo, srcBox, tr.genericFbo, dstBox );
+                FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+            }
         }
         
         if( r_trueAnaglyph->integer )

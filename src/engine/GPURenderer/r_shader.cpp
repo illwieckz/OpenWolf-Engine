@@ -2807,11 +2807,11 @@ static void FixRenderCommandList( S32 newShader )
                     S32 i;
                     drawSurf_t*	drawSurf;
                     shader_t*	shader;
-                    S32			fogNum;
-                    S32			entityNum;
-                    S32			dlightMap;
-                    S32         pshadowMap;
-                    S32			sortedIndex;
+                    S64			fogNum;
+                    S64			entityNum;
+                    S64			dlightMap;
+                    S64         pshadowMap;
+                    S64			sortedIndex;
                     const drawSurfsCommand_t* ds_cmd = ( const drawSurfsCommand_t* )curCmd;
                     
                     for( i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++ )

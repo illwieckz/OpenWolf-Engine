@@ -1032,6 +1032,50 @@ void RB_DOF( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
         GLSL_SetUniformVec4( &tr.dofShader, UNIFORM_VIEWINFO, viewInfo );
     }
     
+    {
+        vec4_t info;
+        
+        info[0] = r_dof->value;
+        info[1] = 0.0;//r_testvalue0->value;
+        info[2] = 0.0;
+        info[3] = 0.0;
+        
+        VectorSet4( info, info[0], info[1], info[2], info[3] );
+        
+        GLSL_SetUniformVec4( &tr.dofShader, UNIFORM_LOCAL0, info );
+    }
+    
     FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.dofShader, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 }
 
+void RB_Vibrancy( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
+{
+    vec4_t color;
+    
+    // bloom
+    color[0] =
+        color[1] =
+            color[2] = pow( 2, r_cameraExposure->value );
+    color[3] = 1.0f;
+    
+    GLSL_BindProgram( &tr.vibrancyShader );
+    
+    GL_BindToTMU( tr.fixedLevelsImage, TB_LEVELSMAP );
+    
+    GLSL_SetUniformInt( &tr.vibrancyShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t info;
+        
+        info[0] = r_vibrancy->value;
+        info[1] = 0.0;
+        info[2] = 0.0;
+        info[3] = 0.0;
+        
+        VectorSet4( info, info[0], info[1], info[2], info[3] );
+        
+        GLSL_SetUniformVec4( &tr.vibrancyShader, UNIFORM_LOCAL0, info );
+    }
+    
+    FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.vibrancyShader, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
+}

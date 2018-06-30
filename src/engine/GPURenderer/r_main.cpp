@@ -1058,9 +1058,7 @@ be moving and rotating.
 Returns true if it should be mirrored
 =================
 */
-bool R_GetPortalOrientations( drawSurf_t* drawSurf, S32 entityNum,
-                              orientation_t* surface, orientation_t* camera,
-                              vec3_t pvsOrigin, bool* mirror )
+bool R_GetPortalOrientations( drawSurf_t* drawSurf, S64 entityNum, orientation_t* surface, orientation_t* camera, vec3_t pvsOrigin, bool* mirror )
 {
     S32			i;
     cplane_t	originalPlane, plane;
@@ -1190,7 +1188,7 @@ bool R_GetPortalOrientations( drawSurf_t* drawSurf, S32 entityNum,
     return false;
 }
 
-static bool IsMirror( const drawSurf_t* drawSurf, S32 entityNum )
+static bool IsMirror( const drawSurf_t* drawSurf, S64 entityNum )
 {
     S32			i;
     cplane_t	originalPlane, plane;
@@ -1256,12 +1254,12 @@ static bool IsMirror( const drawSurf_t* drawSurf, S32 entityNum )
 static bool SurfIsOffscreen( const drawSurf_t* drawSurf, vec4_t clipDest[128] )
 {
     F32 shortest = 100000000;
-    S32 entityNum;
+    S64 entityNum;
     S32 numTriangles;
     shader_t* shader;
-    S32		fogNum;
-    S32 dlighted;
-    S32 pshadowed;
+    S64	fogNum;
+    S64 dlighted;
+    S64 pshadowed;
     vec4_t clip, eye;
     S32 i;
     U32 pointOr = 0;
@@ -1358,7 +1356,7 @@ R_MirrorViewBySurface
 Returns true if another view has been rendered
 ========================
 */
-bool R_MirrorViewBySurface( drawSurf_t* drawSurf, S32 entityNum )
+bool R_MirrorViewBySurface( drawSurf_t* drawSurf, S64 entityNum )
 {
     vec4_t			clipDest[128];
     viewParms_t		newParms;
@@ -1514,7 +1512,15 @@ static void R_RadixSort( drawSurf_t* source, S32 size )
     R_Radix( 1, size, scratch, source );
     R_Radix( 2, size, source, scratch );
     R_Radix( 3, size, scratch, source );
+    R_Radix( 4, size, source, scratch ); // added 4..7 for 64bit sorting
+    R_Radix( 5, size, scratch, source );
+    R_Radix( 6, size, source, scratch );
+    R_Radix( 7, size, scratch, source );
 #else
+    R_Radix( 7, size, source, scratch );
+    R_Radix( 6, size, scratch, source );
+    R_Radix( 5, size, source, scratch );
+    R_Radix( 4, size, scratch, source );
     R_Radix( 3, size, source, scratch );
     R_Radix( 2, size, scratch, source );
     R_Radix( 1, size, source, scratch );
@@ -1529,10 +1535,9 @@ static void R_RadixSort( drawSurf_t* source, S32 size )
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader,
-                    S32 fogIndex, S32 dlightMap, S32 pshadowMap, S32 cubemap )
+void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S64 fogIndex, S64 dlightMap, S64 pshadowMap, S64 cubemap )
 {
-    S32			index;
+    S32	index;
     
     // instead of checking for overflow, we just mask the index
     // so it wraps around
@@ -1541,7 +1546,7 @@ void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader,
     // compared quickly during the qsorting process
     tr.refdef.drawSurfs[index].sort = ( shader->sortedIndex << QSORT_SHADERNUM_SHIFT )
                                       | tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT )
-                                      | ( ( S32 )pshadowMap << QSORT_PSHADOW_SHIFT ) | ( S32 )dlightMap;
+                                      | ( ( S64 )pshadowMap << QSORT_PSHADOW_SHIFT ) | ( S64 )dlightMap;
     tr.refdef.drawSurfs[index].cubemapIndex = cubemap;
     tr.refdef.drawSurfs[index].surface = surface;
     tr.refdef.numDrawSurfs++;
@@ -1552,8 +1557,7 @@ void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader,
 R_DecomposeSort
 =================
 */
-void R_DecomposeSort( U32 sort, S32* entityNum, shader_t** shader,
-                      S32* fogNum, S32* dlightMap, S32* pshadowMap )
+void R_DecomposeSort( const U64 sort, S64* entityNum, shader_t** shader, S64* fogNum, S64* dlightMap, S64* pshadowMap )
 {
     *fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
     *shader = tr.sortedShaders[( sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 ) ];
@@ -1570,10 +1574,10 @@ R_SortDrawSurfs
 void R_SortDrawSurfs( drawSurf_t* drawSurfs, S32 numDrawSurfs )
 {
     shader_t*		shader;
-    S32				fogNum;
-    S32				entityNum;
-    S32				dlighted;
-    S32             pshadowed;
+    S64				fogNum;
+    S64				entityNum;
+    S64				dlighted;
+    S64             pshadowed;
     S32				i;
     
     //CL_RefPrintf(PRINT_ALL, "firstDrawSurf %d numDrawSurfs %d\n", (S32)(drawSurfs - tr.refdef.drawSurfs), numDrawSurfs);

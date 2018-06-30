@@ -510,7 +510,7 @@ typedef struct shader_s
     S32			lightmapIndex;			// for a shader to match, both name and lightmapIndex must match
     
     S32			index;					// this shader == tr.shaders[index]
-    S32			sortedIndex;			// this shader == tr.sortedShaders[sortedIndex]
+    S64			sortedIndex;			// this shader == tr.sortedShaders[sortedIndex]
     
     F32		sort;					// lower numbered shaders draw before higher numbered
     
@@ -847,7 +847,7 @@ typedef struct
     // text messages for deform text shaders
     UTF8		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
     
-    S32			num_entities;
+    S64			num_entities;
     trRefEntity_t*	entities;
     
     S32			num_dlights;
@@ -979,8 +979,8 @@ typedef enum
 
 typedef struct drawSurf_s
 {
-    U32		sort;			// bit combination for fast compares
-    S32                 cubemapIndex;
+    U64                 sort;			// bit combination for fast compares
+    S64                 cubemapIndex;
     surfaceType_t*		surface;		// any of surface*_t
 } drawSurf_t;
 
@@ -995,7 +995,7 @@ typedef struct srfPoly_s
 {
     surfaceType_t	surfaceType;
     qhandle_t		hShader;
-    S32				fogIndex;
+    S64				fogIndex;
     S32				numVerts;
     polyVert_t*		verts;
 } srfPoly_t;
@@ -1191,9 +1191,9 @@ typedef struct cullinfo_s
 
 typedef struct msurface_s
 {
-    //S32					viewCount;		// if == tr.viewCount, already added
-    struct shader_s*		shader;
-    S32					fogIndex;
+    //S32				viewCount;		// if == tr.viewCount, already added
+    struct shader_s*	shader;
+    S64					fogIndex;
     S32                 cubemapIndex;
     cullinfo_t          cullinfo;
     
@@ -1205,28 +1205,28 @@ typedef struct msurface_s
 typedef struct mnode_s
 {
     // common with leaf and node
-    S32			contents;		// -1 for nodes, to differentiate from leafs
+    S32				contents;		// -1 for nodes, to differentiate from leafs
     S32             visCounts[MAX_VISCOUNTS];	// node needs to be traversed if current
-    vec3_t		mins, maxs;		// for bounding box culling
+    vec3_t			mins, maxs;		// for bounding box culling
     struct mnode_s*	parent;
     
     // node specific
-    cplane_t*	plane;
+    cplane_t*		plane;
     struct mnode_s*	children[2];
     
     // leaf specific
-    S32			cluster;
-    S32			area;
+    S32				cluster;
+    S32				area;
     
-    S32         firstmarksurface;
-    S32			nummarksurfaces;
+    S32				firstmarksurface;
+    S32				nummarksurfaces;
 } mnode_t;
 
 typedef struct
 {
-    vec3_t		bounds[2];		// for culling
-    S32	        firstSurface;
-    S32			numSurfaces;
+    vec3_t			bounds[2];		// for culling
+    S32				firstSurface;
+    S32				numSurfaces;
 } bmodel_t;
 
 typedef struct
@@ -1247,18 +1247,18 @@ typedef struct
     
     S32			numnodes;		// includes leafs
     S32			numDecisionNodes;
-    mnode_t*		nodes;
+    mnode_t*	nodes;
     
     S32         numWorldSurfaces;
     
     S32			numsurfaces;
     msurface_t*	surfaces;
-    S32*         surfacesViewCount;
-    S32*         surfacesDlightBits;
-    S32*			surfacesPshadowBits;
+    S32*        surfacesViewCount;
+    S32*        surfacesDlightBits;
+    S32*		surfacesPshadowBits;
     
     S32			nummarksurfaces;
-    S32*         marksurfaces;
+    S32*        marksurfaces;
     
     S32			numfogs;
     fog_t*		fogs;
@@ -1267,8 +1267,8 @@ typedef struct
     vec3_t		lightGridSize;
     vec3_t		lightGridInverseSize;
     S32			lightGridBounds[3];
-    U8*		lightGridData;
-    U16*	lightGrid16;
+    U8*			lightGridData;
+    U16*		lightGrid16;
     
     
     S32			numClusters;
@@ -1421,7 +1421,7 @@ the bits are allocated as follows:
 #define	QSORT_FOGNUM_SHIFT	2
 #define	QSORT_REFENTITYNUM_SHIFT	7
 #define	QSORT_SHADERNUM_SHIFT	(QSORT_REFENTITYNUM_SHIFT+REFENTITYNUM_BITS)
-#if (QSORT_SHADERNUM_SHIFT+SHADERNUM_BITS) > 32
+#if (QSORT_SHADERNUM_SHIFT+SHADERNUM_BITS) > 64
 #error "Need to update sorting, too many bits."
 #endif
 #define QSORT_PSHADOW_SHIFT     1
@@ -1662,8 +1662,8 @@ typedef struct
     
     trRefEntity_t* currentEntity;
     trRefEntity_t worldEntity; // point currentEntity at this when rendering world
-    S32 currentEntityNum;
-    S32	shiftedEntityNum; // currentEntityNum << QSORT_REFENTITYNUM_SHIFT
+    S64 currentEntityNum;
+    S64	shiftedEntityNum; // currentEntityNum << QSORT_REFENTITYNUM_SHIFT
     model_t* currentModel;
     
     //
@@ -1702,6 +1702,7 @@ typedef struct
     shaderProgram_t anamorphicBlurShader;
     shaderProgram_t anamorphicCombineShader;
     shaderProgram_t volumelightShader;
+    shaderProgram_t vibrancyShader;
     
     image_t*        bloomRenderFBOImage[3];
     image_t*        anamorphicRenderFBOImage[3];
@@ -1960,6 +1961,7 @@ extern cvar_t* r_trueAnaglyphSeparation;
 extern cvar_t* r_trueAnaglyphRed;
 extern cvar_t* r_trueAnaglyphGreen;
 extern cvar_t* r_trueAnaglyphBlue;
+extern cvar_t* r_vibrancy;
 
 //====================================================================
 
@@ -1978,8 +1980,8 @@ void R_AddRailSurfaces( trRefEntity_t* e, bool isUnderwater );
 void R_AddLightningBoltSurfaces( trRefEntity_t* e );
 
 void R_AddPolygonSurfaces( void );
-void R_DecomposeSort( U32 sort, S32* entityNum, shader_t** shader, S32* fogNum, S32* dlightMap, S32* pshadowMap );
-void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S32 fogIndex, S32 dlightMap, S32 pshadowMap, S32 cubemap );
+void R_DecomposeSort( const U64 sort, S64* entityNum, shader_t** shader, S64* fogNum, S64* dlightMap, S64* pshadowMap );
+void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S64 fogIndex, S64 dlightMap, S64 pshadowMap, S64 cubemap );
 void R_CalcTexDirs( vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2, const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3 );
 vec_t R_CalcTangentSpace( vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir );
 bool R_CalcTangentVectors( srfVert_t* dv[3] );

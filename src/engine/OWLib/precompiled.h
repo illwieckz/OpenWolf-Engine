@@ -208,6 +208,8 @@
 #include <CL/cl_gl.h>
 #endif
 
+#include <omp.h>
+
 // curses.h defines COLOR_*, which are already defined in q_shared.h
 #undef COLOR_BLACK
 #undef COLOR_RED

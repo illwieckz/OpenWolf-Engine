@@ -1,3 +1,6 @@
+2018-06-30 Dusan Jocic <dusanjocic@msn.com>
+	* Allow parallax on non-map surfaces
+
 2018-06-29 Dusan Jocic <dusanjocic@msn.com>
     * Fixed compiling the engine on the Linux platform
         NOTE: Segmentation fault (core dumped) right after starting and initializing the game window
@@ -5,6 +8,7 @@
 	* Fixed compiling on the Windows platform
     * Yet again fixed compiling on the Linux platform
 	* Updated "readme.cmake" file with the building instructions for the Windows and for the Linux platform
+	* Experimenting with the readme, cmake and copying files on the GitHub
     
 2018-06-28 Dusan Jocic <dusanjocic@msn.com>
 	* Disabled compiling server and autoupdate server from the cmake

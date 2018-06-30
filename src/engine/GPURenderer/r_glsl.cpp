@@ -1152,7 +1152,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
                 
                 attribs |= ATTR_TANGENT;
                 
-                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && !( i & LIGHTDEF_ENTITY ) && r_parallaxMapping->integer )
+                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer )
                 {
                     Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP\n" );
                     if( r_parallaxMapping->integer > 1 )

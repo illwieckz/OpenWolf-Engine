@@ -1,29 +1,40 @@
 /*[Vertex]*/
+#version 130
+
 attribute vec3 attr_Position;
-attribute vec4 attr_TexCoord0;
+attribute vec2 attr_TexCoord0;
 attribute vec3 attr_Normal;
 
 uniform vec4   u_DlightInfo;
 
+#if 0
 #if defined(USE_DEFORM_VERTEXES)
 uniform int    u_DeformGen;
 uniform float  u_DeformParams[5];
 uniform float  u_Time;
 #endif
+#endif
 
 uniform mat4   u_ModelViewProjectionMatrix;
 
 uniform vec4   u_LightColor;
+uniform vec4   u_LightColor1;
+
 uniform vec4   u_LightOrigin;
-uniform float   u_LightRadius;
+uniform vec4   u_LightOrigin1;
 
-varying vec2   var_Tex1;
-varying vec3   var_Normal;
-varying vec3   var_Position;
-varying vec4	var_LightColor;
-varying vec4	var_LightOrigin;
-varying float   var_LightRadius;
+#define			MAX_VARYING_LIGHTS 2
 
+vec4			LightOrigins[MAX_VARYING_LIGHTS];
+
+varying vec3	var_Normal;
+varying vec3	var_Position;
+varying vec2	var_Tex1[MAX_VARYING_LIGHTS];
+varying vec4	var_LightColor[MAX_VARYING_LIGHTS];
+varying vec3	var_LightDir[MAX_VARYING_LIGHTS];
+varying float	var_NumLights;
+
+#if 0
 #if defined(USE_DEFORM_VERTEXES)
 vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 {
@@ -78,14 +89,17 @@ vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 	return pos + normal * (base + func * amplitude);
 }
 #endif
+#endif
 
 void main()
 {
 	vec3 position = attr_Position;
-	vec3 normal = attr_Normal;
+	vec3 normal = attr_Normal * 2.0 - vec3(1.0);
 
+#if 0
 #if defined(USE_DEFORM_VERTEXES)
 	position = DeformPosition(position, normal, attr_TexCoord0.st);
+#endif
 #endif
 
 	gl_Position = u_ModelViewProjectionMatrix * vec4(position, 1.0);
@@ -94,137 +108,84 @@ void main()
 	var_Normal = normalize(gl_NormalMatrix * gl_Normal);
 
 	// Transform the vertex position to eye space (V)
-	var_Position = vec3(u_ModelViewProjectionMatrix * vec4(attr_Position, 1.0));
-		
-	vec3 dist = u_LightOrigin.xyz - position;
+	var_Position = -vec3(u_ModelViewProjectionMatrix * vec4(position, 1.0));
 
-	var_Tex1 = dist.xy * u_LightOrigin.a + vec2(0.5);
-	float dlightmod = step(0.0, dot(dist, normal));
-	dlightmod *= clamp(2.0 * (1.0 - abs(dist.x + dist.y + dist.z) * u_LightOrigin.a), 0.0, 1.0);
+	LightOrigins[0] = u_LightOrigin;
+	LightOrigins[1] = u_LightOrigin1;
+
+	var_LightColor[0] = u_LightColor;
+	var_LightColor[1] = u_LightColor1;
 	
-	var_LightColor = (u_LightColor * dlightmod);
-	var_LightOrigin = u_LightOrigin;
-	var_LightRadius = u_LightRadius;
+	for (int light = 0; light < MAX_VARYING_LIGHTS; light++)
+	{
+		var_NumLights = light;
+
+		if (var_LightColor[light].x == 0 && var_LightColor[light].y == 0 && var_LightColor[light].z == 0)
+		{
+			break; // We found the last one...
+		}
+
+		vec3 dist = LightOrigins[light].xyz - position;
+
+		var_Tex1[light] = dist.xy * LightOrigins[light].a + vec2(0.5);
+
+		float dlightmod = step(0.0, dot(dist, normal));
+		dlightmod *= clamp(2.0 * (1.0 - abs(dist.x + dist.y + dist.z) * LightOrigins[light].a), 0.0, 1.0);
+	
+		var_LightColor[light] = (var_LightColor[light] * dlightmod);
+		var_LightDir[light] = dist;
+	}
 }
 
 /*[Fragment]*/
 uniform sampler2D u_DiffuseMap;
 
-uniform int       u_AlphaTest;
+#define				MAX_VARYING_LIGHTS 2
 
-varying vec2		var_Tex1;
 varying vec3		var_Normal;
 varying vec3		var_Position;
-varying vec4		var_Color;
-varying vec4		var_LightColor;
-varying vec4		var_LightOrigin;
-varying float		var_LightRadius;
+varying vec2		var_Tex1[MAX_VARYING_LIGHTS];
+varying vec4		var_LightColor[MAX_VARYING_LIGHTS];
+varying vec3		var_LightDir[MAX_VARYING_LIGHTS];
+varying float		var_NumLights;
 
-vec4 ambient = vec4(0.0, 0.0, 0.0, 0.0);
-vec4 diffuse = vec4(0.0, 0.0, 0.0, 0.0);
-vec4 specular = vec4(0.0, 0.0, 0.0, 0.0);
-
-float constantAttenuation = 0.0;
-float linearAttenuation = 1.0;
-float quadraticAttenuation = 2.0;
-
-float calculateAttenuation(in int i, in float dist)
+void main (void)
 {
-    return(1.0 / (constantAttenuation +
-                  (linearAttenuation * dist) +
-                  (quadraticAttenuation * dist * dist)));
-}
-vec3 projectOnPlane(in vec3 p, in vec3 pc, in vec3 pn)
-{
-    float distance = dot(pn, p-pc);
-    return p - distance*pn;
-}
-int sideOfPlane(in vec3 p, in vec3 pc, in vec3 pn){
-   if (dot(p-pc,pn)>=0.0) return 1; else return 0;
-}
-vec3 linePlaneIntersect(in vec3 lp, in vec3 lv, in vec3 pc, in vec3 pn){
-   return lp+lv*(dot(pn,pc-lp)/dot(pn,lv));
-}
-void areaLight(in int i, in vec3 N, in vec3 V, in float shininess)
-{
-    //vec3 right = normalize(vec3(gl_ModelViewMatrix*gl_LightSource[i].ambient));
-	vec3 right = normalize(vec3(gl_ModelViewMatrix*var_LightColor));
-    //vec3 pnormal = normalize(gl_LightSource[i].spotDirection);
-	//vec3 pnormal = normalize(vec3(1.0, 1.0, 1.0)); // UQ1: omni...
-	vec3 pnormal = normalize(N); // UQ1: omni...
-    vec3 up = normalize(cross(right,pnormal));
+	vec3 normal = var_Normal;
+	vec3 eyeVec = var_Position;
 
-    //width and height of the area light:
-    float width = 1.0; 
-    float height = 1.0;
+	vec4 out_color = vec4(0.0);
 
-    //project onto plane and calculate direction from center to the projection.
-    vec3 projection = projectOnPlane(V,vec3(var_LightOrigin.xyz),pnormal);// projection in plane
-    vec3 dir = projection-vec3(var_LightOrigin.xyz);
-
-    //calculate distance from area:
-    vec2 diagonal = vec2(dot(dir,right),dot(dir,up));
-    vec2 nearest2D = vec2(clamp( diagonal.x,-width,width  ),clamp(  diagonal.y,-height,height));
-    vec3 nearestPointInside = vec3(var_LightOrigin.xyz)+(right*nearest2D.x+up*nearest2D.y);
-
-    float dist = distance(V,nearestPointInside);//real distance to area rectangle
-
-    vec3 L = normalize(nearestPointInside - V);
-    float attenuation = calculateAttenuation(i, dist);
-
-    float nDotL = dot(pnormal,-L);
-
-    if (nDotL > 0.0 && sideOfPlane(V,vec3(var_LightOrigin.xyz),pnormal) == 1) //looking at the plane
-    {   
-        //shoot a ray to calculate specular:
-        vec3 R = reflect(normalize(-V), N);
-        vec3 E = linePlaneIntersect(V,R,vec3(var_LightOrigin.xyz),pnormal);
-
-        float specAngle = dot(R,pnormal);
-        if (specAngle > 0.0)
-		{
-			vec3 dirSpec = E-vec3(var_LightOrigin.xyz);
-    	    vec2 dirSpec2D = vec2(dot(dirSpec,right),dot(dirSpec,up));
-			vec2 nearestSpec2D = vec2(clamp( dirSpec2D.x,-width,width  ),clamp(  dirSpec2D.y,-height,height));
-    	    float specFactor = 1.0-clamp(length(nearestSpec2D-dirSpec2D)*shininess,0.0,1.0);
-			specular += var_LightColor * attenuation * specFactor * specAngle;   
-			//specular.b = 1.0f;
-        }
-        diffuse  += var_LightColor  * attenuation * nDotL;
-		//diffuse.r = 1.0f;
-
-		//ambient  += var_LightColor * attenuation;
-    }
-}
-
-void main()
-{
-	vec4 color = texture2D(u_DiffuseMap, var_Tex1);
-
-	float alpha = color.a * var_Color.a;
-	if (u_AlphaTest == 1)
+	for (int light = 0; light < var_NumLights; light++)
 	{
-		if (alpha == 0.0)
-			discard;
-	}
-	else if (u_AlphaTest == 2)
-	{
-		if (alpha >= 0.5)
-			discard;
-	}
-	else if (u_AlphaTest == 3)
-	{
-		if (alpha < 0.5)
-			discard;
-	}
+		float shininess = 2.0;
+		vec4 tex_color = texture2D(u_DiffuseMap, var_Tex1[light]);
+		vec4 tex_ambient = tex_color * 0.33333;
+		vec4 tex_diffuse = tex_ambient;
+		vec4 tex_specular = tex_ambient;
+
+		vec4 final_color = tex_ambient;// + (lightColor * tex_ambient);
+
+		vec3 lightDir = var_LightDir[light];
+		vec4 lightColor = var_LightColor[light]; //*0.33333;
+							
+		vec3 N = normalize(normal);
+		vec3 L = normalize(lightDir);
 	
-	float shininess = 0.5;
-	ambient = texture2D(u_DiffuseMap, var_Tex1) * 0.33333;
-	diffuse = ambient;
-	specular = ambient;
+		float lambertTerm = dot(N,L);
+	
+		if(lambertTerm > 0.0)
+		{
+			final_color += lightColor * tex_diffuse * lambertTerm;	
+		
+			vec3 E = normalize(eyeVec);
+			vec3 R = reflect(-L, N);
+			float specular = pow( max(dot(R, E), 0.0), shininess );
+			final_color += lightColor * tex_specular * specular;	
+		}
 
-	int lightNum = 0;
-	areaLight(lightNum, var_Normal.xyz, var_Position.xyz, shininess);
-	gl_FragColor = ambient + (((diffuse * var_LightColor) + (specular * var_LightColor)) / 3.0);
-	gl_FragColor.a = 1.0;
+		out_color += final_color;
+	}
+
+	gl_FragColor = out_color;			
 }

@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <setjmp.h>
+#include <iostream>
 
 #ifndef _WIN32
 #include <sys/ioctl.h>
@@ -65,17 +66,10 @@
 #include <lmerr.h>
 #include <lmcons.h>
 #include <lmwksta.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <direct.h>
-#include <io.h>
 #include <conio.h>
 #include <wincrypt.h>
 #include <shlobj.h>
 #include <psapi.h>
-#include <float.h>
-#include <setjmp.h>
 #include <float.h>
 #pragma fenv_access (on)
 #else

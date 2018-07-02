@@ -33,15 +33,16 @@
 #include <iostream>
 #endif
 
-#if defined (__LINUX__)
-S32 strcpy_s( UTF8* dest, U64 destsz, StringEntry src )
+#if 1 //defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+void strncpy_s( UTF8* dest, S64 destSize, StringEntry src, S64 srcSize )
 {
-    if( strlen( src ) >= destsz )
+    // This isn't really a safe version, but I know the inputs to expect.
+    S64 len = ( std::min )( srcSize, destSize );
+    memcpy( dest, src, len );
+    if( ( destSize - len ) > 0 )
     {
-        return 1;
+        ::memset( dest + len, 0, destSize - len );
     }
-    strcpy( dest, src );
-    return 0;
 }
 #endif
 
@@ -160,13 +161,8 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
     UTF8* vertexSource = ojkAllocString( allocator, vertexBlock->blockTextLength );
     UTF8* fragmentSource = ojkAllocString( allocator, fragmentBlock->blockTextLength );
     
-#ifdef _WIN32
     strncpy_s( vertexSource, vertexBlock->blockTextLength + 1, vertexBlock->blockText, vertexBlock->blockTextLength );
     strncpy_s( fragmentSource, fragmentBlock->blockTextLength + 1, fragmentBlock->blockText, fragmentBlock->blockTextLength );
-#else
-    strncpy( vertexSource, vertexBlock->blockText, vertexBlock->blockTextLength );
-    strncpy( fragmentSource, fragmentBlock->blockText, fragmentBlock->blockTextLength );
-#endif
     
     theProgram.shaders[0].type = GPUSHADER_VERTEX;
     theProgram.shaders[0].source = vertexSource;

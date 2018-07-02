@@ -759,7 +759,7 @@ void R_SetupFrustum( viewParms_t* dest, F32 xmin, F32 xmax, F32 ymax, F32 zProj,
     VectorScale( dest->orientation.axis[0], oppleg, dest->frustum[3].normal );
     VectorMA( dest->frustum[3].normal, -adjleg, dest->orientation.axis[2], dest->frustum[3].normal );
     
-    for( i = 0 ; i < 4 ; i++ )
+    for( i = 0; i < 4; i++ )
     {
         dest->frustum[i].type = PLANE_NON_AXIAL;
         dest->frustum[i].dist = DotProduct( ofsorigin, dest->frustum[i].normal );
@@ -1329,6 +1329,7 @@ static bool SurfIsOffscreen( const drawSurf_t* drawSurf, vec4_t clipDest[128] )
             numTriangles--;
         }
     }
+    
     if( !numTriangles )
     {
         return true;
@@ -1735,7 +1736,9 @@ void R_AddEntitySurfaces( void )
     }
     
     for( i = 0; i < tr.refdef.num_entities; i++ )
+    {
         R_AddEntitySurface( i );
+    }
 }
 
 
@@ -1914,39 +1917,39 @@ void R_RenderDlightCubemaps( const refdef_t* fd )
             {
                 case 0:
                     // -X
-                    VectorSet( shadowParms.orientation.axis[0], -1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[1],  0,  0, -1 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  1,  0 );
+                    VectorSet( shadowParms.orientation.axis[0], -1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[1], 0, 0, -1 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 1, 0 );
                     break;
                 case 1:
                     // +X
-                    VectorSet( shadowParms.orientation.axis[0],  1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[1],  0,  0,  1 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  1,  0 );
+                    VectorSet( shadowParms.orientation.axis[0], 1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[1], 0, 0, 1 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 1, 0 );
                     break;
                 case 2:
                     // -Y
-                    VectorSet( shadowParms.orientation.axis[0],  0, -1,  0 );
-                    VectorSet( shadowParms.orientation.axis[1],  1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  0, -1 );
+                    VectorSet( shadowParms.orientation.axis[0], 0, -1, 0 );
+                    VectorSet( shadowParms.orientation.axis[1], 1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 0, -1 );
                     break;
                 case 3:
                     // +Y
-                    VectorSet( shadowParms.orientation.axis[0],  0,  1,  0 );
-                    VectorSet( shadowParms.orientation.axis[1],  1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  0,  1 );
+                    VectorSet( shadowParms.orientation.axis[0], 0, 1, 0 );
+                    VectorSet( shadowParms.orientation.axis[1], 1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 0, 1 );
                     break;
                 case 4:
                     // -Z
-                    VectorSet( shadowParms.orientation.axis[0],  0,  0, -1 );
-                    VectorSet( shadowParms.orientation.axis[1],  1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  1,  0 );
+                    VectorSet( shadowParms.orientation.axis[0], 0, 0, -1 );
+                    VectorSet( shadowParms.orientation.axis[1], 1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 1, 0 );
                     break;
                 case 5:
                     // +Z
-                    VectorSet( shadowParms.orientation.axis[0],  0,  0,  1 );
-                    VectorSet( shadowParms.orientation.axis[1], -1,  0,  0 );
-                    VectorSet( shadowParms.orientation.axis[2],  0,  1,  0 );
+                    VectorSet( shadowParms.orientation.axis[0], 0, 0, 1 );
+                    VectorSet( shadowParms.orientation.axis[1], -1, 0, 0 );
+                    VectorSet( shadowParms.orientation.axis[2], 0, 1, 0 );
                     break;
             }
             
@@ -2004,8 +2007,8 @@ void R_RenderPshadowMaps( const refdef_t* fd )
                 {
                     // FIXME: never actually tested this
                     mdrHeader_t* header = ( mdrHeader_t* )model->modelData;
-                    S32 frameSize = ( U64 )( &( ( mdrFrame_t* )0 )->bones[ header->numBones ] );
-                    mdrFrame_t* frame = ( mdrFrame_t* )( ( U8* ) header + header->ofsFrames + frameSize * ent->e.frame );
+                    S32 frameSize = ( U64 )( &( ( mdrFrame_t* )0 )->bones[header->numBones] );
+                    mdrFrame_t* frame = ( mdrFrame_t* )( ( U8* )header + header->ofsFrames + frameSize * ent->e.frame );
                     
                     radius = frame->radius;
                 }

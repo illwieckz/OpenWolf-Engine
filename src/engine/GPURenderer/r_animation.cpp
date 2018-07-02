@@ -380,7 +380,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t* surface )
     baseVertex	= tess.numVertexes;
     
     // Set up all triangles.
-    for( j = 0 ; j < indexes ; j++ )
+    for( j = 0; j < indexes; j++ )
     {
         tess.indexes[baseIndex + j] = baseVertex + triangles[j];
     }
@@ -398,7 +398,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t* surface )
     {
         bonePtr = bones;
         
-        for( i = 0 ; i < header->numBones * 12 ; i++ )
+        for( i = 0; i < header->numBones * 12; i++ )
         {
             ( ( F32* )bonePtr )[i] = frontlerp * ( ( F32* )frame->bones )[i] + backlerp * ( ( F32* )oldFrame->bones )[i];
         }
@@ -409,6 +409,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t* surface )
     //
     numVerts = surface->numVerts;
     v = ( mdrVertex_t* )( ( U8* )surface + surface->ofsVerts );
+    
     for( j = 0; j < numVerts; j++ )
     {
         vec3_t	tempVert, tempNormal;
@@ -417,7 +418,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t* surface )
         VectorClear( tempVert );
         VectorClear( tempNormal );
         w = v->weights;
-        for( k = 0 ; k < v->numWeights ; k++, w++ )
+        for( k = 0; k < v->numWeights; k++, w++ )
         {
             bone = bonePtr + w->boneIndex;
             

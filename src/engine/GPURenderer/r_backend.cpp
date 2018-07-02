@@ -478,6 +478,11 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     
     for( i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++ )
     {
+        if( !drawSurf->surface )
+        {
+            continue;
+        }
+        
         if( drawSurf->sort == oldSort && drawSurf->cubemapIndex == oldCubemapIndex )
         {
             if( backEnd.depthFill && shader && shader->sort != SS_OPAQUE )

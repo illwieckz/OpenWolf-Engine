@@ -365,7 +365,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
                 buf_p = buf + imgOffset * tr.lightmapSize * tr.lightmapSize * 3;
             }
             
-            for( j = 0 ; j < tr.lightmapSize * tr.lightmapSize; j++ )
+            for( j = 0; j < tr.lightmapSize * tr.lightmapSize; j++ )
             {
                 if( hdrLightmap )
                 {
@@ -425,7 +425,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
                         F32 g = buf_p[j * 3 + 1];
                         F32 b = buf_p[j * 3 + 2];
                         F32 intensity;
-                        F32 out[3] = {0.0, 0.0, 0.0};
+                        F32 out[3] = { 0.0, 0.0, 0.0 };
                         
                         intensity = 0.33f * r + 0.685f * g + 0.063f * b;
                         
@@ -467,7 +467,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
         {
             buf_p = buf + ( i * 2 + 1 ) * tr.lightmapSize * tr.lightmapSize * 3;
             
-            for( j = 0 ; j < tr.lightmapSize * tr.lightmapSize; j++ )
+            for( j = 0; j < tr.lightmapSize * tr.lightmapSize; j++ )
             {
                 image[j * 4 + 0] = buf_p[j * 3 + 0];
                 image[j * 4 + 1] = buf_p[j * 3 + 1];
@@ -850,6 +850,7 @@ static void ParseMesh( dsurface_t* ds, drawVert_t* verts, F32* hdrVertColors, ms
         
     verts += LittleLong( ds->firstVert );
     numPoints = width * height;
+    
     for( i = 0; i < numPoints; i++ )
         LoadDrawVertToSrfVert( &points[i], &verts[i], realLightmapNum, hdrVertColors ? hdrVertColors + ( ds->firstVert + i ) * 3 : NULL, NULL );
         
@@ -917,6 +918,7 @@ static void ParseTriSurf( dsurface_t* ds, drawVert_t* verts, F32* hdrVertColors,
     surf->cullinfo.type = CULLINFO_BOX;
     ClearBounds( surf->cullinfo.bounds[0], surf->cullinfo.bounds[1] );
     verts += LittleLong( ds->firstVert );
+    
     for( i = 0; i < numVerts; i++ )
         LoadDrawVertToSrfVert( &cv->verts[i], &verts[i], -1, hdrVertColors ? hdrVertColors + ( ds->firstVert + i ) * 3 : NULL, surf->cullinfo.bounds );
         
@@ -1192,7 +1194,7 @@ void R_FixSharedVertexLodError( void )
     for( i = 0; i < s_worldData.numsurfaces; i++ )
     {
         //
-        grid1 = ( srfBspSurface_t* ) s_worldData.surfaces[i].data;
+        grid1 = ( srfBspSurface_t* )s_worldData.surfaces[i].data;
         // if this surface is not a grid
         if( grid1->surfaceType != SF_GRID )
             continue;
@@ -2288,7 +2290,7 @@ void R_LoadLightGrid( lump_t* l )
     wMins = w->bmodels[0].bounds[0];
     wMaxs = w->bmodels[0].bounds[1];
     
-    for( i = 0 ; i < 3 ; i++ )
+    for( i = 0; i < 3; i++ )
     {
         w->lightGridOrigin[i] = w->lightGridSize[i] * ceil( wMins[i] / w->lightGridSize[i] );
         maxs[i] = w->lightGridSize[i] * floor( wMaxs[i] / w->lightGridSize[i] );
@@ -2308,7 +2310,7 @@ void R_LoadLightGrid( lump_t* l )
     ::memcpy( w->lightGridData, ( void* )( fileBase + l->fileofs ), l->filelen );
     
     // deal with overbright bits
-    for( i = 0 ; i < numGridPoints ; i++ )
+    for( i = 0; i < numGridPoints; i++ )
     {
         R_ColorShiftLightingBytes( &w->lightGridData[i * 8], &w->lightGridData[i * 8] );
         R_ColorShiftLightingBytes( &w->lightGridData[i * 8 + 3], &w->lightGridData[i * 8 + 3] );
@@ -2395,6 +2397,8 @@ void R_LoadEntities( lump_t* l )
     w->lightGridSize[1] = 64;
     w->lightGridSize[2] = 128;
     
+    tr.distanceCull = 6000;//DEFAULT_DISTANCE_CULL;
+    
     p = ( UTF8* )( fileBase + l->fileofs );
     
     // store for reference by the cgame
@@ -2456,6 +2460,11 @@ void R_LoadEntities( lump_t* l )
             }
             *s++ = 0;
             renderSystemLocal.RemapShader( value, s, "0" );
+            continue;
+        }
+        if( !Q_stricmp( keyname, "distanceCull" ) )
+        {
+            sscanf( value, "%f", &tr.distanceCull );
             continue;
         }
         // check for a different grid size
@@ -2819,7 +2828,6 @@ void R_CalcVertexLightDirs( void )
                     R_LightDirForPoint( bspSurf->verts[i].xyz, lightDir, normal, &s_worldData );
                     R_VaoPackNormal( bspSurf->verts[i].lightdir, lightDir );
                 }
-                
                 break;
                 
             default:

@@ -3555,257 +3555,250 @@ void Com_Frame( void )
     S32             timeAfter;
     static S32      watchdogTime = 0;
     static bool		watchWarn = false;
-
-	omp_set_dynamic(1);
-	omp_set_num_threads(16);
-	omp_set_nested(1);
-
-#pragma omp parallel num_threads(1)
-	{
-		if (setjmp(abortframe))
-		{
-			return;					// an ERR_DROP was thrown
-		}
-
-		// bk001204 - init to zero.
-		//  also:  might be clobbered by `longjmp' or `vfork'
-		timeBeforeFirstEvents = 0;
-		timeBeforeServer = 0;
-		timeBeforeEvents = 0;
-		timeBeforeClient = 0;
-		timeAfter = 0;
-
-		// Check to make sure we don't have any http data waiting
-		// comment this out until I get things going better under win32
+    
+    if( setjmp( abortframe ) )
+    {
+        return;					// an ERR_DROP was thrown
+    }
+    
+    // bk001204 - init to zero.
+    //  also:  might be clobbered by `longjmp' or `vfork'
+    timeBeforeFirstEvents = 0;
+    timeBeforeServer = 0;
+    timeBeforeEvents = 0;
+    timeBeforeClient = 0;
+    timeAfter = 0;
+    
+    // Check to make sure we don't have any http data waiting
+    // comment this out until I get things going better under win32
 #if defined(USE_HTTP)
-		Net_HTTP_Pump();
+    Net_HTTP_Pump();
 #endif
-
-		// old net chan encryption key
-		key = 0x87243987;
-
-		// Don't write config on Update Server
+    
+    // old net chan encryption key
+    key = 0x87243987;
+    
+    // Don't write config on Update Server
 #if !defined (UPDATE_SERVER)
-	// write config file if anything changed
-		Com_WriteConfiguration();
+    // write config file if anything changed
+    Com_WriteConfiguration();
 #endif
-
-		// if "viewlog" has been modified, show or hide the log console
-		if (com_viewlog->modified)
-		{
-			com_viewlog->modified = false;
-		}
-
-		//
-		// main event loop
-		//
-		if (com_speeds->integer)
-		{
-			timeBeforeFirstEvents = Sys_Milliseconds();
-		}
-
-		// we may want to spin here if things are going too fast
-		if (!com_dedicated->integer && !com_timedemo->integer)
-		{
-			if (com_minimized->integer && com_maxfpsMinimized->integer > 0)
-			{
-				minMsec = 1000 / com_maxfpsMinimized->integer;
-			}
-			else if (com_unfocused->integer && com_maxfpsUnfocused->integer > 0)
-			{
-				minMsec = 1000 / com_maxfpsUnfocused->integer;
-			}
-			else if (com_maxfps->integer > 0)
-			{
-				minMsec = 1000 / com_maxfps->integer;
-			}
-			else
-			{
-				minMsec = 1;
-			}
-		}
-		else
-		{
-			minMsec = 1;
-		}
-
-		msec = minMsec;
-		do
-		{
-			S32 timeRemaining = minMsec - msec;
-
-			// The existing Sys_Sleep implementations aren't really
-			// precise enough to be of use beyond 100fps
-			// FIXME: implement a more precise sleep (RDTSC or something)
-			if (timeRemaining >= 10)
-				Sys_Sleep(timeRemaining);
-
-			com_frameTime = Com_EventLoop();
-			if (lastTime > com_frameTime)
-			{
-				lastTime = com_frameTime;	// possible on first frame
-			}
-			msec = com_frameTime - lastTime;
-		} while (msec < minMsec);
-
-		Cbuf_Execute();
-		Cdelay_Frame();
-
-		lastTime = com_frameTime;
-
-		// mess with msec if needed
-		com_frameMsec = msec;
-		msec = Com_ModifyMsec(msec);
-
-		//
-		// server side
-		//
-		if (com_speeds->integer)
-		{
-			timeBeforeServer = Sys_Milliseconds();
-		}
-
-		SV_Frame(msec);
-
-		// if "dedicated" has been modified, start up
-		// or shut down the client system.
-		// Do this after the server may have started,
-		// but before the client tries to auto-connect
-		if (com_dedicated->modified)
-		{
-			// get the latched value
-			Cvar_Get("dedicated", "0", 0);
-			com_dedicated->modified = false;
-			if (!com_dedicated->integer)
-			{
-				CL_Init();
-			}
-			else
-			{
-				CL_Shutdown();
-			}
-		}
-
-		//
-		// client system
-		//
-		if (!com_dedicated->integer)
-		{
-			//
-			// run event loop a second time to get server to client packets
-			// without a frame of latency
-			//
-			if (com_speeds->integer)
-			{
-				timeBeforeEvents = Sys_Milliseconds();
-			}
-			Com_EventLoop();
-			Cbuf_Execute();
-
-			//
-			// client side
-			//
-			if (com_speeds->integer)
-			{
-				timeBeforeClient = Sys_Milliseconds();
-			}
-
-			CL_Frame(msec);
-
-			if (com_speeds->integer)
-			{
-				timeAfter = Sys_Milliseconds();
-			}
-		}
-		else
-		{
-			timeAfter = Sys_Milliseconds();
-		}
-
-		// Update the physics system after everything gets ran for this frame,
-		// and only if we are in a game.
-		if (com_sv_running->integer || com_cl_running->integer)
-		{
-			physicsManager->Frame();
-		}
-
-		//
-		// watchdog
-		//
-		if (com_dedicated->integer && !com_sv_running->integer && com_watchdog->integer)
-		{
-			if (watchdogTime == 0)
-			{
-				watchdogTime = Sys_Milliseconds();
-			}
-			else
-			{
-				if (!watchWarn && Sys_Milliseconds() - watchdogTime > (com_watchdog->integer - 4) * 1000)
-				{
-					Com_Printf("WARNING: watchdog will trigger in 4 seconds\n");
-					watchWarn = true;
-				}
-				else if (Sys_Milliseconds() - watchdogTime > com_watchdog->integer * 1000)
-				{
-					Com_Printf("Idle Server with no map - triggering watchdog\n");
-					watchdogTime = 0;
-					watchWarn = false;
-					if (com_watchdog_cmd->string[0] == '\0')
-					{
-						Cbuf_AddText("quit\n");
-					}
-					else
-					{
-						Cbuf_AddText(va("%s\n", com_watchdog_cmd->string));
-					}
-				}
-			}
-		}
-
-		NET_FlushPacketQueue();
-
-		//
-		// report timing information
-		//
-		if (com_speeds->integer)
-		{
-			S32             all, sv, sev, cev, cl;
-
-			all = timeAfter - timeBeforeServer;
-			sv = timeBeforeEvents - timeBeforeServer;
-			sev = timeBeforeServer - timeBeforeFirstEvents;
-			cev = timeBeforeClient - timeBeforeEvents;
-			cl = timeAfter - timeBeforeClient;
-			sv -= time_game;
-			cl -= time_frontend + time_backend;
-
-			Com_Printf("frame:%i all:%3i sv:%3i sev:%3i cev:%3i cl:%3i gm:%3i rf:%3i bk:%3i\n",
-				com_frameNumber, all, sv, sev, cev, cl, time_game, time_frontend, time_backend);
-		}
-
-		//
-		// trace optimization tracking
-		//
-		if (com_showtrace->integer)
-		{
-
-			extern S32      c_traces, c_brush_traces, c_patch_traces, c_trisoup_traces;
-			extern S32      c_pointcontents;
-
-			Com_Printf("%4i traces  (%ib %ip %it) %4i points\n", c_traces, c_brush_traces, c_patch_traces, c_trisoup_traces,
-				c_pointcontents);
-			c_traces = 0;
-			c_brush_traces = 0;
-			c_patch_traces = 0;
-			c_trisoup_traces = 0;
-			c_pointcontents = 0;
-		}
-
-		// old net chan encryption key
-		key = lastTime * 0x87243987;
-
-		com_frameNumber++;
-	}
+    
+    // if "viewlog" has been modified, show or hide the log console
+    if( com_viewlog->modified )
+    {
+        com_viewlog->modified = false;
+    }
+    
+    //
+    // main event loop
+    //
+    if( com_speeds->integer )
+    {
+        timeBeforeFirstEvents = Sys_Milliseconds();
+    }
+    
+    // we may want to spin here if things are going too fast
+    if( !com_dedicated->integer && !com_timedemo->integer )
+    {
+        if( com_minimized->integer && com_maxfpsMinimized->integer > 0 )
+        {
+            minMsec = 1000 / com_maxfpsMinimized->integer;
+        }
+        else if( com_unfocused->integer && com_maxfpsUnfocused->integer > 0 )
+        {
+            minMsec = 1000 / com_maxfpsUnfocused->integer;
+        }
+        else if( com_maxfps->integer > 0 )
+        {
+            minMsec = 1000 / com_maxfps->integer;
+        }
+        else
+        {
+            minMsec = 1;
+        }
+    }
+    else
+    {
+        minMsec = 1;
+    }
+    
+    msec = minMsec;
+    do
+    {
+        S32 timeRemaining = minMsec - msec;
+        
+        // The existing Sys_Sleep implementations aren't really
+        // precise enough to be of use beyond 100fps
+        // FIXME: implement a more precise sleep (RDTSC or something)
+        if( timeRemaining >= 10 )
+            Sys_Sleep( timeRemaining );
+            
+        com_frameTime = Com_EventLoop();
+        if( lastTime > com_frameTime )
+        {
+            lastTime = com_frameTime;	// possible on first frame
+        }
+        msec = com_frameTime - lastTime;
+    }
+    while( msec < minMsec );
+    
+    Cbuf_Execute();
+    Cdelay_Frame();
+    
+    lastTime = com_frameTime;
+    
+    // mess with msec if needed
+    com_frameMsec = msec;
+    msec = Com_ModifyMsec( msec );
+    
+    //
+    // server side
+    //
+    if( com_speeds->integer )
+    {
+        timeBeforeServer = Sys_Milliseconds();
+    }
+    
+    SV_Frame( msec );
+    
+    // if "dedicated" has been modified, start up
+    // or shut down the client system.
+    // Do this after the server may have started,
+    // but before the client tries to auto-connect
+    if( com_dedicated->modified )
+    {
+        // get the latched value
+        Cvar_Get( "dedicated", "0", 0 );
+        com_dedicated->modified = false;
+        if( !com_dedicated->integer )
+        {
+            CL_Init();
+        }
+        else
+        {
+            CL_Shutdown();
+        }
+    }
+    
+    //
+    // client system
+    //
+    if( !com_dedicated->integer )
+    {
+        //
+        // run event loop a second time to get server to client packets
+        // without a frame of latency
+        //
+        if( com_speeds->integer )
+        {
+            timeBeforeEvents = Sys_Milliseconds();
+        }
+        Com_EventLoop();
+        Cbuf_Execute();
+        
+        //
+        // client side
+        //
+        if( com_speeds->integer )
+        {
+            timeBeforeClient = Sys_Milliseconds();
+        }
+        
+        CL_Frame( msec );
+        
+        if( com_speeds->integer )
+        {
+            timeAfter = Sys_Milliseconds();
+        }
+    }
+    else
+    {
+        timeAfter = Sys_Milliseconds();
+    }
+    
+    // Update the physics system after everything gets ran for this frame,
+    // and only if we are in a game.
+    if( com_sv_running->integer || com_cl_running->integer )
+    {
+        physicsManager->Frame();
+    }
+    
+    //
+    // watchdog
+    //
+    if( com_dedicated->integer && !com_sv_running->integer && com_watchdog->integer )
+    {
+        if( watchdogTime == 0 )
+        {
+            watchdogTime = Sys_Milliseconds();
+        }
+        else
+        {
+            if( !watchWarn && Sys_Milliseconds() - watchdogTime > ( com_watchdog->integer - 4 ) * 1000 )
+            {
+                Com_Printf( "WARNING: watchdog will trigger in 4 seconds\n" );
+                watchWarn = true;
+            }
+            else if( Sys_Milliseconds() - watchdogTime > com_watchdog->integer * 1000 )
+            {
+                Com_Printf( "Idle Server with no map - triggering watchdog\n" );
+                watchdogTime = 0;
+                watchWarn = false;
+                if( com_watchdog_cmd->string[0] == '\0' )
+                {
+                    Cbuf_AddText( "quit\n" );
+                }
+                else
+                {
+                    Cbuf_AddText( va( "%s\n", com_watchdog_cmd->string ) );
+                }
+            }
+        }
+    }
+    
+    NET_FlushPacketQueue();
+    
+    //
+    // report timing information
+    //
+    if( com_speeds->integer )
+    {
+        S32             all, sv, sev, cev, cl;
+        
+        all = timeAfter - timeBeforeServer;
+        sv = timeBeforeEvents - timeBeforeServer;
+        sev = timeBeforeServer - timeBeforeFirstEvents;
+        cev = timeBeforeClient - timeBeforeEvents;
+        cl = timeAfter - timeBeforeClient;
+        sv -= time_game;
+        cl -= time_frontend + time_backend;
+        
+        Com_Printf( "frame:%i all:%3i sv:%3i sev:%3i cev:%3i cl:%3i gm:%3i rf:%3i bk:%3i\n",
+                    com_frameNumber, all, sv, sev, cev, cl, time_game, time_frontend, time_backend );
+    }
+    
+    //
+    // trace optimization tracking
+    //
+    if( com_showtrace->integer )
+    {
+    
+        extern S32 c_traces, c_brush_traces, c_patch_traces, c_trisoup_traces;
+        extern S32 c_pointcontents;
+        
+        Com_Printf( "%4i traces  (%ib %ip %it) %4i points\n", c_traces, c_brush_traces, c_patch_traces, c_trisoup_traces, c_pointcontents );
+        c_traces = 0;
+        c_brush_traces = 0;
+        c_patch_traces = 0;
+        c_trisoup_traces = 0;
+        c_pointcontents = 0;
+    }
+    
+    // old net chan encryption key
+    key = lastTime * 0x87243987;
+    
+    com_frameNumber++;
 }
 
 /*

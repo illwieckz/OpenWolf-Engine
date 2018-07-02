@@ -468,7 +468,7 @@ void CL_Record( StringEntry name )
     }
     
     // baselines
-    memset( &nullstate, 0, sizeof( nullstate ) );
+    ::memset( &nullstate, 0, sizeof( nullstate ) );
     for( i = 0; i < MAX_GENTITIES; i++ )
     {
         ent = &cl.entityBaselines[i];

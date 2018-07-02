@@ -343,13 +343,14 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
+#define __SINGLE_PASS__
 
 static void ProjectDlightTexture( void )
 {
     S32		l;
     vec3_t	origin;
-    float	scale;
-    float	radius;
+    F32	scale;
+    F32	radius;
     S32 deformGen;
     vec5_t deformParams;
     
@@ -358,27 +359,22 @@ static void ProjectDlightTexture( void )
         return;
     }
     
+    //#define MAX_SHADER_DLIGHTS 8
+#define MAX_SHADER_DLIGHTS 2
+    
     ComputeDeformValues( &deformGen, deformParams );
     
-    for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+#ifdef __SINGLE_PASS__
+    
+    S32 NUM_PASSES = ( backEnd.refdef.num_dlights / MAX_SHADER_DLIGHTS ) + 1;
+    
+    for( S32 i = 0; i < NUM_PASSES; i++ )
     {
-        dlight_t*	dl;
-        shaderProgram_t* sp;
-        vec4_t vector;
-        
-        if( !( tess.dlightBits & ( 1 << l ) ) )
-        {
-            continue;	// this surface definately doesn't have any of this light
-        }
-        
-        dl = &backEnd.refdef.dlights[l];
-        VectorCopy( dl->transformed, origin );
-        radius = dl->radius;
-        scale = 1.0f / radius;
-        
-        sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
+        S32 START_POS = i * MAX_SHADER_DLIGHTS;
         
         backEnd.pc.c_dlightDraws++;
+        
+        shaderProgram_t* sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
         
         GLSL_BindProgram( sp );
         
@@ -386,27 +382,108 @@ static void ProjectDlightTexture( void )
         
         GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
         
+#if 0
         GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
         if( deformGen != DGEN_NONE )
         {
             GLSL_SetUniformFloat5( sp, UNIFORM_DEFORMPARAMS, deformParams );
             GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
         }
+#endif
         
+        for( l = START_POS; l < backEnd.refdef.num_dlights && l - START_POS < 8; l++ )
+        {
+            vec3_t		origin;
+            F32		scale;
+            F32		radius;
+            dlight_t*	dl;
+            vec4_t		vector;
+            
+            dl = &backEnd.refdef.dlights[l];
+            VectorCopy( dl->transformed, origin );
+            radius = dl->radius * 5.0;
+            scale = 1.0f / radius;
+            
+            vector[0] = ( dl->color[0] );
+            vector[1] = ( dl->color[1] );
+            vector[2] = ( dl->color[2] );
+            vector[3] = 0.2f;
+            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTCOLOR + ( l - START_POS ), vector );
+            
+            vector[0] = origin[0];
+            vector[1] = origin[1];
+            vector[2] = origin[2];
+            vector[3] = scale;
+            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN + ( l - START_POS ), vector );
+        }
+        
+        GL_BindToTMU( tr.dlightImage, TB_COLORMAP );
+        
+        // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
+        // where they aren't rendered
+        //if ( dl->additive ) {
+        //	GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+        //}
+        //else {
+        GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+        //}
+        
+        R_DrawElements( tess.numIndexes, tess.firstIndex );
+        
+        backEnd.pc.c_totalIndexes += tess.numIndexes;
+        backEnd.pc.c_dlightIndexes += tess.numIndexes;
+        backEnd.pc.c_dlightVertexes += tess.numVertexes;
+    }
+    
+#else //!__SINGLE_PASS__
+    
+    for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+    {
+        dlight_t*	dl;
+        shaderProgram_t* sp;
+        vec4_t vector;
+    
+        if( !( tess.dlightBits & ( 1 << l ) ) )
+        {
+            continue;	// this surface definately doesn't have any of this light
+        }
+    
+        dl = &backEnd.refdef.dlights[l];
+        VectorCopy( dl->transformed, origin );
+        radius = dl->radius;
+        scale = 1.0f / radius;
+    
+        sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
+    
+        backEnd.pc.c_dlightDraws++;
+    
+        GLSL_BindProgram( sp );
+    
+        GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
+    
+        GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
+    
+        GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
+        if( deformGen != DGEN_NONE )
+        {
+            GLSL_SetUniformFloat5( sp, UNIFORM_DEFORMPARAMS, deformParams );
+            GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
+        }
+    
         vector[0] = dl->color[0];
         vector[1] = dl->color[1];
         vector[2] = dl->color[2];
         vector[3] = 1.0f;
         GLSL_SetUniformVec4( sp, UNIFORM_COLOR, vector );
-        
+    
         vector[0] = origin[0];
         vector[1] = origin[1];
         vector[2] = origin[2];
         vector[3] = scale;
         GLSL_SetUniformVec4( sp, UNIFORM_DLIGHTINFO, vector );
-        
+    
         GL_BindToTMU( tr.dlightImage, TB_COLORMAP );
-        
+    
         // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
         // where they aren't rendered
         if( dl->additive )
@@ -417,15 +494,16 @@ static void ProjectDlightTexture( void )
         {
             GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
         }
-        
+    
         GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
-        
+    
         R_DrawElements( tess.numIndexes, tess.firstIndex );
-        
+    
         backEnd.pc.c_totalIndexes += tess.numIndexes;
         backEnd.pc.c_dlightIndexes += tess.numIndexes;
         backEnd.pc.c_dlightVertexes += tess.numVertexes;
     }
+#endif //__SINGLE_PASS__
 }
 
 
@@ -688,6 +766,11 @@ static void ForwardDlight( void )
     
     shaderCommands_t* input = &tess;
     shaderStage_t* pStage = tess.xstages[0];
+    
+    if( !pStage )
+    {
+        return;
+    }
     
     if( !backEnd.refdef.num_dlights )
     {
@@ -1035,11 +1118,8 @@ void RB_SetStageImageDimensions( shaderProgram_t* sp, shaderStage_t* pStage )
 
 static void RB_IterateStagesGeneric( shaderCommands_t* input )
 {
-    S32 stage;
-    
-    vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-    float eyeT = 0;
-    
+    vec4_t fogDistanceVector, fogDepthVector = { 0, 0, 0, 0 };
+    F32 eyeT = 0;
     S32 deformGen;
     vec5_t deformParams;
     
@@ -1049,12 +1129,15 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
     
     ComputeFogValues( fogDistanceVector, fogDepthVector, &eyeT );
     
-    for( stage = 0; stage < MAX_SHADER_STAGES; stage++ )
+    for( S32 stage = 0; stage < MAX_SHADER_STAGES; stage++ )
     {
         shaderStage_t* pStage = input->xstages[stage];
         shaderProgram_t* sp;
         vec4_t texMatrix;
         vec4_t texOffTurb;
+        S32 stateBits;
+        colorGen_t forceRGBGen = CGEN_BAD;
+        alphaGen_t forceAlphaGen = AGEN_IDENTITY;
         
         if( !pStage )
         {
@@ -1154,14 +1237,21 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                 case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0 );
+                    //RB_SetParallaxScale(sp, 3.0);
+                    RB_SetParallaxScale( sp, 4.0 );
                     break;
                 case MATERIAL_LONGGRASS:		// 6			// long jungle grass
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0 );
+                    //RB_SetParallaxScale(sp, 3.0);
+                    RB_SetParallaxScale( sp, 5.0 );
                     break;
                 case MATERIAL_SAND:				// 8			// sandy beach
+                    GLSL_BindProgram( sp );
+                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
+                    RB_SetParallaxScale( sp, 3.0 );
+                    //RB_SetParallaxScale(sp, 5.0);
+                    break;
                 case MATERIAL_CARPET:			// 27			// lush carpet
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
@@ -1171,16 +1261,19 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
                     RB_SetParallaxScale( sp, 4.0 );
+                    //RB_SetParallaxScale(sp, 5.0);
                     break;
                 case MATERIAL_ROCK:				// 23			//
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 6.0 );
+                    //RB_SetParallaxScale(sp, 6.0);
+                    RB_SetParallaxScale( sp, 4.0 );
                     break;
                 case MATERIAL_TILES:			// 26			// tiled floor
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0 );
+                    //RB_SetParallaxScale(sp, 4.0);
+                    RB_SetParallaxScale( sp, 3.0 );
                     break;
                 case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
                 case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
@@ -1188,13 +1281,15 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                 case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0 );
+                    //RB_SetParallaxScale(sp, 4.0);
+                    RB_SetParallaxScale( sp, 3.0 );
                     break;
                 case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
                 case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0 );
+                    //RB_SetParallaxScale(sp, 4.0);
+                    RB_SetParallaxScale( sp, 5.0 );
                     break;
                 case MATERIAL_FABRIC:			// 21			// Cotton sheets
                 case MATERIAL_CANVAS:			// 22			// tent material
@@ -1210,29 +1305,45 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                 case MATERIAL_SNOW:				// 14			// freshly laid snow
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0 );
+                    //RB_SetParallaxScale(sp, 3.0);
+                    RB_SetParallaxScale( sp, 5.0 );
                     break;
                 case MATERIAL_MUD:				// 17			// wet soil
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
                     RB_SetParallaxScale( sp, 4.0 );
+                    //RB_SetParallaxScale(sp, 5.0);
                     break;
                 case MATERIAL_DIRT:				// 7			// hard mud
-                case MATERIAL_GLASS:			// 10			//
                 case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
-                case MATERIAL_ICE:				// 15			// packed snow/solid ice
                 case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
-                case MATERIAL_BPGLASS:			// 18			// bulletproof glass
                 case MATERIAL_RUBBER:			// 24			// hard tire like rubber
                 case MATERIAL_PLASTIC:			// 25			//
                 case MATERIAL_PLASTER:			// 28			// drywall style plaster
                 case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
-                case MATERIAL_ARMOR:			// 30			// body armor
-                case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
-                default:
                     GLSL_BindProgram( sp );
                     GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
                     RB_SetParallaxScale( sp, 1.0 );
+                    break;
+                case MATERIAL_ARMOR:			// 30			// body armor
+                case MATERIAL_ICE:				// 15			// packed snow/solid ice
+                    GLSL_BindProgram( sp );
+                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
+                    //RB_SetParallaxScale(sp, 4.0);
+                    RB_SetParallaxScale( sp, 2.0 );
+                    break;
+                case MATERIAL_GLASS:			// 10			//
+                case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+                case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+                    GLSL_BindProgram( sp );
+                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
+                    RB_SetParallaxScale( sp, 1.0 );
+                    break;
+                default:
+                    GLSL_BindProgram( sp );
+                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
+                    //RB_SetParallaxScale(sp, 1.0);
+                    RB_SetParallaxScale( sp, 2.0 );
                     break;
             }
         }
@@ -1305,6 +1416,8 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             
             GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, 0.0f );
         }
+        
+        RB_SetStageImageDimensions( sp, pStage );
         
         if( pStage->alphaGen == AGEN_PORTAL )
         {

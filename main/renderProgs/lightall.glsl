@@ -1,11 +1,10 @@
 /*[Vertex]*/
 attribute vec4 attr_TexCoord0;
-uniform vec4   u_Local1; // parallaxScale, 0, 0, 0
-varying vec4	var_Local1; // parallaxScale, 0, 0, 0
-uniform vec4	u_Local2;
-varying vec4	var_Local2; // surfaceType, time, 0, 0
+uniform vec4	u_Local1; // parallaxScale, 0, 0, 0
 uniform vec2	u_Dimensions;
-varying vec2   var_Dimensions;
+
+varying vec4	var_Local1; // parallaxScale, 0, 0, 0
+varying vec2	var_Dimensions;
 
 #if defined(USE_LIGHTMAP) || defined(USE_TCGEN)
 attribute vec4 attr_TexCoord1;
@@ -265,16 +264,13 @@ void main()
 #endif
 
 	var_Local1 = u_Local1;
-	var_Local2 = u_Local2;
 	var_Dimensions = u_Dimensions;
+	var_Local1 = u_Local1;
 }
 
 /*[Fragment]*/
-#define FAST_PARALLAX
-
 uniform sampler2D u_DiffuseMap;
 varying vec4	var_Local1; // surfaceType, 0, 0, 0
-varying vec4	var_Local2; // surfaceType, 0, 0, 0
 varying vec2	var_Dimensions;
 
 #if defined(USE_LIGHTMAP)
@@ -376,48 +372,43 @@ varying vec4      var_PrimaryLightDir;
 
 #define const_1 ( 16.0 / 255.0)
 #define const_2 (255.0 / 219.0)
-		color = ((color - const_1) * const_2);
+		vec3 color2 = ((color - const_1) * const_2);
+#define const_3 ( 125.0 / 255.0)
+#define const_4 (255.0 / 115.0)
+		
+		color = ((color - const_3) * const_4);
 
-		vec3 orig_color = color * 2.0;
-		//color += 0.2;
-		//color = clamp(color, 0.0, 1.0);
-		//color -= vec3(0.4, 0.4, 0.4);
-		//color = clamp(color, 0.0, 1.0);
-		//color += vec3(0.2, 0.2, 0.2);
-		//color = clamp(color, 0.0, 1.0);
-		//color *= 1.8;
-		//color = clamp(color, 0.0, 1.0);
-	
-		//float combined_color = color.r + color.g + color.b;
-		//combined_color /= 3.0;
-  
-		//return clamp(1.0 - combined_color, 0.0, 1.0);
+		//vec3 orig_color = color * 2.0;
+		vec3 orig_color = color + color2;
 
 		orig_color = clamp(orig_color, 0.0, 1.0);
 		float combined_color2 = orig_color.r + orig_color.g + orig_color.b;
 		combined_color2 /= 4.0;
 
-		//float out_color = (clamp(1.0 - combined_color, 0.0, 1.0) + clamp(1.0 - combined_color2, 0.0, 1.0)) / 2.0;
-		//return out_color;
-
 		return clamp(1.0 - combined_color2, 0.0, 1.0);
 	}
   #endif //USE_PARALLAXMAP_NONORMALS
 
+
 float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 {
 #if !defined(FAST_PARALLAX)
+	float MAX_SIZE = var_Local1.x / 3.0;//1.25;//1.5;//1.0;
+	if (MAX_SIZE > 1.75) MAX_SIZE = 1.75;
+	if (MAX_SIZE < 1.0) MAX_SIZE = 1.0;
 	const int linearSearchSteps = 16;
 	const int binarySearchSteps = 6;
 
 	// current size of search window
-	float size = 1.0 / float(linearSearchSteps);
+	float size = MAX_SIZE / float(linearSearchSteps);
 
 	// current depth position
 	float depth = 0.0;
 
 	// best match found (starts with last position 1.0)
-	float bestDepth = 1.0;
+	float bestDepth = MAX_SIZE;
+
+#if 1
 
 	// texture depth at best depth
 	float texDepth = 0.0;
@@ -430,9 +421,10 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	{
 		depth += size;
 		
-		float t = SampleDepth(normalMap, dp + ds * depth);
+		float t = SampleDepth(normalMap, dp + ds * depth) * MAX_SIZE;
 		
-		if(bestDepth > 0.996)		// if no depth found yet
+		//if(bestDepth > 0.996)		// if no depth found yet
+		if(bestDepth > MAX_SIZE - (MAX_SIZE / linearSearchSteps))		// if no depth found yet
 			if(depth >= t)
 			{
 				bestDepth = depth;	// store best depth
@@ -441,9 +433,12 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 			}
 		prevT = t;
 	}
+#else
+	bestDepth = MAX_SIZE;
+#endif
 
 	depth = bestDepth;
-
+	
 #if !defined (USE_RELIEFMAP)
 	float div = 1.0 / (1.0 + (prevTexDepth - texDepth) * float(linearSearchSteps));
 	bestDepth -= (depth - size - prevTexDepth) * div;
@@ -453,7 +448,7 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	{
 		size *= 0.5;
 
-		float t = SampleDepth(normalMap, dp + ds * depth);
+		float t = SampleDepth(normalMap, dp + ds * depth) * MAX_SIZE;
 		
 		if(depth >= t)
 		{
@@ -465,6 +460,7 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	}
 #endif
 
+	//return ((bestDepth * var_Local1.x) + (SampleDepth(normalMap, dp) - 1.0)) * 0.5;
 	return bestDepth * var_Local1.x;
 #else //FAST_PARALLAX
 	float depth = SampleDepth(normalMap, dp) - 1.0;
@@ -568,6 +564,7 @@ void main()
 	vec3 viewDir, lightColor, ambientColor, reflectance;
 	vec3 L, N, E, H;
 	float NL, NH, NE, EH, attenuation;
+	vec2 tex_offset = vec2(1.0 / var_Dimensions.x, 1.0 / var_Dimensions.y);
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 	mat3 tangentToWorld = mat3(var_Tangent.xyz, var_Bitangent.xyz, var_Normal.xyz);
@@ -591,14 +588,18 @@ void main()
 	vec2 texCoords = var_TexCoords.xy;
 
 #if defined(USE_PARALLAXMAP) || defined(USE_PARALLAXMAP_NONORMALS)
-	//vec3 offsetDir = viewDir * tangentToWorld;
+	vec3 offsetDir = normalize(E * tangentToWorld);
 
 	//offsetDir.xy *= -u_NormalScale.a / offsetDir.z;
+	offsetDir.xy *= tex_offset * -var_Local1.x;//-4.0;//-5.0; // -3.0
 
-	texCoords += GetParallaxOffset(texCoords, E, tangentToWorld);
-
-	//texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_NormalMap);
-#endif
+  #if defined(USE_PARALLAXMAP)
+	texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_NormalMap);
+  #endif //USE_PARALLAXMAP
+  #if defined(USE_PARALLAXMAP_NONORMALS)
+	texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_DiffuseMap);
+  #endif //USE_PARALLAXMAP_NONORMALS
+#endif //USE_PARALLAXMAP || USE_PARALLAXMAP_NONORMALS
 
 	vec4 diffuse = texture2D(u_DiffuseMap, texCoords);
 	

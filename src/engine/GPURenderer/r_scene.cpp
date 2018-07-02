@@ -231,11 +231,13 @@ void idRenderSystemLocal::AddRefEntityToScene( const refEntity_t* ent )
     {
         return;
     }
+    
     if( r_numentities >= MAX_REFENTITIES )
     {
         CL_RefPrintf( PRINT_DEVELOPER, "idRenderSystemLocal::AddRefEntityToScene: Dropping refEntity, reached MAX_REFENTITIES\n" );
         return;
     }
+    
     if( Q_isnan( ent->origin[0] ) || Q_isnan( ent->origin[1] ) || Q_isnan( ent->origin[2] ) )
     {
         static bool firstTime = true;
@@ -246,6 +248,7 @@ void idRenderSystemLocal::AddRefEntityToScene( const refEntity_t* ent )
         }
         return;
     }
+    
     if( ( S32 )ent->reType < 0 || ent->reType >= RT_MAX_REF_ENTITY_TYPE )
     {
         Com_Error( ERR_DROP, "idRenderSystemLocal::AddRefEntityToScene: bad reType %i", ent->reType );
@@ -302,7 +305,7 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
 idRenderSystemLocal::AddLightToScene
 =====================
 */
-void idRenderSystemLocal::AddLightToScene( const vec3_t org, float intensity, float r, float g, float b )
+void idRenderSystemLocal::AddLightToScene( const vec3_t org, F32 intensity, F32 r, F32 g, F32 b )
 {
     RE_AddDynamicLightToScene( org, intensity, r, g, b, false );
 }
@@ -312,7 +315,7 @@ void idRenderSystemLocal::AddLightToScene( const vec3_t org, float intensity, fl
 idRenderSystemLocal::AddAdditiveLightToScene
 =====================
 */
-void idRenderSystemLocal::AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b )
+void idRenderSystemLocal::AddAdditiveLightToScene( const vec3_t org, F32 intensity, F32 r, F32 g, F32 b )
 {
     RE_AddDynamicLightToScene( org, intensity, r, g, b, true );
 }

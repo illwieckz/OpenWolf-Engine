@@ -121,9 +121,102 @@ static uniformInfo_t uniformsInfo[] =
     { "u_LightUp",       GLSL_VEC3 },
     { "u_LightRight",    GLSL_VEC3 },
     { "u_LightOrigin",   GLSL_VEC4 },
+    { "u_LightOrigin1",   GLSL_VEC4 },
+    { "u_LightOrigin2",   GLSL_VEC4 },
+    { "u_LightOrigin3",   GLSL_VEC4 },
+    { "u_LightOrigin4",   GLSL_VEC4 },
+    { "u_LightOrigin5",   GLSL_VEC4 },
+    { "u_LightOrigin6",   GLSL_VEC4 },
+    { "u_LightOrigin7",   GLSL_VEC4 },
+    { "u_LightOrigin8",   GLSL_VEC4 },
+    { "u_LightOrigin9",   GLSL_VEC4 },
+    { "u_LightOrigin10",   GLSL_VEC4 },
+    { "u_LightOrigin11",   GLSL_VEC4 },
+    { "u_LightOrigin12",   GLSL_VEC4 },
+    { "u_LightOrigin13",   GLSL_VEC4 },
+    { "u_LightOrigin14",   GLSL_VEC4 },
+    { "u_LightOrigin15",   GLSL_VEC4 },
+    { "u_LightOrigin16",   GLSL_VEC4 },
+    { "u_LightOrigin17",   GLSL_VEC4 },
+    { "u_LightOrigin18",   GLSL_VEC4 },
+    { "u_LightOrigin19",   GLSL_VEC4 },
+    { "u_LightOrigin20",   GLSL_VEC4 },
+    { "u_LightOrigin21",   GLSL_VEC4 },
+    { "u_LightOrigin22",   GLSL_VEC4 },
+    { "u_LightOrigin23",   GLSL_VEC4 },
+    { "u_LightOrigin24",   GLSL_VEC4 },
+    { "u_LightOrigin25",   GLSL_VEC4 },
+    { "u_LightOrigin26",   GLSL_VEC4 },
+    { "u_LightOrigin27",   GLSL_VEC4 },
+    { "u_LightOrigin28",   GLSL_VEC4 },
+    { "u_LightOrigin29",   GLSL_VEC4 },
+    { "u_LightOrigin30",   GLSL_VEC4 },
+    { "u_LightOrigin31",   GLSL_VEC4 },
     { "u_LightColor",   GLSL_VEC4, },
+    { "u_LightColor1",   GLSL_VEC4 },
+    { "u_LightColor2",   GLSL_VEC4 },
+    { "u_LightColor3",   GLSL_VEC4 },
+    { "u_LightColor4",   GLSL_VEC4 },
+    { "u_LightColor5",   GLSL_VEC4 },
+    { "u_LightColor6",   GLSL_VEC4 },
+    { "u_LightColor7",   GLSL_VEC4 },
+    { "u_LightColor8",   GLSL_VEC4 },
+    { "u_LightColor9",   GLSL_VEC4 },
+    { "u_LightColor10",   GLSL_VEC4 },
+    { "u_LightColor11",   GLSL_VEC4 },
+    { "u_LightColor12",   GLSL_VEC4 },
+    { "u_LightColor13",   GLSL_VEC4 },
+    { "u_LightColor14",   GLSL_VEC4 },
+    { "u_LightColor15",   GLSL_VEC4 },
+    { "u_LightColor16",   GLSL_VEC4 },
+    { "u_LightColor17",   GLSL_VEC4 },
+    { "u_LightColor18",   GLSL_VEC4 },
+    { "u_LightColor19",   GLSL_VEC4 },
+    { "u_LightColor20",   GLSL_VEC4 },
+    { "u_LightColor21",   GLSL_VEC4 },
+    { "u_LightColor22",   GLSL_VEC4 },
+    { "u_LightColor23",   GLSL_VEC4 },
+    { "u_LightColor24",   GLSL_VEC4 },
+    { "u_LightColor25",   GLSL_VEC4 },
+    { "u_LightColor26",   GLSL_VEC4 },
+    { "u_LightColor27",   GLSL_VEC4 },
+    { "u_LightColor28",   GLSL_VEC4 },
+    { "u_LightColor29",   GLSL_VEC4 },
+    { "u_LightColor30",   GLSL_VEC4 },
+    { "u_LightColor31",   GLSL_VEC4 },
     { "u_ModelLightDir", GLSL_VEC3 },
     { "u_LightRadius",   GLSL_FLOAT },
+    { "u_LightRadius1",   GLSL_FLOAT },
+    { "u_LightRadius2",   GLSL_FLOAT },
+    { "u_LightRadius3",   GLSL_FLOAT },
+    { "u_LightRadius4",   GLSL_FLOAT },
+    { "u_LightRadius5",   GLSL_FLOAT },
+    { "u_LightRadius6",   GLSL_FLOAT },
+    { "u_LightRadius7",   GLSL_FLOAT },
+    { "u_LightRadius8",   GLSL_FLOAT },
+    { "u_LightRadius9",   GLSL_FLOAT },
+    { "u_LightRadius10",   GLSL_FLOAT },
+    { "u_LightRadius11",   GLSL_FLOAT },
+    { "u_LightRadius12",   GLSL_FLOAT },
+    { "u_LightRadius13",   GLSL_FLOAT },
+    { "u_LightRadius14",   GLSL_FLOAT },
+    { "u_LightRadius15",   GLSL_FLOAT },
+    { "u_LightRadius16",   GLSL_FLOAT },
+    { "u_LightRadius17",   GLSL_FLOAT },
+    { "u_LightRadius18",   GLSL_FLOAT },
+    { "u_LightRadius19",   GLSL_FLOAT },
+    { "u_LightRadius20",   GLSL_FLOAT },
+    { "u_LightRadius21",   GLSL_FLOAT },
+    { "u_LightRadius22",   GLSL_FLOAT },
+    { "u_LightRadius23",   GLSL_FLOAT },
+    { "u_LightRadius24",   GLSL_FLOAT },
+    { "u_LightRadius25",   GLSL_FLOAT },
+    { "u_LightRadius26",   GLSL_FLOAT },
+    { "u_LightRadius27",   GLSL_FLOAT },
+    { "u_LightRadius28",   GLSL_FLOAT },
+    { "u_LightRadius29",   GLSL_FLOAT },
+    { "u_LightRadius30",   GLSL_FLOAT },
+    { "u_LightRadius31",   GLSL_FLOAT },
     { "u_AmbientLight",  GLSL_VEC3 },
     { "u_DirectedLight", GLSL_VEC3 },
     
@@ -418,8 +511,8 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
 
 static S32 GLSL_CompileGPUShader( U32 program, U32* prevShader, StringEntry buffer, S32 size, U32 shaderType )
 {
-    S32           compiled;
-    U32          shader;
+    S32 compiled;
+    U32 shader;
     
     shader = glCreateShader( shaderType );
     
@@ -1016,6 +1109,10 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( r_parallaxMapping->integer ) // Parallax without normal maps...
             Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
             
+        if( r_parallaxMapping->integer && r_parallaxMapping->integer < 2 ) // Fast parallax mapping...
+            Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
+            
+            
         if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load generic shader!" );
@@ -1156,17 +1253,23 @@ void idRenderSystemLocal::InitGPUShaders( void )
                 
                 attribs |= ATTR_TANGENT;
                 
+                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer )
+                    Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP\n" );
+                else if( r_parallaxMapping->integer ) // Parallax without normal maps...
+                    Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
+                    
                 if( r_normalMapping->integer == 3 )
                     Q_strcat( extradefines, 1024, "#define USE_RELIEFMAP\n" );
-                    
-                if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer == 1 )
-                    Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP\n" );
-                else if( r_parallaxMapping->integer == 2 ) // Parallax without normal maps...
-                    Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
+
+                if( r_parallaxMapping->integer && r_parallaxMapping->integer < 2 ) // Fast parallax mapping...
+                    Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
             }
             else if( r_parallaxMapping->integer ) // Parallax without normal maps...
             {
                 Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
+                
+                if( r_parallaxMapping->integer && r_parallaxMapping->integer < 2 ) // Fast parallax mapping...
+                    Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
             }
             
             if( r_specularMapping->integer )

@@ -343,16 +343,21 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
-#define __SINGLE_PASS__
+#define __MERGE_DLIGHTS__
+
+//F32 DLIGHT_SIZE_MULTIPLIER = 5.0;
+F32 DLIGHT_SIZE_MULTIPLIER = 2.5;
+
+//#define __SINGLE_PASS__
 
 static void ProjectDlightTexture( void )
 {
     S32		l;
     vec3_t	origin;
-    F32	scale;
-    F32	radius;
-    S32 deformGen;
-    vec5_t deformParams;
+    F32     scale;
+    F32     radius;
+    S32     deformGen;
+    vec5_t  deformParams;
     
     if( !backEnd.refdef.num_dlights )
     {
@@ -391,17 +396,21 @@ static void ProjectDlightTexture( void )
         }
 #endif
         
-        for( l = START_POS; l < backEnd.refdef.num_dlights && l - START_POS < 8; l++ )
+        for( l = START_POS; l < backEnd.refdef.num_dlights && l - START_POS < MAX_SHADER_DLIGHTS; l++ )
         {
             vec3_t		origin;
-            F32		scale;
-            F32		radius;
+            F32		    scale;
+            F32		    radius;
             dlight_t*	dl;
             vec4_t		vector;
             
+            //if ( !( tess.dlightBits & ( 1 << l ) ) ) {
+            //	continue;	// this surface definately doesn't have any of this light
+            //}
+            
             dl = &backEnd.refdef.dlights[l];
             VectorCopy( dl->transformed, origin );
-            radius = dl->radius * 5.0;
+            radius = dl->radius * DLIGHT_SIZE_MULTIPLIER;
             scale = 1.0f / radius;
             
             vector[0] = ( dl->color[0] );
@@ -436,21 +445,24 @@ static void ProjectDlightTexture( void )
     }
     
 #else //!__SINGLE_PASS__
+#ifndef __MERGE_DLIGHTS__
     
-    for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+    for( l = 0; l < backEnd.refdef.num_dlights; l++ )
     {
+        vec3_t origin;
+        F32	scale;
+        F32	radius;
         dlight_t*	dl;
         shaderProgram_t* sp;
         vec4_t vector;
     
-        if( !( tess.dlightBits & ( 1 << l ) ) )
-        {
-            continue;	// this surface definately doesn't have any of this light
-        }
+        //if ( !( tess.dlightBits & ( 1 << l ) ) ) {
+        //	continue;	// this surface definately doesn't have any of this light
+        //}
     
         dl = &backEnd.refdef.dlights[l];
         VectorCopy( dl->transformed, origin );
-        radius = dl->radius;
+        radius = dl->radius * DLIGHT_SIZE_MULTIPLIER;
         scale = 1.0f / radius;
     
         sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
@@ -470,17 +482,29 @@ static void ProjectDlightTexture( void )
             GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
         }
     
-        vector[0] = dl->color[0];
-        vector[1] = dl->color[1];
-        vector[2] = dl->color[2];
-        vector[3] = 1.0f;
-        GLSL_SetUniformVec4( sp, UNIFORM_COLOR, vector );
+        vector[0] = ( dl->color[0] );
+        vector[1] = ( dl->color[1] );
+        vector[2] = ( dl->color[2] );
+        vector[3] = 0.2f;
+        GLSL_SetUniformVec4( sp, UNIFORM_LIGHTCOLOR, vector );
     
         vector[0] = origin[0];
         vector[1] = origin[1];
         vector[2] = origin[2];
         vector[3] = scale;
-        GLSL_SetUniformVec4( sp, UNIFORM_DLIGHTINFO, vector );
+        GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN, vector );
+    
+        GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, dl->radius );
+    
+        /*
+        {
+        vec2_t screensize;
+        screensize[0] = tr.dlightImage->width;
+        screensize[1] = tr.dlightImage->height;
+    
+        GLSL_SetUniformVec2(sp, UNIFORM_DIMENSIONS, screensize);
+        }
+        */
     
         GL_BindToTMU( tr.dlightImage, TB_COLORMAP );
     
@@ -495,14 +519,161 @@ static void ProjectDlightTexture( void )
             GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
         }
     
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
-    
         R_DrawElements( tess.numIndexes, tess.firstIndex );
     
         backEnd.pc.c_totalIndexes += tess.numIndexes;
         backEnd.pc.c_dlightIndexes += tess.numIndexes;
         backEnd.pc.c_dlightVertexes += tess.numVertexes;
     }
+#else // __MERGE_DLIGHTS__
+    
+    {
+        bool	    SHOULD_MERGE[256];
+        bool	    COMPLETED_MERGE[256];
+        dlight_t	MERGED_DLIGHTS[256];
+        S32			MERGED_DLIGHT_COUNT[256];
+        S32			NUM_MERGED_DLIGHTS = 2;
+        S32			j = 0;
+    
+        ::memset( &SHOULD_MERGE, false, sizeof( bool ) * 256 );
+        ::memset( &COMPLETED_MERGE, false, sizeof( bool ) * 256 );
+        ::memset( &MERGED_DLIGHT_COUNT, 0, sizeof( S32 ) * 256 );
+    
+        for( l = 0; l < backEnd.refdef.num_dlights; l++ )
+        {
+            dlight_t* dl = &backEnd.refdef.dlights[l];
+    
+            // Start search for mergeable lights at the next light from this one...
+            for( j = l + 1; j < backEnd.refdef.num_dlights; j++ )
+            {
+                dlight_t* dl2 = &backEnd.refdef.dlights[j];
+    
+                if( Distance( dl2->origin, dl->origin ) <= dl->radius * 2.0 )
+                {
+                    SHOULD_MERGE[j] = true;
+                }
+            }
+        }
+    
+        // Add all lights that should not be merged with another...
+        for( l = 0; l < backEnd.refdef.num_dlights; l++ )
+        {
+            if( !SHOULD_MERGE[l] )
+            {
+                dlight_t*	dl;
+    
+                // Copy this dlight to our list...
+                ::memcpy( &MERGED_DLIGHTS[NUM_MERGED_DLIGHTS], &backEnd.refdef.dlights[l], sizeof( dlight_t ) );
+                MERGED_DLIGHT_COUNT[NUM_MERGED_DLIGHTS]++;
+    
+                dl = &MERGED_DLIGHTS[NUM_MERGED_DLIGHTS];
+    
+                // And merge any lights close enough with this one...
+                for( j = l; j < backEnd.refdef.num_dlights; j++ )
+                {
+                    dlight_t* dl2 = &backEnd.refdef.dlights[j];
+    
+                    if( !SHOULD_MERGE[j] || COMPLETED_MERGE[j] ) continue;
+    
+                    if( Distance( dl2->origin, dl->origin ) <= dl->radius )
+                    {
+                        // Merge these two...
+                        dl->color[0] += dl2->color[0];
+                        dl->color[1] += dl2->color[1];
+                        dl->color[2] += dl2->color[2];
+    
+                        // TODO: Move the light origin...
+    
+                        // mark this light as merged...
+                        COMPLETED_MERGE[j] = true;
+                        // increase counter of how many lights have been added for this merged light...
+                        MERGED_DLIGHT_COUNT[NUM_MERGED_DLIGHTS]++;
+                    }
+                }
+    
+                NUM_MERGED_DLIGHTS++;
+            }
+        }
+    
+        // Finish up by adjusting merged lights color and radius...
+        for( l = 0; l < NUM_MERGED_DLIGHTS; l++ )
+        {
+            dlight_t*	dl = &MERGED_DLIGHTS[l];
+    
+            // Average out the colors...
+            dl->color[0] /= MERGED_DLIGHT_COUNT[l];
+            dl->color[1] /= MERGED_DLIGHT_COUNT[l];
+            dl->color[2] /= MERGED_DLIGHT_COUNT[l];
+    
+            // Increase the radius...
+            dl->radius *= ( MERGED_DLIGHT_COUNT[l] );
+        }
+    
+        //CL_RefPrintf(PRINT_ALL, "%i dlights were merged into %i dlights.\n", backEnd.refdef.num_dlights, NUM_MERGED_DLIGHTS);
+    
+        // Now display the merged lights...
+        for( l = 0; l < NUM_MERGED_DLIGHTS; l++ )
+        {
+            shaderProgram_t* sp;
+            vec4_t vector;
+            dlight_t*	dl = &MERGED_DLIGHTS[l];
+    
+            VectorCopy( dl->transformed, origin );
+            radius = dl->radius * DLIGHT_SIZE_MULTIPLIER;
+            scale = 1.0f / radius;
+    
+            sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
+    
+            backEnd.pc.c_dlightDraws++;
+    
+            GLSL_BindProgram( sp );
+    
+            GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
+    
+            GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
+    
+            GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
+            if( deformGen != DGEN_NONE )
+            {
+                GLSL_SetUniformFloat5( sp, UNIFORM_DEFORMPARAMS, deformParams );
+                GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
+            }
+    
+            vector[0] = ( dl->color[0] );
+            vector[1] = ( dl->color[1] );
+            vector[2] = ( dl->color[2] );
+            vector[3] = 0.2f;
+            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTCOLOR, vector );
+    
+            vector[0] = origin[0];
+            vector[1] = origin[1];
+            vector[2] = origin[2];
+            vector[3] = scale;
+            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN, vector );
+    
+            GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, dl->radius );
+    
+            GL_BindToTMU( tr.dlightImage, TB_COLORMAP );
+    
+            // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
+            // where they aren't rendered
+            if( dl->additive )
+            {
+                GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+            }
+            else
+            {
+                GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+            }
+    
+            R_DrawElements( tess.numIndexes, tess.firstIndex );
+    
+            backEnd.pc.c_totalIndexes += tess.numIndexes;
+            backEnd.pc.c_dlightIndexes += tess.numIndexes;
+            backEnd.pc.c_dlightVertexes += tess.numVertexes;
+        }
+    }
+#endif //__MERGE_DLIGHTS__
 #endif //__SINGLE_PASS__
 }
 
@@ -1824,11 +1995,12 @@ void RB_StageIteratorGeneric( void )
     //
     RB_IterateStagesGeneric( input );
     
+#ifdef ___OLD_DLIGHT_CODE___ // UQ1: <= SS_OPAQUE and dlightBits tracking is a joke - light is light. surfaces are surfaces! this makes absolutely no sense!
     //
     // pshadows!
     //
-    if( glRefConfig.framebufferObject && r_shadows->integer == 4 && tess.pshadowBits
-            && tess.shader->sort <= SS_OPAQUE && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
+    if( r_shadows->integer == 4 && tess.pshadowBits &&
+            tess.shader->sort <= SS_OPAQUE && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
     {
         ProjectPshadowVBOGLSL();
     }
@@ -1837,7 +2009,7 @@ void RB_StageIteratorGeneric( void )
     //
     // now do any dynamic lighting needed
     //
-    if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE && r_lightmap->integer == 0
+    if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE
             && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
     {
         if( tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader
@@ -1850,6 +2022,43 @@ void RB_StageIteratorGeneric( void )
             ProjectDlightTexture();
         }
     }
+#else //!___OLD_DLIGHT_CODE___
+    //
+    // now do any dynamic lighting needed. UQ1: A generic method to rule them all... A SANE real world style lighting with a blacklist - not a whitelist!
+    //
+    if( !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) && tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
+    {
+        switch( int( tess.shader->sort ) )
+        {
+            case SS_PORTAL:
+            case SS_ENVIRONMENT: // is this really always a skybox???
+            case SS_SEE_THROUGH:
+                //case SS_FOG: // hmm... these??? i sorta like the idea of lighting up fog particles myself...
+            case SS_BLEND0:
+            case SS_BLEND1:
+            case SS_BLEND2:
+            case SS_BLEND3:
+            case SS_BLEND6:
+                break;
+            default:
+                if( r_dlightMode->integer >= 2 )
+                {
+                    ForwardDlight();
+                }
+                else
+                {
+                    ProjectDlightTexture();
+                }
+    
+                //
+                // pshadows!
+                //
+                if( r_shadows->integer == 4 && tess.pshadowBits && !( tess.shader->surfaceFlags & ( /*SURF_NODLIGHT |*/ SURF_SKY ) ) )
+                    ProjectPshadowVBOGLSL();
+                break;
+        }
+    }
+#endif //___OLD_DLIGHT_CODE___
     
     //
     // now do fog

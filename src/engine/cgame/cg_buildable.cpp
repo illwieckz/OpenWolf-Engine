@@ -677,7 +677,7 @@ void idCGameLocal::BuildableStatusParse( StringEntry filename, buildStat_t* bs )
     S32        handle;
     StringEntry s;
     S32        i;
-    F32      f;
+    F32        f;
     vec4_t     c;
     
     handle = trap_PC_LoadSource( filename );

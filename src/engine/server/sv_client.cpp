@@ -393,7 +393,7 @@ gotnewcl:
     Q_strncpyz( newcl->userinfo, userinfo, sizeof( newcl->userinfo ) );
     
     // get the game a chance to reject this connection or modify the userinfo
-    denied = ( UTF8* )game->ClientConnect( clientNum, true, false ); // firstTime = true
+    denied = game->ClientConnect( clientNum, true, false ); // firstTime = true
     if( denied )
     {
         NET_OutOfBandPrint( NS_SERVER, from, "print\n[err_dialog]%s\n", denied );
@@ -1537,22 +1537,32 @@ void SV_UserinfoChanged( client_t* cl )
     
     // snaps command
     val = Info_ValueForKey( cl->userinfo, "snaps" );
-    if( strlen( val ) )
+    if( val[0] && !NET_IsLocalAddress( cl->netchan.remoteAddress ) )
     {
         i = atoi( val );
-        if( i < 1 )
-        {
-            i = 1;
-        }
-        else if( i > sv_fps->integer )
-        {
-            i = sv_fps->integer;
-        }
-        cl->snapshotMsec = 1000 / i;
     }
     else
     {
-        cl->snapshotMsec = 50;
+        i = sv_fps->integer; // sync with server
+    }
+    
+    // range check
+    if( i < 1 )
+    {
+        i = 1;
+    }
+    else if( i > sv_fps->integer )
+    {
+        i = sv_fps->integer;
+    }
+    
+    i = 1000 / i; // from FPS to milliseconds
+    
+    if( i != cl->snapshotMsec )
+    {
+        // Reset next snapshot so we avoid desync between server frame time and snapshot send time
+        cl->nextSnapshotTime = -1;
+        cl->snapshotMsec = i;
     }
     
     // TTimo

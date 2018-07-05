@@ -902,17 +902,17 @@ typedef enum
 // GLSL vertex and one GLSL fragment shader
 typedef struct shaderProgram_s
 {
-    UTF8            name[MAX_QPATH];
+    UTF8       name[MAX_QPATH];
     
-    U32          program;
-    U32          vertexShader;
-    U32          fragmentShader;
+    U32        program;
+    U32        vertexShader;
+    U32        fragmentShader;
     U32        attribs;	// vertex array attributes
     
     // uniform parameters
-    S32 uniforms[UNIFORM_COUNT];
-    S16 uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
-    UTF8*  uniformBuffer;
+    S32        uniforms[UNIFORM_COUNT];
+    S16        uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
+    UTF8*      uniformBuffer;
 } shaderProgram_t;
 
 // trRefdef_t holds everything that comes in refdef_t,
@@ -920,7 +920,7 @@ typedef struct shaderProgram_s
 typedef struct
 {
     S32			x, y, width, height;
-    F32		fov_x, fov_y;
+    F32		    fov_x, fov_y;
     vec3_t		vieworg;
     vec3_t		viewaxis[3];		// transformation matrix
     
@@ -930,12 +930,12 @@ typedef struct
     S32			rdflags;			// RDF_NOWORLDMODEL, etc
     
     // 1 bits will prevent the associated area from rendering at all
-    U8		areamask[MAX_MAP_AREA_BYTES];
-    bool	areamaskModified;	// true if areamask changed since last scene
+    U8		    areamask[MAX_MAP_AREA_BYTES];
+    bool	    areamaskModified;	// true if areamask changed since last scene
     
-    F64		floatTime;			// tr.refdef.time / 1000.0
+    F64		    floatTime;			// tr.refdef.time / 1000.0
     
-    F32		blurFactor;
+    F32		    blurFactor;
     
     // text messages for deform text shaders
     UTF8		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
@@ -952,17 +952,18 @@ typedef struct
     S32			numDrawSurfs;
     struct drawSurf_s*	drawSurfs;
     
-    U32 dlightMask;
+    U32         dlightMask;
     S32         num_pshadows;
     struct pshadow_s* pshadows;
     
-    F32       sunShadowMvp[4][16];
-    F32       sunDir[4];
-    F32       sunCol[4];
-    F32       sunAmbCol[4];
+    F32         sunShadowMvp[4][16];
+    F32         sunDir[4];
+    F32         sunCol[4];
+    F32         sunAmbCol[4];
+    F32         colorScale;
     
-    F32       autoExposureMinMax[2];
-    F32       toneMinAvgMaxLinear[3];
+    F32         autoExposureMinMax[2];
+    F32         toneMinAvgMaxLinear[3];
 } trRefdef_t;
 
 
@@ -994,13 +995,13 @@ typedef struct
     S32			originalBrushNumber;
     vec3_t		bounds[2];
     
-    U32	colorInt;				// in packed U8 format
-    F32		tcScale;				// texture coordinate vector scales
+    U32      	colorInt;				// in packed U8 format
+    F32		    tcScale;				// texture coordinate vector scales
     fogParms_t	parms;
     
     // for clipping distance in fog when outside
-    bool	hasSurface;
-    F32		surface[4];
+    bool	    hasSurface;
+    F32		    surface[4];
 } fog_t;
 
 typedef enum
@@ -1020,23 +1021,23 @@ typedef struct
 {
     orientationr_t	orientation;
     orientationr_t	world;
-    vec3_t		pvsOrigin;			// may be different than or.origin for portals
-    bool	isPortal;			// true if this view is through a portal
-    bool	isMirror;			// the portal is a mirror, invert the face culling
+    vec3_t	     	pvsOrigin;			// may be different than or.origin for portals
+    bool	        isPortal;			// true if this view is through a portal
+    bool	        isMirror;			// the portal is a mirror, invert the face culling
     S32/*viewParmFlags_t*/ flags;
-    S32			frameSceneNum;		// copied from tr.frameSceneNum
-    S32			frameCount;			// copied from tr.frameCount
-    cplane_t	portalPlane;		// clip anything behind this if mirroring
-    S32			viewportX, viewportY, viewportWidth, viewportHeight;
-    FBO_t*		targetFbo;
-    S32         targetFboLayer;
-    S32         targetFboCubemapIndex;
-    F32		fovX, fovY;
-    F32		projectionMatrix[16];
-    cplane_t	frustum[5];
-    vec3_t		visBounds[2];
-    F32		zFar;
-    F32       zNear;
+    S32				frameSceneNum;		// copied from tr.frameSceneNum
+    S32				frameCount;			// copied from tr.frameCount
+    cplane_t		portalPlane;		// clip anything behind this if mirroring
+    S32				viewportX, viewportY, viewportWidth, viewportHeight;
+    FBO_t*			targetFbo;
+    S32				targetFboLayer;
+    S32				targetFboCubemapIndex;
+    F32				fovX, fovY;
+    F32				projectionMatrix[16];
+    cplane_t		frustum[5];
+    vec3_t			visBounds[2];
+    F32				zFar;
+    F32				zNear;
     stereoFrame_t	stereoFrame;
 } viewParms_t;
 
@@ -1131,12 +1132,12 @@ typedef struct srfBspSurface_s
     // culling information
     vec3_t			cullBounds[2];
     vec3_t			cullOrigin;
-    F32			cullRadius;
+    F32				cullRadius;
     cplane_t        cullPlane;
     
     // indexes
     S32             numIndexes;
-    U32*      indexes;
+    U32*			indexes;
     
     // vertexes
     S32             numVerts;
@@ -1148,7 +1149,7 @@ typedef struct srfBspSurface_s
     // than the culling information to allow for
     // groups of curves that LOD as a unit
     vec3_t			lodOrigin;
-    F32			lodRadius;
+    F32				lodRadius;
     S32				lodFixed;
     S32				lodStitched;
     
@@ -1201,8 +1202,8 @@ typedef struct srfIQModel_s
     UTF8		name[MAX_QPATH];
     shader_t*	shader;
     iqmData_t*	data;
-    S32		first_vertex, num_vertexes;
-    S32		first_triangle, num_triangles;
+    S32			first_vertex, num_vertexes;
+    S32			first_triangle, num_triangles;
 } srfIQModel_t;
 
 typedef struct srfVaoMdvMesh_s
@@ -1213,8 +1214,8 @@ typedef struct srfVaoMdvMesh_s
     struct mdvSurface_s* mdvSurface;
     
     // backEnd stats
-    S32             numIndexes;
-    S32             numVerts;
+    S32       numIndexes;
+    S32       numVerts;
     U32       minIndex;
     U32       maxIndex;
     
@@ -1278,7 +1279,7 @@ typedef struct cullinfo_s
     S32             type;
     vec3_t          bounds[2];
     vec3_t			localOrigin;
-    F32			radius;
+    F32				radius;
     cplane_t        plane;
 } cullinfo_t;
 
@@ -1398,7 +1399,7 @@ typedef struct
 
 typedef struct
 {
-    vec3_t          xyz;
+    vec3_t      xyz;
     S16         normal[4];
     S16         tangent[4];
 } mdvVertex_t;
@@ -1415,14 +1416,14 @@ typedef struct mdvSurface_s
     UTF8            name[MAX_QPATH];	// polyset name
     
     S32             numShaderIndexes;
-    S32*				shaderIndexes;
+    S32*			shaderIndexes;
     
     S32             numVerts;
     mdvVertex_t*    verts;
     mdvSt_t*        st;
     
     S32             numIndexes;
-    U32*      indexes;
+    U32*			indexes;
     
     struct mdvModel_s* model;
 } mdvSurface_t;
@@ -1466,7 +1467,7 @@ typedef struct model_s
     bmodel_t*	bmodel;		// only if type == MOD_BRUSH
     mdvModel_t*	mdv[MD3_MAX_LODS];	// only if type == MOD_MESH
     void*	    modelData;			// only if type == (MOD_MDR | MOD_IQM)
-    S32			 numLods;
+    S32			numLods;
 } model_t;
 
 
@@ -1519,7 +1520,7 @@ the bits are allocated as follows:
 #endif
 #define QSORT_PSHADOW_SHIFT     1
 
-extern	S32			gl_filter_min, gl_filter_max;
+extern	S32	gl_filter_min, gl_filter_max;
 
 /*
 ** performanceCounters_t
@@ -1545,19 +1546,19 @@ typedef struct
 // the renderer front end should never modify glstate_t
 typedef struct
 {
-    bool	finishCalled;
+    bool		finishCalled;
     S32			texEnv[2];
     S32			faceCulling;
     S32         faceCullFront;
-    U32    glStateBits;
-    U32    storedGlState;
-    F32           vertexAttribsInterpolation;
+    U32			glStateBits;
+    U32			storedGlState;
+    F32         vertexAttribsInterpolation;
     bool        vertexAnimation;
-    U32        vertexAttribsEnabled;  // global if no VAOs, tess only otherwise
-    FBO_t*          currentFBO;
-    vao_t*          currentVao;
-    mat4_t        modelview;
-    mat4_t        projection;
+    U32			vertexAttribsEnabled;  // global if no VAOs, tess only otherwise
+    FBO_t*      currentFBO;
+    vao_t*      currentVao;
+    mat4_t      modelview;
+    mat4_t      projection;
     mat4_t		modelviewProjection;
 } glstate_t;
 
@@ -1613,29 +1614,29 @@ typedef struct
 
 typedef struct
 {
-    S32		c_surfaces, c_shaders, c_vertexes, c_indexes, c_totalIndexes;
-    S32     c_surfBatches;
+    S32 c_surfaces, c_shaders, c_vertexes, c_indexes, c_totalIndexes;
+    S32 c_surfBatches;
     F32	c_overDraw;
     
-    S32		c_vaoBinds;
-    S32		c_vaoVertexes;
-    S32		c_vaoIndexes;
+    S32	c_vaoBinds;
+    S32	c_vaoVertexes;
+    S32	c_vaoIndexes;
     
-    S32     c_staticVaoDraws;
-    S32     c_dynamicVaoDraws;
+    S32 c_staticVaoDraws;
+    S32 c_dynamicVaoDraws;
     
-    S32		c_dlightVertexes;
-    S32		c_dlightIndexes;
+    S32	c_dlightVertexes;
+    S32	c_dlightIndexes;
     
-    S32		c_flareAdds;
-    S32		c_flareTests;
-    S32		c_flareRenders;
+    S32	c_flareAdds;
+    S32	c_flareTests;
+    S32	c_flareRenders;
     
-    S32     c_glslShaderBinds;
-    S32     c_genericDraws;
-    S32     c_lightallDraws;
-    S32     c_fogDraws;
-    S32     c_dlightDraws;
+    S32 c_glslShaderBinds;
+    S32 c_genericDraws;
+    S32 c_lightallDraws;
+    S32 c_fogDraws;
+    S32 c_dlightDraws;
     
     S32		msec;			// total msec for backend run
 } backEndCounters_t;
@@ -1778,7 +1779,6 @@ typedef struct
     shaderProgram_t depthBlurShader[4];
     shaderProgram_t testcubeShader;
     shaderProgram_t gaussianBlurShader[2];
-    shaderProgram_t glowCompositeShader;
     
     shaderProgram_t darkexpandShader;
     shaderProgram_t hdrShader;

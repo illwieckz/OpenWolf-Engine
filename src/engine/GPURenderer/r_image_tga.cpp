@@ -295,30 +295,29 @@ breakOut:
         }
     }
     
-#if 0
     // TTimo: this is the chunk of code to ensure a behavior that meets TGA specs
+    // bk0101024 - fix from Leonardo
     // bit 5 set => top-down
     if( targa_header.attributes & 0x20 )
     {
-        U8* flip = ( U8* )malloc( columns * 4 );
+        U8* flip;
         U8* src, *dst;
+        
+        //CL_RefPrintf(PRINT_WARNING, "WARNING: '%s' TGA file header declares top-down image, flipping\n", name);
+        
+        flip = ( U8* )Hunk_AllocateTempMemory( columns * 4 );
         
         for( row = 0; row < rows / 2; row++ )
         {
             src = targa_rgba + row * 4 * columns;
             dst = targa_rgba + ( rows - row - 1 ) * 4 * columns;
             
-            memcpy( flip, src, columns * 4 );
-            memcpy( src, dst, columns * 4 );
-            memcpy( dst, flip, columns * 4 );
+            ::memcpy( flip, src, columns * 4 );
+            ::memcpy( src, dst, columns * 4 );
+            ::memcpy( dst, flip, columns * 4 );
         }
-        free( flip );
-    }
-#endif
-    // instead we just print a warning
-    if( targa_header.attributes & 0x20 )
-    {
-        CL_RefPrintf( PRINT_WARNING, "WARNING: '%s' TGA file header declares top-down image, ignoring\n", name );
+        
+        Hunk_FreeTempMemory( flip );
     }
     
     if( width )

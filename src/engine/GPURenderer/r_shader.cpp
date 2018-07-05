@@ -1028,7 +1028,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                 // Change shininess to gloss
                 // Assumes max exponent of 8190 and min of 0, must change here if altered in lightall_fp.glsl
                 exponent = CLAMP( exponent, 0.0f, 8190.0f );
-                //stage->specularScale[3] = ( log2f( exponent + 2.0f ) - 1.0f ) / 12.0f;
+                stage->specularScale[3] = ( log2f( exponent + 2.0f ) - 1.0f ) / 12.0f;
             }
         }
         //
@@ -1171,6 +1171,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                     stage->specularScale[1] = ( stage->specularScale[0] < 0.5f ) ? 0.0f : 1.0f;
                     stage->specularScale[0] = smoothness;
                 }
+                else
                 {
                     // two values, rgb then gloss
                     stage->specularScale[3] = stage->specularScale[1];
@@ -1189,7 +1190,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                 continue;
             }
             
-            stage->specularScale[2] = atof( token );
+            stage->specularScale[3] = atof( token );
             
         }
         //

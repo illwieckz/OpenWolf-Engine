@@ -489,7 +489,7 @@ If the line width has changed, reformat the buffer.
 */
 void Con_CheckResize( void )
 {
-    S32		i, j, width, oldwidth, oldtotallines, numlines, numchars;
+    S32 i, j, width, oldwidth, oldtotallines, numlines, numchars;
     S16	tbuf[CON_TEXTSIZE];
     
     if( cls.glconfig.vidWidth )
@@ -512,7 +512,7 @@ void Con_CheckResize( void )
     if( width == con.linewidth )
         return;
         
-    if( width < 1 )			// video hasn't been initialized yet
+    if( con.linewidth < 1 )			// video hasn't been initialized yet
     {
         width = DEFAULT_CONSOLE_WIDTH;
         con.linewidth = width;

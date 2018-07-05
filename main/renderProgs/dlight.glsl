@@ -1,6 +1,4 @@
 /*[Vertex]*/
-#version 130
-
 attribute vec3 attr_Position;
 attribute vec2 attr_TexCoord0;
 attribute vec3 attr_Normal;
@@ -156,7 +154,7 @@ void main (void)
 
 	vec4 out_color = vec4(0.0);
 
-	for (int light = 0; light < var_NumLights; light++)
+	for (int light = 0; light < MAX_VARYING_LIGHTS; light++)
 	{
 		float shininess = 2.0;
 		vec4 tex_color = texture2D(u_DiffuseMap, var_Tex1[light]);

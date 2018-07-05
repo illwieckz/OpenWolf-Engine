@@ -44,8 +44,6 @@ const GPUProgramDesc fallback_shadowmaskProgram;
 const GPUProgramDesc fallback_ssaoProgram;
 const GPUProgramDesc fallback_texturecolorProgram;
 const GPUProgramDesc fallback_tonemapProgram;
-const GPUProgramDesc fallback_dglow_downsampleProgram;
-const GPUProgramDesc fallback_dglow_upsampleProgram;
 const GPUProgramDesc fallback_surface_spritesProgram;
 const GPUProgramDesc fallback_truehdr;
 const GPUProgramDesc fallback_volumelight;
@@ -1233,7 +1231,9 @@ void idRenderSystemLocal::InitGPUShaders( void )
                 case LIGHTDEF_USE_LIGHTMAP:
                     Q_strcat( extradefines, 1024, "#define USE_LIGHTMAP\n" );
                     if( r_deluxeMapping->integer && !fastLight )
+                    {
                         Q_strcat( extradefines, 1024, "#define USE_DELUXEMAP\n" );
+                    }
                     attribs |= ATTR_LIGHTCOORD | ATTR_LIGHTDIRECTION;
                     break;
                 case LIGHTDEF_USE_LIGHT_VECTOR:
@@ -1254,22 +1254,32 @@ void idRenderSystemLocal::InitGPUShaders( void )
                 attribs |= ATTR_TANGENT;
                 
                 if( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->integer )
+                {
                     Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP\n" );
+                }
                 else if( r_parallaxMapping->integer ) // Parallax without normal maps...
+                {
                     Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
-                    
-                if( r_normalMapping->integer == 3 )
+                }
+                
+                if( r_parallaxMapping->integer )
+                {
                     Q_strcat( extradefines, 1024, "#define USE_RELIEFMAP\n" );
-
+                }
+                
                 if( r_parallaxMapping->integer && r_parallaxMapping->integer < 2 ) // Fast parallax mapping...
+                {
                     Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
+                }
             }
             else if( r_parallaxMapping->integer ) // Parallax without normal maps...
             {
                 Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
                 
                 if( r_parallaxMapping->integer && r_parallaxMapping->integer < 2 ) // Fast parallax mapping...
+                {
                     Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
+                }
             }
             
             if( r_specularMapping->integer )
@@ -1280,6 +1290,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             {
                 Q_strcat( extradefines, 1024, va( "#define r_deluxeSpecular %f\n", r_deluxeSpecular->value ) );
             }
+            
             if( r_cubeMapping->integer )
             {
                 Q_strcat( extradefines, 1024, "#define USE_CUBEMAP\n" );

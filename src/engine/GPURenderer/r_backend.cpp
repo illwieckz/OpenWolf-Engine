@@ -1689,6 +1689,7 @@ const void* RB_PostProcess( const void* data )
             
             FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
         }
+        
     }
     
     if( r_drawSunRays->integer )

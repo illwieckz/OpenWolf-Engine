@@ -357,7 +357,7 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
     // HACK: abuse the GLSL preprocessor to turn GLSL 1.20 shaders into 1.30 ones
     if( glRefConfig.glslMajorVersion > 1 || ( glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 30 ) )
     {
-        Q_strcat( dest, size, "#version 150\n" );
+        Q_strcat( dest, size, "#version 130\n" );
         
         if( shaderType == GL_VERTEX_SHADER )
         {
@@ -1539,7 +1539,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "depthBlur", allocator, fallback_depthblurProgram );
+    programDesc = LoadProgramSource( "depthblur", allocator, fallback_depthblurProgram );
     for( i = 0; i < 4; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1553,10 +1553,9 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( !( i & 2 ) )
             Q_strcat( extradefines, 1024, "#define USE_DEPTH\n" );
             
-            
-        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthBlur", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthblur", attribs, true, extradefines, true, *programDesc ) )
         {
-            Com_Error( ERR_FATAL, "Could not load depthBlur shader!" );
+            Com_Error( ERR_FATAL, "Could not load depthblur shader!" );
         }
         
         GLSL_InitUniforms( &tr.depthBlurShader[i] );

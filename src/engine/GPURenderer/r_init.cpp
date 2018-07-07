@@ -1627,13 +1627,13 @@ void idRenderSystemLocal::Shutdown( bool destroyWindow )
         R_ShutDownQueries();
         if( glRefConfig.framebufferObject )
         {
-            renderSystemLocal.FBOShutdown();
+            FBOShutdown();
         }
         R_DeleteTextures();
         R_ShutdownVaos();
         //
         gpuWorkerLocal.Shutdown();
-        renderSystemLocal.ShutdownGPUShaders();
+        ShutdownGPUShaders();
     }
     
     R_DoneFreeType();

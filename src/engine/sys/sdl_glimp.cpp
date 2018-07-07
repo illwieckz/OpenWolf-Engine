@@ -544,7 +544,7 @@ static void GLimp_DetectAvailableModes( void )
 
 static void GLimp_InitOpenGL3xContext()
 {
-#if defined( WIN32 ) || defined( __linux__ )
+#if defined( WIN32 ) || defined( __LINUX__ )
     S32        retVal;
     StringEntry success[] = { "failed", "success" };
 #endif
@@ -635,8 +635,6 @@ static void GLimp_InitOpenGL3xContext()
             CL_RefPrintf( PRINT_WARNING, "Could not initialize requested OpenGL profile\n" );
         }
     }
-#endif
-#if 0 //Dushan - FIX ME
 #elif defined( __LINUX__ )
     
     if( GLXEW_ARB_create_context_profile && ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
@@ -991,6 +989,7 @@ static S32 GLimp_SetMode( S32 mode, S32 fullscreen, S32 noborder )
         break;
     }
     
+	glewExperimental = true;
     glewResult = glewInit();
     
     if( GLEW_OK != glewResult )

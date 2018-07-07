@@ -29,7 +29,6 @@
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
-#include <chrono>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

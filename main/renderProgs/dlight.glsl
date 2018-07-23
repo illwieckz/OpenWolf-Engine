@@ -30,7 +30,6 @@ varying vec3	var_Position;
 varying vec2	var_Tex1[MAX_VARYING_LIGHTS];
 varying vec4	var_LightColor[MAX_VARYING_LIGHTS];
 varying vec3	var_LightDir[MAX_VARYING_LIGHTS];
-varying float	var_NumLights;
 
 #if 0
 #if defined(USE_DEFORM_VERTEXES)
@@ -93,6 +92,7 @@ void main()
 {
 	vec3 position = attr_Position;
 	vec3 normal = attr_Normal * 2.0 - vec3(1.0);
+	const int maxVaryingLights = MAX_VARYING_LIGHTS;
 
 #if 0
 #if defined(USE_DEFORM_VERTEXES)
@@ -106,7 +106,7 @@ void main()
 	var_Normal = normalize(gl_NormalMatrix * gl_Normal);
 
 	// Transform the vertex position to eye space (V)
-	var_Position = -vec3(u_ModelViewProjectionMatrix * vec4(position, 1.0));
+	var_Position = vec3(u_ModelViewProjectionMatrix * vec4(position, 1.0));
 
 	LightOrigins[0] = u_LightOrigin;
 	LightOrigins[1] = u_LightOrigin1;
@@ -114,11 +114,9 @@ void main()
 	var_LightColor[0] = u_LightColor;
 	var_LightColor[1] = u_LightColor1;
 	
-	for (int light = 0; light < MAX_VARYING_LIGHTS; light++)
+	for (int light; light < maxVaryingLights; light++)
 	{
-		var_NumLights = light;
-
-		if (var_LightColor[light].x == 0 && var_LightColor[light].y == 0 && var_LightColor[light].z == 0)
+		if (var_LightColor[light].x == 0.0 && var_LightColor[light].y == 0.0 && var_LightColor[light].z == 0.0)
 		{
 			break; // We found the last one...
 		}
@@ -145,16 +143,15 @@ varying vec3		var_Position;
 varying vec2		var_Tex1[MAX_VARYING_LIGHTS];
 varying vec4		var_LightColor[MAX_VARYING_LIGHTS];
 varying vec3		var_LightDir[MAX_VARYING_LIGHTS];
-varying float		var_NumLights;
 
 void main (void)
 {
 	vec3 normal = var_Normal;
 	vec3 eyeVec = var_Position;
-
+	const int maxVaryingLights = MAX_VARYING_LIGHTS;
 	vec4 out_color = vec4(0.0);
 
-	for (int light = 0; light < MAX_VARYING_LIGHTS; light++)
+	for (int light = 0; light < maxVaryingLights; light++)
 	{
 		float shininess = 2.0;
 		vec4 tex_color = texture2D(u_DiffuseMap, var_Tex1[light]);

@@ -2400,7 +2400,7 @@ void R_LoadImage( StringEntry name, U8** pic, S32* width, S32* height, U32* picF
     S32 i;
     UTF8 localName[ MAX_QPATH ];
     StringEntry ext;
-    StringEntry altName;
+    UTF8* altName;
     
     *pic = NULL;
     *width = 0;
@@ -2893,7 +2893,7 @@ void R_CreateBuiltinImages( void )
         
         hdrFormat = GL_RGBA8;
         if( r_hdr->integer && glRefConfig.textureFloat )
-            hdrFormat = GL_RGBA16F;
+            hdrFormat = GL_RGBA16F_ARB;
             
         rgbFormat = GL_RGBA8;
         

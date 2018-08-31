@@ -140,9 +140,9 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
             break;
             
         case GL_DEPTH_COMPONENT:
-        case GL_DEPTH_COMPONENT16:
-        case GL_DEPTH_COMPONENT24:
-        case GL_DEPTH_COMPONENT32:
+        case GL_DEPTH_COMPONENT16_ARB:
+        case GL_DEPTH_COMPONENT24_ARB:
+        case GL_DEPTH_COMPONENT32_ARB:
             fbo->depthFormat = format;
             pRenderBuffer = &fbo->depthBuffer;
             attachment = GL_DEPTH_ATTACHMENT;
@@ -175,20 +175,20 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         glGenRenderbuffers( 1, pRenderBuffer );
         
     if( multisample && glRefConfig.framebufferMultisample )
-        glNamedRenderbufferStorageMultisample( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
+        glNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
     else
-        glNamedRenderbufferStorage( *pRenderBuffer, format, fbo->width, fbo->height );
+        glNamedRenderbufferStorageEXT( *pRenderBuffer, format, fbo->width, fbo->height );
         
     if( absent )
     {
         if( attachment == 0 )
         {
-            glNamedFramebufferRenderbuffer( fbo->frameBuffer, GL_DEPTH_ATTACHMENT,   GL_RENDERBUFFER, *pRenderBuffer );
-            glNamedFramebufferRenderbuffer( fbo->frameBuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT,   GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
         }
         else
         {
-            glNamedFramebufferRenderbuffer( fbo->frameBuffer, attachment, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER, *pRenderBuffer );
         }
     }
 }
@@ -205,7 +205,7 @@ void FBO_AttachImage( FBO_t* fbo, image_t* image, GLenum attachment, GLuint cube
     S32 index;
     
     if( image->flags & IMGFLAG_CUBEMAP )
-        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemapside;
+        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + cubemapside;
         
     glNamedFramebufferTexture2DEXT( fbo->frameBuffer, attachment, target, image->texnum, 0 );
     index = attachment - GL_COLOR_ATTACHMENT0;
@@ -262,7 +262,7 @@ void idRenderSystemLocal::FBOInit( void )
     
     hdrFormat = GL_RGBA8;
     if( r_hdr->integer && glRefConfig.textureFloat )
-        hdrFormat = GL_RGBA16F;
+        hdrFormat = GL_RGBA16F_ARB;
         
     if( glRefConfig.framebufferMultisample )
         glGetIntegerv( GL_MAX_SAMPLES, &multisample );
@@ -433,7 +433,7 @@ void idRenderSystemLocal::FBOInit( void )
     {
         tr.renderCubeFbo = FBO_Create( "_renderCubeFbo", tr.renderCubeImage->width, tr.renderCubeImage->height );
         FBO_AttachImage( tr.renderCubeFbo, tr.renderCubeImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_CreateBuffer( tr.renderCubeFbo, GL_DEPTH_COMPONENT24, 0, 0 );
+        FBO_CreateBuffer( tr.renderCubeFbo, GL_DEPTH_COMPONENT24_ARB, 0, 0 );
         R_CheckFBO( tr.renderCubeFbo );
     }
     

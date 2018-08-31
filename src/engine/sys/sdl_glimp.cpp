@@ -989,7 +989,7 @@ static S32 GLimp_SetMode( S32 mode, S32 fullscreen, S32 noborder )
         break;
     }
     
-	glewExperimental = true;
+    glewExperimental = true;
     glewResult = glewInit();
     
     if( GLEW_OK != glewResult )

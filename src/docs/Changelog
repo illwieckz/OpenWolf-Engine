@@ -1,4 +1,8 @@
-2018-07-0 Dusan Jocic <dusanjocic@msn.com>
+2018-08-30 Dusan Jocic <dusanjocic@msn.com>
+	* Added missing library files for the Windows platform
+	* More work on the renderer
+	
+2018-07-08 Dusan Jocic <dusanjocic@msn.com>
 	* Fixed some problems with starting the game with the nVidia hardware
 
 2018-07-07 Dusan Jocic <dusanjocic@msn.com>

@@ -2892,7 +2892,7 @@ void R_CreateBuiltinImages( void )
         height = glConfig.vidHeight;
         
         hdrFormat = GL_RGBA8;
-        if( r_hdr->integer && glRefConfig.textureFloat )
+        if( r_truehdr->integer && glRefConfig.textureFloat )
             hdrFormat = GL_RGBA16F_ARB;
             
         rgbFormat = GL_RGBA8;
@@ -3010,7 +3010,6 @@ void R_SetColorMappings( void )
     
     tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
     tr.identityLightByte = 255 * tr.identityLight;
-    
     
     if( r_intensity->value <= 1 )
     {

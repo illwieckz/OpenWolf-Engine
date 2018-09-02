@@ -1720,9 +1720,6 @@ typedef struct
     image_t* textureDepthImage;
     
     FBO_t* renderFbo;
-#if 0
-    FBO_t* msaaResolveFbo;
-#endif
     FBO_t* sunRaysFbo;
     FBO_t* depthFbo;
     FBO_t* pshadowFbos[MAX_DRAWN_PSHADOWS];

@@ -261,7 +261,7 @@ void idRenderSystemLocal::FBOInit( void )
     R_IssuePendingRenderCommands();
     
     hdrFormat = GL_RGBA8;
-    if( r_hdr->integer && glRefConfig.textureFloat )
+    if( r_truehdr->integer && glRefConfig.textureFloat )
         hdrFormat = GL_RGBA16F_ARB;
         
     if( glRefConfig.framebufferMultisample )
@@ -327,21 +327,6 @@ void idRenderSystemLocal::FBOInit( void )
     
     // only create a render FBO if we need to resolve MSAA or do HDR
     // otherwise just render straight to the screen (tr.renderFbo = NULL)
-#if 0
-    if( multisample && glRefConfig.framebufferMultisample )
-    {
-        tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
-        FBO_CreateBuffer( tr.renderFbo, hdrFormat, 0, multisample );
-        FBO_CreateBuffer( tr.renderFbo, GL_DEPTH_COMPONENT24, 0, multisample );
-        R_CheckFBO( tr.renderFbo );
-        
-        tr.msaaResolveFbo = FBO_Create( "_msaaResolve", tr.renderDepthImage->width, tr.renderDepthImage->height );
-        FBO_AttachImage( tr.msaaResolveFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_AttachImage( tr.msaaResolveFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0 );
-        R_CheckFBO( tr.msaaResolveFbo );
-    }
-    else
-#endif
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
         FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0 );

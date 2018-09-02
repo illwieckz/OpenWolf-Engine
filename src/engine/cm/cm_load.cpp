@@ -918,11 +918,11 @@ void idCollisionModelManagerLocal::LoadCollisionModel( StringEntry qpath )
     S32 cmlen = FS_ReadFile( cmpath, &buffer );
     if( cmlen <= 0 || buffer == NULL )
     {
-        Com_Error( ERR_FATAL, "LoadCollisionModel: Failed to load cm %s\n", qpath );
+        Com_Error( ERR_FATAL, "LoadCollisionModel: Failed to load cm %s\n", cmpath );
     }
     else
     {
-        Com_Printf( "idCollisionModelManagerLocal::LoadCollisionModel: Loaded cm file - %s\n", qpath );
+        Com_Printf( "idCollisionModelManagerLocal::LoadCollisionModel: Loaded cm file - %s\n", cmpath );
         worldcm.Init( ( cmHeader_t* )buffer );
     }
     

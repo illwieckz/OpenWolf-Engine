@@ -1290,11 +1290,11 @@ void R_Register( void )
     r_colorMipLevels = Cvar_Get( "r_colorMipLevels", "0", CVAR_LATCH );
     Cvar_CheckRange( r_picmip, 0, 16, true );
     r_detailTextures = Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_texturebits = Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_colorbits = Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_texturebits = Cvar_Get( "r_texturebits", "32", CVAR_ARCHIVE | CVAR_LATCH );
+    r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
     r_alphabits = Cvar_Get( "r_alphabits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
-    r_depthbits = Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_stencilbits = Cvar_Get( "r_stencilbits", "16", CVAR_ARCHIVE | CVAR_LATCH );
+    r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_multisample = Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
     Cvar_CheckRange( r_ext_multisample, 0, 4, true );
     r_overBrightBits = Cvar_Get( "r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1373,7 +1373,7 @@ void R_Register( void )
     
     r_bloom = Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
     r_bloomPasses = Cvar_Get( "r_bloomPasses", "1", CVAR_ARCHIVE );
-    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "5.0", CVAR_ARCHIVE );
+    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "2.0", CVAR_ARCHIVE );
     r_bloomScale = Cvar_Get( "r_bloomScale", "1.5", CVAR_ARCHIVE );
     r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
     r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );

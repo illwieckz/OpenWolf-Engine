@@ -335,3 +335,57 @@ ImpactLucyPrimary
     period 0 - ~0%
   }
 }
+
+ImpactLucySecondary
+{
+  ejector
+  {
+    particle
+    {
+      shader sync gfx/blaster/orange_particle
+      
+      radius 0 8.0 16.0
+      alpha  0 1.0 0.0
+      rotation 0 ~360 -
+
+      lifeTime 250
+    }
+
+    count 1
+    delay 0
+    period 0 - ~0%
+  }
+
+  ejector
+  {
+    particle
+    {
+      shader sync gfx/blaster/orange_particle
+
+      displacement 0 0 0 ~2.0
+
+      normalDisplacement 10.0
+
+      velocityType      normal
+      velocityDir       linear
+      velocityMagnitude 150
+      velocity          0 0 0 ~160
+
+      accelerationType      static
+      accelerationDir       linear
+      accelerationMagnitude 300
+      acceleration          0 0 -1 0
+
+      radius 0 1.0 5.0
+      alpha  0 1.0 0.0
+      rotation 0 ~360 -
+      bounce 0.8
+
+      lifeTime 2000~1000
+    }
+
+    count 10
+    delay 0
+    period 0 - ~0%
+  }
+}

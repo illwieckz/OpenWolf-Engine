@@ -39,7 +39,7 @@
 
 S32 g_console_field_width = 78;
 
-#define CONSOLE_COLOR COLOR_WHITE
+#define CONSOLE_COLOR '7'
 #define DEFAULT_CONSOLE_WIDTH   78
 #define NUM_CON_TIMES 4
 #define CON_TEXTSIZE 65536

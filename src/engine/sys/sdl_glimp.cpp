@@ -1110,12 +1110,11 @@ static void GLimp_OGL3InitExtensions( void )
     }
     
     // GL_ARB_multitexture
-    //if( glConfig.driverType != GLDRV_OPENGL3 )
+    if( glConfig.driverType != GLDRV_OPENGL3 )
     {
         if( GLEW_ARB_multitexture )
         {
-            glConfig.numTextureUnits = 8;
-            glGetIntegerv( GL_MAX_TEXTURE_UNITS, &glConfig.numTextureUnits );
+            glGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glConfig.numTextureUnits );
             
             if( glConfig.numTextureUnits > 1 )
             {
@@ -1139,7 +1138,6 @@ static void GLimp_OGL3InitExtensions( void )
             Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_multitexture" );
         }
     }
-    
     
     // GL_ARB_depth_texture
     if( GLEW_ARB_depth_texture )
@@ -1314,66 +1312,6 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_ARB_texture_non_power_of_two
-#if 0
-    glConfig2.textureNPOTAvailable = false;
-    if( GLEW_ARB_texture_non_power_of_two )
-    {
-        if( r_ext_texture_non_power_of_two->integer )
-        {
-            glConfig2.textureNPOTAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_non_power_of_two\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_texture_non_power_of_two\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_non_power_of_two not found\n" );
-    }
-    
-    // GL_ARB_draw_buffers
-    glConfig2.drawBuffersAvailable = false;
-    if( GLEW_ARB_draw_buffers )
-    {
-        glGetIntegerv( GL_MAX_DRAW_BUFFERS_ARB, &glConfig2.maxDrawBuffers );
-        
-        if( r_ext_draw_buffers->integer )
-        {
-            glConfig2.drawBuffersAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_draw_buffers\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_draw_buffers\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_draw_buffers not found\n" );
-    }
-    
-    // GL_ARB_half_float_pixel
-    glConfig2.textureHalfFloatAvailable = false;
-    if( GLEW_ARB_half_float_pixel )
-    {
-        if( r_ext_half_float_pixel->integer )
-        {
-            glConfig2.textureHalfFloatAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_half_float_pixel\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_half_float_pixel\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_half_float_pixel not found\n" );
-    }
-#endif
     // GL_ARB_texture_float
     glRefConfig.textureFloat = false;
     if( GLEW_ARB_texture_float )
@@ -1392,6 +1330,7 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_float not found\n" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_texture_compression
     glConfig.textureCompression = TC_NONE;
@@ -1399,7 +1338,7 @@ static void GLimp_OGL3InitExtensions( void )
     {
         if( r_ext_compressed_textures->integer )
         {
-            //glConfig2.ARBTextureCompressionAvailable = true;
+            glConfig.textureCompression = true;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_compression\n" );
         }
         else
@@ -1411,27 +1350,8 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression not found\n" );
     }
+    GL_CheckErrors();
     
-    // GL_ARB_vertex_array_object
-#if 0
-    glConfig2.vertexArrayObjectAvailable = false;
-    if( GLEW_ARB_vertex_array_object )
-    {
-        if( r_ext_vertex_array_object->integer )
-        {
-            glConfig2.vertexArrayObjectAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_vertex_array_object\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_vertex_array_object\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_vertex_array_object not found\n" );
-    }
-#endif
     // GL_EXT_texture_compression_s3tc
     if( GLEW_EXT_texture_compression_s3tc )
     {
@@ -1449,57 +1369,17 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_EXT_texture_compression_s3tc not found\n" );
     }
-    
-    // GL_EXT_texture3D
-#if 0
-    glConfig2.texture3DAvailable = false;
-    if( GLEW_EXT_texture3D )
-    {
-        //if(r_ext_texture3d->value)
-        {
-            glConfig2.texture3DAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_texture3D\n" );
-        }
-        /*
-        else
-        {
-        	CL_RefPrintf(PRINT_ALL, "...ignoring GL_EXT_texture3D\n");
-        }
-        */
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_texture3D not found\n" );
-    }
-    
-    // GL_EXT_stencil_wrap
-    glConfig2.stencilWrapAvailable = false;
-    if( GLEW_EXT_stencil_wrap )
-    {
-        if( r_ext_stencil_wrap->value )
-        {
-            glConfig2.stencilWrapAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_stencil_wrap\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_stencil_wrap\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_stencil_wrap not found\n" );
-    }
+    GL_CheckErrors();
     
     // GL_EXT_texture_filter_anisotropic
-    glConfig2.textureAnisotropyAvailable = false;
+    glConfig.textureFilterAnisotropic = false;
     if( GLEW_EXT_texture_filter_anisotropic )
     {
-        glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig2.maxTextureAnisotropy );
+        glGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig.maxAnisotropy );
         
         if( r_ext_texture_filter_anisotropic->value )
         {
-            glConfig2.textureAnisotropyAvailable = true;
+            glConfig.textureFilterAnisotropic = true;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_texture_filter_anisotropic\n" );
         }
         else
@@ -1513,51 +1393,16 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_EXT_stencil_two_side
-    if( GLEW_EXT_stencil_two_side )
-    {
-        if( r_ext_stencil_two_side->value )
-        {
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_stencil_two_side\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_stencil_two_side\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_stencil_two_side not found\n" );
-    }
-    
-    // GL_EXT_depth_bounds_test
-    if( GLEW_EXT_depth_bounds_test )
-    {
-        if( r_ext_depth_bounds_test->value )
-        {
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_depth_bounds_test\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_depth_bounds_test\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_depth_bounds_test not found\n" );
-    }
-    
     // GL_EXT_framebuffer_object
-    
-    glConfig2.framebufferObjectAvailable = false;
+    glRefConfig.framebufferObject = false;
     if( GLEW_EXT_framebuffer_object )
     {
-        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE_EXT, &glConfig2.maxRenderbufferSize );
-        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS_EXT, &glConfig2.maxColorAttachments );
+        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE_EXT, &glRefConfig.maxRenderbufferSize );
+        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS_EXT, &glRefConfig.maxColorAttachments );
         
         if( r_ext_framebuffer_object->value )
         {
-            glConfig2.framebufferObjectAvailable = true;
+            glRefConfig.framebufferObject = true;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_object\n" );
         }
         else
@@ -1571,32 +1416,13 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_EXT_packed_depth_stencil
-    glConfig2.framebufferPackedDepthStencilAvailable = false;
-    if( GLEW_EXT_packed_depth_stencil && glConfig.driverType != GLDRV_MESA )
-    {
-        if( r_ext_packed_depth_stencil->integer )
-        {
-            glConfig2.framebufferPackedDepthStencilAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_packed_depth_stencil\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_packed_depth_stencil\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_packed_depth_stencil not found\n" );
-    }
-    
     // GL_EXT_framebuffer_blit
-    glConfig2.framebufferBlitAvailable = false;
+    glRefConfig.framebufferBlit = false;
     if( GLEW_EXT_framebuffer_blit )
     {
         if( r_ext_framebuffer_blit->integer )
         {
-            glConfig2.framebufferBlitAvailable = true;
+            glRefConfig.framebufferBlit = true;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_blit\n" );
         }
         else
@@ -1608,74 +1434,27 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_EXT_framebuffer_blit not found\n" );
     }
+    GL_CheckErrors();
     
-    // GL_EXTX_framebuffer_mixed_formats
-    /*
-    glConfig2.framebufferMixedFormatsAvailable = false;
-    if(Q_stristr(glConfig.extensions_string, "GL_EXTX_framebuffer_mixed_formats"))
+    // GL_EXT_direct_state_access
+    glRefConfig.directStateAccess = false;
+    if( GLEW_ARB_direct_state_access )
     {
-    	if(r_extx_framebuffer_mixed_formats->integer)
-    	{
-    		glConfig2.framebufferMixedFormatsAvailable = true;
-    		CL_RefPrintf(PRINT_ALL, "...using GL_EXTX_framebuffer_mixed_formats\n");
-    	}
-    	else
-    	{
-    		CL_RefPrintf(PRINT_ALL, "...ignoring GL_EXTX_framebuffer_mixed_formats\n");
-    	}
-    }
-    else
-    {
-    	CL_RefPrintf(PRINT_ALL, "...GL_EXTX_framebuffer_mixed_formats not found\n");
-    }
-    */
-    
-    // GL_ATI_separate_stencil
-    if( GLEW_ATI_separate_stencil )
-    {
-        if( r_ext_separate_stencil->value )
+        if( r_ext_direct_state_access->integer )
         {
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ATI_separate_stencil\n" );
+            glRefConfig.directStateAccess = true;
+            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_direct_state_access\n" );
         }
         else
         {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ATI_separate_stencil\n" );
+            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_direct_state_access\n" );
         }
     }
     else
     {
-        CL_RefPrintf( PRINT_ALL, "...GL_ATI_separate_stencil not found\n" );
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_direct_state_access not found\n" );
     }
-    
-    // GL_SGIS_generate_mipmap
-    glConfig2.generateMipmapAvailable = false;
-    if( GLEW_SGIS_generate_mipmap )
-    {
-        if( r_ext_generate_mipmap->value )
-        {
-            glConfig2.generateMipmapAvailable = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_SGIS_generate_mipmap\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_SGIS_generate_mipmap\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_SGIS_generate_mipmap not found\n" );
-    }
-#endif
-    // GL_GREMEDY_string_marker
-    if( GLEW_GREMEDY_string_marker )
-    {
-        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_GREMEDY_string_marker\n" );
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_GREMEDY_string_marker not found\n" );
-    }
-    
+    GL_CheckErrors();
 }
 
 #define R_MODE_FALLBACK 3 // 640 * 480
@@ -1690,9 +1469,7 @@ static void reportDriverType( bool force )
     };
     if( glConfig.driverType > GLDRV_UNKNOWN && glConfig.driverType < sizeof( drivers ) / sizeof( drivers[0] ) )
     {
-        CL_RefPrintf( PRINT_ALL, "%s graphics driver class '%s'\n",
-                      force ? "User has forced" : "Detected",
-                      drivers[glConfig.driverType] );
+        CL_RefPrintf( PRINT_ALL, "%s graphics driver class '%s'\n", force ? "User has forced" : "Detected", drivers[glConfig.driverType] );
     }
 }
 
@@ -1700,8 +1477,7 @@ static void reportHardwareType( bool force )
 {
     static StringEntry const hardware[] =
     {
-        "generic", "Voodoo", "Riva 128", "Rage Pro", "Permedia 2",
-        "ATI Radeon", "AMD Radeon DX10-class", "nVidia DX10-class"
+        "generic", "Voodoo", "Riva 128", "Rage Pro", "Permedia 2", "ATI Radeon", "AMD Radeon DX10-class", "nVidia DX10-class"
     };
     if( glConfig.hardwareType > GLDRV_UNKNOWN && glConfig.driverType < sizeof( hardware ) / sizeof( hardware[0] ) )
     {

@@ -663,7 +663,7 @@ void RB_LensFlare( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox 
     vec2_t screensize;
     screensize[0] = glConfig.vidWidth;
     screensize[1] = glConfig.vidHeight;
-        
+    
     GLSL_SetUniformVec2( &tr.lensflareShader, UNIFORM_DIMENSIONS, screensize );
     
     FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.lensflareShader, color, 0 );
@@ -921,12 +921,12 @@ void RB_ESharpening( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBo
     
     GL_BindToTMU( tr.fixedLevelsImage, TB_LEVELSMAP );
     
-	vec2_t screensize;
-	screensize[0] = glConfig.vidWidth;
-	screensize[1] = glConfig.vidHeight;
-	GLSL_SetUniformVec2(&tr.esharpeningShader, UNIFORM_DIMENSIONS, screensize);
-
-	FBO_Blit(hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.esharpeningShader, color, 0);
+    vec2_t screensize;
+    screensize[0] = glConfig.vidWidth;
+    screensize[1] = glConfig.vidHeight;
+    GLSL_SetUniformVec2( &tr.esharpeningShader, UNIFORM_DIMENSIONS, screensize );
+    
+    FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.esharpeningShader, color, 0 );
 }
 
 void RB_ESharpening2( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
@@ -943,12 +943,12 @@ void RB_ESharpening2( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrB
     
     GL_BindToTMU( tr.fixedLevelsImage, TB_LEVELSMAP );
     
-	vec2_t screensize;
-	screensize[0] = glConfig.vidWidth;
-	screensize[1] = glConfig.vidHeight;
-	GLSL_SetUniformVec2(&tr.esharpening2Shader, UNIFORM_DIMENSIONS, screensize);
-
-	FBO_Blit(hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.esharpeningShader, color, 0);
+    vec2_t screensize;
+    screensize[0] = glConfig.vidWidth;
+    screensize[1] = glConfig.vidHeight;
+    GLSL_SetUniformVec2( &tr.esharpening2Shader, UNIFORM_DIMENSIONS, screensize );
+    
+    FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.esharpeningShader, color, 0 );
 }
 
 void RB_DOF( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )

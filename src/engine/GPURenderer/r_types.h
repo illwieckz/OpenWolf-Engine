@@ -251,7 +251,7 @@ typedef struct
     bool				isFullscreen;
     bool				stereoEnabled;
     bool				textureFilterAnisotropic;
-    S32							maxAnisotropy;
+    S32					maxAnisotropy;
 } glconfig_t;
 
 #endif	//!__R_TYPES_H__

@@ -1647,7 +1647,7 @@ const void* RB_PostProcess( const void* data )
         
         if( r_ssgi->integer )
         {
-            //for ( S32 i = 0; i < r_ssgi->integer; i++)
+            for( S32 i = 0; i < r_ssgi->integer; i++ )
             {
                 RB_SSGI( srcFbo, srcBox, tr.genericFbo, dstBox );
                 FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );

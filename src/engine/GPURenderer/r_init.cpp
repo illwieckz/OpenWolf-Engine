@@ -101,14 +101,15 @@ cvar_t*	r_ext_texture_env_add;
 cvar_t*	r_ext_texture_filter_anisotropic;
 cvar_t*	r_ext_max_anisotropy;
 
-cvar_t*  r_ext_framebuffer_object;
-cvar_t*  r_ext_texture_float;
-cvar_t*  r_ext_framebuffer_multisample;
-cvar_t*  r_arb_seamless_cube_map;
-cvar_t*  r_arb_vertex_array_object;
-cvar_t*  r_ext_direct_state_access;
+cvar_t* r_ext_framebuffer_object;
+cvar_t* r_ext_framebuffer_blit;
+cvar_t* r_ext_texture_float;
+cvar_t* r_ext_framebuffer_multisample;
+cvar_t* r_arb_seamless_cube_map;
+cvar_t* r_arb_vertex_array_object;
+cvar_t* r_ext_direct_state_access;
 
-cvar_t*  r_cameraExposure;
+cvar_t* r_cameraExposure;
 
 cvar_t*  r_hdr;
 cvar_t*  r_floatLightmap;
@@ -1034,6 +1035,8 @@ const void* RB_TakeVideoFrameCmd( const void* data )
 */
 void GL_SetDefaultState( void )
 {
+    S32 i;
+    
     glClearDepth( 1.0f );
     
     glCullFace( GL_FRONT );
@@ -1043,7 +1046,27 @@ void GL_SetDefaultState( void )
     if( glRefConfig.framebufferObject )
         GL_BindNullFramebuffers();
         
-    GL_TextureMode( r_textureMode->string );
+    // initialize downstream texture units if we're running
+    // in a multitexture environment
+    if( glConfig.driverType == GLDRV_OPENGL3 )
+    {
+        for( i = 31; i >= 0; i-- )
+        {
+            GL_TextureMode( r_textureMode->string );
+        }
+    }
+    else
+    {
+        if( GLEW_ARB_multitexture )
+        {
+            for( i = glConfig.numTextureUnits - 1; i >= 0; i-- )
+            {
+                GL_TextureMode( r_textureMode->string );
+            }
+        }
+    }
+    
+    GL_CheckErrors();
     
     //glShadeModel( GL_SMOOTH );
     glDepthFunc( GL_LEQUAL );
@@ -1246,12 +1269,13 @@ void R_Register( void )
     // latched and archived variables
     //
     r_allowExtensions = Cvar_Get( "r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_compressed_textures = Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_compressed_textures = Cvar_Get( "r_ext_compressed_textures", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_multitexture = Cvar_Get( "r_ext_multitexture", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_compiled_vertex_array = Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_texture_env_add = Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_ext_framebuffer_object = Cvar_Get( "r_ext_framebuffer_object", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_framebuffer_blit = Cvar_Get( "r_ext_framebuffer_blit", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_texture_float = Cvar_Get( "r_ext_texture_float", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_framebuffer_multisample = Cvar_Get( "r_ext_framebuffer_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_arb_seamless_cube_map = Cvar_Get( "r_arb_seamless_cube_map", "1", CVAR_ARCHIVE | CVAR_LATCH );

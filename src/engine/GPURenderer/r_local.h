@@ -1916,25 +1916,26 @@ extern cvar_t*	r_drawSun;				// controls drawing of sun quad
 extern cvar_t*	r_dynamiclight;		// dynamic lights enabled/disabled
 extern cvar_t*	r_dlightBacks;			// dlight non-facing surfaces for continuity
 
-extern	cvar_t*	r_norefresh;			// bypasses the ref rendering
-extern	cvar_t*	r_drawentities;		// disable/enable entity rendering
-extern	cvar_t*	r_drawworld;			// disable/enable world rendering
-extern	cvar_t*	r_speeds;				// various levels of information display
-extern  cvar_t*	r_detailTextures;		// enables/disables detail texturing stages
-extern	cvar_t*	r_novis;				// disable/enable usage of PVS
-extern	cvar_t*	r_nocull;
-extern	cvar_t*	r_facePlaneCull;		// enables culling of planar surfaces with back side test
-extern	cvar_t*	r_nocurves;
-extern	cvar_t*	r_showcluster;
+extern cvar_t*	r_norefresh;			// bypasses the ref rendering
+extern cvar_t*	r_drawentities;		// disable/enable entity rendering
+extern cvar_t*	r_drawworld;			// disable/enable world rendering
+extern cvar_t*	r_speeds;				// various levels of information display
+extern cvar_t*	r_detailTextures;		// enables/disables detail texturing stages
+extern cvar_t*	r_novis;				// disable/enable usage of PVS
+extern cvar_t*	r_nocull;
+extern cvar_t*	r_facePlaneCull;		// enables culling of planar surfaces with back side test
+extern cvar_t*	r_nocurves;
+extern cvar_t*	r_showcluster;
 
 extern cvar_t*	r_gamma;
 
-extern  cvar_t*  r_ext_framebuffer_object;
-extern  cvar_t*  r_ext_texture_float;
-extern  cvar_t*  r_ext_framebuffer_multisample;
-extern  cvar_t*  r_arb_seamless_cube_map;
-extern  cvar_t*  r_arb_vertex_array_object;
-extern  cvar_t*  r_ext_direct_state_access;
+extern cvar_t*  r_ext_framebuffer_object;
+extern cvar_t*  r_ext_framebuffer_blit;
+extern cvar_t*  r_ext_texture_float;
+extern cvar_t*  r_ext_framebuffer_multisample;
+extern cvar_t*  r_arb_seamless_cube_map;
+extern cvar_t*  r_arb_vertex_array_object;
+extern cvar_t*  r_ext_direct_state_access;
 
 extern	cvar_t*	r_nobind;						// turns off binding to appropriate textures
 extern	cvar_t*	r_singleShader;				// make most world faces use default shader

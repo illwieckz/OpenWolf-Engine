@@ -178,39 +178,47 @@ S32 Export_BotLibSetup( void )
 //===========================================================================
 S32 Export_BotLibShutdown( void )
 {
-    if( !BotLibSetup( "BotLibShutdown" ) ) return BLERR_LIBRARYNOTSETUP;
-#ifndef DEMO
-    //DumpFileCRCs();
-#endif //DEMO
-    //
-    BotShutdownChatAI();		//be_ai_chat.c
-    BotShutdownMoveAI();		//be_ai_move.c
-    BotShutdownGoalAI();		//be_ai_goal.c
-    BotShutdownWeaponAI();		//be_ai_weap.c
-    BotShutdownWeights();		//be_ai_weight.c
-    BotShutdownCharacters();	//be_ai_char.c
-    //shud down aas
-    AAS_Shutdown();
-    //shut down bot elemantary actions
-    EA_Shutdown();
-    //free all libvars
-    LibVarDeAllocAll();
-    //remove all global defines from the pre compiler
-    PC_RemoveAllGlobalDefines();
+    static S32 recursive = 0;
     
-    //dump all allocated memory
-//	DumpMemory();
-#ifdef DEBUG
-    PrintMemoryLabels();
-#endif
-    //shut down library log file
+    if( !BotLibSetup( "BotLibShutdown" ) )
+    {
+        return BLERR_LIBRARYNOTSETUP;
+    }
+    //
+    if( recursive )
+    {
+        return BLERR_NOERROR;
+    }
+    recursive = 1;
+    // shutdown all AI subsystems
+    BotShutdownChatAI();        //be_ai_chat.c
+    BotShutdownMoveAI();        //be_ai_move.c
+    BotShutdownGoalAI();        //be_ai_goal.c
+    BotShutdownWeaponAI();      //be_ai_weap.c
+    BotShutdownWeights();       //be_ai_weight.c
+    BotShutdownCharacters();    //be_ai_char.c
+    // shutdown AAS
+    AAS_Shutdown();
+    // shutdown bot elemantary actions
+    EA_Shutdown();
+    // free all libvars
+    LibVarDeAllocAll();
+    // remove all global defines from the pre compiler
+    PC_RemoveAllGlobalDefines();
+    // shut down library log file
     Log_Shutdown();
     //
     botlibsetup = false;
     botlibglobals.botlibsetup = false;
+    recursive = 0;
     // print any files still open
     PC_CheckOpenSourceHandles();
     //
+#ifdef _DEBUG
+    Log_AlwaysOpen( "memory.log" );
+    PrintMemoryLabels();
+    Log_Shutdown();
+#endif
     return BLERR_NOERROR;
 } //end of the function Export_BotLibShutdown
 //===========================================================================

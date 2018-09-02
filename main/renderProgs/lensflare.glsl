@@ -4,52 +4,32 @@ attribute vec4	attr_TexCoord0;
 
 uniform mat4	u_ModelViewProjectionMatrix;
 
-uniform vec4	u_ViewInfo; // zfar / znear, zfar
 uniform vec2	u_Dimensions;
-uniform vec4	u_Local0; // num_passes, 0, 0, 0
 
 varying vec2	var_TexCoords;
 varying vec3	var_Position;
-varying vec4	var_ViewInfo; // zfar / znear, zfar
 varying vec2	var_Dimensions;
-varying vec4	var_Local0; // num_passes, 0, 0, 0
 
 void main()
 {
 	gl_Position = u_ModelViewProjectionMatrix * vec4(attr_Position, 1.0);
 	var_Position = gl_Position.xyz;
 	var_TexCoords = attr_TexCoord0.st;
-	var_ViewInfo = u_ViewInfo;
 	var_Dimensions = u_Dimensions.st;
-	var_Local0 = u_Local0.rgba;
 }
 
 /*[Fragment]*/
 uniform sampler2D u_DiffuseMap;
-//uniform sampler2D lensDirtTex; // UQ1: FIXME - Add one with openjk assests later...
+//uniform sampler2D lensDirtTex; // UQ1: FIXME - Add one with Warzone assests later...
 
 varying vec2	var_TexCoords;
 varying vec3	var_Position;
-varying vec4	var_ViewInfo; // zfar / znear, zfar
 varying vec2	var_Dimensions;
-varying vec4	var_Local0; // num_passes, 0, 0, 0
-
-vec2 resolution = var_Dimensions;
-
-vec2 terra(vec3 p)
-{
-	return vec2(1024.0*1024.0,.0);
-}
-
-vec2 water(vec3 p)
-{
-	return vec2(1024.0*1024.0,.0);
-}
 
 vec2 dist2(vec3 p)
 {
-	vec2 f1 = terra(p);
-	vec2 f2 = water(p);
+	const vec2 f1 = vec2(1048576.0, 0.0);
+	const vec2 f2 = vec2(1048576.0, 0.0);
 	return vec2(min(f1.x,f2.x),f1.y+f2.y);
 }
 
@@ -81,9 +61,6 @@ float amb_occ(vec3 p)
 #define CHROMATIC_DISTORTION 4.0
 #define ENABLE_CHROMATIC_DISTORTION 1
 #define ENABLE_HALO 1
-
-vec2 vTexCoords = var_TexCoords;
-vec2 TEX_DIMENSIONS = var_Dimensions;
 
 float hash(vec2 p) {
    float h = dot(p,vec2(127.1,311.7));
@@ -142,13 +119,13 @@ void main()
 	//vec3 fColor;
 	vec3 fColor = texture(u_DiffuseMap, var_TexCoords).rgb;
 
-	vec2 texcoord = -vTexCoords + vec2(1.0);
+	vec2 texcoord = -var_TexCoords + vec2(1.0);
 
 	vec2 imgSize = vec2(textureSize(u_DiffuseMap, 0));
 
 	vec2 ghostVec = (vec2(0.5) - texcoord) * GHOST_DISPERSAL;
 
-	vec2 texelSize = 1.0 / vec2(TEX_DIMENSIONS);
+	vec2 texelSize = 1.0 / vec2(var_Dimensions);
 
 	vec3 distortion = vec3(
 		-texelSize.x * CHROMATIC_DISTORTION, 
@@ -183,7 +160,7 @@ void main()
 #endif
 
 	// lens dirt
-	//result *= texture(lensDirtTex, vTexCoords).rgb; // UQ1: FIXME - Add one with openjk assests later...
+	//result *= texture(lensDirtTex, var_TexCoords).rgb; // UQ1: FIXME - Add one with Warzone assests later...
 	//result *= pattern(var_TexCoords); // UQ1: Crappy backup method... Disable this and enable above when we have the image...
 	result.r *= sin(var_TexCoords.x);
 	result.g *= var_TexCoords.y;

@@ -3160,7 +3160,7 @@ void FreeSource( source_t* source )
 // Changes Globals:		-
 //============================================================================
 
-#define MAX_SOURCEFILES		64
+#define MAX_SOURCEFILES	256
 
 static source_t* sourceFiles[MAX_SOURCEFILES];
 

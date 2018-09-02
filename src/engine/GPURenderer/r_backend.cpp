@@ -982,19 +982,22 @@ const void*	RB_DrawSurfs( const void* data )
         
         if( !isShadowView )
         {
+#if 0
             if( tr.msaaResolveFbo )
             {
                 // If we're using multisampling, resolve the depth first
                 FBO_FastBlit( tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_DEPTH_BUFFER_BIT, GL_NEAREST );
             }
-            else if( tr.renderFbo == NULL && tr.renderDepthImage )
-            {
-                // If we're rendering directly to the screen, copy the depth to a texture
-                // This is incredibly slow on Intel Graphics, so just skip it on there
-                if( !glRefConfig.intelGraphics )
-                    glCopyTextureSubImage2DEXT( tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-            }
-            
+            else
+#endif
+                if( tr.renderFbo == NULL && tr.renderDepthImage )
+                {
+                    // If we're rendering directly to the screen, copy the depth to a texture
+                    // This is incredibly slow on Intel Graphics, so just skip it on there
+                    if( !glRefConfig.intelGraphics )
+                        glCopyTextureSubImage2DEXT( tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+                }
+                
             if( tr.hdrDepthFbo )
             {
                 // need the depth in a texture we can do GL_LINEAR sampling on, so copy it to an HDR image
@@ -1408,12 +1411,13 @@ const void* RB_ClearDepth( const void* data )
     glClear( GL_DEPTH_BUFFER_BIT );
     
     // if we're doing MSAA, clear the depth texture for the resolve buffer
+#if 0
     if( tr.msaaResolveFbo )
     {
         FBO_Bind( tr.msaaResolveFbo );
         glClear( GL_DEPTH_BUFFER_BIT );
     }
-    
+#endif
     
     return ( const void* )( cmd + 1 );
 }
@@ -1467,16 +1471,19 @@ const void*	RB_SwapBuffers( const void* data )
     {
         if( !backEnd.framePostProcessed )
         {
+#if 0
             if( tr.msaaResolveFbo && r_hdr->integer )
             {
                 // Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
                 FBO_FastBlit( tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
                 FBO_FastBlit( tr.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
             }
-            else if( tr.renderFbo )
-            {
-                FBO_FastBlit( tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-            }
+            else
+#endif
+                if( tr.renderFbo )
+                {
+                    FBO_FastBlit( tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+                }
         }
     }
     
@@ -1561,6 +1568,7 @@ const void* RB_PostProcess( const void* data )
     }
     
     srcFbo = tr.renderFbo;
+#if 0
     if( tr.msaaResolveFbo )
     {
         // Resolve the MSAA before anything else
@@ -1568,6 +1576,7 @@ const void* RB_PostProcess( const void* data )
         FBO_FastBlit( tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
         srcFbo = tr.msaaResolveFbo;
     }
+#endif
     
     dstBox[0] = backEnd.viewParms.viewportX;
     dstBox[1] = backEnd.viewParms.viewportY;
@@ -1630,6 +1639,21 @@ const void* RB_PostProcess( const void* data )
             FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
         }
         
+        if( r_bloom->integer )
+        {
+            RB_Bloom( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_ssgi->integer )
+        {
+            //for ( S32 i = 0; i < r_ssgi->integer; i++)
+            {
+                RB_SSGI( srcFbo, srcBox, tr.genericFbo, dstBox );
+                FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+            }
+        }
+        
         if( r_anamorphic->integer )
         {
             RB_Anamorphic( srcFbo, srcBox, tr.genericFbo, dstBox );
@@ -1661,6 +1685,12 @@ const void* RB_PostProcess( const void* data )
                 RB_DOF( srcFbo, srcBox, tr.genericFbo, dstBox );
                 FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
             }
+        }
+        
+        if( r_fxaa->integer )
+        {
+            RB_FXAA( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
         }
         
         if( r_trueAnaglyph->integer )

@@ -1373,14 +1373,14 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_half_float_pixel not found\n" );
     }
-    
+#endif
     // GL_ARB_texture_float
-    glConfig2.textureFloatAvailable = false;
+    glRefConfig.textureFloat = false;
     if( GLEW_ARB_texture_float )
     {
         if( r_ext_texture_float->integer )
         {
-            glConfig2.textureFloatAvailable = true;
+            glRefConfig.textureFloat = true;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_float\n" );
         }
         else
@@ -1392,7 +1392,7 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_float not found\n" );
     }
-#endif
+    
     // GL_ARB_texture_compression
     glConfig.textureCompression = TC_NONE;
     if( GLEW_ARB_texture_compression )

@@ -2000,10 +2000,7 @@ void Cmd_RemoveCommand( StringEntry cmd_name )
         if( !strcmp( cmd_name, cmd->name ) )
         {
             *back = cmd->next;
-            if( cmd->name )
-            {
-                Z_Free( cmd->name );
-            }
+            Z_Free( cmd->name );
             Z_Free( cmd );
             return;
         }

@@ -63,6 +63,12 @@ const GPUProgramDesc fallback_darkexpand;
 const GPUProgramDesc fallback_lensflare;
 const GPUProgramDesc fallback_multipost;
 const GPUProgramDesc fallback_vibrancy;
+const GPUProgramDesc fallback_fxaa;
+const GPUProgramDesc fallback_bloom_blur;
+const GPUProgramDesc fallback_bloom_combine;
+const GPUProgramDesc fallback_bloom_darken;
+const GPUProgramDesc fallback_ssgi;
+const GPUProgramDesc fallback_ssgiBlur;
 
 struct uniformInfo_t
 {
@@ -2053,6 +2059,143 @@ void idRenderSystemLocal::InitGPUShaders( void )
     numEtcShaders++;
     allocator.Reset();
     
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "fxaa", allocator, fallback_fxaa );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    if( !GLSL_InitGPUShader( &tr.fxaaShader, "fxaa", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load fxaa shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.fxaaShader );
+    
+    GLSL_SetUniformInt( &tr.fxaaShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.fxaaShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.fxaaShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.fxaaShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.fxaaShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "ssgi", allocator, fallback_ssgi );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.ssgiShader, "ssgi", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load ssgi shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.ssgiShader );
+    GLSL_SetUniformInt( &tr.ssgiShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.ssgiShader, UNIFORM_DIMENSIONS, screensize );
+    }
+    
+    GLSL_FinishGPUShader( &tr.ssgiShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "ssgiBlur", allocator, fallback_ssgiBlur );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.ssgiBlurShader, "ssgiBlur", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load ssgi_blur shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.ssgiBlurShader );
+    GLSL_SetUniformInt( &tr.ssgiBlurShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.ssgiBlurShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "bloom_darken", allocator, fallback_bloom_darken );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.bloomDarkenShader, "bloom_darken", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load bloom_darken shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.bloomDarkenShader );
+    GLSL_SetUniformInt( &tr.bloomDarkenShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.bloomDarkenShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "bloom_blur", allocator, fallback_bloom_blur );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.bloomBlurShader, "bloom_blur", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load bloom_blur shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.bloomBlurShader );
+    GLSL_SetUniformInt( &tr.bloomBlurShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.bloomBlurShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "bloom_combine", allocator, fallback_bloom_combine );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.bloomCombineShader, "bloom_combine", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load bloom_combine shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.bloomCombineShader );
+    GLSL_SetUniformInt( &tr.bloomCombineShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_SetUniformInt( &tr.bloomCombineShader, UNIFORM_NORMALMAP, TB_NORMALMAP );
+    
+    GLSL_FinishGPUShader( &tr.bloomCombineShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
 #if 0
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
@@ -2132,6 +2275,11 @@ void idRenderSystemLocal::ShutdownGPUShaders( void )
     GLSL_DeleteGPUShader( &tr.texturecleanShader );
     GLSL_DeleteGPUShader( &tr.anaglyphShader );
     GLSL_DeleteGPUShader( &tr.waterShader );
+    GLSL_DeleteGPUShader( &tr.fxaaShader );
+    GLSL_DeleteGPUShader( &tr.bloomDarkenShader );
+    GLSL_DeleteGPUShader( &tr.bloomBlurShader );
+    GLSL_DeleteGPUShader( &tr.bloomCombineShader );
+    GLSL_DeleteGPUShader( &tr.ssgiShader );
 }
 
 

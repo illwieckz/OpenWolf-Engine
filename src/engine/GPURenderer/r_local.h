@@ -1720,7 +1720,9 @@ typedef struct
     image_t* textureDepthImage;
     
     FBO_t* renderFbo;
+#if 0
     FBO_t* msaaResolveFbo;
+#endif
     FBO_t* sunRaysFbo;
     FBO_t* depthFbo;
     FBO_t* pshadowFbos[MAX_DRAWN_PSHADOWS];
@@ -1796,6 +1798,12 @@ typedef struct
     shaderProgram_t anamorphicCombineShader;
     shaderProgram_t volumelightShader;
     shaderProgram_t vibrancyShader;
+    shaderProgram_t fxaaShader;
+    shaderProgram_t bloomDarkenShader;
+    shaderProgram_t bloomBlurShader;
+    shaderProgram_t bloomCombineShader;
+    shaderProgram_t ssgiShader;
+    shaderProgram_t ssgiBlurShader;
     
     image_t*        bloomRenderFBOImage[3];
     image_t*        anamorphicRenderFBOImage[3];
@@ -2040,11 +2048,19 @@ extern cvar_t* r_lensflare;
 extern cvar_t* r_volumelight;
 extern cvar_t* r_anamorphic;
 extern cvar_t* r_anamorphicDarkenPower;
+extern cvar_t* r_ssgi;
+extern cvar_t* r_ssgiWidth;
+extern cvar_t* r_ssgiSamples;
 extern cvar_t* r_darkexpand;
 extern cvar_t* r_truehdr;
 extern cvar_t* r_dof;
 extern cvar_t* r_esharpening;
 extern cvar_t* r_esharpening2;
+extern cvar_t* r_fxaa;
+extern cvar_t* r_bloom;
+extern cvar_t* r_bloomPasses;
+extern cvar_t* r_bloomDarkenPower;
+extern cvar_t* r_bloomScale;
 extern cvar_t* r_multipost;
 extern cvar_t* r_textureClean;
 extern cvar_t* r_textureCleanSigma;

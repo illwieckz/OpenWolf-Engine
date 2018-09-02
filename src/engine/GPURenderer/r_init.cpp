@@ -232,9 +232,16 @@ cvar_t*	r_aviMotionJpegQuality;
 cvar_t*	r_screenshotJpegQuality;
 
 cvar_t*	r_lensflare;
+cvar_t* r_bloom;
+cvar_t* r_bloomPasses;
+cvar_t* r_bloomDarkenPower;
+cvar_t* r_bloomScale;
 cvar_t*	r_volumelight;
 cvar_t*	r_anamorphic;
 cvar_t*	r_anamorphicDarkenPower;
+cvar_t* r_ssgi;
+cvar_t* r_ssgiWidth;
+cvar_t* r_ssgiSamples;
 cvar_t*	r_darkexpand;
 cvar_t* r_truehdr;
 cvar_t* r_dof;
@@ -252,6 +259,7 @@ cvar_t* r_trueAnaglyphGreen;
 cvar_t* r_trueAnaglyphBlue;
 cvar_t* r_vibrancy;
 cvar_t* r_multithread;
+cvar_t* r_fxaa;
 
 cvar_t*	r_maxpolys;
 S32		max_polys;
@@ -1339,15 +1347,23 @@ void R_Register( void )
     r_shadowCascadeZBias = Cvar_Get( "r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_ignoreDstAlpha = Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_ARCHIVE | CVAR_LATCH );
     
+    r_bloom = Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
+    r_bloomPasses = Cvar_Get( "r_bloomPasses", "1", CVAR_ARCHIVE );
+    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "5.0", CVAR_ARCHIVE );
+    r_bloomScale = Cvar_Get( "r_bloomScale", "1.5", CVAR_ARCHIVE );
     r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
     r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );
     r_anamorphic = Cvar_Get( "r_anamorphic", "1", CVAR_ARCHIVE );
     r_anamorphicDarkenPower = Cvar_Get( "r_anamorphicDarkenPower", "256.0", CVAR_ARCHIVE );
+    r_ssgi = Cvar_Get( "r_ssgi", "1", CVAR_ARCHIVE );
+    r_ssgiWidth = Cvar_Get( "r_ssgiWidth", "12.0", CVAR_ARCHIVE );
+    r_ssgiSamples = Cvar_Get( "r_ssgiSamples", "4", CVAR_ARCHIVE );
     r_darkexpand = Cvar_Get( "r_darkexpand", "1", CVAR_ARCHIVE );
     r_truehdr = Cvar_Get( "r_truehdr", "1", CVAR_ARCHIVE );
     r_dof = Cvar_Get( "r_dof", "1", CVAR_ARCHIVE );
     r_esharpening = Cvar_Get( "r_esharpening", "1", CVAR_ARCHIVE );
     r_esharpening2 = Cvar_Get( "r_esharpening2", "1", CVAR_ARCHIVE );
+    r_fxaa = Cvar_Get( "r_fxaa", "2", CVAR_ARCHIVE );
     r_multipost = Cvar_Get( "r_multipost", "1", CVAR_ARCHIVE );
     r_textureClean = Cvar_Get( "r_textureClean", "1", CVAR_ARCHIVE );
     r_textureCleanSigma = Cvar_Get( "r_textureCleanSigma", "1.2", CVAR_ARCHIVE );
@@ -1383,12 +1399,11 @@ void R_Register( void )
     r_fastsky = Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
     r_inGameVideo = Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
     r_drawSun = Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
-    r_dynamiclight = Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
+    r_dynamiclight = Cvar_Get( "r_dynamiclight", "0", CVAR_ARCHIVE );
     r_dlightBacks = Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
     r_finish = Cvar_Get( "r_finish", "0", CVAR_ARCHIVE );
     r_textureMode = Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE );
-    r_swapInterval = Cvar_Get( "r_swapInterval", "0",
-                               CVAR_ARCHIVE | CVAR_LATCH );
+    r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_gamma = Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
     r_facePlaneCull = Cvar_Get( "r_facePlaneCull", "1", CVAR_ARCHIVE );
     

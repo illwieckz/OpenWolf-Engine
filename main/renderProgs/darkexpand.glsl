@@ -30,9 +30,8 @@ varying vec2		var_Dimensions;
 float viewWidth =	var_Dimensions.x;
 float viewHeight =	var_Dimensions.y;
 
-vec2 texc = var_TexCoords;
-float scale = 1.0;
-float thresh = 0.93;
+const float scale = 1.0;
+const float thresh = 0.93;
 
 void main()
 {
@@ -44,12 +43,12 @@ void main()
 
 	for(y=-1; y<=1; y++)
 	{
-		for(x=-1; x<=1; x++) sum+=texture2D(u_TextureMap, texc + (vec2(x,y) * recipres));
+		for(x=-1; x<=1; x++) sum+=texture2D(u_TextureMap, var_TexCoords + (vec2(x,y) * recipres));
 	}
 
     sum/=(3*3);
 
-    vec4 s = texture2D(u_TextureMap, texc);
+    vec4 s = texture2D(u_TextureMap, var_TexCoords);
     gl_FragColor = s;
 
 #ifdef BLUR_METHOD
@@ -80,5 +79,7 @@ void main()
     }
 #endif //BLUR_METHOD
 
+	//gl_FragColor.a = origColor.a;
+	//gl_FragColor.a = s.a;
 	gl_FragColor.a = 1.0;
 }

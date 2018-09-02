@@ -287,6 +287,28 @@ void idRenderSystemLocal::FBOInit( void )
     }
     
     //
+    // Bloom VBO's...
+    //
+    {
+        tr.bloomRenderFBO[0] = FBO_Create( "_bloom0", tr.bloomRenderFBOImage[0]->width, tr.bloomRenderFBOImage[0]->height );
+        FBO_Bind( tr.bloomRenderFBO[0] );
+        FBO_AttachImage( tr.bloomRenderFBO[0], tr.bloomRenderFBOImage[0], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.bloomRenderFBO[0] );
+        
+        
+        tr.bloomRenderFBO[1] = FBO_Create( "_bloom1", tr.bloomRenderFBOImage[1]->width, tr.bloomRenderFBOImage[1]->height );
+        FBO_Bind( tr.bloomRenderFBO[1] );
+        FBO_AttachImage( tr.bloomRenderFBO[1], tr.bloomRenderFBOImage[1], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.bloomRenderFBO[1] );
+        
+        
+        tr.bloomRenderFBO[2] = FBO_Create( "_bloom2", tr.bloomRenderFBOImage[2]->width, tr.bloomRenderFBOImage[2]->height );
+        FBO_Bind( tr.bloomRenderFBO[2] );
+        FBO_AttachImage( tr.bloomRenderFBO[2], tr.bloomRenderFBOImage[2], GL_COLOR_ATTACHMENT0, 0 );
+        R_CheckFBO( tr.bloomRenderFBO[2] );
+    }
+    
+    //
     // Anamorphic VBO's...
     //
     {
@@ -305,6 +327,7 @@ void idRenderSystemLocal::FBOInit( void )
     
     // only create a render FBO if we need to resolve MSAA or do HDR
     // otherwise just render straight to the screen (tr.renderFbo = NULL)
+#if 0
     if( multisample && glRefConfig.framebufferMultisample )
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
@@ -318,6 +341,7 @@ void idRenderSystemLocal::FBOInit( void )
         R_CheckFBO( tr.msaaResolveFbo );
     }
     else
+#endif
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
         FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0 );

@@ -587,11 +587,13 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
                 if( glRefConfig.framebufferObject )
                 {
                     // clear all framebuffers
+#if 0
                     if( tr.msaaResolveFbo )
                     {
                         FBO_Bind( tr.msaaResolveFbo );
                         glClear( GL_COLOR_BUFFER_BIT );
                     }
+#endif
                     
                     if( tr.renderFbo )
                     {

@@ -2915,6 +2915,10 @@ void R_CreateBuiltinImages( void )
         
         tr.genericFBOImage = R_CreateImage( "_generic", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
+        tr.bloomRenderFBOImage[0] = R_CreateImage( "_bloom0", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.bloomRenderFBOImage[1] = R_CreateImage( "_bloom1", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.bloomRenderFBOImage[2] = R_CreateImage( "_bloom2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        
         tr.anamorphicRenderFBOImage[0] = R_CreateImage( "_anamorphic0", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         tr.anamorphicRenderFBOImage[1] = R_CreateImage( "_anamorphic1", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         tr.anamorphicRenderFBOImage[2] = R_CreateImage( "_anamorphic2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );

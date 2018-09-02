@@ -586,7 +586,7 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
                 
                 if( glRefConfig.framebufferObject )
                 {
-                    // clear all framebuffers                    
+                    // clear all framebuffers
                     if( tr.renderFbo )
                     {
                         FBO_Bind( tr.renderFbo );

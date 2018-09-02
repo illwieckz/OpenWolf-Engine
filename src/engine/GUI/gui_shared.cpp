@@ -1884,7 +1884,10 @@ void Script_Play( itemDef_t* item, UTF8** args )
     StringEntry val;
     
     if( String_Parse( args, &val ) )
+    {
         DC->startLocalSound( DC->registerSound( val, false ), CHAN_LOCAL_SOUND );
+        DC->startBackgroundTrack( val, val, 0 );
+    }
 }
 
 void Script_playLooped( itemDef_t* item, UTF8** args )
@@ -6859,7 +6862,7 @@ bool ItemParse_focusSound( itemDef_t* item, S32 handle )
     if( !PC_String_Parse( handle, &temp ) )
         return false;
         
-    item->focusSound = DC->registerSound( temp, false );
+    item->focusSound = DC->registerSound( temp, true );
     return true;
 }
 
@@ -8577,7 +8580,7 @@ static void Menu_CacheContents( menuDef_t* menu )
             Item_CacheContents( menu->items[i] );
             
         if( menu->soundName && *menu->soundName )
-            DC->registerSound( menu->soundName, false );
+            DC->registerSound( menu->soundName, true );
     }
     
 }

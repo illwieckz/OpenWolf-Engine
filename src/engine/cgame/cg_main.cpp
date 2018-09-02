@@ -1175,7 +1175,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, false );
+            cgDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         
@@ -1185,7 +1185,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, false );
+            cgDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         
@@ -1195,7 +1195,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, false );
+            cgDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         

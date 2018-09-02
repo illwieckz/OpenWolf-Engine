@@ -989,7 +989,7 @@ const void*	RB_DrawSurfs( const void* data )
                 if( !glRefConfig.intelGraphics )
                     glCopyTextureSubImage2DEXT( tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight );
             }
-                
+            
             if( tr.hdrDepthFbo )
             {
                 // need the depth in a texture we can do GL_LINEAR sampling on, so copy it to an HDR image
@@ -1401,7 +1401,7 @@ const void* RB_ClearDepth( const void* data )
     }
     
     glClear( GL_DEPTH_BUFFER_BIT );
-        
+    
     return ( const void* )( cmd + 1 );
 }
 

@@ -37,31 +37,31 @@ R_CheckFBO
 */
 bool R_CheckFBO( const FBO_t* fbo )
 {
-    GLenum code = glCheckNamedFramebufferStatus( fbo->frameBuffer, GL_FRAMEBUFFER );
+    GLenum code = glCheckNamedFramebufferStatusEXT( fbo->frameBuffer, GL_FRAMEBUFFER_EXT );
     
-    if( code == GL_FRAMEBUFFER_COMPLETE )
+    if( code == GL_FRAMEBUFFER_COMPLETE_EXT )
         return true;
         
     // an error occured
     switch( code )
     {
-        case GL_FRAMEBUFFER_UNSUPPORTED:
+        case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
             CL_RefPrintf( PRINT_WARNING, "R_CheckFBO: (%s) Unsupported framebuffer format\n", fbo->name );
             break;
             
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
             CL_RefPrintf( PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete attachment\n", fbo->name );
             break;
             
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
             CL_RefPrintf( PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing attachment\n", fbo->name );
             break;
             
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
             CL_RefPrintf( PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing draw buffer\n", fbo->name );
             break;
             
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
             CL_RefPrintf( PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing read buffer\n", fbo->name );
             break;
             
@@ -108,7 +108,7 @@ FBO_t*          FBO_Create( StringEntry name, S32 width, S32 height )
     fbo->width = width;
     fbo->height = height;
     
-    glGenFramebuffers( 1, &fbo->frameBuffer );
+    glGenFramebuffersEXT( 1, &fbo->frameBuffer );
     
     return fbo;
 }
@@ -130,49 +130,49 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         case GL_RGBA:
         case GL_RGB8:
         case GL_RGBA8:
-        case GL_RGB16F:
-        case GL_RGBA16F:
-        case GL_RGB32F:
-        case GL_RGBA32F:
+        case GL_RGB16F_ARB:
+        case GL_RGBA16F_ARB:
+		case GL_RGB32F_ARB:
+        case GL_RGBA32F_ARB:
             fbo->colorFormat = format;
             pRenderBuffer = &fbo->colorBuffers[index];
-            attachment = GL_COLOR_ATTACHMENT0 + index;
+            attachment = GL_COLOR_ATTACHMENT0_EXT + index;
             break;
-            
+                        
         case GL_DEPTH_COMPONENT:
         case GL_DEPTH_COMPONENT16_ARB:
         case GL_DEPTH_COMPONENT24_ARB:
         case GL_DEPTH_COMPONENT32_ARB:
             fbo->depthFormat = format;
             pRenderBuffer = &fbo->depthBuffer;
-            attachment = GL_DEPTH_ATTACHMENT;
+            attachment = GL_DEPTH_ATTACHMENT_EXT;
             break;
-            
+                                        
         case GL_STENCIL_INDEX:
-        case GL_STENCIL_INDEX1:
-        case GL_STENCIL_INDEX4:
-        case GL_STENCIL_INDEX8:
-        case GL_STENCIL_INDEX16:
+        case GL_STENCIL_INDEX1_EXT:
+        case GL_STENCIL_INDEX4_EXT:
+        case GL_STENCIL_INDEX8_EXT:
+        case GL_STENCIL_INDEX16_EXT:
             fbo->stencilFormat = format;
             pRenderBuffer = &fbo->stencilBuffer;
-            attachment = GL_STENCIL_ATTACHMENT;
+            attachment = GL_STENCIL_ATTACHMENT_EXT;
             break;
-            
-        case GL_DEPTH_STENCIL:
-        case GL_DEPTH24_STENCIL8:
+                                                            
+        case GL_DEPTH_STENCIL_EXT:
+        case GL_DEPTH24_STENCIL8_EXT:
             fbo->packedDepthStencilFormat = format;
             pRenderBuffer = &fbo->packedDepthStencilBuffer;
             attachment = 0; // special for stencil and depth
             break;
-            
+                                                                    
         default:
             CL_RefPrintf( PRINT_WARNING, "FBO_CreateBuffer: invalid format %d\n", format );
             return;
     }
-    
+                                                                    
     absent = *pRenderBuffer == 0;
     if( absent )
-        glGenRenderbuffers( 1, pRenderBuffer );
+        glGenRenderbuffersEXT( 1, pRenderBuffer );
         
     if( multisample && glRefConfig.framebufferMultisample )
         glNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
@@ -183,12 +183,12 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
     {
         if( attachment == 0 )
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT,   GL_RENDERBUFFER, *pRenderBuffer );
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT_EXT,   GL_RENDERBUFFER_EXT, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, *pRenderBuffer );
         }
         else
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER, *pRenderBuffer );
+            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER_EXT, *pRenderBuffer );
         }
     }
 }
@@ -208,7 +208,7 @@ void FBO_AttachImage( FBO_t* fbo, image_t* image, GLenum attachment, GLuint cube
         target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + cubemapside;
         
     glNamedFramebufferTexture2DEXT( fbo->frameBuffer, attachment, target, image->texnum, 0 );
-    index = attachment - GL_COLOR_ATTACHMENT0;
+    index = attachment - GL_COLOR_ATTACHMENT0_EXT;
     if( index >= 0 && index <= 15 )
         fbo->colorImage[index] = image;
 }
@@ -235,7 +235,7 @@ void FBO_Bind( FBO_t* fbo )
         GLimp_LogComment( ( UTF8* )va( "--- FBO_Bind( %s ) ---\n", fbo ? fbo->name : "NULL" ) );
     }
     
-    GL_BindFramebuffer( GL_FRAMEBUFFER, fbo ? fbo->frameBuffer : 0 );
+    GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, fbo ? fbo->frameBuffer : 0 );
     glState.currentFBO = fbo;
 }
 
@@ -261,11 +261,11 @@ void idRenderSystemLocal::FBOInit( void )
     R_IssuePendingRenderCommands();
     
     hdrFormat = GL_RGBA8;
-    if( r_truehdr->integer && glRefConfig.textureFloat )
+    if( r_hdr->integer && glRefConfig.framebufferObject && glRefConfig.textureFloat )
         hdrFormat = GL_RGBA16F_ARB;
         
     if( glRefConfig.framebufferMultisample )
-        glGetIntegerv( GL_MAX_SAMPLES, &multisample );
+        glGetIntegerv( GL_MAX_SAMPLES_EXT, &multisample );
         
     if( r_ext_framebuffer_multisample->integer < multisample )
         multisample = r_ext_framebuffer_multisample->integer;
@@ -282,7 +282,7 @@ void idRenderSystemLocal::FBOInit( void )
     {
         tr.genericFbo = FBO_Create( "_generic", tr.genericFBOImage->width, tr.genericFBOImage->height );
         FBO_Bind( tr.genericFbo );
-        FBO_AttachImage( tr.genericFbo, tr.genericFBOImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.genericFbo, tr.genericFBOImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.genericFbo );
     }
     
@@ -292,19 +292,19 @@ void idRenderSystemLocal::FBOInit( void )
     {
         tr.bloomRenderFBO[0] = FBO_Create( "_bloom0", tr.bloomRenderFBOImage[0]->width, tr.bloomRenderFBOImage[0]->height );
         FBO_Bind( tr.bloomRenderFBO[0] );
-        FBO_AttachImage( tr.bloomRenderFBO[0], tr.bloomRenderFBOImage[0], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.bloomRenderFBO[0], tr.bloomRenderFBOImage[0], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.bloomRenderFBO[0] );
         
         
         tr.bloomRenderFBO[1] = FBO_Create( "_bloom1", tr.bloomRenderFBOImage[1]->width, tr.bloomRenderFBOImage[1]->height );
         FBO_Bind( tr.bloomRenderFBO[1] );
-        FBO_AttachImage( tr.bloomRenderFBO[1], tr.bloomRenderFBOImage[1], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.bloomRenderFBO[1], tr.bloomRenderFBOImage[1], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.bloomRenderFBO[1] );
         
         
         tr.bloomRenderFBO[2] = FBO_Create( "_bloom2", tr.bloomRenderFBOImage[2]->width, tr.bloomRenderFBOImage[2]->height );
         FBO_Bind( tr.bloomRenderFBO[2] );
-        FBO_AttachImage( tr.bloomRenderFBO[2], tr.bloomRenderFBOImage[2], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.bloomRenderFBO[2], tr.bloomRenderFBOImage[2], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.bloomRenderFBO[2] );
     }
     
@@ -313,15 +313,15 @@ void idRenderSystemLocal::FBOInit( void )
     //
     {
         tr.anamorphicRenderFBO[0] = FBO_Create( "_anamorphic0", tr.anamorphicRenderFBOImage[0]->width, tr.anamorphicRenderFBOImage[0]->height );
-        FBO_AttachImage( tr.anamorphicRenderFBO[0], tr.anamorphicRenderFBOImage[0], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.anamorphicRenderFBO[0], tr.anamorphicRenderFBOImage[0], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.anamorphicRenderFBO[0] );
         
         tr.anamorphicRenderFBO[1] = FBO_Create( "_anamorphic1", tr.anamorphicRenderFBOImage[1]->width, tr.anamorphicRenderFBOImage[1]->height );
-        FBO_AttachImage( tr.anamorphicRenderFBO[1], tr.anamorphicRenderFBOImage[1], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.anamorphicRenderFBO[1], tr.anamorphicRenderFBOImage[1], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.anamorphicRenderFBO[1] );
         
         tr.anamorphicRenderFBO[2] = FBO_Create( "_anamorphic2", tr.anamorphicRenderFBOImage[2]->width, tr.anamorphicRenderFBOImage[2]->height );
-        FBO_AttachImage( tr.anamorphicRenderFBO[2], tr.anamorphicRenderFBOImage[2], GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.anamorphicRenderFBO[2], tr.anamorphicRenderFBOImage[2], GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.anamorphicRenderFBO[2] );
     }
     
@@ -329,8 +329,8 @@ void idRenderSystemLocal::FBOInit( void )
     // otherwise just render straight to the screen (tr.renderFbo = NULL)
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
-        FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_AttachImage( tr.renderFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0 );
+        FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        FBO_AttachImage( tr.renderFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT_EXT, 0 );
         R_CheckFBO( tr.renderFbo );
     }
     
@@ -338,23 +338,23 @@ void idRenderSystemLocal::FBOInit( void )
     // this fixes the corrupt screen bug with r_hdr 1 on older hardware
     if( tr.renderFbo )
     {
-        GL_BindFramebuffer( GL_FRAMEBUFFER, tr.renderFbo->frameBuffer );
+        GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, tr.renderFbo->frameBuffer );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     }
     
     if( tr.screenScratchImage )
     {
         tr.screenScratchFbo = FBO_Create( "screenScratch", tr.screenScratchImage->width, tr.screenScratchImage->height );
-        FBO_AttachImage( tr.screenScratchFbo, tr.screenScratchImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_AttachImage( tr.screenScratchFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0 );
+        FBO_AttachImage( tr.screenScratchFbo, tr.screenScratchImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        FBO_AttachImage( tr.screenScratchFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT_EXT, 0 );
         R_CheckFBO( tr.screenScratchFbo );
     }
     
     if( tr.sunRaysImage )
     {
         tr.sunRaysFbo = FBO_Create( "_sunRays", tr.renderDepthImage->width, tr.renderDepthImage->height );
-        FBO_AttachImage( tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0, 0 );
-        FBO_AttachImage( tr.sunRaysFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0 );
+        FBO_AttachImage( tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        FBO_AttachImage( tr.sunRaysFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT_EXT, 0 );
         R_CheckFBO( tr.sunRaysFbo );
     }
     
@@ -365,7 +365,7 @@ void idRenderSystemLocal::FBOInit( void )
             tr.pshadowFbos[i] = FBO_Create( va( "_shadowmap%d", i ), tr.pshadowMaps[i]->width, tr.pshadowMaps[i]->height );
             // FIXME: this next line wastes 16mb with 16x512x512 sun shadow maps, skip if OpenGL 4.3+ or ARB_framebuffer_no_attachments
             FBO_CreateBuffer( tr.pshadowFbos[i], GL_RGBA8, 0, 0 );
-            FBO_AttachImage( tr.pshadowFbos[i], tr.pshadowMaps[i], GL_DEPTH_ATTACHMENT, 0 );
+            FBO_AttachImage( tr.pshadowFbos[i], tr.pshadowMaps[i], GL_DEPTH_ATTACHMENT_EXT, 0 );
             R_CheckFBO( tr.pshadowFbos[i] );
         }
     }
@@ -378,7 +378,7 @@ void idRenderSystemLocal::FBOInit( void )
             // FIXME: this next line wastes 16mb with 4x1024x1024 sun shadow maps, skip if OpenGL 4.3+ or ARB_framebuffer_no_attachments
             // This at least gets sun shadows working on older GPUs (Intel)
             FBO_CreateBuffer( tr.sunShadowFbo[i], GL_RGBA8, 0, 0 );
-            FBO_AttachImage( tr.sunShadowFbo[i], tr.sunShadowDepthImage[i], GL_DEPTH_ATTACHMENT, 0 );
+            FBO_AttachImage( tr.sunShadowFbo[i], tr.sunShadowDepthImage[i], GL_DEPTH_ATTACHMENT_EXT, 0 );
             R_CheckFBO( tr.sunShadowFbo[i] );
         }
     }
@@ -386,7 +386,7 @@ void idRenderSystemLocal::FBOInit( void )
     if( tr.screenShadowImage )
     {
         tr.screenShadowFbo = FBO_Create( "_screenshadow", tr.screenShadowImage->width, tr.screenShadowImage->height );
-        FBO_AttachImage( tr.screenShadowFbo, tr.screenShadowImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.screenShadowFbo, tr.screenShadowImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.screenShadowFbo );
     }
     
@@ -395,7 +395,7 @@ void idRenderSystemLocal::FBOInit( void )
         for( i = 0; i < 2; i++ )
         {
             tr.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), tr.textureScratchImage[i]->width, tr.textureScratchImage[i]->height );
-            FBO_AttachImage( tr.textureScratchFbo[i], tr.textureScratchImage[i], GL_COLOR_ATTACHMENT0, 0 );
+            FBO_AttachImage( tr.textureScratchFbo[i], tr.textureScratchImage[i], GL_COLOR_ATTACHMENT0_EXT, 0 );
             R_CheckFBO( tr.textureScratchFbo[i] );
         }
     }
@@ -403,14 +403,14 @@ void idRenderSystemLocal::FBOInit( void )
     if( tr.calcLevelsImage )
     {
         tr.calcLevelsFbo = FBO_Create( "_calclevels", tr.calcLevelsImage->width, tr.calcLevelsImage->height );
-        FBO_AttachImage( tr.calcLevelsFbo, tr.calcLevelsImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.calcLevelsFbo, tr.calcLevelsImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.calcLevelsFbo );
     }
     
     if( tr.targetLevelsImage )
     {
         tr.targetLevelsFbo = FBO_Create( "_targetlevels", tr.targetLevelsImage->width, tr.targetLevelsImage->height );
-        FBO_AttachImage( tr.targetLevelsFbo, tr.targetLevelsImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.targetLevelsFbo, tr.targetLevelsImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.targetLevelsFbo );
     }
     
@@ -419,7 +419,7 @@ void idRenderSystemLocal::FBOInit( void )
         for( i = 0; i < 2; i++ )
         {
             tr.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), tr.quarterImage[i]->width, tr.quarterImage[i]->height );
-            FBO_AttachImage( tr.quarterFbo[i], tr.quarterImage[i], GL_COLOR_ATTACHMENT0, 0 );
+            FBO_AttachImage( tr.quarterFbo[i], tr.quarterImage[i], GL_COLOR_ATTACHMENT0_EXT, 0 );
             R_CheckFBO( tr.quarterFbo[i] );
         }
     }
@@ -427,28 +427,28 @@ void idRenderSystemLocal::FBOInit( void )
     if( tr.hdrDepthImage )
     {
         tr.hdrDepthFbo = FBO_Create( "_hdrDepth", tr.hdrDepthImage->width, tr.hdrDepthImage->height );
-        FBO_AttachImage( tr.hdrDepthFbo, tr.hdrDepthImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.hdrDepthFbo, tr.hdrDepthImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.hdrDepthFbo );
     }
     
     if( tr.screenSsaoImage )
     {
         tr.screenSsaoFbo = FBO_Create( "_screenssao", tr.screenSsaoImage->width, tr.screenSsaoImage->height );
-        FBO_AttachImage( tr.screenSsaoFbo, tr.screenSsaoImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.screenSsaoFbo, tr.screenSsaoImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.screenSsaoFbo );
     }
     
     if( tr.renderCubeImage )
     {
         tr.renderCubeFbo = FBO_Create( "_renderCubeFbo", tr.renderCubeImage->width, tr.renderCubeImage->height );
-        FBO_AttachImage( tr.renderCubeFbo, tr.renderCubeImage, GL_COLOR_ATTACHMENT0, 0 );
+        FBO_AttachImage( tr.renderCubeFbo, tr.renderCubeImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         FBO_CreateBuffer( tr.renderCubeFbo, GL_DEPTH_COMPONENT24_ARB, 0, 0 );
         R_CheckFBO( tr.renderCubeFbo );
     }
     
     GL_CheckErrors();
     
-    GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+    GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, 0 );
     glState.currentFBO = NULL;
 }
 
@@ -476,17 +476,17 @@ void idRenderSystemLocal::FBOShutdown( void )
         for( j = 0; j < glRefConfig.maxColorAttachments; j++ )
         {
             if( fbo->colorBuffers[j] )
-                glDeleteRenderbuffers( 1, &fbo->colorBuffers[j] );
+                glDeleteRenderbuffersEXT( 1, &fbo->colorBuffers[j] );
         }
         
         if( fbo->depthBuffer )
-            glDeleteRenderbuffers( 1, &fbo->depthBuffer );
+            glDeleteRenderbuffersEXT( 1, &fbo->depthBuffer );
             
         if( fbo->stencilBuffer )
-            glDeleteRenderbuffers( 1, &fbo->stencilBuffer );
+            glDeleteRenderbuffersEXT( 1, &fbo->stencilBuffer );
             
         if( fbo->frameBuffer )
-            glDeleteFramebuffers( 1, &fbo->frameBuffer );
+            glDeleteFramebuffersEXT( 1, &fbo->frameBuffer );
     }
 }
 
@@ -687,13 +687,13 @@ void FBO_FastBlit( FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, S32 b
         VectorSet4( dstBoxFinal, dstBox[0], dstBox[1], dstBox[0] + dstBox[2], dstBox[1] + dstBox[3] );
     }
     
-    GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
-    GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
-    glBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
-                       dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
-                       buffers, filter );
-                       
-    GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+    GL_BindFramebuffer( GL_READ_FRAMEBUFFER_EXT, srcFb );
+    GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER_EXT, dstFb );
+    glBlitFramebufferEXT( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+                          dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+                          buffers, filter );
+                          
+    GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, 0 );
     glState.currentFBO = NULL;
 }
 
@@ -702,20 +702,20 @@ void FBO_FastBlitIndexed( FBO_t* src, FBO_t* dst, S32 srcReadBuffer, S32 dstDraw
     assert( src != NULL );
     assert( dst != NULL );
     
-    glBindFramebuffer( GL_READ_FRAMEBUFFER, src->frameBuffer );
-    glReadBuffer( GL_COLOR_ATTACHMENT0 + srcReadBuffer );
+    glBindFramebufferEXT( GL_READ_FRAMEBUFFER_EXT, src->frameBuffer );
+    glReadBuffer( GL_COLOR_ATTACHMENT0_EXT + srcReadBuffer );
     
-    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, dst->frameBuffer );
-    glDrawBuffer( GL_COLOR_ATTACHMENT0 + dstDrawBuffer );
+    glBindFramebufferEXT( GL_DRAW_FRAMEBUFFER_EXT, dst->frameBuffer );
+    glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT + dstDrawBuffer );
     
-    glBlitFramebuffer( 0, 0, src->width, src->height,
-                       0, 0, dst->width, dst->height,
-                       buffers, filter );
-                       
-    glReadBuffer( GL_COLOR_ATTACHMENT0 );
+    glBlitFramebufferEXT( 0, 0, src->width, src->height,
+                          0, 0, dst->width, dst->height,
+                          buffers, filter );
+                          
+    glReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
     
     glState.currentFBO = dst;
     
-    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
     glState.currentFBO = NULL;
 }

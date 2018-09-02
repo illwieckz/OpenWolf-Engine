@@ -1228,7 +1228,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, false );
+            uiInfo.uiDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         
@@ -1238,7 +1238,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, false );
+            uiInfo.uiDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         
@@ -1248,7 +1248,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, false );
+            uiInfo.uiDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         
@@ -1258,7 +1258,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr, false );
+            uiInfo.uiDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr, true );
             continue;
         }
         

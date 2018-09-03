@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<qpref version="1">
+  <epair name="gamefile">le.engine</epair>
+  <epair name="autoload">true</epair>
+  <epair name="log console">false</epair>
+</qpref>

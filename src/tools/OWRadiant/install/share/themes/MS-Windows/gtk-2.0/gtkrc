@@ -1,0 +1,164 @@
+# ----------------------------------------------- #
+# - LifeEngine- #
+
+gtk-color-scheme	= "base_color:#2b2b2b\nfg_color:#CCC\ntooltip_fg_color:#FFFFFF\nselected_bg_color:#4080fb\nselected_fg_color:#ccc\ntext_color:#F9F9F9\nbg_color:#383838\ninsensitive_bg_color:#434446\ntooltip_bg_color:#343434\nlink_color:#4080fb"
+
+gtk-menu-popup-delay = 0
+gtk-button-images = 0
+
+style "default" {
+
+  GtkButton      ::default_border    = { 0, 0, 0, 0 }
+  GtkRange       ::trough_border     = 0
+  GtkPaned       ::handle_size       = 6
+  GtkRange       ::slider_width      = 15
+  GtkRange       ::stepper_size      = 15
+  GtkScrollbar   ::min_slider_length = 30
+  GtkCheckButton ::indicator_size    = 12
+  GtkMenuBar     ::internal-padding  = 0
+  GtkTreeView    ::expander_size     = 14
+  GtkTreeView    ::enable-search     = 1
+  GtkTreeView    ::search-column     = -1
+  GtkExpander    ::expander_size     = 16
+
+  xthickness = 0
+  ythickness = 0
+
+  # Colors
+  bg[NORMAL] = @bg_color
+  bg[PRELIGHT] = shade (1.02, @bg_color)
+  bg[SELECTED] = @selected_bg_color
+  bg[INSENSITIVE] = @insensitive_bg_color
+  bg[ACTIVE] = shade (0.9, @bg_color)
+
+  fg[NORMAL] = @text_color
+  fg[PRELIGHT] = @fg_color
+  fg[SELECTED] = @selected_fg_color
+  fg[INSENSITIVE] = shade(0.6, @fg_color)
+  fg[ACTIVE] = @fg_color
+
+  text[NORMAL] = @text_color
+  text[PRELIGHT] = @text_color
+  text[SELECTED] = @selected_fg_color
+  text[INSENSITIVE] = shade (0.6, @text_color)
+  text[ACTIVE] = @selected_fg_color
+
+  base[NORMAL] = @base_color
+  base[PRELIGHT] = shade (0.95, @bg_color)
+  base[SELECTED] = @selected_bg_color
+  base[INSENSITIVE] = @bg_color
+  base[ACTIVE] = shade (0.9, @selected_bg_color)
+}
+
+style "frame" {
+  xthickness = 0
+  ythickness = 0
+}
+
+style "menubar" {
+
+  bg[PRELIGHT] = "#393a3c" 
+  bg[NORMAL] = "#454749"
+  fg[NORMAL] = @selected_fg_color
+  fg[SELECTED] = @text_color
+  fg[INSENSITIVE] = shade(0.5, @selected_fg_color)
+
+  xthickness = 2
+  ythickness = 2
+} 
+
+style "menu" {
+  xthickness = 0
+  ythickness = 0
+
+  GtkMenuItem::arrow-scaling = 0.5
+
+  bg[NORMAL] = @base_color
+  bg[INSENSITIVE] = @base_color
+  bg[PRELIGHT] = @base_color
+}
+
+style "menu_framed_box" {
+  xthickness = 0
+  ythickness = 0
+}
+
+style "menu_item"
+{
+  xthickness = 2
+  ythickness = 2
+
+  bg[SELECTED] = @selected_bg_color
+
+  bg[PRELIGHT] = @selected_bg_color
+  fg[PRELIGHT] = @selected_fg_color
+  text[PRELIGHT] = @selected_fg_color
+}
+
+style "menubar_item" {
+  xthickness  = 2
+  ythickness  = 2
+
+  bg[PRELIGHT]  = "#393a3c"
+  fg[PRELIGHT]  = @text_color
+}
+
+style "button" {
+  xthickness  = 2
+  ythickness  = 2
+}
+
+style "button_nohilight" {
+  xthickness  = 2
+  ythickness  = 2
+} 
+
+style "tooltip" {
+  xthickness = 8
+  ythickness = 4
+
+  bg[NORMAL] = @tooltip_bg_color
+  fg[NORMAL] = @tooltip_fg_color
+  bg[SELECTED] = @tooltip_bg_color 
+}
+
+style "scrollbar" {
+  bg[NORMAL] = @base_color
+  xthickness = 2
+  ythickness = 2
+}
+
+# ----------------------------------------------- #
+
+
+
+# General
+  class "GtkWidget"                               style "default"
+  class "GtkFrame"                                style "frame"
+
+# Controls
+
+  # Menu
+    widget_class "*<GtkMenu>*"                                          style "menu"
+    widget_class "*<GtkMenuBar>*"                                       style "menubar"
+    widget_class "*<GtkMenu>*"                                          style "menu_framed_box"
+    widget_class "*<GtkMenuItem>*"                                      style "menu_item"
+    widget_class "*<GtkMenuBar>.<GtkMenuItem>*"                         style "menubar_item"
+
+  # Button
+    class "GtkButton"                                                   style "button"
+    widget_class "*<GtkInfoBar>*<GtkButton>"                            style "button_nohilight"
+    widget_class "*<GtkFileChooserDefault>*<GtkToolbar>*<GtkButton>"    style "button_nohilight"
+    widget_class "*Chrom*Button*"                                       style "button"
+
+  # ToolTip
+    widget "gtk-tooltip*"                                               style "tooltip"
+
+  # ScrollBar
+    class "GtkScrollbar"                                                style "scrollbar"
+
+
+#
+
+
+# ----------------------------------------------- #

@@ -1,0 +1,6 @@
+This was retrieved from http://www.gtk.org/download/win64.php:
+gtk+-bundle_2.22.1-20101229_win64.zip
+
+At the time of writing, we only use this package to compile x64 versions of the map compiler.
+We are not using this to make x64 GtkRadiant binaries yet.
+

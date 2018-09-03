@@ -1,0 +1,172 @@
+BendMode                  B
+Brush3Sided               Control + 3
+Brush4Sided               Control + 4
+Brush5Sided               Control + 5
+Brush6Sided               Control + 6
+Brush7Sided               Control + 7
+Brush8Sided               Control + 8
+Brush9Sided               Control + 9
+CSGMerge                  Control + U
+CSGSubtract               Shift + U
+CameraAngleDown           Z
+CameraAngleUp             A
+CameraBack                Down
+CameraDown                C
+CameraForward             Up
+CameraLeft                Left
+CameraRight               Right
+CameraStrafeLeft          Comma
+CameraStrafeRight         Period
+CameraUp                  D
+CapCurrentCurve           Shift + C
+CenterView                End
+CenterXYView              Shift + Control + Tab
+ClearPatchOverlays        Control + L
+ClipSelected              Return
+CloneSelection            Space
+ConnectSelection          Control + K
+Copy                      Control + C
+CubicClipZoomIn           Control + [
+CubicClipZoomOut          Control + ]
+CycleCapTexturePatch      Shift + Control + N
+CycleOutlineStyle         J
+DecPatchColumn            Shift + Control + Subtract
+DecPatchRow               Control + Subtract
+DeleteSelection           Backspace
+DownFloor                 PageDown
+DragEdges                 E
+DragVertices              V
+DumpSelectedBrush         Shift + D
+EntityColor               K
+EntityList                L
+FileOpen                  Control + O
+FileSave                  Control + S
+FilterAreaportals         Alt + 3
+FilterAreaportals         Alt + 3
+FilterBotClips            Alt + M
+FilterCaulk               Alt + 6
+FilterCaulk               Alt + 6
+FilterClips               Alt + 7
+FilterClips               Alt + 7
+FilterClusterportals      Alt + 9
+FilterClusterportals      Alt + 9
+FilterDetails             Control + D
+FilterEntities            Alt + 2
+FilterEntities            Alt + 2
+FilterHintsSkips          Control + H
+FilterLights              Alt + 0
+FilterLights              Alt + 0
+FilterLiquids             Alt + 5
+FilterLiquids             Alt + 5
+FilterModels              Shift + M
+FilterPatches             Control + P
+FilterPaths               Alt + 8
+FilterPaths               Alt + 8
+FilterStructural          Shift + Control + D
+FilterTranslucent         Alt + 4
+FilterTranslucent         Alt + 4
+FilterTriggers            Shift + Control + T
+FilterWorldBrushes        Alt + 1
+FilterWorldBrushes        Alt + 1
+FitTexture                Shift + B
+FlipClip                  Control + Return
+GridDown                  [
+GridUp                    ]
+Help                      F1
+HideSelected              H
+IncPatchColumn            Shift + Control + Plus
+IncPatchRow               Control + Plus
+InvertCurve               Control + I
+InvertCurveTextureX       Shift + Control + I
+InvertCurveTextureY       Shift + I
+InvertSelection           I
+LoadPointfile             Shift + L
+MakeDetail                Control + M
+MakeOverlayPatch          Y
+MakeStructural            Shift + Control + S
+MapInfo                   M
+MatrixTranspose           Shift + Control + M
+MouseRotate               R
+MoveSelectionDOWN         Subtract
+MoveSelectionUP           Plus
+NaturalizePatch           Control + N
+NextLeakSpot              Shift + Control + K
+NextView                  Control + Tab
+Paste                     Control + V
+PasteToCamera             Alt + V
+Patch TAB                 Tab
+Patch TAB                 Tab
+PatchInspector            Shift + S
+Preferences               P
+PrevLeakSpot              Shift + Control + L
+RedisperseIntermediateCols Shift + Control + E
+RedisperseRows            Control + E
+Redo                      Control + Y
+RegionSetSelection        Shift + Control + R
+SelectAllOfType           Shift + A
+SelectFuncGroup           G
+SelectNudgeDown           Alt + Down
+SelectNudgeLeft           Alt + Left
+SelectNudgeRight          Alt + Right
+SelectNudgeUp             Alt + Up
+SetGrid1                  1
+SetGrid1                  1
+SetGrid128                8
+SetGrid128                8
+SetGrid16                 5
+SetGrid16                 5
+SetGrid2                  2
+SetGrid2                  2
+SetGrid256                9
+SetGrid256                9
+SetGrid32                 6
+SetGrid32                 6
+SetGrid4                  3
+SetGrid4                  3
+SetGrid64                 7
+SetGrid64                 7
+SetGrid8                  4
+SetGrid8                  4
+ShowAllTextures           Control + A
+ShowHidden                Shift + H
+ShowInUse                 U
+SimplePatchMesh           Shift + P
+Sleep                     Shift + Control + P
+SnapToGrid                Control + G
+SplitSelected             Shift + Return
+SurfaceInspector          S
+TexRotateClock            Shift + PageDown
+TexRotateCounter          Shift + PageUp
+TexScaleDown              Control + Down
+TexScaleLeft              Control + Left
+TexScaleRight             Control + Right
+TexScaleUp                Control + Up
+TexShiftDown              Shift + Down
+TexShiftLeft              Shift + Left
+TexShiftRight             Shift + Right
+TexShiftUp                Shift + Up
+TextureWindowScaledown    Alt + Insert
+TextureWindowScaleup      Alt + Delete
+ThickenPatch              Control + T
+TogTexLock                Shift + T
+TogTexRotLock             Shift + R
+ToggleCamera              Shift + Control + C
+ToggleClipper             X
+ToggleConsole             O
+ToggleCrosshairs          Shift + X
+ToggleCubicClip           Control + \
+ToggleGrid                0
+ToggleGrid                0
+ToggleRealtime            Control + R
+ToggleSizePaint           Q
+ToggleView                Shift + Control + V
+ToggleZ                   Shift + Control + Z
+UnSelectSelection         Escape
+Undo                      Control + Z
+UpFloor                   PageUp
+ViewEntityInfo            N
+ViewTextures              T
+ZZoomIn                   Control + Delete
+ZZoomOut                  Control + Insert
+ZoomIn                    Delete
+ZoomOut                   Insert

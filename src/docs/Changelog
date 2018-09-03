@@ -1,5 +1,7 @@
 2018-09-03 Dusan Jocic <dusanjocic@msn.com>
 	* Removed r_hdr console variable from the engine
+	* Readded OWBspc, OWMaster and OWRadiant
+	* Added library files for the OWRadiant
 	
 2018-09-02 Dusan Jocic <dusanjocic@msn.com>
 	* Updated renderer

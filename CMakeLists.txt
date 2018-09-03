@@ -121,7 +121,6 @@ set( GPURENDERER_SOURCES
   ${MOUNT_DIR}/GPURenderer/r_cmds.cpp
   ${MOUNT_DIR}/GPURenderer/r_curve.cpp
   ${MOUNT_DIR}/GPURenderer/r_dsa.cpp
-  ${MOUNT_DIR}/GPURenderer/r_extensions.cpp
   ${MOUNT_DIR}/GPURenderer/r_extramath.cpp
   ${MOUNT_DIR}/GPURenderer/r_fbo.cpp
   ${MOUNT_DIR}/GPURenderer/r_flares.cpp

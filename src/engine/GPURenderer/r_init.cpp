@@ -294,7 +294,6 @@ static void InitOpenGL( void )
         S32		temp;
         
         GLimp_Init();
-        GLimp_InitExtraExtensions();
         
         strcpy( renderer_buffer, glConfig.renderer_string );
         Q_strlwr( renderer_buffer );

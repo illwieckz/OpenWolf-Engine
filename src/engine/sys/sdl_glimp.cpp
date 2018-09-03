@@ -1186,6 +1186,7 @@ static void GLimp_OGL3InitExtensions( void )
         Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_vertex_program\n" );
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_vertex_program" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_vertex_buffer_object
     glRefConfig.vertexArrayObject = false;
@@ -1204,6 +1205,7 @@ static void GLimp_OGL3InitExtensions( void )
         Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_vertex_buffer_object\n" );
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_vertex_buffer_object" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_shader_objects
     if( GLEW_ARB_shader_objects )
@@ -1463,6 +1465,7 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression_bptc not found\n" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_depth_clamp
     glRefConfig.depthClamp = false;
@@ -1475,6 +1478,33 @@ static void GLimp_OGL3InitExtensions( void )
     else
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_depth_clamp not found\n" );
+    }
+    GL_CheckErrors();
+    
+    //GL_ARB_seamless_cube_map
+    glRefConfig.seamlessCubeMap = false;
+    if( GL_ARB_seamless_cube_map )
+    {
+        glRefConfig.depthClamp = true;
+        
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_seamless_cube_map\n" );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_seamless_cube_map not found\n" );
+    }
+    GL_CheckErrors();
+    
+    // Determine GLSL version
+    if( 1 )
+    {
+        UTF8 version[256];
+        
+        Q_strncpyz( version, ( UTF8* )glGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof( version ) );
+        
+        sscanf( version, "%d.%d", &glRefConfig.glslMajorVersion, &glRefConfig.glslMinorVersion );
+        
+        CL_RefPrintf( PRINT_ALL, "...using GLSL version %s\n", version );
     }
 }
 

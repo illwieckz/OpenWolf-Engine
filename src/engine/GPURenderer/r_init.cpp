@@ -111,7 +111,6 @@ cvar_t* r_ext_direct_state_access;
 
 cvar_t* r_cameraExposure;
 
-cvar_t*  r_hdr;
 cvar_t*  r_floatLightmap;
 cvar_t*  r_postProcess;
 
@@ -1313,7 +1312,6 @@ void R_Register( void )
     r_greyscale = Cvar_Get( "r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH );
     Cvar_CheckRange( r_greyscale, 0, 1, false );
     
-    r_hdr = Cvar_Get( "r_hdr", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_floatLightmap = Cvar_Get( "r_floatLightmap", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_postProcess = Cvar_Get( "r_postProcess", "1", CVAR_ARCHIVE );
     

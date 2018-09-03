@@ -1,3 +1,6 @@
+2018-09-03 Dusan Jocic <dusanjocic@msn.com>
+	* Removed r_hdr console variable from the engine
+	
 2018-09-02 Dusan Jocic <dusanjocic@msn.com>
 	* Updated renderer
 	* Various fixes and improvements

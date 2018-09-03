@@ -132,13 +132,13 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         case GL_RGBA8:
         case GL_RGB16F_ARB:
         case GL_RGBA16F_ARB:
-		case GL_RGB32F_ARB:
+        case GL_RGB32F_ARB:
         case GL_RGBA32F_ARB:
             fbo->colorFormat = format;
             pRenderBuffer = &fbo->colorBuffers[index];
             attachment = GL_COLOR_ATTACHMENT0_EXT + index;
             break;
-                        
+            
         case GL_DEPTH_COMPONENT:
         case GL_DEPTH_COMPONENT16_ARB:
         case GL_DEPTH_COMPONENT24_ARB:
@@ -147,7 +147,7 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
             pRenderBuffer = &fbo->depthBuffer;
             attachment = GL_DEPTH_ATTACHMENT_EXT;
             break;
-                                        
+            
         case GL_STENCIL_INDEX:
         case GL_STENCIL_INDEX1_EXT:
         case GL_STENCIL_INDEX4_EXT:
@@ -157,19 +157,19 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
             pRenderBuffer = &fbo->stencilBuffer;
             attachment = GL_STENCIL_ATTACHMENT_EXT;
             break;
-                                                            
+            
         case GL_DEPTH_STENCIL_EXT:
         case GL_DEPTH24_STENCIL8_EXT:
             fbo->packedDepthStencilFormat = format;
             pRenderBuffer = &fbo->packedDepthStencilBuffer;
             attachment = 0; // special for stencil and depth
             break;
-                                                                    
+            
         default:
             CL_RefPrintf( PRINT_WARNING, "FBO_CreateBuffer: invalid format %d\n", format );
             return;
     }
-                                                                    
+    
     absent = *pRenderBuffer == 0;
     if( absent )
         glGenRenderbuffersEXT( 1, pRenderBuffer );
@@ -261,7 +261,7 @@ void idRenderSystemLocal::FBOInit( void )
     R_IssuePendingRenderCommands();
     
     hdrFormat = GL_RGBA8;
-    if( r_hdr->integer && glRefConfig.framebufferObject && glRefConfig.textureFloat )
+    if( r_truehdr->integer && glRefConfig.framebufferObject && glRefConfig.textureFloat )
         hdrFormat = GL_RGBA16F_ARB;
         
     if( glRefConfig.framebufferMultisample )

@@ -1188,10 +1188,13 @@ static void GLimp_OGL3InitExtensions( void )
     }
     
     // GL_ARB_vertex_buffer_object
-    if( GLEW_ARB_vertex_buffer_object )
+    glRefConfig.vertexArrayObject = false;
+    if( GL_ARB_vertex_buffer_object )
     {
         good = true;
         
+        // force VAO, core context requires it
+        glRefConfig.vertexArrayObject = true;
         CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_vertex_buffer_object\n" );
     }
     else
@@ -1202,29 +1205,6 @@ static void GLimp_OGL3InitExtensions( void )
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_vertex_buffer_object" );
     }
     
-    // GL_ARB_occlusion_query
-#if 0
-    glConfig2.occlusionQueryAvailable = false;
-    glConfig2.occlusionQueryBits = 0;
-    if( GLEW_ARB_occlusion_query )
-    {
-        if( r_ext_occlusion_query->value )
-        {
-            glConfig2.occlusionQueryAvailable = true;
-            glGetQueryivARB( GL_SAMPLES_PASSED, GL_QUERY_COUNTER_BITS, &glConfig2.occlusionQueryBits );
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_occlusion_query\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_occlusion_query\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_occlusion_query not found\n" );
-    }
-    GL_CheckErrors();
-#endif
     // GL_ARB_shader_objects
     if( GLEW_ARB_shader_objects )
     {
@@ -1247,27 +1227,8 @@ static void GLimp_OGL3InitExtensions( void )
         good = true;
         
         GL_CheckErrors();
-        //glGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &glConfig2.maxVertexUniforms );
-        //GL_CheckErrors();
-        //glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &glConfig.maxVaryingFloats); GL_CheckErrors();
-        //glGetIntegerv( GL_MAX_VERTEX_ATTRIBS_ARB, &glConfig2.maxVertexAttribs );
-        //GL_CheckErrors();
         
         reservedComponents = 16 * 10; // approximation how many uniforms we have besides the bone matrices
-        
-        /*
-        if(glConfig.driverType == GLDRV_MESA)
-        {
-        	// HACK
-        	// restrict to number of vertex uniforms to 512 because of:
-        	// xreal.x86_64: nv50_program.c:4181: nv50_program_validate_data: Assertion `p->param_nr <= 512' failed
-        
-        	glConfig2.maxVertexUniforms = Q_bound(0, glConfig2.maxVertexUniforms, 512);
-        }
-        */
-        
-        //glConfig2.maxVertexSkinningBones = ( S32 ) Q_bound( 0.0, ( Q_max( glConfig2.maxVertexUniforms - reservedComponents, 0 ) / 16 ), MAX_BONES );
-        //glConfig2.vboVertexSkinningAvailable = ( bool )( r_vboVertexSkinning->integer && ( ( glConfig2.maxVertexSkinningBones >= 12 ) ? true : false ) );
         
         CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_vertex_shader\n" );
     }

@@ -39,12 +39,13 @@ set( CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "" ) # Need this to get rid of -rdynami
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
 # Options
-option( BUILD_CLIENT                   "Build OpenWolf client"                                 ON )
-#option( BUILD_SERVER                   "Build OpenWolfded server"                              ON )
-#option( BUILD_AUTOUPDATE_SERVER        "Build OpenWolf AutoUpdate server"                      ON )
+option( BUILD_CLIENT                   "Build Tremulous client"                                ON )
+option( BUILD_SERVER                   "Build Tremulous dedicated server"                      OFF )
+option( BUILD_AUTOUPDATE_SERVER        "Build Tremulous AutoUpdate server"                     OFF ) #Dushan - this will be changed soon
 option( BUILD_GAME                     "Build game logic shared libraries"                     ON )
-option( USE_CURSES                     "Use the curses console"                                ON ) 
-option( NO_UNTRUSTED_PLUGINS           "Don't load native plugins from the user dir"           ON )
+option( BUILD_MASTER_SERVER            "Build master server"                                   OFF )
+option( BUILD_OWBSPC                   "Build WORLD-to-AAS compiler"                           OFF )
+option( BUILD_OWRADIANT                "Build platform level editor"                           OFF )
 
 # Package info
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenWolf client" )
@@ -582,10 +583,6 @@ elseif( UNIX )
   endif()
 endif()
 
-if( NO_UNTRUSTED_PLUGINS )
-  add_definitions( -DNO_UNTRUSTED_PLUGINS )
-endif()
-
 ###############################
 # Build Game/Cgame/Ui DLL/.so #
 ###############################
@@ -742,18 +739,16 @@ endif( WIN32 )
     link_directories( ${LIB_DIR}/bullet-2.80-rev2531/libs/Linux64/ )
   endif() 
   
-  if( USE_CURSES )
-    set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
-    # Determine platform
-    if( WIN32 )
-        find_package( PDCurses REQUIRED )
-    elseif( UNIX )
-        find_package( Curses REQUIRED )
-    endif()
-    set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS USE_CURSES )
-    TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${CURSES_INCLUDE_DIR} )
-    target_link_libraries( client ${CURSES_LIBRARIES} )
-  endif()
+set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
+# Determine platform
+if( WIN32 )
+	find_package( PDCurses REQUIRED )
+elseif( UNIX )
+	find_package( Curses REQUIRED )
+endif()
+set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS USE_CURSES )
+TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${CURSES_INCLUDE_DIR} )
+target_link_libraries( client ${CURSES_LIBRARIES} )
   
 if ( WIN32)
   target_link_libraries( client ${OS_LIBRARIES} )
@@ -801,7 +796,6 @@ if( BUILD_SERVER )
 	ADD_PRECOMPILED_HEADER( server "${MOUNT_DIR}/null/null_precompiled.h" "${MOUNT_DIR}/null/null_precompiled.cpp" )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
 
-  if( USE_CURSES )
     set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
     # Determine platform
     if( WIN32 )
@@ -812,7 +806,6 @@ if( BUILD_SERVER )
     set_property( TARGET server APPEND PROPERTY COMPILE_DEFINITIONS USE_CURSES )
     TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${CURSES_INCLUDE_DIR} )
     target_link_libraries( server ${CURSES_LIBRARIES} )
-  endif()
   
   find_package( MySQL REQUIRED )
   set_property( TARGET server APPEND PROPERTY COMPILE_DEFINITIONS ET_MYSQL )
@@ -853,7 +846,6 @@ if( BUILD_AUTOUPDATE_SERVER )
     target_link_libraries( autoupdateserver ${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
 
-  if( USE_CURSES )
     set( CURSES_NEED_NCURSES 1 ) # Tells FindCurses that ncurses is required
     # Determine platform
     if( WIN32 )
@@ -864,7 +856,6 @@ if( BUILD_AUTOUPDATE_SERVER )
     set_property( TARGET autoupdateserver APPEND PROPERTY COMPILE_DEFINITIONS USE_CURSES )
     TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${CURSES_INCLUDE_DIR} )
     target_link_libraries( autoupdateserver ${CURSES_LIBRARIES} )
-  endif()
 
   find_package( MySQL REQUIRED )
   set_property( TARGET autoupdateserver APPEND PROPERTY COMPILE_DEFINITIONS ET_MYSQL )

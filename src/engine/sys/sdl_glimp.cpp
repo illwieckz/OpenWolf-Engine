@@ -1356,20 +1356,19 @@ static void GLimp_OGL3InitExtensions( void )
     
     // GL_EXT_framebuffer_object
     glRefConfig.framebufferObject = false;
+    glRefConfig.framebufferBlit = false;
+    glRefConfig.framebufferMultisample = false;
     if( GLEW_EXT_framebuffer_object )
     {
-        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE_EXT, &glRefConfig.maxRenderbufferSize );
-        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS_EXT, &glRefConfig.maxColorAttachments );
+        glRefConfig.framebufferObject = !!r_ext_framebuffer_object->integer;;
+        glRefConfig.framebufferBlit = true;
+        glRefConfig.framebufferMultisample = true;
         
-        if( r_ext_framebuffer_object->value )
-        {
-            glRefConfig.framebufferObject = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_object\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_framebuffer_object\n" );
-        }
+        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE, &glRefConfig.maxRenderbufferSize );
+        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, &glRefConfig.maxColorAttachments );
+        
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_object\n" );
+        
     }
     else
     {
@@ -1416,6 +1415,67 @@ static void GLimp_OGL3InitExtensions( void )
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_direct_state_access not found\n" );
     }
     GL_CheckErrors();
+    
+    // GL_ARB_occlusion_query
+    glRefConfig.occlusionQuery = false;
+    if( GLEW_ARB_occlusion_query )
+    {
+        glRefConfig.occlusionQuery = true;
+        
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_occlusion_query\n" );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_occlusion_query not found\n" );
+    }
+    GL_CheckErrors();
+    
+    // GL_ARB_texture_compression_rgtc
+    if( GLEW_ARB_texture_compression_rgtc )
+    {
+        bool useRgtc = r_ext_compressed_textures->integer >= 1;
+        
+        if( useRgtc )
+        {
+            glRefConfig.textureCompression |= TCR_RGTC;
+        }
+        
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_compression_rgtc\n" );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression_rgtc not found\n" );
+    }
+    
+    glRefConfig.swizzleNormalmap = r_ext_compressed_textures->integer && !( glRefConfig.textureCompression & TCR_RGTC );
+    
+    // GL_ARB_texture_compression_bptc
+    if( GLEW_ARB_texture_compression_bptc )
+    {
+        bool useBptc = r_ext_compressed_textures->integer >= 2;
+        
+        if( useBptc )
+            glRefConfig.textureCompression |= TCR_BPTC;
+            
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_compression_bptc\n" );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression_bptc not found\n" );
+    }
+    
+    // GL_ARB_depth_clamp
+    glRefConfig.depthClamp = false;
+    if( GLEW_ARB_depth_clamp )
+    {
+        glRefConfig.depthClamp = true;
+        
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_depth_clamp\n" );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_depth_clamp not found\n" );
+    }
 }
 
 #define R_MODE_FALLBACK 3 // 640 * 480

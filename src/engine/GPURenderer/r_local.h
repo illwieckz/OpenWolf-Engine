@@ -1583,14 +1583,14 @@ typedef struct
     S32 openglMajorVersion;
     S32 openglMinorVersion;
     
-    bool    intelGraphics;
+    bool intelGraphics;
     
-    bool	occlusionQuery;
+    bool occlusionQuery;
     
     S32 glslMajorVersion;
     S32 glslMinorVersion;
     
-    memInfo_t   memInfo;
+    memInfo_t memInfo;
     
     bool framebufferObject;
     S32 maxRenderbufferSize;

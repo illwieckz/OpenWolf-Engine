@@ -1,5 +1,6 @@
 2018-09-04 Dusan Jocic <dusanjocic@msn.com>
 	* Initialize GL_ARB_vertex_buffer_object
+	* Added initialization of more OpenGL extensions
 
 2018-09-03 Dusan Jocic <dusanjocic@msn.com>
 	* Removed r_hdr console variable from the engine

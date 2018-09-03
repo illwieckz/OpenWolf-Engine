@@ -47,27 +47,6 @@ void GLimp_InitExtraExtensions()
     glRefConfig.intelGraphics = false;
     if( strstr( ( UTF8* )glGetString( GL_RENDERER ), "Intel" ) ) glRefConfig.intelGraphics = true;
     
-    // OpenGL 3.0 - GL_ARB_framebuffer_object
-    extension = "GL_ARB_framebuffer_object";
-    glRefConfig.framebufferObject = false;
-    glRefConfig.framebufferBlit = false;
-    glRefConfig.framebufferMultisample = false;
-    if( q_gl_version_at_least_3_0 )
-    {
-        glRefConfig.framebufferObject = !!r_ext_framebuffer_object->integer;
-        glRefConfig.framebufferBlit = true;
-        glRefConfig.framebufferMultisample = true;
-        
-        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE, &glRefConfig.maxRenderbufferSize );
-        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, &glRefConfig.maxColorAttachments );
-        
-        CL_RefPrintf( PRINT_ALL, result[glRefConfig.framebufferObject], extension );
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, result[2], extension );
-    }
-    
     // OpenGL 3.0 - GL_ARB_vertex_array_object
     extension = "GL_ARB_vertex_array_object";
     glRefConfig.vertexArrayObject = false;

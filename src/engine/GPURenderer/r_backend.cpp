@@ -639,7 +639,7 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     
     if( inQuery )
     {
-        glEndQuery( GL_SAMPLES_PASSED );
+        glEndQueryARB( GL_SAMPLES_PASSED );
     }
     
     if( glRefConfig.framebufferObject )
@@ -1216,14 +1216,14 @@ const void*	RB_DrawSurfs( const void* data )
             if( glRefConfig.occlusionQuery )
             {
                 tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = true;
-                glBeginQuery( GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex] );
+                glBeginQueryARB( GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex] );
             }
             
             RB_DrawSun( 0.3, tr.sunFlareShader );
             
             if( glRefConfig.occlusionQuery )
             {
-                glEndQuery( GL_SAMPLES_PASSED );
+                glEndQueryARB( GL_SAMPLES_PASSED );
             }
             
             FBO_Bind( oldFbo );

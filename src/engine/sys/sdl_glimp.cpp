@@ -1568,28 +1568,7 @@ void GLimp_Init( void )
     
     //Sys_SetEnv("SDL_VIDEO_CENTERED", r_centerWindow->integer ? "1" : "");
     
-    //Sys_GLimpInit();
-#if 0 //defined(WIN32)
-    
-    if( !SDL_VIDEODRIVER_externallySet )
-    {
-        // It's a little bit weird having in_mouse control the
-        // video driver, but from ioq3's point of view they're
-        // virtually the same except for the mouse input anyway
-        if( Cvar_VariableIntegerValue( "in_mouse" ) == -1 )
-        {
-            // Use the windib SDL backend, which is closest to
-            // the behaviour of idq3 with in_mouse set to -1
-            _putenv( "SDL_VIDEODRIVER=windib" );
-        }
-        else
-        {
-            // Use the DirectX SDL backend
-            _putenv( "SDL_VIDEODRIVER=directx" );
-        }
-    }
-    
-#endif
+    Sys_GLimpInit();
     
     // Create the window and set up the context
     if( GLimp_StartDriverAndSetMode( r_mode->integer, r_fullscreen->integer, false ) )
@@ -1599,17 +1578,6 @@ void GLimp_Init( void )
     
     // Try again, this time in a platform specific "safe mode"
     Sys_GLimpSafeInit();
-    
-#if 0 //defined(WIN32)
-    
-    if( !SDL_VIDEODRIVER_externallySet )
-    {
-        // Here, we want to let SDL decide what do to unless
-        // explicitly requested otherwise
-        _putenv( "SDL_VIDEODRIVER=" );
-    }
-    
-#endif
     
     if( GLimp_StartDriverAndSetMode( r_mode->integer, r_fullscreen->integer, false ) )
     {

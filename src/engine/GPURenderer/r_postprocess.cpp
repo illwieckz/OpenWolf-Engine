@@ -289,7 +289,7 @@ static bool RB_UpdateSunFlareVis( void )
         for( iter = 0 ; ; ++iter )
         {
             S32 available = 0;
-            glGetQueryObjectiv( tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT_AVAILABLE, &available );
+            glGetQueryObjectivARB( tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT_AVAILABLE, &available );
             if( available )
                 break;
         }
@@ -297,7 +297,7 @@ static bool RB_UpdateSunFlareVis( void )
         CL_RefPrintf( PRINT_DEVELOPER, "Waited %d iterations\n", iter );
     }
     
-    glGetQueryObjectuiv( tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT, &sampleCount );
+    glGetQueryObjectuivARB( tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT, &sampleCount );
     return sampleCount > 0;
 }
 

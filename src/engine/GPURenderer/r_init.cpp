@@ -1511,7 +1511,7 @@ void R_InitQueries( void )
         return;
         
     if( r_drawSunRays->integer )
-        glGenQueries( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
+        glGenQueriesARB( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
 }
 
 void R_ShutDownQueries( void )
@@ -1520,7 +1520,7 @@ void R_ShutDownQueries( void )
         return;
         
     if( r_drawSunRays->integer )
-        glDeleteQueries( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
+        glDeleteQueriesARB( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
 }
 
 /*

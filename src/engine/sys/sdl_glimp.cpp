@@ -544,7 +544,7 @@ static void GLimp_DetectAvailableModes( void )
 
 static void GLimp_InitOpenGL3xContext()
 {
-#if defined( WIN32 ) || defined( __LINUX__ )
+#if defined( _WIN32 ) || defined( __LINUX__ )
     S32        retVal;
     StringEntry success[] = { "failed", "success" };
 #endif
@@ -558,9 +558,7 @@ static void GLimp_InitOpenGL3xContext()
     // Requesting a version below that will just give us the same GL version
     // again, so just keep the context, but pretend to the engine that we
     // have the lower version.
-    if( r_glMajorVersion->integer && r_glMinorVersion->integer &&
-            100 * r_glMajorVersion->integer + r_glMinorVersion->integer <=
-            100 * GLmajor + GLminor )
+    if( r_glMajorVersion->integer && r_glMinorVersion->integer && 100 * r_glMajorVersion->integer + r_glMinorVersion->integer <= 100 * GLmajor + GLminor )
     {
         GLmajor = r_glMajorVersion->integer;
         GLminor = r_glMinorVersion->integer;
@@ -569,7 +567,7 @@ static void GLimp_InitOpenGL3xContext()
     // Check if we have to create a core profile.
     // Core profiles are not necessarily compatible, so we have
     // to request the desired version.
-#if defined( WIN32 )
+#if defined( _WIN32 )
     
     if( WGLEW_ARB_create_context_profile && ( r_glCoreProfile->integer || r_glDebugProfile->integer ) )
     {
@@ -644,14 +642,12 @@ static void GLimp_InitOpenGL3xContext()
         GLXFBConfig* FBConfig;
     
         // get FBConfig XID
-        memset( attribs, 0, sizeof( attribs ) );
+        ::memset( attribs, 0, sizeof( attribs ) );
         numAttribs = 0;
     
         attribs[ numAttribs++ ] = GLX_FBCONFIG_ID;
-        glXQueryContext( opengl_context.dpy, opengl_context.ctx,
-                         GLX_FBCONFIG_ID, &attribs[ numAttribs++ ] );
-        FBConfig = glXChooseFBConfig( opengl_context.dpy, 0,
-                                      attribs, &numAttribs );
+        glXQueryContext( opengl_context.dpy, opengl_context.ctx, GLX_FBCONFIG_ID, &attribs[ numAttribs++ ] );
+        FBConfig = glXChooseFBConfig( opengl_context.dpy, 0, attribs, &numAttribs );
     
         if( numAttribs == 0 )
         {
@@ -707,8 +703,7 @@ static void GLimp_InitOpenGL3xContext()
     
         CL_RefPrintf( PRINT_ALL, "...initializing new OpenGL context " );
     
-        opengl_context.ctx = glXCreateContextAttribsARB( opengl_context.dpy,
-                             FBConfig[ 0 ], NULL, GL_TRUE, attribs );
+        opengl_context.ctx = glXCreateContextAttribsARB( opengl_context.dpy, FBConfig[ 0 ], NULL, GL_TRUE, attribs );
     
         if( glXMakeCurrent( opengl_context.dpy, opengl_context.drawable, opengl_context.ctx ) )
         {
@@ -1079,19 +1074,19 @@ static bool GLimp_StartDriverAndSetMode( S32 mode, S32 fullscreen, S32 noborder 
 
 /*
 ===============
-GLimp_XreaLInitExtensions
+GLimp_OGL3InitExtensions
 ===============
 */
 static void GLimp_OGL3InitExtensions( void )
 {
-    bool        	good;
-    UTF8            missingExts[4096];
+    bool good;
+    UTF8 missingExts[4096];
     
     CL_RefPrintf( PRINT_ALL, "Initializing OpenGL extensions\n" );
     
     // GL_EXT_texture_env_add
     glConfig.textureEnvAddAvailable = false;
-    if( GLEW_EXT_texture_env_add )
+    if( glewGetExtension( "GL_EXT_texture_env_add" ) )
     {
         if( r_ext_texture_env_add->integer )
         {
@@ -1108,11 +1103,12 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_multitexture
     if( glConfig.driverType != GLDRV_OPENGL3 )
     {
-        if( GLEW_ARB_multitexture )
+        if( glewGetExtension( "GL_ARB_multitexture" ) )
         {
             glGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glConfig.numTextureUnits );
             
@@ -1138,9 +1134,10 @@ static void GLimp_OGL3InitExtensions( void )
             Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_multitexture" );
         }
     }
+    GL_CheckErrors();
     
     // GL_ARB_depth_texture
-    if( GLEW_ARB_depth_texture )
+    if( glewGetExtension( "GL_ARB_depth_texture" ) )
     {
         good = true;
         
@@ -1153,10 +1150,10 @@ static void GLimp_OGL3InitExtensions( void )
         Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_depth_texture\n" );
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_depth_texture" );
     }
-    
+    GL_CheckErrors();
     
     // GL_ARB_texture_cube_map
-    if( GLEW_ARB_texture_cube_map )
+    if( glewGetExtension( "GL_ARB_texture_cube_map" ) )
     {
         good = true;
         
@@ -1173,7 +1170,7 @@ static void GLimp_OGL3InitExtensions( void )
     GL_CheckErrors();
     
     // GL_ARB_vertex_program
-    if( GLEW_ARB_vertex_program )
+    if( glewGetExtension( "GL_ARB_vertex_program" ) )
     {
         good = true;
         
@@ -1188,27 +1185,28 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_ARB_vertex_buffer_object
+    // GL_ARB_vertex_array_object
     glRefConfig.vertexArrayObject = false;
-    if( GL_ARB_vertex_buffer_object )
+    if( glewGetExtension( "GL_ARB_vertex_array_object" ) )
     {
-        good = true;
-        
-        // force VAO, core context requires it
-        glRefConfig.vertexArrayObject = true;
-        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_vertex_buffer_object\n" );
+        if( r_arb_vertex_array_object->integer )
+        {
+            glRefConfig.vertexArrayObject = true;
+            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_vertex_array_object\n" );
+        }
+        else
+        {
+            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_vertex_array_object\n" );
+        }
     }
     else
     {
-        good = false;
-        
-        Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_vertex_buffer_object\n" );
-        Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_vertex_buffer_object" );
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_vertex_array_object not found\n" );
     }
     GL_CheckErrors();
     
     // GL_ARB_shader_objects
-    if( GLEW_ARB_shader_objects )
+    if( glewGetExtension( "GL_ARB_shader_objects" ) )
     {
         good = true;
         
@@ -1221,9 +1219,10 @@ static void GLimp_OGL3InitExtensions( void )
         Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_shader_objects\n" );
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_shader_objects" );
     }
+    GL_CheckErrors();
     
     // GL_ARB_vertex_shader
-    if( GLEW_ARB_vertex_shader )
+    if( glewGetExtension( "GL_ARB_vertex_shader" ) )
     {
         S32	reservedComponents;
         good = true;
@@ -1244,7 +1243,7 @@ static void GLimp_OGL3InitExtensions( void )
     GL_CheckErrors();
     
     // GL_ARB_fragment_shader
-    if( GLEW_ARB_fragment_shader )
+    if( glewGetExtension( "GL_ARB_fragment_shader" ) )
     {
         good = true;
         
@@ -1257,27 +1256,11 @@ static void GLimp_OGL3InitExtensions( void )
         Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_fragment_shader\n" );
         Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_fragment_shader" );
     }
-    
-    // GL_ARB_shading_language_100
-    if( GLEW_ARB_shading_language_100 )
-    {
-        good = true;
-        
-        //Q_strncpyz( glConfig2.shadingLanguageVersion, ( UTF8* )glGetString( GL_SHADING_LANGUAGE_VERSION_ARB ), sizeof( glConfig2.shadingLanguageVersion ) );
-        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_shading_language_100\n" );
-    }
-    else
-    {
-        good = false;
-        
-        Q_strcat( missingExts, sizeof( missingExts ), "GL_ARB_shading_language_100\n" );
-        Com_Error( ERR_FATAL, MSG_ERR_OLD_VIDEO_DRIVER "\nYour GL driver is missing support for: GL_ARB_shading_language_100" );
-    }
     GL_CheckErrors();
     
     // GL_ARB_texture_float
     glRefConfig.textureFloat = false;
-    if( GLEW_ARB_texture_float )
+    if( glewGetExtension( "GL_ARB_texture_float" ) )
     {
         if( r_ext_texture_float->integer )
         {
@@ -1295,28 +1278,52 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_ARB_texture_compression
-    glConfig.textureCompression = TC_NONE;
-    if( GLEW_ARB_texture_compression )
+    // GL_ATI_meminfo
+    if( glewGetExtension( "GL_ATI_meminfo" ) )
     {
-        if( r_ext_compressed_textures->integer )
+        if( glRefConfig.memInfo == MI_NONE )
         {
-            glConfig.textureCompression = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_compression\n" );
+            glRefConfig.memInfo = MI_ATI;
+            
+            GLint vbo_mem_kb = 0, texture_mem_kb = 0, renderbuffer_mem_kb = 0;
+            glGetIntegerv( GL_VBO_FREE_MEMORY_ATI, &vbo_mem_kb );
+            glGetIntegerv( GL_TEXTURE_FREE_MEMORY_ATI, &texture_mem_kb );
+            glGetIntegerv( GL_RENDERBUFFER_FREE_MEMORY_ATI, &renderbuffer_mem_kb );
+            CL_RefPrintf( PRINT_ALL, "GL_ATI_meminfo:\n\tVBO free memory: %u\n\tTexture free memory: %u\n\tRenderbuffer free memory: %u\n",
+                          vbo_mem_kb / 1024, texture_mem_kb / 1024, renderbuffer_mem_kb / 1024 );
+                          
+            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ATI_meminfo\n" );
         }
         else
         {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_texture_compression\n" );
+            CL_RefPrintf( PRINT_ALL, "...GL_ATI_meminfo not found\n" );
         }
     }
     else
     {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression not found\n" );
+        CL_RefPrintf( PRINT_ALL, "...GL_ATI_meminfo not found\n" );
+    }
+    GL_CheckErrors();
+    
+    if( glewGetExtension( "GL_NVX_gpu_memory_info" ) )
+    {
+        GLint total_mem_kb = 0, cur_avail_mem_kb = 0;
+        glGetIntegerv( GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &total_mem_kb );
+        glGetIntegerv( GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb );
+        
+        glRefConfig.memInfo = MI_NVX;
+        CL_RefPrintf( PRINT_ALL, "GL_NVX_gpu_memory_info:\n\tNumber of megabytes of video memory: %u\n\tNumber of megabytes of video memory available to the renderer: %u\n",
+                      total_mem_kb / 1024, cur_avail_mem_kb / 1024 );
+    }
+    else
+    {
+        CL_RefPrintf( PRINT_ALL, "...GL_NVX_gpu_memory_info not found\n" );
     }
     GL_CheckErrors();
     
     // GL_EXT_texture_compression_s3tc
-    if( GLEW_EXT_texture_compression_s3tc )
+    glRefConfig.textureCompression = TCR_NONE;
+    if( glewGetExtension( "GL_EXT_texture_compression_s3tc" ) )
     {
         if( r_ext_compressed_textures->integer )
         {
@@ -1336,7 +1343,7 @@ static void GLimp_OGL3InitExtensions( void )
     
     // GL_EXT_texture_filter_anisotropic
     glConfig.textureFilterAnisotropic = false;
-    if( GLEW_EXT_texture_filter_anisotropic )
+    if( glewGetExtension( "GL_EXT_texture_filter_anisotropic" ) )
     {
         glGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig.maxAnisotropy );
         
@@ -1356,11 +1363,11 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    // GL_EXT_framebuffer_object
+    // GL_ARB_framebuffer_object
     glRefConfig.framebufferObject = false;
     glRefConfig.framebufferBlit = false;
     glRefConfig.framebufferMultisample = false;
-    if( GLEW_EXT_framebuffer_object )
+    if( glewGetExtension( "GL_ARB_framebuffer_object" ) )
     {
         glRefConfig.framebufferObject = !!r_ext_framebuffer_object->integer;;
         glRefConfig.framebufferBlit = true;
@@ -1369,61 +1376,40 @@ static void GLimp_OGL3InitExtensions( void )
         glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE, &glRefConfig.maxRenderbufferSize );
         glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, &glRefConfig.maxColorAttachments );
         
-        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_object\n" );
+        CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_framebuffer_object\n" );
         
     }
     else
     {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_framebuffer_object not found\n" );
-    }
-    GL_CheckErrors();
-    
-    // GL_EXT_framebuffer_blit
-    glRefConfig.framebufferBlit = false;
-    if( GLEW_EXT_framebuffer_blit )
-    {
-        if( r_ext_framebuffer_blit->integer )
-        {
-            glRefConfig.framebufferBlit = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_framebuffer_blit\n" );
-        }
-        else
-        {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_framebuffer_blit\n" );
-        }
-    }
-    else
-    {
-        CL_RefPrintf( PRINT_ALL, "...GL_EXT_framebuffer_blit not found\n" );
+        CL_RefPrintf( PRINT_ALL, "...GL_ARB_framebuffer_object not found\n" );
     }
     GL_CheckErrors();
     
     // GL_EXT_direct_state_access
     glRefConfig.directStateAccess = false;
-    if( GLEW_ARB_direct_state_access )
+    if( glewGetExtension( "GL_EXT_direct_state_access" ) )
     {
         if( r_ext_direct_state_access->integer )
         {
-            glRefConfig.directStateAccess = true;
-            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_direct_state_access\n" );
+            glRefConfig.directStateAccess = !!r_ext_direct_state_access->integer;
+            CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_EXT_direct_state_access\n" );
         }
         else
         {
-            CL_RefPrintf( PRINT_ALL, "...ignoring GL_ARB_direct_state_access\n" );
+            CL_RefPrintf( PRINT_ALL, "...ignoring GL_EXT_direct_state_access\n" );
         }
     }
     else
     {
-        CL_RefPrintf( PRINT_ALL, "...GL_ARB_direct_state_access not found\n" );
+        CL_RefPrintf( PRINT_ALL, "...GL_EXT_direct_state_access not found\n" );
     }
     GL_CheckErrors();
     
     // GL_ARB_occlusion_query
     glRefConfig.occlusionQuery = false;
-    if( GLEW_ARB_occlusion_query )
+    if( glewGetExtension( "GL_ARB_occlusion_query" ) )
     {
         glRefConfig.occlusionQuery = true;
-        
         CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_occlusion_query\n" );
     }
     else
@@ -1433,7 +1419,7 @@ static void GLimp_OGL3InitExtensions( void )
     GL_CheckErrors();
     
     // GL_ARB_texture_compression_rgtc
-    if( GLEW_ARB_texture_compression_rgtc )
+    if( glewGetExtension( "GL_ARB_texture_compression_rgtc" ) )
     {
         bool useRgtc = r_ext_compressed_textures->integer >= 1;
         
@@ -1448,11 +1434,12 @@ static void GLimp_OGL3InitExtensions( void )
     {
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_texture_compression_rgtc not found\n" );
     }
+    GL_CheckErrors();
     
     glRefConfig.swizzleNormalmap = r_ext_compressed_textures->integer && !( glRefConfig.textureCompression & TCR_RGTC );
     
     // GL_ARB_texture_compression_bptc
-    if( GLEW_ARB_texture_compression_bptc )
+    if( glewGetExtension( "GL_ARB_texture_compression_bptc" ) )
     {
         bool useBptc = r_ext_compressed_textures->integer >= 2;
         
@@ -1469,7 +1456,7 @@ static void GLimp_OGL3InitExtensions( void )
     
     // GL_ARB_depth_clamp
     glRefConfig.depthClamp = false;
-    if( GLEW_ARB_depth_clamp )
+    if( glewGetExtension( "GL_ARB_depth_clamp" ) )
     {
         glRefConfig.depthClamp = true;
         
@@ -1483,7 +1470,7 @@ static void GLimp_OGL3InitExtensions( void )
     
     //GL_ARB_seamless_cube_map
     glRefConfig.seamlessCubeMap = false;
-    if( GL_ARB_seamless_cube_map )
+    if( glewGetExtension( "GL_ARB_seamless_cube_map" ) )
     {
         glRefConfig.depthClamp = true;
         

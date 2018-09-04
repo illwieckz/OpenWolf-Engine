@@ -2369,7 +2369,7 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
         defs |= LIGHTDEF_USE_LIGHT_VERTEX;
     }
     
-    if( r_deluxeMapping->integer && tr.worldDeluxeMapping && lightmap )
+    if( r_deluxeMapping->integer && tr.worldDeluxeMapping && lightmap && shader.lightmapIndex >= 0 )
     {
         //CL_RefPrintf(PRINT_ALL, ", deluxemap");
         diffuse->bundle[TB_DELUXEMAP] = lightmap->bundle[0];
@@ -2582,6 +2582,7 @@ static S32 CollapseStagesToGLSL( void )
             lightmap = NULL;
             
             // we have a diffuse map, find matching normal, specular, and lightmap
+            bool usedLightmap = false;
             for( j = i + 1; j < MAX_SHADER_STAGES; j++ )
             {
                 shaderStage_t* pStage2 = &stages[j];
@@ -2616,7 +2617,16 @@ static S32 CollapseStagesToGLSL( void )
                     case ST_COLORMAP:
                         if( pStage2->bundle[0].tcGen == TCGEN_LIGHTMAP )
                         {
-                            lightmap = pStage2;
+                            int blendBits = pStage->stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+                            
+                            // Only add lightmap to blendfunc filter stage if it's the first time lightmap is used
+                            // otherwise it will cause the shader to be darkened by the lightmap multiple times.
+                            if( !usedLightmap || ( blendBits != ( GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO )
+                                                   && blendBits != ( GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR ) ) )
+                            {
+                                lightmap = pStage2;
+                                usedLightmap = true;
+                            }
                         }
                         break;
                         
@@ -2950,6 +2960,52 @@ static shader_t* GeneratePermanentShader( void )
     
     return newShader;
 }
+
+/*
+====================
+FindLightingStages
+Find proper stage for dlight pass
+====================
+*/
+#define GLS_BLEND_BITS (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)
+
+static void FindLightingStages( void )
+{
+    S32 i;
+    
+    shader.lightingStage = -1;
+    if( shader.isSky || ( shader.surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) || shader.sort > SS_OPAQUE )
+    {
+        return;
+    }
+    
+    for( i = 0; i < shader.numUnfoggedPasses; i++ )
+    {
+        if( !stages[i].bundle[0].isLightmap )
+        {
+            if( stages[i].bundle[0].tcGen != TCGEN_TEXTURE )
+            {
+                continue;
+            }
+            
+            if( ( stages[i].stateBits & GLS_BLEND_BITS ) == ( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE ) )
+            {
+                continue;
+            }
+            
+            if( stages[i].rgbGen == CGEN_IDENTITY && ( stages[i].stateBits & GLS_BLEND_BITS ) == ( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO ) )
+            {
+                if( shader.lightingStage >= 0 )
+                {
+                    continue;
+                }
+            }
+            
+            shader.lightingStage = i;
+        }
+    }
+}
+#undef GLS_BLEND_BITS
 
 /*
 =================
@@ -3299,6 +3355,8 @@ static shader_t* FinishShader( void )
     // compute number of passes
     //
     shader.numUnfoggedPasses = stage;
+    
+    FindLightingStages();
     
     // fogonly shaders don't have any normal passes
     if( stage == 0 && !shader.isSky )
@@ -3919,6 +3977,15 @@ void	R_ShaderList_f( void )
     CL_RefPrintf( PRINT_ALL, "------------------\n" );
 }
 
+static UTF8* stradd( UTF8* dst, StringEntry src )
+{
+    UTF8 c;
+    while( ( c = *src++ ) != '\0' )
+        * dst++ = c;
+    *dst = '\0';
+    return dst;
+}
+
 /*
 ====================
 ScanAndLoadShaderFiles
@@ -4025,20 +4092,19 @@ static void ScanAndLoadShaderFiles( void )
     }
     
     // build single large buffer
-    s_shaderText = ( UTF8* )Hunk_Alloc( sum + numShaderFiles * 2, h_low );
+    s_shaderText = ( UTF8* )Hunk_Alloc( sum + numShaderFiles * 2 + 1, h_low );
     s_shaderText[ 0 ] = '\0';
     textEnd = s_shaderText;
     
     // free in reverse order, so the temp files are all dumped
     for( i = numShaderFiles - 1; i >= 0 ; i-- )
     {
-        if( !buffers[i] )
-            continue;
-            
-        strcat( textEnd, buffers[i] );
-        strcat( textEnd, "\n" );
-        textEnd += strlen( textEnd );
-        FS_FreeFile( buffers[i] );
+        if( buffers[i] )
+        {
+            textEnd = stradd( textEnd, buffers[i] );
+            textEnd = stradd( textEnd, "\n" );
+            FS_FreeFile( buffers[i] );
+        }
     }
     
     COM_Compress( s_shaderText );
@@ -4075,8 +4141,6 @@ static void ScanAndLoadShaderFiles( void )
         hashMem = ( ( UTF8* ) hashMem ) + ( ( shaderTextHashTableSizes[i] + 1 ) * sizeof( UTF8* ) );
     }
     
-    ::memset( shaderTextHashTableSizes, 0, sizeof( shaderTextHashTableSizes ) );
-    
     p = s_shaderText;
     // look for shader names
     while( 1 )
@@ -4089,7 +4153,7 @@ static void ScanAndLoadShaderFiles( void )
         }
         
         hash = generateHashValue( token, MAX_SHADERTEXT_HASH );
-        shaderTextHashTable[hash][shaderTextHashTableSizes[hash]++] = oldp;
+        shaderTextHashTable[hash][--shaderTextHashTableSizes[hash]] = oldp;
         
         SkipBracedSection_Depth( &p, 0 );
     }

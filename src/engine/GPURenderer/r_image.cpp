@@ -2990,7 +2990,7 @@ void R_SetColorMappings( void )
     S32		inf;
     
     // setup the overbright lighting
-    tr.overbrightBits = r_overBrightBits->integer;
+    tr.overbrightBits = abs( r_overBrightBits->integer );
     
     // allow 2 overbright bits
     if( tr.overbrightBits > 2 )

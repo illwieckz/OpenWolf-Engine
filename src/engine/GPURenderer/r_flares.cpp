@@ -92,7 +92,7 @@ typedef struct flare_s
 flare_t		r_flareStructs[MAX_FLARES];
 flare_t*		r_activeFlares, *r_inactiveFlares;
 
-S32 flareCoeff;
+static float flareCoeff;
 
 /*
 ==================

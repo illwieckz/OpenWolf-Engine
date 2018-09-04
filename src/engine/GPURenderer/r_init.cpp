@@ -163,7 +163,7 @@ cvar_t*  r_shadowCascadeZNear;
 cvar_t*  r_shadowCascadeZFar;
 cvar_t*  r_shadowCascadeZBias;
 cvar_t*  r_ignoreDstAlpha;
-
+cvar_t* r_floatfix;
 cvar_t*	r_ignoreGLErrors;
 cvar_t*	r_logFile;
 
@@ -1490,6 +1490,8 @@ void R_Register( void )
     r_maxpolys = Cvar_Get( "r_maxpolys", va( "%d", MAX_POLYS ), 0 );
     r_maxpolyverts = Cvar_Get( "r_maxpolyverts", va( "%d", MAX_POLYVERTS ), 0 );
     
+    r_floatfix = Cvar_Get( "r_floatfix", "0", 0 );
+    
     // make sure all the commands added here are also
     // removed in R_Shutdown
     Cmd_AddCommand( "imagelist", R_ImageList_f );
@@ -1511,7 +1513,7 @@ void R_InitQueries( void )
         return;
         
     if( r_drawSunRays->integer )
-        glGenQueriesARB( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
+        glGenQueries( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
 }
 
 void R_ShutDownQueries( void )
@@ -1520,7 +1522,7 @@ void R_ShutDownQueries( void )
         return;
         
     if( r_drawSunRays->integer )
-        glDeleteQueriesARB( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
+        glDeleteQueries( ARRAY_LEN( tr.sunFlareQuery ), tr.sunFlareQuery );
 }
 
 /*

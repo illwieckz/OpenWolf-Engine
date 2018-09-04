@@ -1264,7 +1264,7 @@ static void GLimp_OGL3InitExtensions( void )
     {
         if( r_ext_texture_float->integer )
         {
-            glRefConfig.textureFloat = true;
+            glRefConfig.textureFloat = !!r_ext_texture_float->integer;
             CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_texture_float\n" );
         }
         else
@@ -1472,7 +1472,7 @@ static void GLimp_OGL3InitExtensions( void )
     glRefConfig.seamlessCubeMap = false;
     if( glewGetExtension( "GL_ARB_seamless_cube_map" ) )
     {
-        glRefConfig.depthClamp = true;
+        glRefConfig.seamlessCubeMap = !!r_arb_seamless_cube_map->integer;
         
         CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_seamless_cube_map\n" );
     }
@@ -1481,18 +1481,6 @@ static void GLimp_OGL3InitExtensions( void )
         CL_RefPrintf( PRINT_ALL, "...GL_ARB_seamless_cube_map not found\n" );
     }
     GL_CheckErrors();
-    
-    // Determine GLSL version
-    if( 1 )
-    {
-        UTF8 version[256];
-        
-        Q_strncpyz( version, ( UTF8* )glGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof( version ) );
-        
-        sscanf( version, "%d.%d", &glRefConfig.glslMajorVersion, &glRefConfig.glslMinorVersion );
-        
-        CL_RefPrintf( PRINT_ALL, "...using GLSL version %s\n", version );
-    }
 }
 
 #define R_MODE_FALLBACK 3 // 640 * 480
@@ -1701,6 +1689,11 @@ success:
     {
         glConfig.hardwareType = GLHW_ATI_DX10;
     }
+    // Check if we need Intel graphics specific fixes.
+    else if( Q_stristr( glConfig.renderer_string, "Intel" ) )
+    {
+        glRefConfig.intelGraphics = true;
+    }
     
     reportDriverType( false );
     reportHardwareType( false );
@@ -1761,7 +1754,8 @@ success:
             hardwareType = GLHW_ATI_DX10;
         }
         else if( !Q_stricmp( forceGL->string, "atidx10" ) ||
-                 !Q_stricmp( forceGL->string, "radeonhd" ) )
+                 !Q_stricmp( forceGL->string, "radeonhd" ) ||
+                 !Q_stricmp( forceGL->string, "radeon" ) )
         {
             hardwareType = GLHW_ATI_DX10;
         }

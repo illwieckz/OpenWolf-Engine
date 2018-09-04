@@ -532,8 +532,12 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
                 backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
                 
                 // FIXME: e.shaderTime must be passed as S32 to avoid fp-precision loss issues
-                backEnd.refdef.floatTime = originalTime - ( F64 )backEnd.currentEntity->e.shaderTime;
-                
+                //backEnd.refdef.floatTime = originalTime - ( F64 )backEnd.currentEntity->e.shaderTime;
+                if( backEnd.floatfix )
+                    backEnd.refdef.floatTime = originalTime - ( double )( backEnd.currentEntity->e.shaderTime ) * 0.001;
+                else
+                    backEnd.refdef.floatTime = originalTime - ( double )backEnd.currentEntity->e.shaderTime;
+                    
                 // we have to reset the shaderTime as well otherwise image animations start
                 // from the wrong frame
                 tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
@@ -639,7 +643,7 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     
     if( inQuery )
     {
-        glEndQueryARB( GL_SAMPLES_PASSED );
+        glEndQuery( GL_SAMPLES_PASSED );
     }
     
     if( glRefConfig.framebufferObject )
@@ -706,7 +710,7 @@ void	RB_SetGL2D( void )
     
     // set time for 2D shaders
     backEnd.refdef.time = CL_ScaledMilliseconds();
-    backEnd.refdef.floatTime = backEnd.refdef.time * 0.001;
+    backEnd.refdef.floatTime = ( F64 )backEnd.refdef.time * 0.001;
 }
 
 
@@ -1216,14 +1220,14 @@ const void*	RB_DrawSurfs( const void* data )
             if( glRefConfig.occlusionQuery )
             {
                 tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = true;
-                glBeginQueryARB( GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex] );
+                glBeginQuery( GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex] );
             }
             
             RB_DrawSun( 0.3, tr.sunFlareShader );
             
             if( glRefConfig.occlusionQuery )
             {
-                glEndQueryARB( GL_SAMPLES_PASSED );
+                glEndQuery( GL_SAMPLES_PASSED );
             }
             
             FBO_Bind( oldFbo );
@@ -1903,6 +1907,15 @@ void RB_ExecuteRenderCommands( const void* data )
     S32		t1, t2;
     
     t1 = CL_ScaledMilliseconds();
+    
+    if( r_floatfix->integer )
+    {
+        backEnd.floatfix = true;
+    }
+    else
+    {
+        backEnd.floatfix = false;
+    }
     
     while( 1 )
     {

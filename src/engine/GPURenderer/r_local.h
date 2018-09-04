@@ -345,10 +345,10 @@ typedef struct
 {
     genFunc_t	func;
     
-    F32 base;
-    F32 amplitude;
-    F32 phase;
-    F32 frequency;
+    F64 base;
+    F64 amplitude;
+    F64 phase;
+    F64 frequency;
 } waveForm_t;
 
 #define TR_MAX_TEXMODS 4
@@ -412,7 +412,7 @@ typedef struct
 {
     image_t*			image[MAX_IMAGE_ANIMATIONS];
     S32				numImageAnimations;
-    F32			imageAnimationSpeed;
+    F64			imageAnimationSpeed;
     
     texCoordGen_t	tcGen;
     vec3_t			tcGenVectors[2];
@@ -548,6 +548,8 @@ typedef struct shader_s
     
     S32			numUnfoggedPasses;
     shaderStage_t*	stages[MAX_SHADER_STAGES];
+    
+    S32     lightingStage;
     
     void	( *optimalStageIteratorFunc )( void );
     
@@ -1658,6 +1660,7 @@ typedef struct
     bool	vertexes2D;		// shader needs to be finished
     trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
     
+    bool floatfix;
     FBO_t* last2DFBO;
     bool    colorMask[4];
     bool    framePostProcessed;
@@ -2039,8 +2042,8 @@ extern	cvar_t*	r_debugSort;
 
 extern cvar_t* r_printShaders;
 
-extern cvar_t*	r_marksOnTriangleMeshes;
-
+extern cvar_t* r_marksOnTriangleMeshes;
+extern cvar_t* r_floatfix;
 extern cvar_t* r_lensflare;
 extern cvar_t* r_volumelight;
 extern cvar_t* r_anamorphic;

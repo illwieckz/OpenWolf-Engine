@@ -74,7 +74,9 @@ R_BindAnimatedImageToTMU
 */
 static void R_BindAnimatedImageToTMU( textureBundle_t* bundle, S32 tmu )
 {
-
+    S64 index;
+    F64	v;
+    
     if( bundle->isVideoMap )
     {
         CIN_RunCinematic( bundle->videoMapHandle );
@@ -91,15 +93,16 @@ static void R_BindAnimatedImageToTMU( textureBundle_t* bundle, S32 tmu )
     
     // it is necessary to do this messy calc to make sure animations line up
     // exactly with waveforms of the same frequency
-    S32 i = static_cast<S32>( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
+    v = tess.shaderTime * bundle->imageAnimationSpeed;
+    index = v;
     
-    if( i < 0 )
+    if( index  < 0 )
     {
-        i = 0;	// may happen with shader time offsets
+        index = 0;	// may happen with shader time offsets
     }
-    i %= bundle->numImageAnimations;
+    index %= bundle->numImageAnimations;
     
-    GL_BindToTMU( bundle->image[ i ], tmu );
+    GL_BindToTMU( bundle->image[ index ], tmu );
 }
 
 
@@ -189,14 +192,14 @@ void RB_BeginSurface( shader_t* shader, S32 fogNum, S32 cubemapIndex )
 
 
 
-extern float EvalWaveForm( const waveForm_t* wf );
-extern float EvalWaveFormClamped( const waveForm_t* wf );
+extern F32 EvalWaveForm( const waveForm_t* wf );
+extern F32 EvalWaveFormClamped( const waveForm_t* wf );
 
 
-static void ComputeTexMods( shaderStage_t* pStage, S32 bundleNum, float* outMatrix, float* outOffTurb )
+static void ComputeTexMods( shaderStage_t* pStage, S32 bundleNum, F32* outMatrix, F32* outOffTurb )
 {
     S32 tm;
-    float matrix[6], currentmatrix[6];
+    F32 matrix[6], currentmatrix[6];
     textureBundle_t* bundle = &pStage->bundle[bundleNum];
     
     matrix[0] = 1.0f;
@@ -343,12 +346,12 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
-#define __MERGE_DLIGHTS__
+//#define __MERGE_DLIGHTS__
 
 //F32 DLIGHT_SIZE_MULTIPLIER = 5.0;
 F32 DLIGHT_SIZE_MULTIPLIER = 2.5;
 
-//#define __SINGLE_PASS__
+#define __SINGLE_PASS__
 
 static void ProjectDlightTexture( void )
 {
@@ -677,7 +680,6 @@ static void ProjectDlightTexture( void )
 #endif //__SINGLE_PASS__
 }
 
-
 static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t vertColor, S32 blend )
 {
     bool isBlend = ( ( blend & GLS_SRCBLEND_BITS ) == GLS_SRCBLEND_DST_COLOR )
@@ -687,7 +689,7 @@ static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t
                    
     bool is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
     
-    float overbright = ( isBlend || is2DDraw ) ? 1.0f : ( float )( 1 << tr.overbrightBits );
+    F32 overbright = ( isBlend || is2DDraw ) ? 1.0f : ( F32 )( 1 << tr.overbrightBits );
     
     fog_t* fog;
     
@@ -850,7 +852,7 @@ static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t
 }
 
 
-static void ComputeFogValues( vec4_t fogDistanceVector, vec4_t fogDepthVector, float* eyeT )
+static void ComputeFogValues( vec4_t fogDistanceVector, vec4_t fogDepthVector, F32* eyeT )
 {
     // from RB_CalcFogTexCoords()
     fog_t*  fog;
@@ -926,17 +928,17 @@ static void ForwardDlight( void )
 {
     S32		l;
     //vec3_t	origin;
-    //float	scale;
-    float	radius;
+    //F32	scale;
+    F32	radius;
     
     S32 deformGen;
     vec5_t deformParams;
     
     vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-    float eyeT = 0;
+    F32 eyeT = 0;
     
     shaderCommands_t* input = &tess;
-    shaderStage_t* pStage = tess.xstages[0];
+    shaderStage_t* pStage = tess.xstages[tess.shader->lightingStage];
     
     if( !pStage )
     {
@@ -1109,7 +1111,7 @@ static void ProjectPshadowVBOGLSL( void )
 {
     S32		l;
     vec3_t	origin;
-    float	radius;
+    F32	radius;
     
     S32 deformGen;
     vec5_t deformParams;
@@ -1191,7 +1193,7 @@ static void RB_FogPass( void )
     fog_t*		fog;
     vec4_t  color;
     vec4_t	fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-    float	eyeT = 0;
+    F32	eyeT = 0;
     shaderProgram_t* sp;
     
     S32 deformGen;
@@ -1271,7 +1273,7 @@ static U32 RB_CalcShaderVertexAttribs( shaderCommands_t* input )
     return vertexAttribs;
 }
 
-void RB_SetParallaxScale( shaderProgram_t* sp, float scale )
+void RB_SetParallaxScale( shaderProgram_t* sp, F32 scale )
 {
     vec4_t local1;
     VectorSet4( local1, scale, 0.0, 0.0, 0.0 );
@@ -1864,7 +1866,7 @@ static void RB_RenderShadowmap( shaderCommands_t* input )
     }
 }
 
-
+#define ___OLD_DLIGHT_CODE___
 
 /*
 ** RB_StageIteratorGeneric
@@ -1999,21 +2001,17 @@ void RB_StageIteratorGeneric( void )
     //
     // pshadows!
     //
-    if( r_shadows->integer == 4 && tess.pshadowBits &&
-            tess.shader->sort <= SS_OPAQUE && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
+    if( r_shadows->integer == 4 && tess.pshadowBits && tess.shader->sort <= SS_OPAQUE && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
     {
         ProjectPshadowVBOGLSL();
     }
     
-    
     //
     // now do any dynamic lighting needed
     //
-    if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE
-            && !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) )
+    if( tess.dlightBits && tess.shader->lightingStage >= 0 )
     {
-        if( tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader
-                && ( tess.xstages[0]->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK ) && r_dlightMode->integer )
+        if( r_dlightMode->integer )
         {
             ForwardDlight();
         }

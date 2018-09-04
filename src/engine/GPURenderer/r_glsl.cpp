@@ -359,34 +359,6 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
     
     dest[0] = '\0';
     
-#if 1
-    // HACK: abuse the GLSL preprocessor to turn GLSL 1.20 shaders into 1.30 ones
-    if( glRefConfig.glslMajorVersion > 1 || ( glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 30 ) )
-    {
-        Q_strcat( dest, size, "#version 130\n" );
-        
-        if( shaderType == GL_VERTEX_SHADER )
-        {
-            Q_strcat( dest, size, "#define attribute in\n" );
-            Q_strcat( dest, size, "#define varying out\n" );
-        }
-        else
-        {
-            Q_strcat( dest, size, "#define varying in\n" );
-            
-            Q_strcat( dest, size, "out vec4 out_Color;\n" );
-            Q_strcat( dest, size, "#define gl_FragColor out_Color\n" );
-            Q_strcat( dest, size, "#define texture2D texture\n" );
-            Q_strcat( dest, size, "#define textureCubeLod textureLod\n" );
-            Q_strcat( dest, size, "#define shadow2D texture\n" );
-        }
-    }
-    else
-    {
-        Q_strcat( dest, size, "#version 120\n" );
-        Q_strcat( dest, size, "#define shadow2D(a,b) shadow2D(a,b).r \n" );
-    }
-#else
     Q_strcat( dest, size, "#version 150 core\n" );
     
     if( shaderType == GL_VERTEX_SHADER )
@@ -397,8 +369,10 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
     else
     {
         Q_strcat( dest, size, "#define varying in\n" );
+        
+        Q_strcat( dest, size, "out vec4 out_Color;\n" );
+        Q_strcat( dest, size, "#define gl_FragColor out_Color\n" );
     }
-#endif
     
     // HACK: add some macros to avoid extra uniforms and save speed and code maintenance
     //Q_strcat(dest, size,

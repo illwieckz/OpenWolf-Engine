@@ -4,6 +4,8 @@
 	* Removed r_extensions.cpp file
 	* Initialize proper GL_ARB_occlusion_query functions
 	* More work on the initialization of the OpenGL extensions
+	* Use GLSL 1.50 shaders
+	* Misc fixes
 
 2018-09-03 Dusan Jocic <dusanjocic@msn.com>
 	* Removed r_hdr console variable from the engine

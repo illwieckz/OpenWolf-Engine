@@ -33,7 +33,7 @@
 #include <iostream>
 #endif
 
-#if 1 //defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
 void strncpy_s( UTF8* dest, S64 destSize, StringEntry src, S64 srcSize )
 {
     // This isn't really a safe version, but I know the inputs to expect.
@@ -74,10 +74,7 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
     S32 line = 1;
     while( text[i] )
     {
-        S32 markerStart = i;
-        S32 markerEnd = -1;
-        
-        if( Q_strncmp( text + i, "/*[", 3 ) == 0 )
+        if( strncmp( text + i, "/*[", 3 ) == 0 )
         {
             S32 startHeaderTitle = i + 3;
             S32 endHeaderTitle = -1;
@@ -150,27 +147,46 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
         prevBlock->blockTextLength = ( text + i ) - prevBlock->blockText;
     }
     
-    GPUProgramDesc theProgram = {};
-    theProgram.numShaders = 2;
+    static StringEntry shaderBlockNames[GPUSHADER_TYPE_COUNT] =
+    {
+        "Vertex", "Fragment", "Geometry"
+    };
     
-    Block* vertexBlock = FindBlock( "Vertex", blocks, numBlocks );
-    Block* fragmentBlock = FindBlock( "Fragment", blocks, numBlocks );
+    GPUProgramDesc theProgram = {};
+    const Block* parsedBlocks[GPUSHADER_TYPE_COUNT] = {};
+    
+for( const auto & shaderBlockName : shaderBlockNames )
+    {
+        Block* block = FindBlock( shaderBlockName, blocks, numBlocks );
+        if( block )
+            parsedBlocks[theProgram.numShaders++] = block;
+    }
     
     theProgram.shaders = ojkAllocArray<GPUShaderDesc>( allocator, theProgram.numShaders );
     
-    UTF8* vertexSource = ojkAllocString( allocator, vertexBlock->blockTextLength );
-    UTF8* fragmentSource = ojkAllocString( allocator, fragmentBlock->blockTextLength );
-    
-    strncpy_s( vertexSource, vertexBlock->blockTextLength + 1, vertexBlock->blockText, vertexBlock->blockTextLength );
-    strncpy_s( fragmentSource, fragmentBlock->blockTextLength + 1, fragmentBlock->blockText, fragmentBlock->blockTextLength );
-    
-    theProgram.shaders[0].type = GPUSHADER_VERTEX;
-    theProgram.shaders[0].source = vertexSource;
-    theProgram.shaders[0].firstLine = vertexBlock->blockTextFirstLine;
-    
-    theProgram.shaders[1].type = GPUSHADER_FRAGMENT;
-    theProgram.shaders[1].source = fragmentSource;
-    theProgram.shaders[1].firstLine = fragmentBlock->blockTextFirstLine;
+    int shaderIndex = 0;
+    for( int shaderType = 0;
+            shaderType < theProgram.numShaders;
+            ++shaderType )
+    {
+        const Block* block = parsedBlocks[shaderType];
+        if( !block )
+            continue;
+            
+        UTF8* source = ojkAllocString( allocator, block->blockTextLength );
+        
+        strncpy_s(
+            source,
+            block->blockTextLength + 1,
+            block->blockText,
+            block->blockTextLength );
+            
+        GPUShaderDesc& shaderDesc = theProgram.shaders[shaderIndex];
+        shaderDesc.type = static_cast<GPUShaderType>( shaderType );
+        shaderDesc.source = source;
+        shaderDesc.firstLineNumber = block->blockTextFirstLine;
+        ++shaderIndex;
+    }
     
     return theProgram;
 }

@@ -6,6 +6,7 @@
 	* More work on the initialization of the OpenGL extensions
 	* Use GLSL 1.50 shaders
 	* Misc fixes
+	* More work on the renderer
 
 2018-09-03 Dusan Jocic <dusanjocic@msn.com>
 	* Removed r_hdr console variable from the engine

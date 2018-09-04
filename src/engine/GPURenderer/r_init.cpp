@@ -134,7 +134,6 @@ cvar_t*  r_deluxeMapping;
 cvar_t*  r_parallaxMapping;
 cvar_t*  r_cubeMapping;
 cvar_t*  r_horizonFade;
-cvar_t*  r_cubemapSize;
 cvar_t*  r_deluxeSpecular;
 cvar_t*  r_pbr;
 cvar_t*  r_baseNormalX;
@@ -1288,11 +1287,11 @@ void R_Register( void )
     r_colorMipLevels = Cvar_Get( "r_colorMipLevels", "0", CVAR_LATCH );
     Cvar_CheckRange( r_picmip, 0, 16, true );
     r_detailTextures = Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_texturebits = Cvar_Get( "r_texturebits", "32", CVAR_ARCHIVE | CVAR_LATCH );
-    r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
+    r_texturebits = Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_colorbits = Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_alphabits = Cvar_Get( "r_alphabits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_stencilbits = Cvar_Get( "r_stencilbits", "16", CVAR_ARCHIVE | CVAR_LATCH );
-    r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
+    r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_depthbits = Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_multisample = Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
     Cvar_CheckRange( r_ext_multisample, 0, 4, true );
     r_overBrightBits = Cvar_Get( "r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1336,7 +1335,6 @@ void R_Register( void )
     r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_cubeMapping = Cvar_Get( "r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_horizonFade = Cvar_Get( "r_horizonFade", "3", CVAR_ARCHIVE | CVAR_LATCH );
-    r_cubemapSize = Cvar_Get( "r_cubemapSize", "128", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeSpecular = Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
     r_pbr = Cvar_Get( "r_pbr", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseNormalX = Cvar_Get( "r_baseNormalX", "1.0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1369,9 +1367,9 @@ void R_Register( void )
     r_ignoreDstAlpha = Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_bloom = Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
-    r_bloomPasses = Cvar_Get( "r_bloomPasses", "1", CVAR_ARCHIVE );
-    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "2.0", CVAR_ARCHIVE );
-    r_bloomScale = Cvar_Get( "r_bloomScale", "1.5", CVAR_ARCHIVE );
+    r_bloomPasses = Cvar_Get( "r_bloomPasses", "2", CVAR_ARCHIVE );
+    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "1", CVAR_ARCHIVE );
+    r_bloomScale = Cvar_Get( "r_bloomScale", "1", CVAR_ARCHIVE );
     r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
     r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );
     r_anamorphic = Cvar_Get( "r_anamorphic", "1", CVAR_ARCHIVE );
@@ -1420,7 +1418,7 @@ void R_Register( void )
     r_fastsky = Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
     r_inGameVideo = Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
     r_drawSun = Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
-    r_dynamiclight = Cvar_Get( "r_dynamiclight", "0", CVAR_ARCHIVE );
+    r_dynamiclight = Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
     r_dlightBacks = Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
     r_finish = Cvar_Get( "r_finish", "0", CVAR_ARCHIVE );
     r_textureMode = Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE );
@@ -1480,7 +1478,7 @@ void R_Register( void )
     r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     r_lockpvs = Cvar_Get( "r_lockpvs", "0", CVAR_CHEAT );
     r_noportals = Cvar_Get( "r_noportals", "0", CVAR_CHEAT );
-    r_shadows = Cvar_Get( "cg_shadows", "1", 0 );
+    r_shadows = Cvar_Get( "cg_shadows", "4", 0 );
     
     r_marksOnTriangleMeshes = Cvar_Get( "r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE );
     

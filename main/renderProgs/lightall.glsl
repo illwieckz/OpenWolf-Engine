@@ -139,20 +139,16 @@ vec2 ModTexCoords(vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb)
 #endif
 
 
-float CalcLightAttenuation(float point, float normDist)
+float CalcLightAttenuation(float distance, float radius)
 {
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
+	float d = pow(distance / radius, 4.0);
+	float attenuation = clamp(1.0 - d, 0.0, 1.0);
+	attenuation *= attenuation;
+	attenuation /= distance * distance + 1.0;
+	// don't attenuate directional light
+	attenuation = attenuation + float(radius < 1.0);
 
-	// clamp attenuation
-	#if defined(NO_LIGHT_CLAMP)
-	attenuation = max(attenuation, 0.0);
-	#else
-	attenuation = clamp(attenuation, 0.0, 1.0);
-	#endif
-
-	return attenuation;
+	return clamp(attenuation, 0.0, 1.0);
 }
 
 
@@ -516,7 +512,7 @@ float spec_D( float NH, float roughness)
   return (quotient * quotient) / M_PI;
 }
 
-vec3 spec_F( float EH, vec3 F0)
+vec3 spec_F( float EH, vec3 F0 )
 {
   // Fresnel
   // from http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
@@ -524,7 +520,7 @@ vec3 spec_F( float EH, vec3 F0)
   return F0 + (vec3(1.0) - F0) * pow2;
 }
 
-float G1(float NV, float k)
+float G1( float NV, float k )
 {
   return NV / (NV*(1.0-k) +  k);
 }
@@ -535,12 +531,11 @@ float spec_G(float NL, float NE, float roughness )
   // from http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
   float k = max(((roughness + 1.0) * (roughness + 1.0)) / 8.0, 1e-5);
   return G1(NL,k)*G1(NE,k);
- }
+}
 
-vec3 CalcSpecular(vec3 specular, float NH, in float NL, in float NE, float EH, float roughness)
+vec3 CalcSpecular( in vec3 specular, in float NH, in float NL, in float NE, in float EH, in float roughness )
 {
 	float distrib = spec_D(NH,roughness);
-	
 	vec3 fresnel = spec_F(EH,specular);
 	float vis = spec_G(NL, NE, roughness);
 	return (distrib * fresnel * vis);
@@ -587,6 +582,7 @@ void main()
   #if defined(USE_PBR) && !defined(USE_FAST_LIGHT)
 	lightmapColor.rgb *= lightmapColor.rgb;
   #endif
+	//lightColor	= lightmapColor.rgb * (var_Color.rgb * 0.66666 + 0.33333);
 	lightColor *= lightmapColor.rgb;
 #endif
 
@@ -629,7 +625,7 @@ void main()
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 	L = var_LightDir.xyz;
   #if defined(USE_DELUXEMAP)
-	L += (texture2D(u_DeluxeMap, var_TexCoords.zw).xyz - vec3(0.5)) * u_EnableTextures.y;
+	L = (texture2D(u_DeluxeMap, var_TexCoords.zw).xyz - vec3(0.5)) * u_EnableTextures.y;
   #endif
 	float sqrLightDist = dot(L, L);
 	L /= sqrt(sqrLightDist);
@@ -667,22 +663,10 @@ void main()
     #endif
   #endif
 
-  #if !defined(USE_LIGHT_VECTOR)
-	ambientColor = lightColor;
-	float surfNL = clamp(dot(var_Normal.xyz, L), 0.0, 1.0);
 
-	// reserve 25% ambient to avoid black areas on normalmaps
-	lightColor *= 0.75;
-
-	// Scale the incoming light to compensate for the baked-in light angle
-	// attenuation.
-	lightColor /= max(surfNL, 0.25);
-
-	// Recover any unused light as ambient, in case attenuation is over 4x or
-	// light is below the surface
-	ambientColor = max(ambientColor - lightColor * surfNL, vec3(0.0));
-  #else
-	ambientColor = var_ColorAmbient.rgb;
+  #if defined(USE_LIGHTMAP) || defined(USE_LIGHT_VERTEX)
+	float surfNL = clamp(dot(N, L), 0.0, 1.0);
+	ambientColor = mix(ambientColor, lightColor, surfNL);
   #endif
 
 	NL = clamp(dot(N, L), 0.0, 1.0);
@@ -700,6 +684,7 @@ void main()
 
   #if defined(USE_PBR)
 	diffuse.rgb *= diffuse.rgb;
+	specular.rgb *= specular.rgb;
   #endif
 
   #if defined(USE_PBR)
@@ -714,11 +699,11 @@ void main()
 	// diffuse rgb is diffuse
 	// specular rgb is specular reflectance at normal incidence
 	// specular alpha is gloss
-	float gloss = specular.a;
+	float gloss = 1.0 - min(specular.a, 0.96);
 
 	// adjust diffuse by specular reflectance, to maintain energy conservation
-	diffuse.rgb *= vec3(1.0) - specular.rgb;
-  #endif
+	diffuse.rgb -= specular.rgb * (1.0 - u_EnableTextures.z);
+#endif
 
   #if defined(GLOSS_IS_GLOSS)
 	float roughness = exp2(-3.0 * gloss);
@@ -730,21 +715,21 @@ void main()
 	float roughness = pow(2.0 / (8190.0 * gloss + 2.0), 0.25);
   #endif
 
-	reflectance  = CalcDiffuse(diffuse.rgb, NH, EH, roughness);
-	
     H  = normalize(L + E);
-    NL = clamp(dot(N, L), 0.0, 1.0);
-    NL = max(1e-8, abs(NL) );
     EH = max(1e-8, dot(E, H));
     NH = max(1e-8, dot(N, H));
-    NE = abs(dot(N, E)) + 1e-5;
+    NL = clamp(dot(N, L), 1e-8, 1.0);
 
-    reflectance += CalcSpecular(specular.rgb, NH, NL, NE, EH, roughness);
+    reflectance  = CalcDiffuse(diffuse.rgb, NH, EH, roughness);
+
+	NE = abs(dot(N, E)) + 1e-5;
+	reflectance += CalcSpecular(specular.rgb, NH, NL, NE, EH, roughness);
 
 	gl_FragColor.rgb  = lightColor   * reflectance * (attenuation * NL);
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
 
   #if defined(USE_CUBEMAP)
+	NE = clamp(dot(N, E), 0.0, 1.0);
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
 
 	vec3 R = reflect(E, N);

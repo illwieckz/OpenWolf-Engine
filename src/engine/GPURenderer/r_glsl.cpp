@@ -458,16 +458,7 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
         
     if( r_cubeMapping->integer )
     {
-        S32 cubeMipSize = r_cubemapSize->integer;
-        S32 numRoughnessMips = 0;
-        
-        while( cubeMipSize )
-        {
-            cubeMipSize >>= 1;
-            numRoughnessMips++;
-        }
-        numRoughnessMips = MAX( 1, numRoughnessMips - 2 );
-        Q_strcat( dest, size, va( "#define ROUGHNESS_MIPS float(%d)\n", numRoughnessMips ) );
+        Q_strcat( dest, size, va( "#define ROUGHNESS_MIPS float(%i)\n", CUBE_MAP_MIPS - 4 ) );
     }
     
     if( r_horizonFade->integer )
@@ -742,14 +733,15 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
     S32 size;
     S32 result;
     
-    assert( programDesc.numShaders == 2 );
+    assert( programDesc.numShaders == 3 );
     assert( programDesc.shaders[0].type == GPUSHADER_VERTEX );
     assert( programDesc.shaders[1].type == GPUSHADER_FRAGMENT );
+    assert( programDesc.shaders[1].type == GPUSHADER_GEOMETRY );
     
     size = sizeof( vpCode );
     if( addHeader )
     {
-        GLSL_GetShaderHeader( GL_VERTEX_SHADER, extra, programDesc.shaders[0].firstLine, vpCode, size );
+        GLSL_GetShaderHeader( GL_VERTEX_SHADER, extra, programDesc.shaders[0].firstLineNumber, vpCode, size );
         postHeader = &vpCode[strlen( vpCode )];
         size -= strlen( vpCode );
     }
@@ -768,7 +760,7 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
         size = sizeof( fpCode );
         if( addHeader )
         {
-            GLSL_GetShaderHeader( GL_FRAGMENT_SHADER, extra, programDesc.shaders[0].firstLine, fpCode, size );
+            GLSL_GetShaderHeader( GL_FRAGMENT_SHADER, extra, programDesc.shaders[0].firstLineNumber, fpCode, size );
             postHeader = &fpCode[strlen( fpCode )];
             size -= strlen( fpCode );
         }

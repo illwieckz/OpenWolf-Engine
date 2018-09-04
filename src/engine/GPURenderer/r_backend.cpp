@@ -532,7 +532,6 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, S32 numDrawSurfs )
                 backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
                 
                 // FIXME: e.shaderTime must be passed as S32 to avoid fp-precision loss issues
-                //backEnd.refdef.floatTime = originalTime - ( F64 )backEnd.currentEntity->e.shaderTime;
                 if( backEnd.floatfix )
                     backEnd.refdef.floatTime = originalTime - ( double )( backEnd.currentEntity->e.shaderTime ) * 0.001;
                 else
@@ -1855,7 +1854,7 @@ const void* RB_ExportCubemaps( const void* data )
     if( cmd )
     {
         FBO_t* oldFbo = glState.currentFBO;
-        S32 sideSize = r_cubemapSize->integer * r_cubemapSize->integer * 4;
+        S32 sideSize = CUBE_MAP_SIZE * CUBE_MAP_SIZE * 4;
         U8* cubemapPixels = ( U8* )CL_RefMalloc( sideSize * 6 );
         S32 i, j;
         
@@ -1870,7 +1869,7 @@ const void* RB_ExportCubemaps( const void* data )
             for( j = 0; j < 6; j++ )
             {
                 FBO_AttachImage( tr.renderCubeFbo, cubemap->image, GL_COLOR_ATTACHMENT0_EXT, j );
-                glReadPixels( 0, 0, r_cubemapSize->integer, r_cubemapSize->integer, GL_RGBA, GL_UNSIGNED_BYTE, p );
+                glReadPixels( 0, 0, CUBE_MAP_SIZE, CUBE_MAP_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, p );
                 p += sideSize;
             }
             
@@ -1884,7 +1883,7 @@ const void* RB_ExportCubemaps( const void* data )
                 Com_sprintf( filename, MAX_QPATH, "cubemaps/%s/%03d.dds", tr.world->baseName, i );
             }
             
-            R_SaveDDS( filename, cubemapPixels, r_cubemapSize->integer, r_cubemapSize->integer, 6 );
+            R_SaveDDS( filename, cubemapPixels, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 6 );
             CL_RefPrintf( PRINT_ALL, "Saved cubemap %d as %s\n", i, filename );
         }
         

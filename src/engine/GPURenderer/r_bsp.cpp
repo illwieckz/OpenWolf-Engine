@@ -2781,17 +2781,22 @@ void R_LoadCubemaps( void )
     }
 }
 
-
 void R_RenderMissingCubemaps( void )
 {
     S32 i, j;
     S32/*imgFlags_t*/ flags = IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
+    U32 cubemapFormat = GL_RGBA8;
+    
+    if( r_truehdr->integer )
+    {
+        cubemapFormat = GL_RGBA16F;
+    }
     
     for( i = 0; i < tr.numCubemaps; i++ )
     {
         if( !tr.cubemaps[i].image )
         {
-            tr.cubemaps[i].image = R_CreateImage( va( "*cubeMap%d", i ), NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8 );
+            tr.cubemaps[i].image = R_CreateImage( va( "*cubeMap%d", i ), NULL, CUBE_MAP_SIZE, CUBE_MAP_SIZE, IMGTYPE_COLORALPHA, flags, cubemapFormat );
             
             for( j = 0; j < 6; j++ )
             {
@@ -2803,7 +2808,6 @@ void R_RenderMissingCubemaps( void )
         }
     }
 }
-
 
 void R_CalcVertexLightDirs( void )
 {

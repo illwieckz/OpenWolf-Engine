@@ -346,7 +346,7 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
-//#define __MERGE_DLIGHTS__
+#define __MERGE_DLIGHTS__
 
 //F32 DLIGHT_SIZE_MULTIPLIER = 5.0;
 F32 DLIGHT_SIZE_MULTIPLIER = 2.5;
@@ -1866,7 +1866,7 @@ static void RB_RenderShadowmap( shaderCommands_t* input )
     }
 }
 
-#define ___OLD_DLIGHT_CODE___
+//#define ___OLD_DLIGHT_CODE___
 
 /*
 ** RB_StageIteratorGeneric
@@ -1947,7 +1947,7 @@ void RB_StageIteratorGeneric( void )
     if( ( tess.shader->contentFlags & CONTENTS_WATER ) )
     {
         if( input->xstages[0]->isWater != true ) // In case it is already set, no need looping more then once on the same shader...
-            for( int stage = 0; stage < MAX_SHADER_STAGES; stage++ )
+            for( S32 stage = 0; stage < MAX_SHADER_STAGES; stage++ )
                 if( input->xstages[stage] )
                     input->xstages[stage]->isWater = true;
     }
@@ -2024,7 +2024,8 @@ void RB_StageIteratorGeneric( void )
     //
     // now do any dynamic lighting needed. UQ1: A generic method to rule them all... A SANE real world style lighting with a blacklist - not a whitelist!
     //
-    if( !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) && tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
+    if( !( tess.shader->surfaceFlags & ( /*SURF_NODLIGHT |*/ SURF_SKY ) ) )
+        //if( !( tess.shader->surfaceFlags & ( SURF_NODLIGHT | SURF_SKY ) ) && tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
     {
         switch( int( tess.shader->sort ) )
         {

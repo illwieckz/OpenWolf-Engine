@@ -119,6 +119,8 @@ void* CL_RefMalloc( S32 size );
 #define MAX_CALC_PSHADOWS    64
 #define MAX_DRAWN_PSHADOWS    16 // do not increase past 32, because bit flags are used on surfaces
 #define PSHADOW_MAP_SIZE      512
+#define CUBE_MAP_MIPS      8
+#define CUBE_MAP_SIZE      (1 << CUBE_MAP_MIPS)
 
 typedef struct cubemap_s
 {
@@ -687,14 +689,16 @@ struct Block
 enum GPUShaderType
 {
     GPUSHADER_VERTEX,
-    GPUSHADER_FRAGMENT
+    GPUSHADER_FRAGMENT,
+    GPUSHADER_GEOMETRY,
+    GPUSHADER_TYPE_COUNT
 };
 
 struct GPUShaderDesc
 {
     GPUShaderType type;
     StringEntry source;
-    S32 firstLine;
+    S32 firstLineNumber;
 };
 
 struct GPUProgramDesc
@@ -1016,7 +1020,8 @@ typedef enum
     VPF_ORTHOGRAPHIC    = 0x10,
     VPF_USESUNLIGHT     = 0x20,
     VPF_FARPLANEFRUSTUM = 0x40,
-    VPF_NOCUBEMAPS      = 0x80
+    VPF_NOCUBEMAPS      = 0x80,
+    VPF_NOPOSTPROCESS   = 0x100
 } viewParmFlags_t;
 
 typedef struct
@@ -1997,7 +2002,6 @@ extern  cvar_t* r_deluxeMapping;
 extern  cvar_t* r_parallaxMapping;
 extern  cvar_t* r_cubeMapping;
 extern  cvar_t* r_horizonFade;
-extern  cvar_t* r_cubemapSize;
 extern  cvar_t* r_deluxeSpecular;
 extern  cvar_t* r_pbr;
 extern  cvar_t* r_baseNormalX;

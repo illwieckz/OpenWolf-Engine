@@ -1368,7 +1368,7 @@ void R_Register( void )
     
     r_bloom = Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
     r_bloomPasses = Cvar_Get( "r_bloomPasses", "2", CVAR_ARCHIVE );
-    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "1", CVAR_ARCHIVE );
+    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "0.6", CVAR_ARCHIVE );
     r_bloomScale = Cvar_Get( "r_bloomScale", "1", CVAR_ARCHIVE );
     r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
     r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );

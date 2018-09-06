@@ -1244,7 +1244,14 @@ S32 trap_CM_LerpTag( orientation_t* tag, clipHandle_t mod, S32 startFrame, S32 e
 
 sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
 {
-    return soundSystem->RegisterSound( sample, compressed );
+    S32 i = soundSystem->RegisterSound( sample, false );
+#ifdef _DEBUG
+    if( i == 0 )
+    {
+        Com_Printf( "^1Warning: Failed to load sound: %s\n", sample );
+    }
+#endif
+    return i;
 }
 
 void trap_S_StartLocalSound( sfxHandle_t sfx, S32 channelNum )

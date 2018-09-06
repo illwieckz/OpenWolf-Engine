@@ -1046,7 +1046,10 @@ void idCGameLocal::StartMusic( void )
     Q_strncpyz( parm1, COM_Parse( &s ), sizeof( parm1 ) );
     Q_strncpyz( parm2, COM_Parse( &s ), sizeof( parm2 ) );
     
-    trap_S_StartBackgroundTrack( parm1, parm2, 0 );
+    if( strlen( parm1 ) )
+    {
+        trap_S_StartBackgroundTrack( parm1, parm2, 0 );
+    }
 }
 
 /*

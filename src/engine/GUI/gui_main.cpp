@@ -108,6 +108,9 @@ vmCvar_t  ui_winner;
 
 vmCvar_t  ui_emoticons;
 
+vmCvar_t ui_autoredirect;
+vmCvar_t ui_profile;
+
 static cvarTable_t    cvarTable[ ] =
 {
     { &ui_browserShowFull, "gui_browserShowFull", "1", CVAR_ARCHIVE },
@@ -4212,9 +4215,17 @@ void idUserInterfaceManagerLocal::SetMousePosition( S32 x, S32 y )
         Display_MouseMove( NULL, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory );
 }
 
+#define MISSING_FILES_MSG "The following packs are missing:"
+
+/*
+=================
+idUserInterfaceManagerLocal::SetActiveMenu
+=================
+*/
 void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
 {
-    UTF8 buf[256];
+    UTF8 buf[4096]; // com_errorMessage can go up to 4096
+    UTF8* missing_files;
     
     // this should be the ONLY way the menu system is brought up
     // enusure minumum menu data is cached
@@ -4223,6 +4234,8 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
     {
         vec3_t v;
         v[0] = v[1] = v[2] = 0;
+        
+        menutype = menu;
         
         switch( menu )
         {
@@ -4235,30 +4248,93 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
                 return;
                 
             case UIMENU_MAIN:
-                trap_Cvar_Set( "sv_killserver", "1" );
+                
                 trap_Key_SetCatcher( KEYCATCH_UI );
                 Menus_CloseAll( true );
-                Menus_ActivateByName( "main" );
+                Menus_ActivateByName( "backgroundmusic" );
+                // makes sure it doesn't get restarted every time you reach the main menu
+                if( !cl_profile->string[0] )
+                {
+                    //Menus_ActivateByName( "profilelogin", qtrue );
+                    // FIXME: initial profile popup
+                    // FIXED: handled in opener now
+                    Menus_ActivateByName( "main" );
+                }
+                else
+                {
+                    Menus_ActivateByName( "main" );
+                }
+                
                 trap_Cvar_VariableStringBuffer( "com_errorMessage", buf, sizeof( buf ) );
                 
-                if( strlen( buf ) )
+                if( ( *buf ) && ( Q_stricmp( buf, ";" ) ) )
                 {
-                    if( trap_Cvar_VariableValue( "com_errorCode" ) == ERR_SERVERDISCONNECT )
-                        Menus_ActivateByName( "drop_popmenu" );
+                    trap_Cvar_Set( "ui_connecting", "0" );
+                    if( !Q_stricmpn( buf, "Invalid password", 16 ) )
+                    {
+                        trap_Cvar_Set( "com_errorMessage", trap_TranslateString( buf ) );
+                        Menus_ActivateByName( "popupPassword" );
+                    }
+                    else if( strlen( buf ) > 5 && !Q_stricmpn( buf, "OW://", 5 ) )
+                    {
+                        Q_strncpyz( buf, buf + 5, sizeof( buf ) );
+                        Com_Printf( "Server is full, redirect to: %s\n", buf );
+                        switch( ui_autoredirect.integer )
+                        {
+                                //auto-redirect
+                            case 1:
+                                trap_Cvar_Set( "com_errorMessage", "" );
+                                trap_Cmd_ExecuteText( EXEC_APPEND, va( "connect %s\n", buf ) );
+                                break;
+                                //prompt (default)
+                            default:
+                                trap_Cvar_Set( "com_errorMessage", buf );
+                                Menus_ActivateByName( "popupServerRedirect" );
+                                break;
+                        }
+                    }
                     else
-                        Menus_ActivateByName( "error_popmenu" );
+                    {
+                        trap_Cvar_Set( "com_errorMessage", trap_TranslateString( buf ) );
+                        if( UI_Cvar_VariableString( "com_errorDiagnoseIP" )[0] )
+                        {
+                            missing_files = UI_Cvar_VariableString( "com_missingFiles" );
+                            if( missing_files[0] )
+                            {
+                                trap_Cvar_Set( "com_errorMessage",
+                                               va( "%s\n\n%s\n%s",
+                                                   UI_Cvar_VariableString( "com_errorMessage" ),
+                                                   trap_TranslateString( MISSING_FILES_MSG ),
+                                                   missing_files ) );
+                            }
+                        }
+                    }
                 }
                 
                 trap_S_FadeAllSound( 1.0f, 1000, false );
                 
+                trap_Cvar_Set( "g_reloading", "0" );
+                return;
+                
+            case UIMENU_TEAM:
+                trap_Key_SetCatcher( KEYCATCH_UI );
+                Menus_ActivateByName( "team" );
                 return;
                 
             case UIMENU_INGAME:
                 trap_Cvar_Set( "cl_paused", "1" );
                 trap_Key_SetCatcher( KEYCATCH_UI );
                 UI_BuildPlayerList();
+                Menu_SetFeederSelection( NULL, FEEDER_PLAYER_LIST, 0, NULL );
                 Menus_CloseAll( true );
+                //trap_Cvar_Set( "authLevel", "0" ); // just used for testing...
                 Menus_ActivateByName( "ingame" );
+                return;
+                
+            case UIMENU_WM_AUTOUPDATE:
+                return;
+                
+            default:
                 return;
         }
     }

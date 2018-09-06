@@ -1334,14 +1334,6 @@ static void SV_VerifyPaks_f( client_t* cl )
                 bGood = false;
                 break;
             }
-            // verify the second to be the ui checksum
-            pArg = Cmd_Argv( nCurArg++ );
-            if( !pArg || *pArg == '@' || atoi( pArg ) != nChkSum2 )
-            {
-                Com_Printf( "nChkSum2 %d == %d\n", atoi( pArg ), nChkSum2 );
-                bGood = false;
-                break;
-            }
             // should be sitting at the delimeter now
             pArg = Cmd_Argv( nCurArg++ );
             if( *pArg != '@' )

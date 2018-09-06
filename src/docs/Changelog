@@ -1,4 +1,7 @@
-2018-09-04 Dusan Jocic <dusanjocic@msn.com>
+2018-09-06 Dusan Jocic <dusanjocic@msn.com>
+	* FIxed sv_pure 1
+
+2018-09-05 Dusan Jocic <dusanjocic@msn.com>
 	* Changed "r_bloomDarkenPower" to "0.6"
 
 2018-09-04 Dusan Jocic <dusanjocic@msn.com>

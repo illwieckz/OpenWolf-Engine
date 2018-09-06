@@ -782,7 +782,7 @@ void Sys_GLimpInit( void )
         else
         {
             // Use the DirectX SDL backend
-            _putenv( "SDL_VIDEODRIVER=directx" );
+            _putenv( "SDL_VIDEODRIVER=windib" );
         }
     }
 #endif

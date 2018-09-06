@@ -4248,7 +4248,7 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
                 return;
                 
             case UIMENU_MAIN:
-                
+            
                 trap_Key_SetCatcher( KEYCATCH_UI );
                 Menus_CloseAll( true );
                 Menus_ActivateByName( "backgroundmusic" );

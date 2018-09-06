@@ -788,18 +788,18 @@ void idGameLocal::Shutdown( S32 restart )
     level.restarted = false;
     level.surrenderTeam = TEAM_NONE;
     trap_SetConfigstring( CS_WINNER, "" );
-    
-    if( trap_Cvar_VariableIntegerValue( "bot_enable" ) )
-    {
-        botLocal.BotAIShutdown( restart );
-    }
-    
+       
     // clear all demo clients
     clients = trap_Cvar_VariableIntegerValue( "sv_democlients" );
     for( i = 0; i < clients; i++ )
     {
         trap_SetConfigstring( CS_PLAYERS + i, NULL );
     }
+
+	if (trap_Cvar_VariableIntegerValue("bot_enable"))
+	{
+		botLocal.BotAIShutdown(restart);
+	}
 }
 
 void Com_Error( S32 level, StringEntry error, ... )
@@ -1987,7 +1987,7 @@ void idGameLocal::LogPrintf( StringEntry fmt, ... )
     Com_sprintf( string, sizeof( string ), "%3i:%i%i ", min, tens, sec );
     
     va_start( argptr, fmt );
-    Q_vsnprintf( string + 7, sizeof( string ) - 7, fmt, argptr );
+    Q_vsnprintf( string, sizeof( string ), fmt, argptr );
     va_end( argptr );
     
     if( g_dedicated.integer )

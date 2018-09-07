@@ -33,12 +33,17 @@ FIND_PATH(BZ2_INCLUDE_DIR bzlib.h
   ${LIB_DIR}/libbz2/include
 )
 
-FIND_LIBRARY(BZ2_LIBRARY bz2 libbz2
-  /usr/lib
-  /usr/local/lib
-  ${LIB_DIR}/libbz2/libs/x64
-  PATH_SUFFIXES x64 x32
-)
+SET(BZ2_NAMES ${BZ2_NAMES} bz2 libbz2)
+FIND_LIBRARY(BZ2_LIBRARY
+	NAMES
+		${BZ2_NAMES}
+	PATH_SUFFIXES
+		x64
+	PATHS
+		/usr/lib
+		/usr/local/lib
+		${LIB_DIR}/libbz2/libs
+	)
 
 IF(BZ2_INCLUDE_DIR)
   IF(BZ2_LIBRARY)

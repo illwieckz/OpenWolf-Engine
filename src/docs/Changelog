@@ -4,6 +4,7 @@
 	* Fully functional sv_pure and dedicated server
 	* Changed copyright header
 	* Updated cMake system
+	* Fixed compiling with BZ2 compression
 
 2018-09-06 Dusan Jocic <dusanjocic@msn.com>
 	* Fixed sv_pure 1

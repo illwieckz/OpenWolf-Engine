@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 // always use bbox vs. bbox collision and never capsule vs. bbox or vice versa
 //#define ALWAYS_BBOX_VS_BBOX

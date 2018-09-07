@@ -63,7 +63,11 @@
 
 */
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 #define MAX_LOGFILENAMESIZE		1024
 
@@ -54,8 +58,9 @@ static logfile_t logfile;
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
-void Log_Open( UTF8* filename )
+void Log_Open( StringEntry filename )
 {
+#if 0
     if( !LibVarValue( "log", "0" ) ) return;
     if( !filename || !strlen( filename ) )
     {
@@ -75,6 +80,37 @@ void Log_Open( UTF8* filename )
     } //end if
     strncpy( logfile.filename, filename, MAX_LOGFILENAMESIZE );
     botimport.Print( PRT_MESSAGE, "Opened log %s\n", logfile.filename );
+#else
+    {
+        StringEntry ospath;
+    
+        if( !LibVarValue( "log", "0" ) )
+            return;
+    
+        if( !filename || !*filename )
+        {
+            botimport.Print( PRT_MESSAGE, "openlog <filename>\n" );
+            return;
+        } //end if
+    
+        if( logfile.fp )
+        {
+            botimport.Print( PRT_ERROR, "log file %s is already opened\n", logfile.filename );
+            return;
+        } //end if
+    
+        ospath = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), "", filename );
+        logfile.fp = fopen( ospath, "wb" );
+        if( !logfile.fp )
+        {
+            botimport.Print( PRT_ERROR, "can't open the log file %s\n", filename );
+            return;
+        } //end if
+    
+        Q_strncpyz( logfile.filename, filename, sizeof( logfile.filename ) );
+        botimport.Print( PRT_MESSAGE, "Opened log %s\n", logfile.filename );
+    } //end of the function Log_Create
+#endif
 } //end of the function Log_Create
 //===========================================================================
 //

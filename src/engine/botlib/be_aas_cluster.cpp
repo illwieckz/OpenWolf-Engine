@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 extern botlib_import_t botimport;
 

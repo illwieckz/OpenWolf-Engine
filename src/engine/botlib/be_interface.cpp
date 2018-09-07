@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 //library globals in a structure
 botlib_globals_t botlibglobals;
@@ -118,52 +122,50 @@ bool BotLibSetup( UTF8* str )
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
+extern define_t* globaldefines;
 S32 Export_BotLibSetup( void )
 {
-    S32		errnum;
-    UTF8		logfilename[MAX_QPATH];
-    UTF8*		homedir, *gamedir;
+    S32 errnum;
     
     bot_developer = LibVarGetValue( "bot_developer" );
-    memset( &botlibglobals, 0, sizeof( botlibglobals ) ); // bk001207 - init
-    //initialize byte swapping (litte endian etc.)
-//	Swap_Init();
-    homedir = LibVarGetString( "homedir" );
-    gamedir = LibVarGetString( "gamedir" );
-    if( homedir[0] )
-    {
-        if( gamedir[0] )
-        {
-            Com_sprintf( logfilename, sizeof( logfilename ), "%s%c%s%cbotlib.log", homedir, PATH_SEP, gamedir, PATH_SEP );
-        }
-        else
-        {
-            /*Com_sprintf(logfilename, sizeof(logfilename), "%s%c" BASEGAME "%cbotlib.log", homedir, PATH_SEP, PATH_SEP);*/
-        }
-    }
-    else
-    {
-        Com_sprintf( logfilename, sizeof( logfilename ), "botlib.log" );
-    }
-    Log_Open( logfilename );
+    
+    Log_Open( "botlib.log" );
     //
     botimport.Print( PRT_MESSAGE, "------- BotLib Initialization -------\n" );
     //
-    botlibglobals.maxclients = ( S32 ) LibVarValue( "maxclients", "128" );
-    botlibglobals.maxentities = ( S32 ) LibVarValue( "maxentities", "1024" );
+    botlibglobals.maxclients = ( S32 )LibVarValue( "maxclients", "128" );
+    botlibglobals.maxentities = ( S32 )LibVarValue( "maxentities", "1024" );
     
-    errnum = AAS_Setup();			//be_aas_main.c
-    if( errnum != BLERR_NOERROR ) return errnum;
-    errnum = EA_Setup();			//be_ea.c
-    if( errnum != BLERR_NOERROR ) return errnum;
-    errnum = BotSetupWeaponAI();	//be_ai_weap.c
-    if( errnum != BLERR_NOERROR )return errnum;
-    //errnum = BotSetupGoalAI();		//be_ai_goal.c
-    //if (errnum != BLERR_NOERROR) return errnum;
-    errnum = BotSetupChatAI();		//be_ai_chat.c
-    if( errnum != BLERR_NOERROR ) return errnum;
-    errnum = BotSetupMoveAI();		//be_ai_move.c
-    if( errnum != BLERR_NOERROR ) return errnum;
+    errnum = AAS_Setup();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
+    errnum = EA_Setup();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
+    errnum = BotSetupWeaponAI();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
+    errnum = BotSetupGoalAI();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
+    errnum = BotSetupChatAI();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
+    errnum = BotSetupMoveAI();
+    if( errnum != BLERR_NOERROR )
+    {
+        return errnum;
+    }
     
     botlibsetup = true;
     botlibglobals.botlibsetup = true;

@@ -75,6 +75,7 @@
 #include <fenv.h>
 #endif
 
+#ifndef DEDICATED
 #ifdef _WIN32
 #include <GL/glew.h>
 #include <GL/wglew.h>
@@ -87,6 +88,7 @@
 #else
 // Mac - I Have no idea
 #endif
+#endif
 
 #include <database/db_local.h>
 
@@ -96,7 +98,9 @@
 #include <SDL/SDL.h>
 #endif
 #include <curl/curl.h>
+#ifndef DEDICATED
 #include <CL/cl.h>
+#endif
 #include <sys/resource.h>
 
 #include <botlib/botlib.h>
@@ -136,13 +140,13 @@
 #include <qcommon/dl_public.h>
 #include <qcommon/md4.h>
 #include <server/server.h>
-
+#ifndef DEDICATED
 #include <GPURenderer/r_local.h>
 #include <GPURenderer/r_fbo.h>
 #include <GPURenderer/r_dsa.h>
 #include <GPURenderer/r_common.h>
 #include <GPURenderer/r_allocator.h>
-
+#endif
 #include <client/client.h>
 #include <client/keys.h>
 
@@ -161,29 +165,32 @@
 #include <physicslib/physics_public.h>
 
 #include <GUI/gui_local.h>
-
+#ifndef DEDICATED
 #include <GPUWorker/GPUWorker.h>
 #include <GPUWorker/GPUWorker_Local.h>
 #include <GPUWorker/GPUWorker_CLCache.h>
 #include <GPUWorker/GPUWorker_Backend.h>
 #include <GPUWorker/GPUWorker_OpenCL.h>
-
+#endif
 #include <cm/cm_local.h>
 #include <cm/cm_patch.h>
 
 #include <cgame/cg_api.h>
-
+#ifndef DEDICATED
 #include <client/cl_HydraManager.h>
 #ifdef _WIN32
 #include <OVR.h>
 #endif
+#endif
 
+#ifndef DEDICATED
 #ifdef _WIN32
 #include <freetype/ft2build.h>
 #else
 #include <freetype2/ft2build.h>
 #endif
 #undef getch
+#endif
 
 // Dushan
 #if defined(_WIN32) || defined(_WIN64)
@@ -196,6 +203,8 @@
 #include <OWLib/types.h>
 #include <OWLib/util_list.h>
 #include <OWLib/util_str.h>
+#include <OWLib/q_splineshared.h>
+#include <OWLib/splines.h>
 
 #ifdef __LINUX__
 #include <CL/cl_gl.h>

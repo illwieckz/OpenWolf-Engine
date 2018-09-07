@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   sg_precompiled.cpp
+// File name:   null_precompiled.cpp
 // Version:     v1.00
 // Created:
 // Compilers:   Visual Studio 2015
@@ -26,4 +26,4 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <sgame/sg_precompiled.h>
+#include <null/null_precompiled.h>

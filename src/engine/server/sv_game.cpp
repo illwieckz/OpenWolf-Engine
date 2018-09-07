@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 botlib_export_t* botlib_export;
 
@@ -527,6 +531,11 @@ Called every time a map changes
 */
 void SV_ShutdownGameProgs( void )
 {
+    if( !svs.gameStarted )
+    {
+        return;
+    }
+    
     if( !gvm || game == NULL )
     {
         return;
@@ -578,8 +587,11 @@ Called on a map_restart, but not on a normal map change
 */
 void SV_RestartGameProgs( void )
 {
+    SV_InitExportTable();
     if( !gvm )
     {
+        svs.gameStarted = false;
+        Com_Error( ERR_DROP, "SV_RestartGameProgs on game failed" );
         return;
     }
     game->Shutdown( true );
@@ -597,8 +609,13 @@ Called on a normal map change, not on a map_restart
 */
 void SV_InitGameProgs( void )
 {
+    extern S32 bot_enable;
+    
     sv.num_tagheaders = 0;
     sv.num_tags = 0;
+    
+    cvar_t* var = Cvar_Get( "bot_enable", "1", CVAR_LATCH );
+    bot_enable = var ? var->integer : 0;
     
     // load the dll or bytecode
     gvm = Sys_LoadDll( "sgame" );
@@ -613,6 +630,8 @@ void SV_InitGameProgs( void )
     {
         Com_Error( ERR_FATAL, "gameDllEntry on game failed.\n" );
     }
+    
+    svs.gameStarted = true;
     
     // Init the export table.
     SV_InitExportTable();

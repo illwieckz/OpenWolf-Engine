@@ -26,7 +26,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 idDatabaseSystemLocal databaseSystemLocal;
 idDatabaseSystem* databaseSystem = &databaseSystemLocal;

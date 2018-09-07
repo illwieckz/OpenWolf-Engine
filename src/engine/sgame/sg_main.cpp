@@ -788,18 +788,18 @@ void idGameLocal::Shutdown( S32 restart )
     level.restarted = false;
     level.surrenderTeam = TEAM_NONE;
     trap_SetConfigstring( CS_WINNER, "" );
-       
+    
     // clear all demo clients
     clients = trap_Cvar_VariableIntegerValue( "sv_democlients" );
     for( i = 0; i < clients; i++ )
     {
         trap_SetConfigstring( CS_PLAYERS + i, NULL );
     }
-
-	if (trap_Cvar_VariableIntegerValue("bot_enable"))
-	{
-		botLocal.BotAIShutdown(restart);
-	}
+    
+    if( trap_Cvar_VariableIntegerValue( "bot_enable" ) )
+    {
+        botLocal.BotAIShutdown( restart );
+    }
 }
 
 void Com_Error( S32 level, StringEntry error, ... )
@@ -1305,9 +1305,11 @@ void idGameLocal::CalculateBuildPoints( void )
                           
     //may as well pump the stages here too
     {
-        F32 alienPlayerCountMod = level.averageNumAlienClients / PLAYER_COUNT_MOD;
-        F32 humanPlayerCountMod = level.averageNumHumanClients / PLAYER_COUNT_MOD;
-        S32   alienNextStageThreshold, humanNextStageThreshold;
+        F32 alienPlayerCountMod;
+        F32 humanPlayerCountMod;
+        
+        alienPlayerCountMod = level.averageNumAlienClients / PLAYER_COUNT_MOD;
+        humanPlayerCountMod = level.averageNumHumanClients / PLAYER_COUNT_MOD;
         
         if( alienPlayerCountMod < 0.1f )
             alienPlayerCountMod = 0.1f;
@@ -1315,13 +1317,14 @@ void idGameLocal::CalculateBuildPoints( void )
         if( humanPlayerCountMod < 0.1f )
             humanPlayerCountMod = 0.1f;
             
+        S32 alienNextStageThreshold, humanNextStageThreshold;
+        
         if( g_alienStage.integer < g_alienMaxStage.integer )
             alienNextStageThreshold = ( S32 )( ceil( ( F32 )g_alienStageThreshold.integer * ( g_alienStage.integer + 1 ) * alienPlayerCountMod ) );
         else if( g_humanStage.integer > S1 )
             alienNextStageThreshold = ( S32 )( ceil( ( F32 )level.alienStagedownCredits + g_alienStageThreshold.integer * alienPlayerCountMod ) );
         else
             alienNextStageThreshold = -1;
-            
             
         if( g_humanStage.integer < g_humanMaxStage.integer )
             humanNextStageThreshold = ( S32 )( ceil( ( F32 )g_humanStageThreshold.integer * ( g_humanStage.integer + 1 ) * humanPlayerCountMod ) );
@@ -1974,8 +1977,9 @@ Print to the logfile with a time stamp if it is open, and to the server console
 void idGameLocal::LogPrintf( StringEntry fmt, ... )
 {
     va_list argptr;
-    UTF8    string[ 1024 ], decoloured[ 1024 ];
-    S32     min, tens, sec;
+    UTF8 string[BIG_INFO_STRING], decolored[BIG_INFO_STRING];
+    S32 min, tens, sec;
+    U64 tslen;
     
     sec = level.time / 1000;
     
@@ -1986,18 +1990,19 @@ void idGameLocal::LogPrintf( StringEntry fmt, ... )
     
     Com_sprintf( string, sizeof( string ), "%3i:%i%i ", min, tens, sec );
     
+    tslen = strlen( string );
+    
     va_start( argptr, fmt );
-    Q_vsnprintf( string, sizeof( string ), fmt, argptr );
+    Q_vsnprintf( string + tslen, sizeof( string ) - tslen, fmt, argptr );
     va_end( argptr );
     
-    if( g_dedicated.integer )
-        Printf( "%s", string + 7 );
-        
     if( !level.logFile )
+    {
         return;
-        
-    DecolorString( string, decoloured, sizeof( decoloured ) );
-    trap_FS_Write( decoloured, strlen( decoloured ), level.logFile );
+    }
+    
+    DecolorString( string, decolored, sizeof( decolored ) );
+    trap_FS_Write( decolored, strlen( decolored ), level.logFile );
 }
 
 /*

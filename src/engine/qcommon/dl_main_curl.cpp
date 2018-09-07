@@ -40,7 +40,11 @@
 	* Add server as referring URL
 */
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 #define APP_NAME        "ID_DOWNLOAD"
 #define APP_VERSION     "2.0"

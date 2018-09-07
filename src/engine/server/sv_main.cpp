@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 serverStatic_t  svs;			// persistant server info
 server_t        sv;				// local server
@@ -1435,7 +1439,8 @@ void SV_Frame( S32 msec )
         return;
     }
     
-    if( svs.initialized && gvm )
+#if 0
+    if( svs.initialized && svs.gameStarted )
     {
         S32 i = 0;
         S32 players = 0;
@@ -1461,6 +1466,7 @@ void SV_Frame( S32 msec )
             }
         }
     }
+#endif
     
     if( !com_sv_running->integer )
     {

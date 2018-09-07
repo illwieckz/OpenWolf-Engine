@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 S32 demo_protocols[] = { 66, 67, 68, 0 };
 
@@ -3509,7 +3513,7 @@ S32 Com_ModifyMsec( S32 msec )
         if( msec > 500 && msec < 500000 )
         {
             // hibernation mode cause this
-            if( !svs.hibernation.enabled )
+            //if( !svs.hibernation.enabled )
             {
                 Com_Printf( "Hitch warning: %i msec frame time\n", msec );
             }
@@ -3808,7 +3812,7 @@ Com_Shutdown
 */
 void Com_Shutdown( bool badProfile )
 {
-    UTF8*           cl_profileStr = Cvar_VariableString( "cl_profile" );
+    UTF8* cl_profileStr = Cvar_VariableString( "cl_profile" );
     
     // delete pid file
     if( com_gameInfo.usesProfiles && cl_profileStr[0] && !badProfile )
@@ -4115,10 +4119,9 @@ void Field_CompleteDelay( void )
 Field_CompleteCommand
 ===============
 */
-void Field_CompleteCommand( UTF8* cmd,
-                            bool doCommands, bool doCvars )
+void Field_CompleteCommand( UTF8* cmd, bool doCommands, bool doCvars )
 {
-    S32		completionArgument = 0;
+    S32 completionArgument = 0;
     
     // Skip leading whitespace and quotes
     cmd = Com_SkipCharset( cmd, " \"" );

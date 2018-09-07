@@ -53,7 +53,11 @@
 
 #ifdef BOTLIB
 //include files for usage in the bot library
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 #endif //BOTLIB
 
 #ifdef MEQCC

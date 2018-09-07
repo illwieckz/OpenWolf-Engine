@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 typedef struct bot_debugpoly_s
 {
@@ -620,8 +624,16 @@ SV_BotFrame
 */
 void SV_BotFrame( S32 time )
 {
+    if( !bot_enable )
+        return;
+        
+    //NOTE: maybe the game is already shutdown
+    if( !svs.gameStarted )
+        return;
+        
     if( !gvm )
         return;
+        
     game->BotAIStartFrame( time );
 }
 

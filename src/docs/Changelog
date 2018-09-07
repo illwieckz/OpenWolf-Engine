@@ -1,5 +1,9 @@
 2018-09-07 Dusan Jocic <dusanjocic@msn.com>
 	* Fixed crash with and if "dedicated 1" is set
+	* Fixed compiling dedicated server
+	* Fully functional sv_pure and dedicated server
+	* Changed copyright header
+	* Updated cMake system
 
 2018-09-06 Dusan Jocic <dusanjocic@msn.com>
 	* Fixed sv_pure 1

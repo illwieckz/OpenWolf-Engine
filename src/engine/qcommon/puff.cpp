@@ -69,7 +69,11 @@
  * 1.8   9 Jan 2004     - Added some comments on no distance codes case
  */
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 #define local static            /* for local function definitions */
 

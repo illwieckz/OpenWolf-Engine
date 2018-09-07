@@ -340,6 +340,8 @@ typedef struct serverStatic_s
         S32 lastTimeDisconnected;
         F32 sv_fps;
     } hibernation;
+    
+    bool            gameStarted;
 } serverStatic_t;
 
 #if defined (UPDATE_SERVER)

@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 /*
 ===============
@@ -685,6 +689,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
     // shut down the existing game if it is running
     SV_ShutdownGameProgs();
+    svs.gameStarted = false;
     
     Com_Printf( "------ Server Initialization ------\n" );
     Com_Printf( "Server: %s\n", server );
@@ -1283,6 +1288,7 @@ void SV_Shutdown( UTF8* finalmsg )
     
     SV_MasterShutdown();
     SV_ShutdownGameProgs();
+    svs.gameStarted = false;
     
     // free current level
     SV_ClearServer();

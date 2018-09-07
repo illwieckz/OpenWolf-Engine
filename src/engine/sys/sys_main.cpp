@@ -35,7 +35,11 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 
 static UTF8 binaryPath[ MAX_OSPATH ] = { 0 };
 static UTF8 installPath[ MAX_OSPATH ] = { 0 };

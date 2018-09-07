@@ -39,7 +39,7 @@
 #define __L_LOG_H__
 
 //open a log file
-void Log_Open( UTF8* filename );
+void Log_Open( StringEntry filename );
 //close the current log file
 void Log_Close( void );
 //close log file if present

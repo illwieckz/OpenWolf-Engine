@@ -36,7 +36,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef BOTLIB
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#else
 #include <OWLib/precompiled.h>
+#endif
 #endif //BOTLIB
 
 #ifdef BSPC

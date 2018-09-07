@@ -38,7 +38,9 @@
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef CGAMEDLL
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif CGAMEDLL
 #include <cgame/cg_precompiled.h>
 #elif GAMEDLL
 #include <sgame/sg_precompiled.h>

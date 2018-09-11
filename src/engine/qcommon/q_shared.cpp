@@ -2842,3 +2842,33 @@ S32 Q_vsnprintf( UTF8* str, U64 size, StringEntry format, va_list ap )
     return retval;
 }
 #endif
+
+bool StringContainsWord( StringEntry haystack, StringEntry needle )
+{
+    if( !*needle )
+    {
+        return false;
+    }
+    for( ; *haystack; ++haystack )
+    {
+        if( toupper( *haystack ) == toupper( *needle ) )
+        {
+            /*
+            * Matched starting char -- loop through remaining chars.
+            */
+            const char* h, *n;
+            for( h = haystack, n = needle; *h && *n; ++h, ++n )
+            {
+                if( toupper( *h ) != toupper( *n ) )
+                {
+                    break;
+                }
+            }
+            if( !*n ) /* matched all of 'needle' to null termination */
+            {
+                return true; /* return the start of the match */
+            }
+        }
+    }
+    return false;
+}

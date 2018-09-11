@@ -715,6 +715,11 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                     if( stage->type == ST_NORMALPARALLAXMAP )
                         type = IMGTYPE_NORMALHEIGHT;
                 }
+                else if( stage->type == ST_SPECULARMAP )
+                {
+                    type = IMGTYPE_SPECULAR;
+                    flags |= IMGFLAG_NOLIGHTSCALE;
+                }
                 else
                 {
                     if( r_genNormalMaps->integer )
@@ -1768,6 +1773,36 @@ void ParseSort( UTF8** text )
 }
 
 
+/*
+=================
+ParseMaterial
+=================
+*/
+const char* materialNames[MATERIAL_LAST] =
+{
+    MATERIALS
+};
+
+void ParseMaterial( UTF8** text )
+{
+    UTF8*	token;
+    int		i;
+    
+    token = COM_ParseExt2( text, false );
+    if( token[0] == 0 )
+    {
+        Com_Printf( S_COLOR_YELLOW  "WARNING: missing material in shader '%s'\n", shader.name );
+        return;
+    }
+    for( i = 0; i < MATERIAL_LAST; i++ )
+    {
+        if( !Q_stricmp( token, materialNames[i] ) )
+        {
+            shader.surfaceFlags |= i;
+            break;
+        }
+    }
+}
 
 // this table is also present in q3map
 
@@ -1869,6 +1904,53 @@ static bool ParseShader( UTF8** text )
     
     s = 0;
     
+    if( StringContainsWord( *text, "plastic" ) || StringContainsWord( *text, "trooper" ) )
+        shader.surfaceFlags |= MATERIAL_PLASTIC;
+    else if( StringContainsWord( *text, "metal" ) || StringContainsWord( *text, "pipe" ) )
+        shader.surfaceFlags |= MATERIAL_SOLIDMETAL;
+    else if( StringContainsWord( *text, "glass" ) )
+        shader.surfaceFlags |= MATERIAL_GLASS;
+    else if( StringContainsWord( *text, "sand" ) )
+        shader.surfaceFlags |= MATERIAL_SAND;
+    else if( StringContainsWord( *text, "gravel" ) )
+        shader.surfaceFlags |= MATERIAL_GRAVEL;
+    else if( StringContainsWord( *text, "dirt" ) )
+        shader.surfaceFlags |= MATERIAL_DIRT;
+    else if( StringContainsWord( *text, "concrete" ) )
+        shader.surfaceFlags |= MATERIAL_CONCRETE;
+    else if( StringContainsWord( *text, "marble" ) )
+        shader.surfaceFlags |= MATERIAL_MARBLE;
+    else if( StringContainsWord( *text, "snow" ) )
+        shader.surfaceFlags |= MATERIAL_SNOW;
+    else if( StringContainsWord( *text, "flesh" ) || StringContainsWord( *text, "body" ) )
+        shader.surfaceFlags |= MATERIAL_FLESH;
+    else if( StringContainsWord( *text, "canvas" ) )
+        shader.surfaceFlags |= MATERIAL_CANVAS;
+    else if( StringContainsWord( *text, "rock" ) )
+        shader.surfaceFlags |= MATERIAL_ROCK;
+    else if( StringContainsWord( *text, "rubber" ) )
+        shader.surfaceFlags |= MATERIAL_RUBBER;
+    else if( StringContainsWord( *text, "carpet" ) )
+        shader.surfaceFlags |= MATERIAL_CARPET;
+    else if( StringContainsWord( *text, "plaster" ) )
+        shader.surfaceFlags |= MATERIAL_PLASTER;
+    else if( StringContainsWord( *text, "computer" ) || StringContainsWord( *text, "console" ) || StringContainsWord( *text, "button" ) )
+        shader.surfaceFlags |= MATERIAL_COMPUTER;
+    else if( StringContainsWord( *text, "armor" ) || StringContainsWord( *text, "armour" ) )
+        shader.surfaceFlags |= MATERIAL_ARMOR;
+    else if( StringContainsWord( *text, "fabric" ) )
+        shader.surfaceFlags |= MATERIAL_FABRIC;
+    else if( StringContainsWord( *text, "hood" ) || StringContainsWord( *text, "robe" ) || StringContainsWord( *text, "cloth" ) )
+        shader.surfaceFlags |= MATERIAL_FABRIC;
+    else if( StringContainsWord( *text, "tile" ) )
+        shader.surfaceFlags |= MATERIAL_TILES;
+    else if( StringContainsWord( *text, "leaf" ) || StringContainsWord( *text, "leaves" ) )
+        shader.surfaceFlags |= MATERIAL_GREENLEAVES;
+    else if( StringContainsWord( *text, "mud" ) )
+        shader.surfaceFlags |= MATERIAL_MUD;
+    else if( StringContainsWord( *text, "ice" ) )
+        shader.surfaceFlags |= MATERIAL_ICE;
+        
     token = COM_ParseExt2( text, true );
     if( token[0] != '{' )
     {
@@ -1913,6 +1995,10 @@ static bool ParseShader( UTF8** text )
         {
             SkipRestOfLine( text );
             continue;
+        }
+        else if( !Q_stricmp( token, "material" ) || !Q_stricmp( token, "q3map_material" ) )
+        {
+            ParseMaterial( text );
         }
         // sun parms
         else if( !Q_stricmp( token, "q3map_sun" ) || !Q_stricmp( token, "q3map_sunExt" ) || !Q_stricmp( token, "q3gl2_sun" ) )
@@ -2342,12 +2428,26 @@ static void ComputeVertexAttribs( void )
     }
 }
 
+void StripCrap( const char* in, char* out, int destsize )
+{
+    const char* dot = strrchr( in, '_' ), *slash;
+    if( dot && ( !( slash = strrchr( in, '/' ) ) || slash < dot ) )
+        destsize = ( destsize < dot - in + 1 ? destsize : dot - in + 1 );
+        
+    if( in == out && destsize > 1 )
+        out[destsize - 1] = '\0';
+    else
+        Q_strncpyz( out, in, destsize );
+}
+
 
 static void CollapseStagesToLightall( shaderStage_t* diffuse,
                                       shaderStage_t* normal, shaderStage_t* specular, shaderStage_t* lightmap,
                                       bool useLightVector, bool useLightVertex, bool parallax, bool tcgen )
 {
     S32 defs = 0;
+    bool hasRealNormalMap = false;
+    bool hasRealSpecularMap = false;
     
     //CL_RefPrintf(PRINT_ALL, "shader %s has diffuse %s", shader.name, diffuse->bundle[0].image[0]->imgName);
     
@@ -2387,30 +2487,21 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
                 defs |= LIGHTDEF_USE_PARALLAXMAP;
                 
             VectorCopy4( normal->normalScale, diffuse->normalScale );
+            
+            hasRealNormalMap = true;
         }
-        else if( ( lightmap || useLightVector || useLightVertex ) && ( diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0] ) )
+        else if( ( lightmap || useLightVector || useLightVertex )
+                 && ( diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0] ) )
         {
             UTF8 normalName[MAX_QPATH];
             image_t* normalImg;
-            S32/*imgFlags_t*/ normalFlags = ( diffuseImg->flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
-            
-            // try a normalheight image first
-            COM_StripExtension2( diffuseImg->imgName, normalName, MAX_QPATH );
-            Q_strcat( normalName, MAX_QPATH, "_h" );
-            
-            normalImg = R_FindImageFile( normalName, IMGTYPE_NORMALHEIGHT, normalFlags );
-            
-            if( normalImg )
-            {
-                parallax = true;
-            }
-            else
-            {
-                // try a normal image ("_n" suffix)
-                normalName[strlen( normalName ) - 1] = '\0';
-                normalImg = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
-            }
-            
+            S32 normalFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB ) ) | IMGFLAG_NOLIGHTSCALE;
+    
+            COM_StripExtension2( diffuseImg->imgName, normalName, sizeof( normalName ) );
+            Q_strcat( normalName, sizeof( normalName ), "_n" );
+    
+            normalImg = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
+    
             if( normalImg )
             {
                 diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
@@ -2421,37 +2512,48 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
                     defs |= LIGHTDEF_USE_PARALLAXMAP;
                     
                 VectorSet4( diffuse->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value );
+    
+                hasRealNormalMap = true;
             }
         }
     }
-    
-    if( r_specularMapping->integer )
+
+    if( diffuse && r_specularMapping->integer )
     {
-        image_t* diffuseImg;
-        if( specular )
+        image_t* diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0];
+        
+        if( diffuse && diffuse->bundle[TB_SPECULARMAP].specularLoaded )
         {
-            //CL_RefPrintf(PRINT_ALL, ", specularmap %s", specular->bundle[0].image[0]->imgName);
+            // Got one...
             diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
             VectorCopy4( specular->specularScale, diffuse->specularScale );
+            hasRealSpecularMap = true;
         }
-        else if( ( lightmap || useLightVector || useLightVertex ) && ( diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0] ) )
+        else if( diffuse && !diffuse->bundle[TB_SPECULARMAP].specularLoaded )
         {
+            // Check if we can load one...
             UTF8 specularName[MAX_QPATH];
+            UTF8 specularName2[MAX_QPATH];
             image_t* specularImg;
-            S32/*imgFlags_t*/ specularFlags = ( diffuseImg->flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
+            S32 specularFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB ) ) | IMGFLAG_NOLIGHTSCALE;
             
-            COM_StripExtension2( diffuseImg->imgName, specularName, MAX_QPATH );
-            Q_strcat( specularName, MAX_QPATH, "_s" );
+            diffuse->bundle[TB_SPECULARMAP].specularLoaded = true;
             
-            specularImg = R_FindImageFile( specularName, IMGTYPE_COLORALPHA, specularFlags );
+            COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+            StripCrap( specularName, specularName2, sizeof( specularName ) );
+            Q_strcat( specularName2, sizeof( specularName2 ), "_s" );
+            
+            specularImg = R_FindImageFile( specularName2, IMGTYPE_SPECULAR, specularFlags );
             
             if( specularImg )
             {
                 diffuse->bundle[TB_SPECULARMAP] = diffuse->bundle[0];
                 diffuse->bundle[TB_SPECULARMAP].numImageAnimations = 0;
                 diffuse->bundle[TB_SPECULARMAP].image[0] = specularImg;
-                
-                VectorSet4( diffuse->specularScale, 1.0f, 1.0f, 1.0f, 1.0f );
+                if( !specular ) 
+                    specular = diffuse;
+                VectorCopy4( specular->specularScale, diffuse->specularScale );
+                hasRealSpecularMap = true;
             }
         }
     }
@@ -2463,6 +2565,18 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
     
     //CL_RefPrintf(PRINT_ALL, ".\n");
     
+    if( hasRealNormalMap )
+    {
+        diffuse->glslShaderGroup = tr.lightallShader;
+    }
+    
+    if( hasRealSpecularMap )
+    {
+        if( diffuse ) diffuse->hasSpecular = true;
+        if( normal ) normal->hasSpecular = true;
+        if( specular ) specular->hasSpecular = true;
+    }
+    
     diffuse->glslShaderGroup = tr.lightallShader;
     diffuse->glslShaderIndex = defs;
 }
@@ -2472,6 +2586,8 @@ static S32 CollapseStagesToGLSL( void )
 {
     S32 i, j, numStages;
     bool skip = false;
+    bool hasRealNormalMap = false;
+    bool hasRealSpecularMap = false;
     
     // skip shaders with deforms
     if( shader.numDeforms != 0 )
@@ -2595,6 +2711,7 @@ static S32 CollapseStagesToGLSL( void )
                     case ST_NORMALMAP:
                         if( !normal )
                         {
+                            hasRealNormalMap = true;
                             normal = pStage2;
                         }
                         break;
@@ -2610,6 +2727,7 @@ static S32 CollapseStagesToGLSL( void )
                     case ST_SPECULARMAP:
                         if( !specular )
                         {
+                            hasRealSpecularMap = true;
                             specular = pStage2;
                         }
                         break;
@@ -2683,6 +2801,7 @@ static S32 CollapseStagesToGLSL( void )
             
         if( pStage->type == ST_NORMALMAP )
         {
+            hasRealNormalMap = true;
             pStage->active = false;
         }
         
@@ -2693,6 +2812,7 @@ static S32 CollapseStagesToGLSL( void )
         
         if( pStage->type == ST_SPECULARMAP )
         {
+            hasRealSpecularMap = true;
             pStage->active = false;
         }
     }
@@ -2771,6 +2891,24 @@ static S32 CollapseStagesToGLSL( void )
                     pStage->glslShaderIndex |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
             }
         }
+    }
+    
+    for( S32 i = 0; i < MAX_SHADER_STAGES; i++ )
+    {
+        shaderStage_t* stage = &stages[i];
+        
+        if( !stage->active )
+        {
+            continue;
+        }
+        
+        if( hasRealNormalMap )
+            stage->glslShaderGroup = tr.lightallShader;
+            
+        if( hasRealSpecularMap )
+            stage->hasSpecular = true;
+            
+        CL_RefPrintf( PRINT_DEVELOPER, "-> %s\n", stage->bundle[0].image[0]->imgName );
     }
     
     return numStages;

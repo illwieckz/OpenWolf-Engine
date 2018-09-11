@@ -425,6 +425,7 @@ typedef struct
     S32				videoMapHandle;
     bool		isLightmap;
     bool		isVideoMap;
+    bool		specularLoaded;
 } textureBundle_t;
 
 enum
@@ -460,6 +461,7 @@ typedef struct
     bool		active;
     bool		isDetail;
     bool        isWater;
+    bool		hasSpecular;
     
     textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
     

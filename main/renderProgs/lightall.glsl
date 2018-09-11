@@ -138,7 +138,6 @@ vec2 ModTexCoords(vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb)
 }
 #endif
 
-
 float CalcLightAttenuation(float distance, float radius)
 {
 	float d = pow(distance / radius, 4.0);
@@ -150,7 +149,6 @@ float CalcLightAttenuation(float distance, float radius)
 
 	return clamp(attenuation, 0.0, 1.0);
 }
-
 
 void main()
 {
@@ -262,21 +260,22 @@ void main()
 
 	var_Local1 = u_Local1;
 	var_Dimensions = u_Dimensions;
-	var_Local1 = u_Local1;
 }
 
 /*[Fragment]*/
 uniform sampler2D u_DiffuseMap;
+uniform vec2	u_Dimensions;
 varying vec4	var_Local1; // surfaceType, 0, 0, 0
 varying vec2	var_Dimensions;
+uniform vec4	u_Local1;
 
 #if defined(USE_LIGHTMAP)
 uniform sampler2D u_LightMap;
 #endif
 
-#if defined(USE_NORMALMAP)
+//#if defined(USE_NORMALMAP)
 uniform sampler2D u_NormalMap;
-#endif
+//#endif
 
 #if defined(USE_DELUXEMAP)
 uniform sampler2D u_DeluxeMap;
@@ -308,8 +307,9 @@ uniform vec3  u_PrimaryLightAmbient;
 #if !defined(USE_LIGHT)
 uniform vec4   u_NormalScale;
 varying vec3   var_Normal;
-varying vec3   var_ViewDir;
 #endif
+
+varying vec3   var_ViewDir;
 
 varying vec3 var_N;
 
@@ -372,29 +372,31 @@ varying vec4      var_PrimaryLightDir;
 		vec3 color2 = ((color - const_1) * const_2);
 #define const_3 ( 125.0 / 255.0)
 #define const_4 (255.0 / 115.0)
-		
 		color = ((color - const_3) * const_4);
-		
-		color = clamp(color * color * (color * 5.0), 0.0, 1.0); // testing
 
-		//vec3 orig_color = color * 2.0;
+		color = clamp(color * color * (color * 5.0), 0.0, 1.0); // 1st half "color * color" darkens, 2nd half "* color * 5.0" increases the mids...
+
 		vec3 orig_color = color + color2;
-		
-		orig_color = clamp(orig_color * 2.5, 0.0, 1.0); // testing
 
-		orig_color = clamp(orig_color, 0.0, 1.0);
+		orig_color = clamp(orig_color * 2.5, 0.0, 1.0); // Lightens the new mixed version...
+
 		float combined_color2 = orig_color.r + orig_color.g + orig_color.b;
-		combined_color2 /= 4.0;
+		combined_color2 /= 4.0; // Darkens the whole thing a litttle...
 
-		return clamp(1.0 - combined_color2, 0.0, 1.0);
+		// Returns inverse of the height. Result is mostly around 1.0 (so we don't stand on a surface far below us), with deep dark areas (cracks, edges, etc)...
+		float height = clamp(1.0 - combined_color2, 0.0, 1.0);
+		return height;
 	}
-  #endif //USE_PARALLAXMAP_NONORMALS
+  #endif
 
 
 float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 {
-#if !defined(FAST_PARALLAX)
-	float MAX_SIZE = var_Local1.x / 3.0;//1.25;//1.5;//1.0;
+	if (u_Local1.x == 0.0)
+		return 0.0;
+	
+  #if !defined(FAST_PARALLAX)
+	float MAX_SIZE = u_Local1.x / 3.0;//1.25;//1.5;//1.0;
 	if (MAX_SIZE > 1.75) MAX_SIZE = 1.75;
 	if (MAX_SIZE < 1.0) MAX_SIZE = 1.0;
 	const int linearSearchSteps = 16;
@@ -461,11 +463,10 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	}
 #endif
 
-	//return ((bestDepth * var_Local1.x) + (SampleDepth(normalMap, dp) - 1.0)) * 0.5;
-	return bestDepth * var_Local1.x;
+	return bestDepth * u_Local1.x;
 #else //FAST_PARALLAX
 	float depth = SampleDepth(normalMap, dp) - 1.0;
-	return depth * var_Local1.x;
+	return depth * u_Local1.x;
 #endif //FAST_PARALLAX
 }
 #endif //USE_PARALLAXMAP || USE_PARALLAXMAP_NONORMALS
@@ -541,23 +542,86 @@ vec3 CalcSpecular( in vec3 specular, in float NH, in float NL, in float NE, in f
 	return (distrib * fresnel * vis);
 }
 
-
-float CalcLightAttenuation(float point, float normDist)
+float CalcLightAttenuation(float distance, float radius)
 {
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
+	float d = pow(distance / radius, 4.0);
+	float attenuation = clamp(1.0 - d, 0.0, 1.0);
+	attenuation *= attenuation;
+	attenuation /= distance * distance + 1.0;
+	// don't attenuate directional light
+	attenuation = attenuation + float(radius < 1.0);
 
-	// clamp attenuation
-	#if defined(NO_LIGHT_CLAMP)
-	attenuation = max(attenuation, 0.0);
-	#else
-	attenuation = clamp(attenuation, 0.0, 1.0);
-	#endif
-
-	return attenuation;
+	return clamp(attenuation, 0.0, 1.0);
 }
 
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+	vec2 tex_offset = vec2(1.0 / u_Dimensions.x, 1.0 / u_Dimensions.y);
+    // number of depth layers
+	float height_scale = u_Local1.x;
+    const float minLayers = 10;
+    const float maxLayers = 20;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy / viewDir.z * height_scale * tex_offset; 
+    vec2 deltaTexCoords = P / numLayers;
+  
+    // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = texture2D(u_NormalMap, currentTexCoords).a;
+      
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture2D(u_NormalMap, currentTexCoords).a;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    
+    // -- parallax occlusion mapping interpolation from here on
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = texture2D(u_NormalMap, prevTexCoords).a - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    return finalTexCoords;
+}
+
+//---------------------------------------------------------
+// get pseudo 3d bump background
+//---------------------------------------------------------
+vec4 BumpyBackground (sampler2D texture, vec2 pos)
+{
+  #define LINEAR_STEPS 20
+  #define DISTANCE 0.16
+  #define FEATURES 0.5
+
+  vec4 color = vec4(0.0);
+  vec2 dir = -(vec2(pos - vec2(0.5, 0.5)) * (DISTANCE / LINEAR_STEPS)) * 0.5;
+    
+  for (float i = 0.0; i < LINEAR_STEPS; i++) 
+  {
+    vec4 pixel1 = texture2D(texture, pos - i * dir);
+    if (pow(length(pixel1.rgb) / 1.4, 0.20) * (1.0 - FEATURES)
+       +pow(length(texture2D(texture, (pos - i * dir) * 2.0).rgb) / 1.4, 0.90) * FEATURES
+       > i / LINEAR_STEPS) 
+    //color = pixel1 * i / LINEAR_STEPS;
+    color += 0.16 * pixel1 * i / LINEAR_STEPS;
+  }
+  return color;
+}
 
 void main()
 {
@@ -582,27 +646,21 @@ void main()
   #if defined(USE_PBR) && !defined(USE_FAST_LIGHT)
 	lightmapColor.rgb *= lightmapColor.rgb;
   #endif
-	//lightColor	= lightmapColor.rgb * (var_Color.rgb * 0.66666 + 0.33333);
 	lightColor *= lightmapColor.rgb;
 #endif
 
 	vec2 texCoords = var_TexCoords.xy;
+	vec4 diffuse = BumpyBackground(u_DiffuseMap, texCoords);;
 
 #if defined(USE_PARALLAXMAP) || defined(USE_PARALLAXMAP_NONORMALS)
 	vec3 offsetDir = normalize(E * tangentToWorld);
+	texCoords = ParallaxMapping(var_TexCoords.xy, offsetDir);
 
-	//offsetDir.xy *= -u_NormalScale.a / offsetDir.z;
-	offsetDir.xy *= tex_offset * -var_Local1.x;//-4.0;//-5.0; // -3.0
+	diffuse = texture2D(u_DiffuseMap, texCoords);
+#else
+	diffuse = texture2D(u_DiffuseMap, texCoords);
+#endif
 
-  #if defined(USE_PARALLAXMAP)
-	texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_NormalMap);
-  #endif //USE_PARALLAXMAP
-  #if defined(USE_PARALLAXMAP_NONORMALS)
-	texCoords += offsetDir.xy * RayIntersectDisplaceMap(texCoords, offsetDir.xy, u_DiffuseMap);
-  #endif //USE_PARALLAXMAP_NONORMALS
-#endif //USE_PARALLAXMAP || USE_PARALLAXMAP_NONORMALS
-
-	vec4 diffuse = texture2D(u_DiffuseMap, texCoords);
 	
 	float alpha = diffuse.a * var_Color.a;
 	if (u_AlphaTest == 1)
@@ -625,10 +683,9 @@ void main()
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 	L = var_LightDir.xyz;
   #if defined(USE_DELUXEMAP)
-	L = (texture2D(u_DeluxeMap, var_TexCoords.zw).xyz - vec3(0.5)) * u_EnableTextures.y;
+	L += (texture2D(u_DeluxeMap, var_TexCoords.zw).xyz - vec3(0.5)) * u_EnableTextures.y;
   #endif
 	float sqrLightDist = dot(L, L);
-	L /= sqrt(sqrLightDist);
 
   #if defined(USE_LIGHT_VECTOR)
 	attenuation  = CalcLightAttenuation(float(var_LightDir.w > 0.0), var_LightDir.w / sqrLightDist);
@@ -650,25 +707,33 @@ void main()
   #endif
 
 	N = normalize(N);
+	L /= sqrt(sqrLightDist);
 
   #if defined(USE_SHADOWMAP) 
 	vec2 shadowTex = gl_FragCoord.xy * r_FBufScale;
 	float shadowValue = texture2D(u_ShadowMap, shadowTex).r;
 
 	// surfaces not facing the light are always shadowed
-	shadowValue *= clamp(dot(N, var_PrimaryLightDir.xyz), 0.0, 1.0);
+	shadowValue *= float(dot(var_Normal.xyz, var_PrimaryLightDir.xyz) > 0.0);
 
     #if defined(SHADOWMAP_MODULATE)
-	lightColor *= shadowValue * (1.0 - u_PrimaryLightAmbient.r) + u_PrimaryLightAmbient.r;
+	//vec3 shadowColor = min(u_PrimaryLightAmbient, lightColor);
+	vec3 shadowColor = u_PrimaryLightAmbient * lightColor;
+
+      #if 0
+	// Only shadow when the world light is parallel to the primary light
+	shadowValue = 1.0 + (shadowValue - 1.0) * clamp(dot(L, var_PrimaryLightDir.xyz), 0.0, 1.0);
+      #endif
+	lightColor = mix(shadowColor, lightColor, shadowValue);
     #endif
   #endif
 
-
   #if defined(USE_LIGHTMAP) || defined(USE_LIGHT_VERTEX)
-	float surfNL = clamp(dot(N, L), 0.0, 1.0);
-	ambientColor = mix(ambientColor, lightColor, surfNL);
+	ambientColor = lightColor;
+	float surfNL = clamp(dot(var_Normal.xyz, L), 0.0, 1.0);
+	lightColor /= max(surfNL, 0.25);
+	ambientColor = clamp(ambientColor - lightColor * surfNL, 0.0, 1.0);
   #endif
-
 	NL = clamp(dot(N, L), 0.0, 1.0);
 	NE = clamp(dot(N, E), 0.0, 1.0);
 	H = normalize(L + E);
@@ -682,10 +747,6 @@ void main()
   #endif
 	specular *= u_SpecularScale;
 
-  #if defined(USE_PBR)
-	diffuse.rgb *= diffuse.rgb;
-	specular.rgb *= specular.rgb;
-  #endif
 
   #if defined(USE_PBR)
 	// diffuse rgb is base color
@@ -715,6 +776,13 @@ void main()
 	float roughness = pow(2.0 / (8190.0 * gloss + 2.0), 0.25);
   #endif
 
+  #if defined(USE_PBR)
+	//diffuse.rgb *= CalcDiffuse(diffuse.rgb, NH, EH, roughness);
+	//specular.rgb *= CalcSpecular(specular.rgb, NH, NL, NE, EH, roughness);
+	diffuse.rgb *= diffuse.rgb;
+	specular.rgb *= specular.rgb;
+  #endif
+
     H  = normalize(L + E);
     EH = max(1e-8, dot(E, H));
     NH = max(1e-8, dot(N, H));
@@ -725,6 +793,8 @@ void main()
 	NE = abs(dot(N, E)) + 1e-5;
 	reflectance += CalcSpecular(specular.rgb, NH, NL, NE, EH, roughness);
 
+	//gl_FragColor.rgb  = (((lightColor   * reflectance * (attenuation * NL)) * 2.0) + (lightColor   * (reflectance * specular.a) * (attenuation * NL))) / 3.0;
+	//gl_FragColor.rgb += ambientColor * (diffuse.rgb + specular.rgb);
 	gl_FragColor.rgb  = lightColor   * reflectance * (attenuation * NL);
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
 
@@ -742,8 +812,8 @@ void main()
 
 	// normalize cubemap based on last roughness mip (~diffuse)
 	// multiplying cubemap values by lighting below depends on either this or the cubemap being normalized at generation
-	//vec3 cubeLightDiffuse = max(textureCubeLod(u_CubeMap, N, ROUGHNESS_MIPS).rgb, 0.5 / 255.0);
-	//cubeLightColor /= dot(cubeLightDiffuse, vec3(0.2125, 0.7154, 0.0721));
+	vec3 cubeLightDiffuse = max(textureCubeLod(u_CubeMap, N, ROUGHNESS_MIPS).rgb, 0.5 / 255.0);
+	cubeLightColor /= dot(cubeLightDiffuse, vec3(0.2126, 0.7152, 0.0722));
 
 	float horiz = 1.0;
 	// from http://marmosetco.tumblr.com/post/81245981087
@@ -760,7 +830,7 @@ void main()
 
 	// multiply cubemap values by lighting
 	// not technically correct, but helps make reflections look less unnatural
-	//cubeLightColor *= lightColor * (attenuation * NL) + ambientColor;
+	cubeLightColor *= lightColor * (attenuation * NL) + ambientColor;
 
 	gl_FragColor.rgb += cubeLightColor * reflectance * horiz;
   #endif
@@ -772,8 +842,8 @@ void main()
 	L2 = var_PrimaryLightDir.xyz;
 
 	// enable when point lights are supported as primary lights
-	//sqrLightDist = dot(L2, L2);
-	//L2 /= sqrt(sqrLightDist);
+	sqrLightDist = dot(L2, L2);
+	L2 /= sqrt(sqrLightDist);
 
 	H2  = normalize(L2 + E); 
 	NL2 = clamp(dot(N, L2), 0.0, 1.0);
@@ -781,21 +851,19 @@ void main()
 	EH2 = max(1e-8, dot(E, H2));
 	NH2 = max(1e-8, dot(N, H2));
 
-	reflectance  = CalcSpecular(specular.rgb, NH2, NL2, NE, EH2, roughness);
+	lightColor *= u_PrimaryLightColor * var_Color.rgb;
 
-	// bit of a hack, with modulated shadowmaps, ignore diffuse
-    #if !defined(SHADOWMAP_MODULATE)
+	reflectance = CalcSpecular(specular.rgb, NH2, NL2, NE, EH2, roughness);
 	reflectance += CalcDiffuse(diffuse.rgb, NH2, EH2, roughness);
-    #endif
 
-	lightColor = u_PrimaryLightColor * var_Color.rgb;
+	//lightColor *= u_PrimaryLightColor * var_Color.rgb;
 
     #if defined(USE_SHADOWMAP)
 	lightColor *= shadowValue;
     #endif
 
 	// enable when point lights are supported as primary lights
-	//lightColor *= CalcLightAttenuation(float(u_PrimaryLightDir.w > 0.0), u_PrimaryLightDir.w / sqrLightDist);
+	lightColor *= CalcLightAttenuation(float(var_PrimaryLightDir.w > 0.0), var_PrimaryLightDir.w / sqrLightDist);
 
 	gl_FragColor.rgb += lightColor * reflectance * NL2;
   #endif

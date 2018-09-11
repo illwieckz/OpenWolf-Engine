@@ -50,6 +50,7 @@ typedef enum
 {
     IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
     IMGTYPE_NORMAL,
+    IMGTYPE_SPECULAR,
     IMGTYPE_NORMALHEIGHT,
     IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
 } imgType_t;

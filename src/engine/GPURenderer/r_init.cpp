@@ -1355,7 +1355,7 @@ void R_Register( void )
     r_forceSunLightScale = Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
     r_forceSunAmbientScale = Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
     r_drawSunRays = Cvar_Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_sunlightMode = Cvar_Get( "r_sunlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_sunlightMode = Cvar_Get( "r_sunlightMode", "2", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_sunShadows = Cvar_Get( "r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowFilter = Cvar_Get( "r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1368,13 +1368,13 @@ void R_Register( void )
     
     r_bloom = Cvar_Get( "r_bloom", "1", CVAR_ARCHIVE );
     r_bloomPasses = Cvar_Get( "r_bloomPasses", "2", CVAR_ARCHIVE );
-    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "0.6", CVAR_ARCHIVE );
-    r_bloomScale = Cvar_Get( "r_bloomScale", "1", CVAR_ARCHIVE );
+    r_bloomDarkenPower = Cvar_Get( "r_bloomDarkenPower", "0.3", CVAR_ARCHIVE );
+    r_bloomScale = Cvar_Get( "r_bloomScale", "0.1", CVAR_ARCHIVE );
     r_lensflare = Cvar_Get( "r_lensflare", "1", CVAR_ARCHIVE );
     r_volumelight = Cvar_Get( "r_volumelight", "0", CVAR_ARCHIVE );
     r_anamorphic = Cvar_Get( "r_anamorphic", "1", CVAR_ARCHIVE );
     r_anamorphicDarkenPower = Cvar_Get( "r_anamorphicDarkenPower", "256.0", CVAR_ARCHIVE );
-    r_ssgi = Cvar_Get( "r_ssgi", "1", CVAR_ARCHIVE );
+    r_ssgi = Cvar_Get( "r_ssgi", "4", CVAR_ARCHIVE );
     r_ssgiWidth = Cvar_Get( "r_ssgiWidth", "12.0", CVAR_ARCHIVE );
     r_ssgiSamples = Cvar_Get( "r_ssgiSamples", "4", CVAR_ARCHIVE );
     r_darkexpand = Cvar_Get( "r_darkexpand", "1", CVAR_ARCHIVE );

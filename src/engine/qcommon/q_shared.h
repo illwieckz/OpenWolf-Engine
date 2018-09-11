@@ -1870,4 +1870,6 @@ void Com_EndParseSession( void );
 #define Q_EXPORT
 #endif
 
+bool StringContainsWord( StringEntry haystack, StringEntry needle );
+
 #endif //!__Q_SHARED_H__

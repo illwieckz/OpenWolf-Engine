@@ -2725,6 +2725,14 @@ public:
     virtual void ShutdownGPUShaders( void );
     virtual void FBOInit( void );
     virtual void FBOShutdown( void );
+    virtual void PBOInit( void );
+    virtual void WriteToPBO( S32 pbo, U8* buffer, S32 DestX, S32 DestY, S32 Width, S32 Height );
+    virtual U8* ReadPBO( bool readBack );
+    virtual void UnbindPBO( void );
+private:
+    U8* buffer;
+    U32	pboReadbackHandle;
+    U32	pboWriteHandle[2];
 };
 
 extern idRenderSystemLocal renderSystemLocal;

@@ -2496,12 +2496,12 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
             UTF8 normalName[MAX_QPATH];
             image_t* normalImg;
             S32 normalFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB ) ) | IMGFLAG_NOLIGHTSCALE;
-    
+            
             COM_StripExtension2( diffuseImg->imgName, normalName, sizeof( normalName ) );
             Q_strcat( normalName, sizeof( normalName ), "_n" );
-    
+            
             normalImg = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
-    
+            
             if( normalImg )
             {
                 diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
@@ -2512,12 +2512,12 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
                     defs |= LIGHTDEF_USE_PARALLAXMAP;
                     
                 VectorSet4( diffuse->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value );
-    
+                
                 hasRealNormalMap = true;
             }
         }
     }
-
+    
     if( diffuse && r_specularMapping->integer )
     {
         image_t* diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0];
@@ -2550,7 +2550,7 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
                 diffuse->bundle[TB_SPECULARMAP] = diffuse->bundle[0];
                 diffuse->bundle[TB_SPECULARMAP].numImageAnimations = 0;
                 diffuse->bundle[TB_SPECULARMAP].image[0] = specularImg;
-                if( !specular ) 
+                if( !specular )
                     specular = diffuse;
                 VectorCopy4( specular->specularScale, diffuse->specularScale );
                 hasRealSpecularMap = true;

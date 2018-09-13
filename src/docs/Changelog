@@ -1,3 +1,6 @@
+2018-09-13 Dusan Jocic <dusanjocic@msn.com>
+	* Added OpenGL Pixel Buffer Object (PBO) for future usage
+
 2018-09-11 Dusan Jocic <dusanjocic@msn.com>
 	* Misc updates and fixes at the renderer 
 	* Updated map files with new shaders

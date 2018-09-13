@@ -78,7 +78,7 @@ bool R_CheckFBO( const FBO_t* fbo )
 FBO_Create
 ============
 */
-FBO_t*          FBO_Create( StringEntry name, S32 width, S32 height )
+FBO_t* FBO_Create( StringEntry name, S32 width, S32 height )
 {
     FBO_t*          fbo;
     
@@ -246,8 +246,7 @@ idRenderSystemLocal::FBOInit
 */
 void idRenderSystemLocal::FBOInit( void )
 {
-    S32             i;
-    S32             hdrFormat, multisample = 0;
+    S32 i, hdrFormat, multisample = 0;
     
     CL_RefPrintf( PRINT_ALL, "------- idRenderSystemLocal::FBOInit -------\n" );
     

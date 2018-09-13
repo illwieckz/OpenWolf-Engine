@@ -917,7 +917,7 @@ typedef enum
 #include "../OWLib/math_quaternion.h"
 #include "../cm/cm_public.h"
 #include "../GPURenderer/r_public.h"
-#include "../audio/snd_public.h"
+#include "../audio/s_public.h"
 #include "../database/db_public.h"
 
 S32 Com_HexStrToInt( StringEntry str );

@@ -386,7 +386,7 @@ bool idCGameLocal::ParseWeaponModeSection( weaponInfoMode_t* wim, UTF8** text_p 
             if( !token )
                 break;
                 
-            wim->impactSound[ index ] = trap_S_RegisterSound( token, false );
+            wim->impactSound[ index ] = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -409,7 +409,7 @@ bool idCGameLocal::ParseWeaponModeSection( weaponInfoMode_t* wim, UTF8** text_p 
             if( !token )
                 break;
                 
-            wim->impactFleshSound[ index ] = trap_S_RegisterSound( token, false );
+            wim->impactFleshSound[ index ] = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -474,7 +474,7 @@ bool idCGameLocal::ParseWeaponModeSection( weaponInfoMode_t* wim, UTF8** text_p 
             if( !token )
                 break;
                 
-            wim->firingSound = trap_S_RegisterSound( token, false );
+            wim->firingSound = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -484,7 +484,7 @@ bool idCGameLocal::ParseWeaponModeSection( weaponInfoMode_t* wim, UTF8** text_p 
             if( !token )
                 break;
                 
-            wim->missileSound = trap_S_RegisterSound( token, false );
+            wim->missileSound = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -507,7 +507,7 @@ bool idCGameLocal::ParseWeaponModeSection( weaponInfoMode_t* wim, UTF8** text_p 
             if( !token )
                 break;
                 
-            wim->flashSound[ index ] = trap_S_RegisterSound( token, false );
+            wim->flashSound[ index ] = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -665,7 +665,7 @@ bool idCGameLocal::ParseWeaponFile( StringEntry filename, weaponInfo_t* wi )
             if( !token )
                 break;
                 
-            wi->readySound = trap_S_RegisterSound( token, false );
+            wi->readySound = trap_S_RegisterSound( token );
             
             continue;
         }
@@ -1047,11 +1047,11 @@ void idCGameLocal::AddPlayerWeapon( refEntity_t* parent, playerState_t* ps, cent
         // add weapon ready sound
         if( firing && weapon->wim[ weaponMode ].firingSound )
         {
-            trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, weapon->wim[ weaponMode ].firingSound, 255, 0 );
+            trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->wim[weaponMode].firingSound );
         }
         else if( weapon->readySound )
         {
-            trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, weapon->readySound, 255, 0 );
+            trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->readySound );
         }
     }
     
@@ -1059,7 +1059,7 @@ void idCGameLocal::AddPlayerWeapon( refEntity_t* parent, playerState_t* ps, cent
     // FIXME: should not send this to aliens at all, rather than just ignoring it
     if( weaponNum == WP_LUCIFER_CANNON && ( cent->currentState.eFlags & EF_WARN_CHARGE ) && cg.snap->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
     {
-        trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, ps ? cgs.media.lCannonWarningSound : cgs.media.lCannonWarningSound2, 255, 0 );
+        trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, ps ? cgs.media.lCannonWarningSound : cgs.media.lCannonWarningSound2 );
     }
     
     if( !noGunModel )
@@ -1121,6 +1121,7 @@ void idCGameLocal::AddPlayerWeapon( refEntity_t* parent, playerState_t* ps, cent
             return;
     }
     
+    ::memset( &flash, 0, sizeof( flash ) );
     VectorCopy( parent->lightingOrigin, flash.lightingOrigin );
     flash.shadowPlane = parent->shadowPlane;
     flash.renderfx = parent->renderfx;

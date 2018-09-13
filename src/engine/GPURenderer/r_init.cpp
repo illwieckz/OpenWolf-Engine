@@ -1266,21 +1266,21 @@ void R_Register( void )
     // latched and archived variables
     //
     r_allowExtensions = Cvar_Get( "r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_compressed_textures = Cvar_Get( "r_ext_compressed_textures", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_compressed_textures = Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_multitexture = Cvar_Get( "r_ext_multitexture", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_compiled_vertex_array = Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_texture_env_add = Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_compiled_vertex_array = Cvar_Get( "r_ext_compiled_vertex_array", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_texture_env_add = Cvar_Get( "r_ext_texture_env_add", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
-    r_ext_framebuffer_object = Cvar_Get( "r_ext_framebuffer_object", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_framebuffer_blit = Cvar_Get( "r_ext_framebuffer_blit", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_texture_float = Cvar_Get( "r_ext_texture_float", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_framebuffer_object = Cvar_Get( "r_ext_framebuffer_object", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_framebuffer_blit = Cvar_Get( "r_ext_framebuffer_blit", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_texture_float = Cvar_Get( "r_ext_texture_float", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_ext_framebuffer_multisample = Cvar_Get( "r_ext_framebuffer_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_arb_seamless_cube_map = Cvar_Get( "r_arb_seamless_cube_map", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_arb_seamless_cube_map = Cvar_Get( "r_arb_seamless_cube_map", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_arb_vertex_array_object = Cvar_Get( "r_arb_vertex_array_object", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_direct_state_access = Cvar_Get( "r_ext_direct_state_access", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_direct_state_access = Cvar_Get( "r_ext_direct_state_access", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_ext_texture_filter_anisotropic = Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_max_anisotropy = Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_max_anisotropy = Cvar_Get( "r_ext_max_anisotropy", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_picmip = Cvar_Get( "r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_roundImagesDown = Cvar_Get( "r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1296,7 +1296,7 @@ void R_Register( void )
     Cvar_CheckRange( r_ext_multisample, 0, 4, true );
     r_overBrightBits = Cvar_Get( "r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_ignorehwgamma = Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_mode = Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
+    r_mode = Cvar_Get( "r_mode", "7", CVAR_ARCHIVE | CVAR_LATCH );
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE );
     r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_width = Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1311,7 +1311,7 @@ void R_Register( void )
     Cvar_CheckRange( r_greyscale, 0, 1, false );
     
     r_floatLightmap = Cvar_Get( "r_floatLightmap", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_postProcess = Cvar_Get( "r_postProcess", "1", CVAR_ARCHIVE );
+    r_postProcess = Cvar_Get( "r_postProcess", "0", CVAR_ARCHIVE );
     
     r_toneMap = Cvar_Get( "r_toneMap", "1", CVAR_ARCHIVE );
     r_forceToneMap = Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
@@ -1329,14 +1329,14 @@ void R_Register( void )
     r_depthPrepass = Cvar_Get( "r_depthPrepass", "1", CVAR_ARCHIVE );
     r_ssao = Cvar_Get( "r_ssao", "1", CVAR_LATCH | CVAR_ARCHIVE );
     
-    r_normalMapping = Cvar_Get( "r_normalMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_specularMapping = Cvar_Get( "r_specularMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_cubeMapping = Cvar_Get( "r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_normalMapping = Cvar_Get( "r_normalMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_specularMapping = Cvar_Get( "r_specularMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "", CVAR_ARCHIVE | CVAR_LATCH );
+    r_cubeMapping = Cvar_Get( "r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_horizonFade = Cvar_Get( "r_horizonFade", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeSpecular = Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
-    r_pbr = Cvar_Get( "r_pbr", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_pbr = Cvar_Get( "r_pbr", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseNormalX = Cvar_Get( "r_baseNormalX", "1.0", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseNormalY = Cvar_Get( "r_baseNormalY", "1.0", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseParallax = Cvar_Get( "r_baseParallax", "0.001", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1349,13 +1349,13 @@ void R_Register( void )
     r_imageUpsample = Cvar_Get( "r_imageUpsample", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_imageUpsampleMaxSize = Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_ARCHIVE | CVAR_LATCH );
     r_imageUpsampleType = Cvar_Get( "r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_genNormalMaps = Cvar_Get( "r_genNormalMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_genNormalMaps = Cvar_Get( "r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_forceSun = Cvar_Get( "r_forceSun", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_forceSunLightScale = Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
     r_forceSunAmbientScale = Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
     r_drawSunRays = Cvar_Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_sunlightMode = Cvar_Get( "r_sunlightMode", "2", CVAR_ARCHIVE | CVAR_LATCH );
+    r_sunlightMode = Cvar_Get( "r_sunlightMode", "0", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_sunShadows = Cvar_Get( "r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowFilter = Cvar_Get( "r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH );

@@ -85,6 +85,7 @@ FIND_PATH(OPENAL_INCLUDE_DIR "${AL_HEADER_PREFIX}al.h"
   /opt/local # DarwinPorts
   /opt/csw # Blastwave
   /opt
+  ${LIB_DIR}/OpenAL/include
   #Dushan - moved to Wow6432Node on Windows x64
   #       - maybe we need to change that in order to work on Windows x86 (not sure)  
   [HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Creative\ Labs\\OpenAL\ 1.1\ Software\ Development\ Kit\\3.05;InstallDir]
@@ -93,10 +94,10 @@ FIND_PATH(OPENAL_INCLUDE_DIR "${AL_HEADER_PREFIX}al.h"
 )
 
 FIND_LIBRARY(OPENAL_LIBRARY 
-  NAMES OpenAL al openal OpenAL32
+  NAMES OpenAL al openal OpenAL32 
   HINTS
   $ENV{OPENALDIR}
-  PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
+  PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64 
   PATHS
   ~/Library/Frameworks
   /Library/Frameworks
@@ -106,6 +107,9 @@ FIND_LIBRARY(OPENAL_LIBRARY
   /opt/local
   /opt/csw
   /opt
+  ${LIB_DIR}/OpenAL
+  ${LIB_DIR}/OpenAL/libs
+  ${LIB_DIR}/OpenAL/libs/win64
   #Dushan - moved to Wow6432Node on Windows x64
   #       - maybe we need to change that in order to automatically work on Windows x86 (not sure)
   [HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Creative\ Labs\\OpenAL\ 1.1\ Software\ Development\ Kit\\3.05;InstallDir]

@@ -698,9 +698,9 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             }
             else
             {
+            
                 imgType_t type = IMGTYPE_COLORALPHA;
                 S32/*imgFlags_t*/ flags = IMGFLAG_NONE;
-                
                 if( !shader.noMipMaps )
                     flags |= IMGFLAG_MIPMAP;
                     
@@ -725,7 +725,6 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                     if( r_genNormalMaps->integer )
                         flags |= IMGFLAG_GENNORMALMAP;
                 }
-                
                 stage->bundle[0].image[0] = R_FindImageFile( token, type, flags );
                 
                 if( !stage->bundle[0].image[0] )
@@ -3672,7 +3671,7 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
         lightmapIndex = LIGHTMAP_BY_VERTEX;
     }
     
-    COM_StripExtension2( name, strippedName, sizeof( strippedName ) );
+    COM_StripExtension3( name, strippedName, sizeof( strippedName ) );
     
     hash = generateHashValue( strippedName, FILE_HASH_SIZE );
     

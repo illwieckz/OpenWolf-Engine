@@ -1366,15 +1366,15 @@ static void GLimp_OGL3InitExtensions( void )
     // GL_ARB_framebuffer_object
     glRefConfig.framebufferObject = false;
     glRefConfig.framebufferBlit = false;
-    glRefConfig.framebufferMultisample = false;
+    //glRefConfig.framebufferMultisample = false;
     if( glewGetExtension( "GL_ARB_framebuffer_object" ) )
     {
-        glRefConfig.framebufferObject = !!r_ext_framebuffer_object->integer;;
+        glRefConfig.framebufferObject = r_ext_framebuffer_object->integer;
         glRefConfig.framebufferBlit = true;
-        glRefConfig.framebufferMultisample = true;
+        //glRefConfig.framebufferMultisample = true;
         
-        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE, &glRefConfig.maxRenderbufferSize );
-        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, &glRefConfig.maxColorAttachments );
+        glGetIntegerv( GL_MAX_RENDERBUFFER_SIZE_EXT, &glRefConfig.maxRenderbufferSize );
+        glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS_EXT, &glRefConfig.maxColorAttachments );
         
         CL_RefPrintf( PRINT_ALL, "...found OpenGL extension - GL_ARB_framebuffer_object\n" );
         
@@ -1421,7 +1421,7 @@ static void GLimp_OGL3InitExtensions( void )
     // GL_ARB_texture_compression_rgtc
     if( glewGetExtension( "GL_ARB_texture_compression_rgtc" ) )
     {
-        bool useRgtc = r_ext_compressed_textures->integer >= 1;
+        bool useRgtc = !!r_ext_compressed_textures->integer >= 1;
         
         if( useRgtc )
         {
@@ -1436,12 +1436,12 @@ static void GLimp_OGL3InitExtensions( void )
     }
     GL_CheckErrors();
     
-    glRefConfig.swizzleNormalmap = r_ext_compressed_textures->integer && !( glRefConfig.textureCompression & TCR_RGTC );
+    glRefConfig.swizzleNormalmap = !!r_ext_compressed_textures->integer && !( glRefConfig.textureCompression & TCR_RGTC );
     
     // GL_ARB_texture_compression_bptc
     if( glewGetExtension( "GL_ARB_texture_compression_bptc" ) )
     {
-        bool useBptc = r_ext_compressed_textures->integer >= 2;
+        bool useBptc = !!r_ext_compressed_textures->integer >= 2;
         
         if( useBptc )
             glRefConfig.textureCompression |= TCR_BPTC;

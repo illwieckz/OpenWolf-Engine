@@ -252,52 +252,27 @@ void trap_R_ClearDecals( void )
 
 void trap_S_StartSound( vec3_t origin, S32 entityNum, S32 entchannel, sfxHandle_t sfx )
 {
-    imports->soundSystem->StartSound( origin, entityNum, entchannel, sfx, 127 );
-}
-
-void trap_S_StartSoundVControl( vec3_t origin, S32 entityNum, S32 entchannel, sfxHandle_t sfx, S32 volume )
-{
-    imports->soundSystem->StartSound( origin, entityNum, entchannel, sfx, volume );
-}
-
-void trap_S_StartSoundEx( vec3_t origin, S32 entityNum, S32 entchannel, sfxHandle_t sfx, S32 flags )
-{
-    imports->soundSystem->StartSoundEx( origin, entityNum, entchannel, sfx, flags, 127 );
-}
-
-void trap_S_StartSoundExVControl( vec3_t origin, S32 entityNum, S32 entchannel, sfxHandle_t sfx, S32 flags, S32 volume )
-{
-    imports->soundSystem->StartSoundEx( origin, entityNum, entchannel, sfx, flags, volume );
+    imports->soundSystem->StartSound( origin, entityNum, entchannel, sfx );
 }
 
 void trap_S_StartLocalSound( sfxHandle_t sfx, S32 channelNum )
 {
-    imports->soundSystem->StartLocalSound( sfx, channelNum, 127 );
+    imports->soundSystem->StartLocalSound( sfx, channelNum );
 }
 
-void trap_S_ClearLoopingSounds( void )
+void trap_S_ClearLoopingSounds( bool killall )
 {
-    imports->soundSystem->ClearLoopingSounds();
+    imports->soundSystem->ClearLoopingSounds( killall );
 }
 
-void trap_S_ClearSounds( bool killmusic, bool clearMusic )
+void trap_S_AddLoopingSound( S32 entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx )
 {
-    imports->soundSystem->ClearSounds( killmusic, clearMusic );
+    imports->soundSystem->AddLoopingSound( entityNum, origin, velocity, sfx );
 }
 
-void trap_S_AddLoopingSound( const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx, S32 volume, S32 soundTime )
+void trap_S_AddRealLoopingSound( S32 entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx )
 {
-    imports->soundSystem->AddLoopingSound( origin, velocity, 1250, sfx, volume, soundTime );
-}
-
-void trap_S_AddRealLoopingSound( const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx, S32 range, S32 volume, S32 soundTime )
-{
-    imports->soundSystem->AddRealLoopingSound( origin, velocity, range, sfx, volume, soundTime );
-}
-
-void trap_S_StopStreamingSound( S32 entityNum )
-{
-    imports->soundSystem->StopStreamingSound( entityNum );
+    imports->soundSystem->AddRealLoopingSound( entityNum, origin, velocity, sfx );
 }
 
 void trap_S_StopLoopingSound( S32 entityNum )
@@ -310,44 +285,14 @@ void trap_S_UpdateEntityPosition( S32 entityNum, const vec3_t origin )
     imports->soundSystem->UpdateEntityPosition( entityNum, origin );
 }
 
-S32 trap_S_GetVoiceAmplitude( S32 entityNum )
-{
-    return imports->soundSystem->GetVoiceAmplitude( entityNum );
-}
-
 void trap_S_Respatialize( S32 entityNum, const vec3_t origin, vec3_t axis[3], S32 inwater )
 {
     imports->soundSystem->Respatialize( entityNum, origin, axis, inwater );
 }
 
-S32 trap_S_GetSoundLength( sfxHandle_t sfx )
+void trap_S_StartBackgroundTrack( StringEntry intro, StringEntry loop )
 {
-    return imports->soundSystem->GetSoundLength( sfx );
-}
-
-S32 trap_S_GetCurrentSoundTime( void )
-{
-    return imports->soundSystem->GetCurrentSoundTime();
-}
-
-void trap_S_StartBackgroundTrack( StringEntry intro, StringEntry loop, S32 fadeupTime )
-{
-    imports->soundSystem->StartBackgroundTrack( intro, loop, fadeupTime );
-}
-
-void trap_S_FadeBackgroundTrack( F32 targetvol, S32 time, S32 num )
-{
-    soundSystem->FadeStreamingSound( PASSFLOAT( targetvol ), time, num );
-}
-
-void trap_S_FadeAllSound( F32 targetvol, S32 time, bool stopsounds )
-{
-    imports->soundSystem->FadeAllSounds( PASSFLOAT( targetvol ), time, stopsounds );
-}
-
-S32 trap_S_StartStreamingSound( StringEntry intro, StringEntry loop, S32 entnum, S32 channel, S32 attenuation )
-{
-    return imports->soundSystem->StartStreamingSound( intro, loop, entnum, channel, attenuation );
+    imports->soundSystem->StartBackgroundTrack( intro, loop );
 }
 
 void trap_R_LoadWorldMap( StringEntry mapname )
@@ -823,9 +768,9 @@ void trap_TranslateString( StringEntry string, UTF8* buf )
     imports->CL_TranslateString( string, buf );
 }
 
-sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
+sfxHandle_t trap_S_RegisterSound( StringEntry sample )
 {
-    return soundSystem->RegisterSound( sample, compressed );
+    return soundSystem->RegisterSound( sample );
 }
 
 void trap_PhysicsDrawDebug( void )

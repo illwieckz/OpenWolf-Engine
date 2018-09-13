@@ -113,7 +113,7 @@
 #include <botlib/be_aas_routealt.h>
 
 #include <sgame/sg_api.h>
-#include <audio/snd_local.h>
+#include <audio/s_local.h>
 #include <bgame/bg_public.h>
 #include <bgame/bg_local.h>
 

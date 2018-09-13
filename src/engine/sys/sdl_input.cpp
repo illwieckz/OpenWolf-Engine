@@ -1446,18 +1446,28 @@ static void IN_ProcessEvents( void )
                 
             case SDL_VIDEORESIZE:
             {
-                UTF8 width[32], height[32];
-                Com_sprintf( width, sizeof( width ), "%d", e.resize.w );
-                Com_sprintf( height, sizeof( height ), "%d", e.resize.h );
-                Cvar_Set( "r_customwidth", width );
-                Cvar_Set( "r_customheight", height );
+                S32 width, height;
+                
+                width = e.resize.w;
+                height = e.resize.h;
+                
+                // check if size actually changed or ignore this event on fullscreen
+                if( cls.glconfig.vidWidth == width && cls.glconfig.vidHeight == height || cls.glconfig.isFullscreen )
+                {
+                    break;
+                }
+                
+                Cvar_SetValue( "r_customwidth", width );
+                Cvar_SetValue( "r_customheight", height );
                 Cvar_Set( "r_mode", "-1" );
+                
                 /* wait until user stops dragging for 1 second, so
                    we aren't constantly recreating the GL context while
                    he tries to drag...*/
                 vidRestartTime = Sys_Milliseconds() + 1000;
             }
             break;
+            
             case SDL_ACTIVEEVENT:
                 if( e.active.state & SDL_APPINPUTFOCUS )
                 {

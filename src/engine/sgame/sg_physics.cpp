@@ -122,7 +122,7 @@ void idGameLocal::Physics( gentity_t* ent, S32 msec )
     }
     else
     {
-        mask = MASK_DEADSOLID;
+        mask = MASK_PLAYERSOLID & ~CONTENTS_BODY;//MASK_SOLID;
     }
     
     if( ent->s.pos.trType == TR_STATIONARY )

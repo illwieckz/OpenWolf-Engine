@@ -1133,7 +1133,7 @@ void            CL_FlushMemory( void );
 
 // dump all memory on an error
 
-void            CL_StartHunkUsers( bool rendererOnly );
+void            CL_StartHunkUsers( void );
 
 // start all the client stuff using the hunk
 
@@ -1409,5 +1409,7 @@ void            Com_RandomBytes( U8* string, S32 len );
 #if !defined ( BSPC )
 void            Com_QueueEvent( S32 time, sysEventType_t type, S32 value, S32 value2, S32 ptrLength, void* ptr );
 #endif
+
+void FS_FMOD_OpenSoundFile( StringEntry name, void** buff, S32* length );
 
 #endif //!__QCOMMON_H__

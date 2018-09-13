@@ -270,13 +270,13 @@ static cvarTable_t cvarTable[ ] =
     
     { &cg_debugVoices, "cg_debugVoices", "0", 0 },
     
-    { &ui_currentClass, "gui_currentClass", "0", 0 },
-    { &ui_carriage, "gui_carriage", "", 0 },
-    { &ui_stage, "gui_stage", "0", 0 },
-    { &ui_dialog, "gui_dialog", "Text not set", 0 },
-    { &ui_voteActive, "gui_voteActive", "0", 0 },
-    { &ui_humanTeamVoteActive, "gui_humanTeamVoteActive", "0", 0 },
-    { &ui_alienTeamVoteActive, "gui_alienTeamVoteActive", "0", 0 },
+    { &ui_currentClass, "ui_currentClass", "0", 0 },
+    { &ui_carriage, "ui_carriage", "", 0 },
+    { &ui_stage, "ui_stage", "0", 0 },
+    { &ui_dialog, "ui_dialog", "Text not set", 0 },
+    { &ui_voteActive, "ui_voteActive", "0", 0 },
+    { &ui_humanTeamVoteActive, "ui_humanTeamVoteActive", "0", 0 },
+    { &ui_alienTeamVoteActive, "ui_alienTeamVoteActive", "0", 0 },
     
     { &cg_debugRandom, "cg_debugRandom", "0", 0 },
     
@@ -309,7 +309,7 @@ static cvarTable_t cvarTable[ ] =
     
     { &cg_voice, "voice", "default", CVAR_USERINFO | CVAR_ARCHIVE},
     
-    { &cg_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE},
+    { &cg_emoticons, "cg_emoticons", "0", CVAR_LATCH | CVAR_ARCHIVE},
     { &cg_drawAlienFeedback, "cg_drawAlienFeedback", "1", 0}
 };
 
@@ -364,18 +364,18 @@ void idCGameLocal::SetUIVars( void )
             upgrades |= ( 1 << i );
     }
     
-    trap_Cvar_Set( "gui_carriage", va( "%d %d %d", cg.snap->ps.stats[ STAT_WEAPON ], upgrades, cg.snap->ps.persistant[ PERS_CREDIT ] ) );
+    trap_Cvar_Set( "ui_carriage", va( "%d %d %d", cg.snap->ps.stats[ STAT_WEAPON ], upgrades, cg.snap->ps.persistant[ PERS_CREDIT ] ) );
     
     switch( cg.snap->ps.stats[ STAT_TEAM ] )
     {
         case TEAM_NONE:
-            trap_Cvar_Set( "gui_stage", "0" );
+            trap_Cvar_Set( "ui_stage", "0" );
             break;
         case TEAM_ALIENS:
-            trap_Cvar_Set( "gui_stage", va( "%d", cgs.alienStage ) );
+            trap_Cvar_Set( "ui_stage", va( "%d", cgs.alienStage ) );
             break;
         case TEAM_HUMANS:
-            trap_Cvar_Set( "gui_stage", va( "%d", cgs.humanStage ) );
+            trap_Cvar_Set( "ui_stage", va( "%d", cgs.humanStage ) );
             break;
     }
 }
@@ -607,7 +607,19 @@ Test if a specific file exists or not
 */
 bool idCGameLocal::FileExists( UTF8* filename )
 {
-    return trap_FS_FOpenFile( filename, NULL, FS_READ );
+    fileHandle_t  f;
+    
+    if( trap_FS_FOpenFile( filename, &f, FS_READ ) > 0 )
+    {
+        //file exists so close it
+        trap_FS_FCloseFile( f );
+        
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 /*
@@ -623,46 +635,46 @@ void idCGameLocal::RegisterSounds( void )
     UTF8        name[ MAX_QPATH ];
     StringEntry  soundName;
     
-    cgs.media.alienStageTransition  = trap_S_RegisterSound( "sound/announcements/overmindevolved.wav", true );
-    cgs.media.humanStageTransition  = trap_S_RegisterSound( "sound/announcements/reinforcement.wav", true );
+    cgs.media.alienStageTransition  = trap_S_RegisterSound( "sound/announcements/overmindevolved.wav" );
+    cgs.media.humanStageTransition  = trap_S_RegisterSound( "sound/announcements/reinforcement.wav" );
     
-    cgs.media.alienOvermindAttack   = trap_S_RegisterSound( "sound/announcements/overmindattack.wav", true );
-    cgs.media.alienOvermindDying    = trap_S_RegisterSound( "sound/announcements/overminddying.wav", true );
-    cgs.media.alienOvermindSpawns   = trap_S_RegisterSound( "sound/announcements/overmindspawns.wav", true );
+    cgs.media.alienOvermindAttack   = trap_S_RegisterSound( "sound/announcements/overmindattack.wav" );
+    cgs.media.alienOvermindDying    = trap_S_RegisterSound( "sound/announcements/overminddying.wav" );
+    cgs.media.alienOvermindSpawns   = trap_S_RegisterSound( "sound/announcements/overmindspawns.wav" );
     
-    cgs.media.alienL1Grab           = trap_S_RegisterSound( "sound/player/level1/grab.wav", true );
-    cgs.media.alienL4ChargePrepare  = trap_S_RegisterSound( "sound/player/level4/charge_prepare.wav", true );
-    cgs.media.alienL4ChargeStart    = trap_S_RegisterSound( "sound/player/level4/charge_start.wav", true );
+    cgs.media.alienL1Grab           = trap_S_RegisterSound( "sound/player/level1/grab.wav" );
+    cgs.media.alienL4ChargePrepare  = trap_S_RegisterSound( "sound/player/level4/charge_prepare.wav" );
+    cgs.media.alienL4ChargeStart    = trap_S_RegisterSound( "sound/player/level4/charge_start.wav" );
     
-    cgs.media.tracerSound           = trap_S_RegisterSound( "sound/weapons/tracer.wav", false );
-    cgs.media.selectSound           = trap_S_RegisterSound( "sound/weapons/change.wav", false );
-    cgs.media.turretSpinupSound     = trap_S_RegisterSound( "sound/buildables/mgturret/spinup.wav", false );
-    cgs.media.weaponEmptyClick      = trap_S_RegisterSound( "sound/weapons/click.wav", false );
+    cgs.media.tracerSound           = trap_S_RegisterSound( "sound/weapons/tracer.wav" );
+    cgs.media.selectSound           = trap_S_RegisterSound( "sound/weapons/change.wav" );
+    cgs.media.turretSpinupSound     = trap_S_RegisterSound( "sound/buildables/mgturret/spinup.wav" );
+    cgs.media.weaponEmptyClick      = trap_S_RegisterSound( "sound/weapons/click.wav" );
     
-    cgs.media.talkSound             = trap_S_RegisterSound( "sound/misc/talk.wav", false );
-    cgs.media.alienTalkSound        = trap_S_RegisterSound( "sound/misc/alien_talk.wav", false );
-    cgs.media.humanTalkSound        = trap_S_RegisterSound( "sound/misc/human_talk.wav", false );
-    cgs.media.landSound             = trap_S_RegisterSound( "sound/player/land1.wav", false );
+    cgs.media.talkSound             = trap_S_RegisterSound( "sound/misc/talk.wav" );
+    cgs.media.alienTalkSound        = trap_S_RegisterSound( "sound/misc/alien_talk.wav" );
+    cgs.media.humanTalkSound        = trap_S_RegisterSound( "sound/misc/human_talk.wav" );
+    cgs.media.landSound             = trap_S_RegisterSound( "sound/player/land1.wav" );
     
-    cgs.media.watrInSound           = trap_S_RegisterSound( "sound/player/watr_in.wav", false );
-    cgs.media.watrOutSound          = trap_S_RegisterSound( "sound/player/watr_out.wav", false );
-    cgs.media.watrUnSound           = trap_S_RegisterSound( "sound/player/watr_un.wav", false );
+    cgs.media.watrInSound           = trap_S_RegisterSound( "sound/player/watr_in.wav" );
+    cgs.media.watrOutSound          = trap_S_RegisterSound( "sound/player/watr_out.wav" );
+    cgs.media.watrUnSound           = trap_S_RegisterSound( "sound/player/watr_un.wav" );
     
-    cgs.media.disconnectSound       = trap_S_RegisterSound( "sound/misc/disconnect.wav", false );
+    cgs.media.disconnectSound       = trap_S_RegisterSound( "sound/misc/disconnect.wav" );
     
     for( i = 0; i < 4; i++ )
     {
         Com_sprintf( name, sizeof( name ), "sound/player/footsteps/step%i.wav", i + 1 );
-        cgs.media.footsteps[ FOOTSTEP_NORMAL ][ i ] = trap_S_RegisterSound( name, false );
+        cgs.media.footsteps[ FOOTSTEP_NORMAL ][ i ] = trap_S_RegisterSound( name );
         
         Com_sprintf( name, sizeof( name ), "sound/player/footsteps/flesh%i.wav", i + 1 );
-        cgs.media.footsteps[ FOOTSTEP_FLESH ][ i ] = trap_S_RegisterSound( name, false );
+        cgs.media.footsteps[ FOOTSTEP_FLESH ][ i ] = trap_S_RegisterSound( name );
         
         Com_sprintf( name, sizeof( name ), "sound/player/footsteps/splash%i.wav", i + 1 );
-        cgs.media.footsteps[ FOOTSTEP_SPLASH ][ i ] = trap_S_RegisterSound( name, false );
+        cgs.media.footsteps[ FOOTSTEP_SPLASH ][ i ] = trap_S_RegisterSound( name );
         
         Com_sprintf( name, sizeof( name ), "sound/player/footsteps/clank%i.wav", i + 1 );
-        cgs.media.footsteps[ FOOTSTEP_METAL ][ i ] = trap_S_RegisterSound( name, false );
+        cgs.media.footsteps[ FOOTSTEP_METAL ][ i ] = trap_S_RegisterSound( name );
     }
     
     for( i = 1 ; i < MAX_SOUNDS ; i++ )
@@ -675,38 +687,38 @@ void idCGameLocal::RegisterSounds( void )
         if( soundName[ 0 ] == '*' )
             continue; // custom sound
             
-        cgs.gameSounds[ i ] = trap_S_RegisterSound( soundName, false );
+        cgs.gameSounds[ i ] = trap_S_RegisterSound( soundName );
     }
     
-    cgs.media.jetpackDescendSound     = trap_S_RegisterSound( "sound/upgrades/jetpack/low.wav", false );
-    cgs.media.jetpackIdleSound        = trap_S_RegisterSound( "sound/upgrades/jetpack/idle.wav", false );
-    cgs.media.jetpackAscendSound      = trap_S_RegisterSound( "sound/upgrades/jetpack/hi.wav", false );
+    cgs.media.jetpackDescendSound     = trap_S_RegisterSound( "sound/upgrades/jetpack/low.wav" );
+    cgs.media.jetpackIdleSound        = trap_S_RegisterSound( "sound/upgrades/jetpack/idle.wav" );
+    cgs.media.jetpackAscendSound      = trap_S_RegisterSound( "sound/upgrades/jetpack/hi.wav" );
     
-    cgs.media.medkitUseSound          = trap_S_RegisterSound( "sound/upgrades/medkit/medkit.wav", false );
+    cgs.media.medkitUseSound          = trap_S_RegisterSound( "sound/upgrades/medkit/medkit.wav" );
     
-    cgs.media.alienEvolveSound        = trap_S_RegisterSound( "sound/player/alienevolve.wav", false );
+    cgs.media.alienEvolveSound        = trap_S_RegisterSound( "sound/player/alienevolve.wav" );
     
-    cgs.media.alienBuildableExplosion = trap_S_RegisterSound( "sound/buildables/alien/explosion.wav", false );
-    cgs.media.alienBuildableDamage    = trap_S_RegisterSound( "sound/buildables/alien/damage.wav", false );
-    cgs.media.alienBuildablePrebuild  = trap_S_RegisterSound( "sound/buildables/alien/prebuild.wav", false );
+    cgs.media.alienBuildableExplosion = trap_S_RegisterSound( "sound/buildables/alien/explosion.wav" );
+    cgs.media.alienBuildableDamage    = trap_S_RegisterSound( "sound/buildables/alien/damage.wav" );
+    cgs.media.alienBuildablePrebuild  = trap_S_RegisterSound( "sound/buildables/alien/prebuild.wav" );
     
-    cgs.media.humanBuildableExplosion = trap_S_RegisterSound( "sound/buildables/human/explosion.wav", false );
-    cgs.media.humanBuildablePrebuild  = trap_S_RegisterSound( "sound/buildables/human/prebuild.wav", false );
+    cgs.media.humanBuildableExplosion = trap_S_RegisterSound( "sound/buildables/human/explosion.wav" );
+    cgs.media.humanBuildablePrebuild  = trap_S_RegisterSound( "sound/buildables/human/prebuild.wav" );
     
     for( i = 0; i < 4; i++ )
         cgs.media.humanBuildableDamage[ i ] = trap_S_RegisterSound(
-                va( "sound/buildables/human/damage%d.wav", i ), false );
+                va( "sound/buildables/human/damage%d.wav", i ) );
                 
-    cgs.media.hardBounceSound1        = trap_S_RegisterSound( "sound/misc/hard_bounce1.wav", false );
-    cgs.media.hardBounceSound2        = trap_S_RegisterSound( "sound/misc/hard_bounce2.wav", false );
+    cgs.media.hardBounceSound1        = trap_S_RegisterSound( "sound/misc/hard_bounce1.wav" );
+    cgs.media.hardBounceSound2        = trap_S_RegisterSound( "sound/misc/hard_bounce2.wav" );
     
-    cgs.media.repeaterUseSound        = trap_S_RegisterSound( "sound/buildables/repeater/use.wav", false );
+    cgs.media.repeaterUseSound        = trap_S_RegisterSound( "sound/buildables/repeater/use.wav" );
     
-    cgs.media.buildableRepairSound    = trap_S_RegisterSound( "sound/buildables/human/repair.wav", false );
-    cgs.media.buildableRepairedSound  = trap_S_RegisterSound( "sound/buildables/human/repaired.wav", false );
+    cgs.media.buildableRepairSound    = trap_S_RegisterSound( "sound/buildables/human/repair.wav" );
+    cgs.media.buildableRepairedSound  = trap_S_RegisterSound( "sound/buildables/human/repaired.wav" );
     
-    cgs.media.lCannonWarningSound     = trap_S_RegisterSound( "models/weapons/lcannon/warning.wav", false );
-    cgs.media.lCannonWarningSound2    = trap_S_RegisterSound( "models/weapons/lcannon/warning2.wav", false );
+    cgs.media.lCannonWarningSound     = trap_S_RegisterSound( "models/weapons/lcannon/warning.wav" );
+    cgs.media.lCannonWarningSound2    = trap_S_RegisterSound( "models/weapons/lcannon/warning2.wav" );
 }
 
 
@@ -1048,7 +1060,7 @@ void idCGameLocal::StartMusic( void )
     
     if( strlen( parm1 ) )
     {
-        trap_S_StartBackgroundTrack( parm1, parm2, 0 );
+        trap_S_StartBackgroundTrack( parm1, parm2 );
     }
 }
 
@@ -1178,7 +1190,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, true );
+            cgDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1188,7 +1200,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, true );
+            cgDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1198,7 +1210,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, true );
+            cgDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1208,7 +1220,7 @@ bool idCGameLocal::Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            cgDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr, false );
+            cgDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1863,8 +1875,6 @@ void idCGameLocal::Init( S32 serverMessageNum, S32 serverCommandSequence, S32 cl
     
     cg.weaponSelect = WP_NONE;
     
-    // old servers
-    
     // get the gamestate from the client system
     trap_GetGameState( &cgs.gameState );
     
@@ -1923,7 +1933,7 @@ void idCGameLocal::Init( S32 serverMessageNum, S32 serverCommandSequence, S32 cl
     
     ShaderStateChanged( );
     
-    trap_S_ClearLoopingSounds( );
+    trap_S_ClearLoopingSounds( true );
 }
 
 /*
@@ -1946,12 +1956,7 @@ void idCGameLocal::Shutdown( void )
 
 bool idCGameLocal::CheckExecKey( S32 key )
 {
-    //if( !cg.showFireteamMenu )
-    //{
-    //    return false;
-    //}
-    
-    return true; //CG_FireteamCheckExecKey( key, false );
+    return 0;
 }
 
 void idCGameLocal::ConsoleText( void )

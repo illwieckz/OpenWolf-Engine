@@ -121,7 +121,7 @@ void CL_FlushMemory( void )
 {
 }
 
-void CL_StartHunkUsers( bool rendererOnly )
+void CL_StartHunkUsers( void )
 {
 }
 

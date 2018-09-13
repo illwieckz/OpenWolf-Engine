@@ -229,12 +229,13 @@ void idCGameLocal::EntityEffects( centity_t* cent )
     {
         if( cent->currentState.eType != ET_SPEAKER )
         {
-            trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound], 127, cent->soundTime );
+            trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin,
+                                    cgs.gameSounds[cent->currentState.loopSound] );
         }
         else
         {
-            trap_S_AddRealLoopingSound( cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound],
-                                        cent->currentState.dmgFlags, 127, cent->soundTime );
+            trap_S_AddRealLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin,
+                                        cgs.gameSounds[cent->currentState.loopSound] );
         }
     }
     else if( cent->soundTime )
@@ -458,12 +459,10 @@ void idCGameLocal::Missile( centity_t* cent )
     if( wim->missileSound )
     {
         vec3_t  velocity;
-        S32 flytime = cg.time - cent->currentState.pos.trTime;
-        S32 volume = flytime > 375 ? 255 : ( 75.f / ( ( F32 )flytime - 300.f ) ) * 255;
         
         bggame->EvaluateTrajectoryDelta( &cent->currentState.pos, cg.time, velocity );
         
-        trap_S_AddLoopingSound( cent->lerpOrigin, velocity, wim->missileSound, volume, 0 );
+        trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, wim->missileSound );
     }
     
     // create the render entity

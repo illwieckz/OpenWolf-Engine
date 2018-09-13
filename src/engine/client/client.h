@@ -509,7 +509,7 @@ void            CL_FlushMemory( void );
 void            CL_ShutdownAll( void );
 void            CL_AddReliableCommand( StringEntry cmd );
 
-void            CL_StartHunkUsers( bool rendererOnly );
+void            CL_StartHunkUsers( void );
 
 #if !defined(UPDATE_SERVER)
 void            CL_CheckAutoUpdate( void );

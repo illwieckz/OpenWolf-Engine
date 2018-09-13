@@ -447,7 +447,7 @@ void HTTP_PostBug( StringEntry fileName )
     cvar_t* map		= Cvar_Get( "mapname", "", 0 );
     cvar_t* bugreport	= Cvar_Get( "r_bugreport", "", 0 );
     cvar_t* challenge	= Cvar_Get( "gamename", "", 0 );
-    cvar_t* username	= Cvar_Get( "gui_username", "", 0 );
+    cvar_t* username	= Cvar_Get( "ui_username", "", 0 );
     
     UTF8 comment[ 512 ];
     StringEntry condump;
@@ -529,7 +529,7 @@ void HTTP_PostErrorNotice( StringEntry type, StringEntry msg )
 {
     cvar_t* map		= Cvar_Get( "mapname", "", 0 );
     cvar_t* challenge	= Cvar_Get( "gamename", "", 0 );
-    cvar_t* username	= Cvar_Get( "gui_username", "", 0 );
+    cvar_t* username	= Cvar_Get( "ui_username", "", 0 );
     
     UTF8 comment[ 512 ];
     StringEntry condump;

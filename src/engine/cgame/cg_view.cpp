@@ -1431,7 +1431,7 @@ void idCGameLocal::DrawActiveFrame( S32 serverTime, stereoFrame_t stereoView, bo
     
     // any looped sounds will be respecified as entities
     // are added to the render list
-    trap_S_ClearLoopingSounds( );
+    trap_S_ClearLoopingSounds( false );
     
     // clear all the render lists
     trap_R_ClearScene( );

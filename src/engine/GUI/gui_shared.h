@@ -436,8 +436,8 @@ typedef struct
     void ( *Pause )( bool b );
     S32( *ownerDrawWidth )( S32 ownerDraw, F32 scale );
     StringEntry( *ownerDrawText )( S32 ownerDraw );
-    sfxHandle_t ( *registerSound )( StringEntry name, bool compressed );
-    void ( *startBackgroundTrack )( StringEntry intro, StringEntry loop, S32 fadeupTime );
+    sfxHandle_t ( *registerSound )( StringEntry name );
+    void ( *startBackgroundTrack )( StringEntry intro, StringEntry loop );
     void ( *stopBackgroundTrack )( void );
     S32( *playCinematic )( StringEntry name, F32 x, F32 y, F32 w, F32 h );
     void ( *stopCinematic )( S32 handle );

@@ -131,7 +131,9 @@
 #include <botlib/be_aas_routealt.h>
 
 #include <sgame/sg_api.h>
-#include <audio/snd_local.h>
+#include <audio/s_local.h>
+#include <audio/s_codec.h>
+
 #include <bgame/bg_public.h>
 #include <bgame/bg_local.h>
 
@@ -210,7 +212,21 @@
 #include <CL/cl_gl.h>
 #endif
 
-#include <omp.h>
+#ifdef _MSC_VER
+// MSVC users must install the OpenAL SDK which doesn't use the AL/*.h scheme.
+#include <al.h>
+#include <alc.h>
+#elif defined (MACOS_X)
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else
+#include <AL/al.h>
+#include <AL/alc.h>
+#endif
+
+// includes for the OGG codec
+#include <errno.h>
+#include <vorbis/vorbisfile.h>
 
 // curses.h defines COLOR_*, which are already defined in q_shared.h
 #undef COLOR_BLACK

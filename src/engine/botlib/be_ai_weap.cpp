@@ -445,7 +445,7 @@ void BotResetWeaponState( S32 weaponstate )
     weaponweightconfig = ws->weaponweightconfig;
     weaponweightindex = ws->weaponweightindex;
     
-    //Com_Memset(ws, 0, sizeof(bot_weaponstate_t));
+    //::memset(ws, 0, sizeof(bot_weaponstate_t));
     ws->weaponweightconfig = weaponweightconfig;
     ws->weaponweightindex = weaponweightindex;
 } //end of the function BotResetWeaponState

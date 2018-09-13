@@ -332,10 +332,10 @@ void idCGameLocal::InitBuildables( void )
         strcpy( soundfile, cg_buildableSoundNames[ j - 1 ] );
         
         Com_sprintf( filename, sizeof( filename ), "sound/buildables/alien/%s", soundfile );
-        defaultAlienSounds[ j ] = trap_S_RegisterSound( filename, false );
+        defaultAlienSounds[ j ] = trap_S_RegisterSound( filename );
         
         Com_sprintf( filename, sizeof( filename ), "sound/buildables/human/%s", soundfile );
-        defaultHumanSounds[ j ] = trap_S_RegisterSound( filename, false );
+        defaultHumanSounds[ j ] = trap_S_RegisterSound( filename );
     }
     
     cg.buildablesFraction = 0.0f;
@@ -375,7 +375,7 @@ void idCGameLocal::InitBuildables( void )
                     //file exists so close it
                     trap_FS_FCloseFile( f );
                     
-                    cg_buildables[ i ].sounds[ j ].sound = trap_S_RegisterSound( filename, false );
+                    cg_buildables[ i ].sounds[ j ].sound = trap_S_RegisterSound( filename );
                 }
                 else
                 {
@@ -453,13 +453,15 @@ void idCGameLocal::RunBuildableLerpFrame( centity_t* cent )
                 Printf( "Sound for animation %d for a %s\n", newAnimation, bggame->Buildable( buildable )->humanName );
                 
             trap_S_StartSound( cent->lerpOrigin, cent->currentState.number, CHAN_AUTO,
-                               cg_buildables[ buildable ].sounds[ newAnimation ].sound );
+                               cg_buildables[buildable].sounds[newAnimation].sound );
         }
     }
     
-    if( cg_buildables[ buildable ].sounds[ lf->animationNumber ].looped && cg_buildables[ buildable ].sounds[ lf->animationNumber ].enabled )
-        trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, cg_buildables[ buildable ].sounds[ lf->animationNumber ].sound, 255, 0 );
-        
+    if( cg_buildables[buildable].sounds[lf->animationNumber].looped &&
+            cg_buildables[buildable].sounds[lf->animationNumber].enabled )
+        trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin,
+                                cg_buildables[buildable].sounds[lf->animationNumber].sound );
+                                
     RunLerpFrame( lf, 1.0f );
     
     // animation ended
@@ -1278,7 +1280,7 @@ void idCGameLocal::Buildable( centity_t* cent )
         else if( team == TEAM_ALIENS )
             prebuildSound = cgs.media.alienBuildablePrebuild;
             
-        trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, prebuildSound, 255, 0 );
+        trap_S_AddLoopingSound( es->number, cent->lerpOrigin, vec3_origin, prebuildSound );
     }
     
     BuildableAnimation( cent, &ent.oldframe, &ent.frame, &ent.backlerp );
@@ -1412,13 +1414,14 @@ void idCGameLocal::Buildable( centity_t* cent )
             }
         }
         
-        if( weapon->wim[ WPM_PRIMARY ].firingSound )
+        if( weapon->wim[WPM_PRIMARY].firingSound )
         {
-            trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, weapon->wim[ WPM_PRIMARY ].firingSound, 255, 0 );
+            trap_S_AddLoopingSound( es->number, cent->lerpOrigin, vec3_origin,
+                                    weapon->wim[WPM_PRIMARY].firingSound );
         }
         else if( weapon->readySound )
         {
-            trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, weapon->readySound, 255, 0 );
+            trap_S_AddLoopingSound( es->number, cent->lerpOrigin, vec3_origin, weapon->readySound );
         }
     }
     

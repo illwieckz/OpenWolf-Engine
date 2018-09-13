@@ -2550,7 +2550,7 @@ image_t*	R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ fl
         
         normalFlags = ( flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
         
-        COM_StripExtension3( name, normalName, MAX_QPATH );
+        COM_StripExtension2( name, normalName, MAX_QPATH );
         Q_strcat( normalName, MAX_QPATH, "_n" );
         
         // find normalmap in case it's there

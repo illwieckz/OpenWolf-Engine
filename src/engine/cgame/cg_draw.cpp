@@ -2500,6 +2500,9 @@ void idCGameLocal::ScanForCrosshairEntity( void )
     VectorCopy( cg.refdef.vieworg, start );
     VectorMA( start, 131072, cg.refdef.viewaxis[ 0 ], end );
     
+    if( trace.entityNum >= MAX_CLIENTS )
+        return;
+        
     Trace( &trace, start, vec3_origin, vec3_origin, end, cg.snap->ps.clientNum, CONTENTS_SOLID | CONTENTS_BODY );
     
     // if the player is in fog, don't show it
@@ -2530,6 +2533,10 @@ void idCGameLocal::ScanForCrosshairEntity( void )
     // update the fade timer
     cg.crosshairClientNum = trace.entityNum;
     cg.crosshairClientTime = cg.time;
+    if( cg.crosshairClientNum != cg.snap->ps.identifyClient && cg.crosshairClientNum != ENTITYNUM_WORLD )
+    {
+        cg.identifyClientRequest = cg.crosshairClientNum;
+    }
 }
 
 
@@ -3005,7 +3012,7 @@ void idCGameLocal::KeyEvent( S32 key, bool down )
             ( cg.predictedPlayerState.pm_type == PM_SPECTATOR &&
               cg.showScores == false ) )
     {
-        cgameLocal.EventHandling( CGAME_EVENT_NONE, true );
+        cgameLocal.EventHandling( CGAME_EVENT_NONE, false );
         trap_Key_SetCatcher( 0 );
         return;
     }
@@ -3479,7 +3486,6 @@ void idCGameLocal::Draw2D( void )
         DrawTeamStatus( );
         if( cg_drawStatus.integer )
             Menu_Paint( menu, true );
-            
     }
     else if( cg_drawStatus.integer )
         Menu_Paint( defaultMenu, true );

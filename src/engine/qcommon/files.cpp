@@ -5201,3 +5201,26 @@ bool FS_OW_RemoveFile( StringEntry qpath )
     }
     return true;
 }
+
+/*
+===================
+FS_FMOD_OpenSoundFile
+===================
+*/
+void FS_FMOD_OpenSoundFile( StringEntry name, void** buff, S32* length )
+{
+    FILE* fp = fopen( FS_BuildOSPath( fs_basepath->string, fs_gamedir, name ), "rb" );
+    if( !fp )
+    {
+        return;
+    }
+    
+    fseek( fp, 0, SEEK_END );
+    *length = ftell( fp );
+    fseek( fp, 0, SEEK_SET );
+    
+    *buff = malloc( *length );
+    fread( *buff, *length, 1, fp );
+    
+    fclose( fp );
+}

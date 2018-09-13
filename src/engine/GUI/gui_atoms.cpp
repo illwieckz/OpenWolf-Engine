@@ -107,7 +107,7 @@ static void UI_MessageMode_f( void )
     S32 i;
     for( i = 1; i < trap_Argc( ); i++ )
         Q_strcat( buffer, sizeof( buffer ), UI_Argv( i ) );
-    trap_Cvar_Set( "gui_sayBuffer", buffer );
+    trap_Cvar_Set( "ui_sayBuffer", buffer );
     uiInfo.chatTargetClientNum = -1;
     uiInfo.chatTeam = false;
     uiInfo.chatAdmins = false;
@@ -161,7 +161,7 @@ static void UI_Prompt_f( void )
     }
     trap_Argv( 1, uiInfo.chatPromptCallback, sizeof( uiInfo.chatPromptCallback ) );
     trap_Argv( 2, buffer, sizeof( buffer ) );
-    trap_Cvar_Set( "gui_sayBuffer", "" );
+    trap_Cvar_Set( "ui_sayBuffer", "" );
     uiInfo.chatTargetClientNum = -1;
     uiInfo.chatTeam = false;
     uiInfo.chatAdmins = false;
@@ -189,9 +189,9 @@ struct
     void ( *function )( void );
 } commands[ ] =
 {
-    { "gui_load", UI_Load },
-    { "gui_report", UI_Report },
-    { "gui_cache", UI_Cache_f },
+    { "ui_load", UI_Load },
+    { "ui_report", UI_Report },
+    { "ui_cache", UI_Cache_f },
     { "messagemode", UI_MessageMode_f },
     { "messagemode2", UI_MessageMode_f },
     { "messagemode3", UI_MessageMode_f },

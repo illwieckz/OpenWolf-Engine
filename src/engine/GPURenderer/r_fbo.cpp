@@ -174,7 +174,7 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
     if( absent )
         glGenRenderbuffersEXT( 1, pRenderBuffer );
         
-    if( multisample && glRefConfig.framebufferMultisample )
+    if( glRefConfig.framebufferMultisample )
         glNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
     else
         glNamedRenderbufferStorageEXT( *pRenderBuffer, format, fbo->width, fbo->height );
@@ -246,7 +246,7 @@ idRenderSystemLocal::FBOInit
 */
 void idRenderSystemLocal::FBOInit( void )
 {
-    S32 i, hdrFormat, multisample = 0;
+    S32 i, hdrFormat;
     
     CL_RefPrintf( PRINT_ALL, "------- idRenderSystemLocal::FBOInit -------\n" );
     
@@ -263,17 +263,6 @@ void idRenderSystemLocal::FBOInit( void )
     if( r_truehdr->integer && glRefConfig.framebufferObject && glRefConfig.textureFloat )
         hdrFormat = GL_RGBA16F_ARB;
         
-    if( glRefConfig.framebufferMultisample )
-        glGetIntegerv( GL_MAX_SAMPLES_EXT, &multisample );
-        
-    if( r_ext_framebuffer_multisample->integer < multisample )
-        multisample = r_ext_framebuffer_multisample->integer;
-        
-    if( multisample < 2 || !glRefConfig.framebufferBlit )
-        multisample = 0;
-        
-    if( multisample != r_ext_framebuffer_multisample->integer )
-        Cvar_SetValue( "r_ext_framebuffer_multisample", ( F32 )multisample );
         
     //
     // Generic FBO...

@@ -264,7 +264,7 @@
       action
       {
         play "sound/misc/menu1.wav";
-        exec "snd_restart" // includes vid_restart
+        //exec "snd_restart" // includes vid_restart
       }
     }
 

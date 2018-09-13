@@ -508,7 +508,7 @@ qhandle_t idCGameLocal::RegisterParticleSystem( UTF8* name )
                         bp->bounceMark = trap_R_RegisterShader( bp->bounceMarkName );
                         
                     if( bp->bounceSoundName[ 0 ] != '\0' )
-                        bp->bounceSound = trap_S_RegisterSound( bp->bounceSoundName, false );
+                        bp->bounceSound = trap_S_RegisterSound( bp->bounceSoundName );
                         
                     //recursively register any children
                     if( bp->childSystemName[ 0 ] != '\0' )

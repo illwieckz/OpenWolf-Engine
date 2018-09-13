@@ -1,5 +1,13 @@
 2018-09-13 Dusan Jocic <dusanjocic@msn.com>
 	* Added OpenGL Pixel Buffer Object (PBO) for future usage
+	* Fixed compiling
+	* Changed default settings for the renderer
+	* Reverted to the old variant of the sound system
+	* Added OpenAL, OGG and Vorbis libraries
+	* Fixed vid_restart bug
+	* Fixed big inside userinfo what made map to load start on the load, thanks @kungfooman
+	* Updated binaries
+	* Misc fixes
 
 2018-09-11 Dusan Jocic <dusanjocic@msn.com>
 	* Misc updates and fixes at the renderer 

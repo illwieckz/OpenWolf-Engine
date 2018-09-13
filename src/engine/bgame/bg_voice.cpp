@@ -45,7 +45,7 @@ S32 trap_PC_ReadToken( S32 handle, pc_token_t* pc_token );
 S32 trap_PC_SourceFileAndLine( S32 handle, UTF8* filename, S32* line );
 
 #ifdef CGAMEDLL
-sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed );
+sfxHandle_t trap_S_RegisterSound( StringEntry sample );
 S32 trap_S_SoundDuration( sfxHandle_t handle );
 #endif
 
@@ -351,7 +351,7 @@ voiceTrack_t* idBothGamesLocal::VoiceParseCommand( S32 handle )
         else
         {
 #ifdef CGAMEDLL
-            voiceTracks->track = trap_S_RegisterSound( token.string, false );
+            voiceTracks->track = trap_S_RegisterSound( token.string );
             voiceTracks->duration = trap_S_SoundDuration( voiceTracks->track );
 #endif
         }

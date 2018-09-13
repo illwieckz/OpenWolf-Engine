@@ -680,7 +680,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
 #if 0 //defined(USE_HTTP)
     // Dushan - Do not allow users who are not logged in
-    if( Cvar_VariableIntegerValue( "gui_logged_in" ) != 1 )
+    if( Cvar_VariableIntegerValue( "ui_logged_in" ) != 1 )
     {
         Com_Error( ERR_DROP, "You are not logged in\n" );
         return;

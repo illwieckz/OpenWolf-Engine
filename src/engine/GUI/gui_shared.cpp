@@ -262,58 +262,61 @@ static stringDef_t* strHandle[HASH_TABLE_SIZE];
 
 StringEntry String_Alloc( StringEntry p )
 {
-    S32 len;
-    S64 hash;
+    int len;
+    long hash;
     stringDef_t* str, *last;
-    static StringEntry staticNULL = "";
+    static const char* staticNULL = "";
     
     if( p == NULL )
+    {
         return NULL;
-        
+    }
+    
     if( *p == 0 )
+    {
         return staticNULL;
-        
+    }
+    
     hash = hashForString( p );
     
     str = strHandle[hash];
-    
     while( str )
     {
         if( strcmp( p, str->str ) == 0 )
+        {
             return str->str;
-            
+        }
         str = str->next;
     }
     
     len = strlen( p );
-    
     if( len + strPoolIndex + 1 < STRING_POOL_SIZE )
     {
-        S32 ph = strPoolIndex;
+        int ph = strPoolIndex;
         strcpy( &strPool[strPoolIndex], p );
         strPoolIndex += len + 1;
         
         str = strHandle[hash];
         last = str;
-        
         while( str && str->next )
         {
-            last = str;
             str = str->next;
+            last = str;
         }
         
-        str = ( stringDef_t* ) UI_Alloc( sizeof( stringDef_t ) );
+        str = ( stringDef_t* )UI_Alloc( sizeof( stringDef_t ) );
         str->next = NULL;
         str->str = &strPool[ph];
-        
         if( last )
+        {
             last->next = str;
+        }
         else
+        {
             strHandle[hash] = str;
-            
+        }
         return &strPool[ph];
     }
-    
     return NULL;
 }
 
@@ -1065,7 +1068,7 @@ static void Window_Paint( WinDow* w, F32 fadeAmount, F32 fadeClamp, F32 fadeCycl
     rectDef_t fillRect = w->rect;
     
     
-    if( DC->getCVarValue( "gui_developer" ) )
+    if( DC->getCVarValue( "ui_developer" ) )
     {
         color[0] = color[1] = color[2] = color[3] = 1;
         DC->drawRect( w->rect.x, w->rect.y, w->rect.w, w->rect.h, 1, color );
@@ -1873,31 +1876,29 @@ void Script_SetCvar( itemDef_t* item, UTF8** args )
 
 void Script_Exec( itemDef_t* item, UTF8** args )
 {
-    StringEntry val;
-    
+    StringEntry val = NULL;
     if( String_Parse( args, &val ) )
+    {
         DC->executeText( EXEC_APPEND, va( "%s ; ", val ) );
+    }
 }
 
 void Script_Play( itemDef_t* item, UTF8** args )
 {
-    StringEntry val;
-    
+    StringEntry val = NULL;
     if( String_Parse( args, &val ) )
     {
-        DC->startLocalSound( DC->registerSound( val, false ), CHAN_LOCAL_SOUND );
-        DC->startBackgroundTrack( val, val, 0 );
+        DC->startLocalSound( DC->registerSound( val ), CHAN_LOCAL_SOUND );  // all sounds are not 3d
     }
 }
 
 void Script_playLooped( itemDef_t* item, UTF8** args )
 {
-    StringEntry val;
-    
+    StringEntry val = NULL;
     if( String_Parse( args, &val ) )
     {
         DC->stopBackgroundTrack();
-        DC->startBackgroundTrack( val, val, 0 );
+        DC->startBackgroundTrack( val, val );
     }
 }
 
@@ -1964,9 +1965,9 @@ F32 UI_Text_Width( StringEntry text, F32 scale, S32 limit )
     F32 emoticonW;
     S32 emoticons = 0;
     
-    if( scale <= DC->getCVarValue( "gui_smallFont" ) )
+    if( scale <= DC->getCVarValue( "ui_smallFont" ) )
         font = &DC->Assets.smallFont;
-    else if( scale >= DC->getCVarValue( "gui_bigFont" ) )
+    else if( scale >= DC->getCVarValue( "ui_bigFont" ) )
         font = &DC->Assets.bigFont;
         
     useScale = scale * font->glyphScale;
@@ -2022,9 +2023,9 @@ F32 UI_Text_Height( StringEntry text, F32 scale, S32 limit )
     StringEntry s = text;
     fontInfo_t* font = &DC->Assets.textFont;
     
-    if( scale <= DC->getCVarValue( "gui_smallFont" ) )
+    if( scale <= DC->getCVarValue( "ui_smallFont" ) )
         font = &DC->Assets.smallFont;
-    else if( scale >= DC->getCVarValue( "gui_bigFont" ) )
+    else if( scale >= DC->getCVarValue( "ui_bigFont" ) )
         font = &DC->Assets.bigFont;
         
     useScale = scale * font->glyphScale;
@@ -2122,9 +2123,9 @@ void UI_Text_Paint_Limit( F32* maxX, F32 x, F32 y, F32 scale,
         
         memcpy( &newColor[0], &color[0], sizeof( vec4_t ) );
         
-        if( scale <= DC->getCVarValue( "gui_smallFont" ) )
+        if( scale <= DC->getCVarValue( "ui_smallFont" ) )
             font = &DC->Assets.smallFont;
-        else if( scale > DC->getCVarValue( "gui_bigFont" ) )
+        else if( scale > DC->getCVarValue( "ui_bigFont" ) )
             font = &DC->Assets.bigFont;
             
         useScale = scale * font->glyphScale;
@@ -2214,9 +2215,9 @@ void UI_Text_Paint( F32 x, F32 y, F32 scale, vec4_t color, StringEntry text,
     bool emoticonEscaped;
     S32 emoticonWidth;
     
-    if( scale <= DC->getCVarValue( "gui_smallFont" ) )
+    if( scale <= DC->getCVarValue( "ui_smallFont" ) )
         font = &DC->Assets.smallFont;
-    else if( scale >= DC->getCVarValue( "gui_bigFont" ) )
+    else if( scale >= DC->getCVarValue( "ui_bigFont" ) )
         font = &DC->Assets.bigFont;
         
     emoticonH = UI_Text_Height( "[", scale, 0 );
@@ -2375,9 +2376,9 @@ void UI_Text_PaintWithCursor( F32 x, F32 y, F32 scale, vec4_t color, StringEntry
     F32 useScale;
     fontInfo_t* font = &DC->Assets.textFont;
     
-    if( scale <= DC->getCVarValue( "gui_smallFont" ) )
+    if( scale <= DC->getCVarValue( "ui_smallFont" ) )
         font = &DC->Assets.smallFont;
-    else if( scale >= DC->getCVarValue( "gui_bigFont" ) )
+    else if( scale >= DC->getCVarValue( "ui_bigFont" ) )
         font = &DC->Assets.bigFont;
         
     useScale = scale * font->glyphScale;
@@ -4223,7 +4224,7 @@ void Menus_Activate( menuDef_t* menu )
         }
         
         if( menu->soundName && *menu->soundName )
-            DC->startBackgroundTrack( menu->soundName, menu->soundName, 0 );
+            DC->startBackgroundTrack( menu->soundName, menu->soundName );
             
         Display_CloseCinematics( );
         
@@ -4891,7 +4892,7 @@ void Item_Text_Wrapped_Paint( itemDef_t* item )
     Item_TextColor( item, &color );
     
     // Check if this block is cached
-    if( ( bool )DC->getCVarValue( "gui_textWrapCache" ) &&
+    if( ( bool )DC->getCVarValue( "ui_textWrapCache" ) &&
             UI_CheckWrapCache( textPtr, &item->window.rect, item->textscale ) )
     {
         while( UI_NextWrapLine( &p, &x, &y ) )
@@ -4991,7 +4992,7 @@ void Item_Text_Wrapped_Paint( itemDef_t* item )
                 lineItem.window.border      = item->window.border;
                 lineItem.window.borderSize  = item->window.borderSize;
                 
-                if( DC->getCVarValue( "gui_developer" ) )
+                if( DC->getCVarValue( "ui_developer" ) )
                 {
                     vec4_t color;
                     color[ 0 ] = color[ 2 ] = color[ 3 ] = 1.0f;
@@ -6364,7 +6365,7 @@ void Item_Paint( itemDef_t* item )
         
     Window_Paint( &item->window, parent->fadeAmount , parent->fadeClamp, parent->fadeCycle );
     
-    if( DC->getCVarValue( "gui_developer" ) )
+    if( DC->getCVarValue( "ui_developer" ) )
     {
         vec4_t color;
         rectDef_t* r = Item_CorrectedTextRect( item );
@@ -6724,7 +6725,7 @@ void Menu_Paint( menuDef_t* menu, bool forcePaint )
     for( i = 0; i < menu->itemCount; i++ )
         Item_Paint( menu->items[i] );
         
-    if( DC->getCVarValue( "gui_developer" ) )
+    if( DC->getCVarValue( "ui_developer" ) )
     {
         vec4_t color;
         color[0] = color[2] = color[3] = 1;
@@ -6862,7 +6863,7 @@ bool ItemParse_focusSound( itemDef_t* item, S32 handle )
     if( !PC_String_Parse( handle, &temp ) )
         return false;
         
-    item->focusSound = DC->registerSound( temp, true );
+    item->focusSound = DC->registerSound( temp );
     return true;
 }
 
@@ -8439,11 +8440,11 @@ void Menu_PaintAll( void )
 {
     S32 i;
     
-    if( g_editingField || g_waitingForKey )
-        DC->setCVar( "gui_hideCursor", "1" );
-    else
-        DC->setCVar( "gui_hideCursor", "0" );
-        
+    // if( g_editingField || g_waitingForKey )
+    // DC->setCVar( "ui_hideCursor", "1" );
+    // else
+    //DC->setCVar( "ui_hideCursor", "0" );
+    
     if( captureFunc != voidFunction )
     {
         if( captureFuncExpiry > 0 && DC->realTime > captureFuncExpiry )
@@ -8455,7 +8456,7 @@ void Menu_PaintAll( void )
     for( i = 0; i < openMenuCount; i++ )
         Menu_Paint( menuStack[i], false );
         
-    if( DC->getCVarValue( "gui_developer" ) )
+    if( DC->getCVarValue( "ui_developer" ) )
     {
         vec4_t v = {1, 1, 1, 1};
         UI_Text_Paint( 5, 25, .5, v, va( "fps: %f", DC->FPS ), 0, 0, 0 );
@@ -8580,7 +8581,7 @@ static void Menu_CacheContents( menuDef_t* menu )
             Item_CacheContents( menu->items[i] );
             
         if( menu->soundName && *menu->soundName )
-            DC->registerSound( menu->soundName, true );
+            DC->registerSound( menu->soundName );
     }
     
 }

@@ -275,7 +275,7 @@ void trap_AddCommand( StringEntry cmdName );
 void trap_RemoveCommand( StringEntry cmdName );
 bool trap_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagName, orientation_t* ori );
 bool trap_LoadTag( StringEntry filename );
-sfxHandle_t trap_RegisterSound( StringEntry sample, bool compressed );
+sfxHandle_t trap_RegisterSound( StringEntry sample );
 S32 trap_GetSoundLength( sfxHandle_t sfxHandle );
 S32 trap_BotLibSetup( void );
 S32 trap_BotLibVarSet( UTF8* var_name, UTF8* value );
@@ -368,7 +368,7 @@ void trap_Database_FinishQuery( void );
 bool trap_Database_FetchRow( void );
 void trap_Database_FetchfieldbyID( S32 id, UTF8* buffer, S32 len );
 void trap_Database_FetchFieldByName( StringEntry name, UTF8* buffer, S32 len );
-sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed );
+sfxHandle_t trap_S_RegisterSound( StringEntry sample );
 S32 trap_S_SoundDuration( sfxHandle_t handle );
 
 //

@@ -3369,7 +3369,7 @@ void Com_Init( UTF8* commandLine )
     // start in full screen ui mode
     Cvar_Set( "r_uiFullScreen", "1" );
     
-    CL_StartHunkUsers( false );
+    CL_StartHunkUsers();
     
     // NERVE - SMF - force recommendedSet and don't do vid_restart if in safe mode
     if( !com_recommendedSet->integer && !safeMode )
@@ -3381,6 +3381,8 @@ void Com_Init( UTF8* commandLine )
     
     if( !com_dedicated->integer && !Com_AddStartupCommands() )
     {
+#if 0
+        //Dushan turned this all off until someone create something better
         Cvar_Set( "com_logosPlaying", "1" );
         
         Cbuf_AddText( "cinematic splash.roq\n" );
@@ -3392,6 +3394,7 @@ void Com_Init( UTF8* commandLine )
             Cvar_Set( com_introPlayed->name, "1" );
             Cvar_Set( "nextmap", "cinematic splash.roq" );
         }
+#endif
     }
     
     com_fullyInitialized = true;

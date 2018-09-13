@@ -59,7 +59,7 @@ sfxHandle_t idCGameLocal::CustomSound( S32 clientNum, StringEntry soundName )
     S32           i;
     
     if( soundName[ 0 ] != '*' )
-        return trap_S_RegisterSound( soundName, false );
+        return trap_S_RegisterSound( soundName );
         
     if( clientNum < 0 || clientNum >= MAX_CLIENTS )
         clientNum = 0;
@@ -110,7 +110,7 @@ bool idCGameLocal::ParseAnimationFile( StringEntry filename, clientInfo_t* ci )
     
     // load the file
     len = trap_FS_FOpenFile( filename, &f, FS_READ );
-    if( len < 0 )
+    if( len <= 0 )
         return false;
         
     if( len == 0 || len >= sizeof( text ) - 1 )
@@ -555,7 +555,7 @@ void idCGameLocal::LoadClientInfo( clientInfo_t* ci )
             
             if( i == 11 || i == 8 ) //fall or falling
             {
-                ci->sounds[ i ] = trap_S_RegisterSound( "sound/null.wav", false );
+                ci->sounds[ i ] = trap_S_RegisterSound( "sound/null.wav" );
             }
             else
             {
@@ -564,12 +564,12 @@ void idCGameLocal::LoadClientInfo( clientInfo_t* ci )
                 else if( i == 10 ) //drown
                     s = cg_customSoundNames[ 0 ]; //death1
                     
-                ci->sounds[ i ] = trap_S_RegisterSound( va( "sound/player/%s/%s", dir, s + 1 ), false );
+                ci->sounds[ i ] = trap_S_RegisterSound( va( "sound/player/%s/%s", dir, s + 1 ) );
             }
         }
         else
         {
-            ci->sounds[ i ] = trap_S_RegisterSound( va( "sound/player/%s/%s", dir, s + 1 ), false );
+            ci->sounds[ i ] = trap_S_RegisterSound( va( "sound/player/%s/%s", dir, s + 1 ) );
         }
     }
     
@@ -577,13 +577,13 @@ void idCGameLocal::LoadClientInfo( clientInfo_t* ci )
     {
         for( i = 0; i < 4; i++ )
         {
-            ci->customFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/%s/step%d.wav", dir, i + 1 ), false );
+            ci->customFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/%s/step%d.wav", dir, i + 1 ) );
             if( !ci->customFootsteps[ i ] )
-                ci->customFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/footsteps/step%d.wav", i + 1 ), false );
+                ci->customFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/footsteps/step%d.wav", i + 1 ) );
                 
-            ci->customMetalFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/%s/clank%d.wav", dir, i + 1 ), false );
+            ci->customMetalFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/%s/clank%d.wav", dir, i + 1 ) );
             if( !ci->customMetalFootsteps[ i ] )
-                ci->customMetalFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/footsteps/clank%d.wav", i + 1 ), false );
+                ci->customMetalFootsteps[ i ] = trap_S_RegisterSound( va( "sound/player/footsteps/clank%d.wav", i + 1 ) );
         }
     }
     
@@ -1569,7 +1569,7 @@ void idCGameLocal::PlayerUpgrades( centity_t* cent, refEntity_t* torso )
                     cent->jetPackState = JPS_ASCENDING;
                 }
                 
-                trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, cgs.media.jetpackAscendSound, 127, 0 );
+                trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.jetpackAscendSound );
             }
             else if( es->pos.trDelta[ 2 ] < -10.0f )
             {
@@ -1582,7 +1582,7 @@ void idCGameLocal::PlayerUpgrades( centity_t* cent, refEntity_t* torso )
                     cent->jetPackState = JPS_DESCENDING;
                 }
                 
-                trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, cgs.media.jetpackDescendSound, 127, 0 );
+                trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.jetpackDescendSound );
             }
             else
             {
@@ -1595,7 +1595,7 @@ void idCGameLocal::PlayerUpgrades( centity_t* cent, refEntity_t* torso )
                     cent->jetPackState = JPS_HOVERING;
                 }
                 
-                trap_S_AddLoopingSound( cent->lerpOrigin, vec3_origin, cgs.media.jetpackIdleSound, 127, 0 );
+                trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.jetpackIdleSound );
             }
             
             ::memset( &flash, 0, sizeof( flash ) );

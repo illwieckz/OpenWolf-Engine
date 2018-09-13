@@ -1041,7 +1041,7 @@ void CL_FlushMemory( void )
         Hunk_ClearToMark();
     }
     
-    CL_StartHunkUsers( false );
+    CL_StartHunkUsers();
 }
 
 /*
@@ -1193,7 +1193,7 @@ void CL_Disconnect( bool showMainMenu )
     }
     
     SCR_StopCinematic();
-    soundSystemLocal.ClearSoundBuffer( false );	//----(SA)    modified
+    soundSystemLocal.ClearSoundBuffer();
 #if 1
     // send a disconnect message to the server
     // send it a few times in case one is dropped
@@ -1813,7 +1813,7 @@ void CL_Connect_f( void )
     
     // starting to load a map so we get out of full screen ui mode
     Cvar_Set( "r_uiFullScreen", "0" );
-    Cvar_Set( "gui_connecting", "1" );
+    Cvar_Set( "ui_connecting", "1" );
     
     // fire a message off to the motd server
     CL_RequestMotd();
@@ -1840,7 +1840,7 @@ void CL_Connect_f( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "gui_connecting", "0" );
+        Cvar_Set( "ui_connecting", "0" );
         return;
     }
     if( clc.serverAddress.port == 0 )
@@ -1892,9 +1892,9 @@ void CL_Connect_f( void )
     Cvar_Set( "mp_team", "0" );
     Cvar_Set( "mp_currentTeam", "0" );
     
-    Cvar_Set( "gui_limboOptions", "0" );
-    Cvar_Set( "gui_limboPrevOptions", "0" );
-    Cvar_Set( "gui_limboObjective", "0" );
+    Cvar_Set( "ui_limboOptions", "0" );
+    Cvar_Set( "ui_limboPrevOptions", "0" );
+    Cvar_Set( "ui_limboObjective", "0" );
     // -NERVE - SMF
     
 }
@@ -2021,61 +2021,58 @@ void CL_Vid_Restart_f( void )
     
     // don't let them loop during the restart
     soundSystem->StopAllSounds();
+    // shutdown the UI
+    CL_ShutdownUI();
+    // shutdown the CGame
+    CL_ShutdownCGame();
+    // shutdown the renderer and clear the renderer interface
+    CL_ShutdownRef();
+    // client is no longer pure untill new checksums are sent
+    CL_ResetPureClientAtServer();
+    // clear pak references
+    FS_ClearPakReferences( FS_CGAME_REF );
+    // reinitialize the filesystem if the game directory or checksum has changed
+    FS_ConditionalRestart( clc.checksumFeed );
     
-    if( !FS_ConditionalRestart( clc.checksumFeed ) )
+    soundSystem->BeginRegistration();		// all sound handles are now invalid
+    
+    cls.rendererStarted = false;
+    cls.uiStarted = false;
+    cls.cgameStarted = false;
+    cls.soundRegistered = false;
+    autoupdateChecked = false;
+    
+    // unpause so the cgame definately gets a snapshot and renders a frame
+    Cvar_Set( "cl_paused", "0" );
+    
+    // if not running a server clear the whole hunk
+    if( !com_sv_running->integer )
     {
-        // shutdown the UI
-        CL_ShutdownUI();
-        // shutdown the CGame
-        CL_ShutdownCGame();
-        // shutdown the renderer and clear the renderer interface
-        CL_ShutdownRef();
-        // client is no longer pure untill new checksums are sent
-        CL_ResetPureClientAtServer();
-        // clear pak references
-        FS_ClearPakReferences( FS_CGAME_REF );
-        // reinitialize the filesystem if the game directory or checksum has changed
-        
-        soundSystem->BeginRegistration();		// all sound handles are now invalid
-        
-        cls.rendererStarted = false;
-        cls.uiStarted = false;
-        cls.cgameStarted = false;
-        cls.soundRegistered = false;
-        autoupdateChecked = false;
-        
-        // unpause so the cgame definately gets a snapshot and renders a frame
-        Cvar_Set( "cl_paused", "0" );
-        
-        // if not running a server clear the whole hunk
-        if( !com_sv_running->integer )
-        {
-            // clear the whole hunk
-            Hunk_Clear();
-        }
-        else
-        {
-            // clear all the client data on the hunk
-            Hunk_ClearToMark();
-        }
-        
-        // initialize the renderer interface
-        CL_InitRef();
-        
-        // startup all the client stuff
-        CL_StartHunkUsers( false );
-        
+        // clear the whole hunk
+        Hunk_Clear();
+    }
+    else
+    {
+        // clear all the client data on the hunk
+        Hunk_ClearToMark();
+    }
+    
+    // initialize the renderer interface
+    CL_InitRef();
+    
+    // startup all the client stuff
+    CL_StartHunkUsers();
+    
 #ifdef _WIN32
-        Sys_In_Restart_f();			// fretn
+    Sys_In_Restart_f();			// fretn
 #endif
-        // start the cgame if connected
-        if( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC )
-        {
-            cls.cgameStarted = true;
-            CL_InitCGame();
-            // send pure checksums
-            CL_SendPureChecksums();
-        }
+    // start the cgame if connected
+    if( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC )
+    {
+        cls.cgameStarted = true;
+        CL_InitCGame();
+        // send pure checksums
+        CL_SendPureChecksums();
     }
 }
 
@@ -2690,8 +2687,8 @@ void CL_DisconnectPacket( netadr_t from )
     else
     {
         CL_Disconnect( false );
-        Cvar_Set( "gui_connecting", "1" );
-        Cvar_Set( "gui_dl_running", "1" );
+        Cvar_Set( "ui_connecting", "1" );
+        Cvar_Set( "ui_dl_running", "1" );
     }
 }
 
@@ -3721,7 +3718,7 @@ After the server has cleared the hunk, these will need to be restarted
 This is the only place that any of these functions are called from
 ============================
 */
-void CL_StartHunkUsers( bool rendererOnly )
+void CL_StartHunkUsers( void )
 {
     if( !com_cl_running )
     {
@@ -3737,11 +3734,6 @@ void CL_StartHunkUsers( bool rendererOnly )
     {
         cls.rendererStarted = true;
         CL_InitRenderer();
-    }
-    
-    if( rendererOnly )
-    {
-        return;
     }
     
     if( !cls.soundStarted )
@@ -3921,7 +3913,7 @@ void CL_GetAutoUpdate( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "gui_connecting", "0" );
+        Cvar_Set( "ui_connecting", "0" );
         return;
     }
     
@@ -4195,9 +4187,9 @@ void CL_Init( void )
     // -2 - login in progress
     // 0 - invalid login
     // 1 - logged in
-    Cvar_Get( "gui_logged_in", "-1", CVAR_ROM );
+    Cvar_Get( "ui_logged_in", "-1", CVAR_ROM );
     //force ui_logged in to -1 so we can't reset it on the command line
-    Cvar_Set( "gui_logged_in", "-1" );
+    Cvar_Set( "ui_logged_in", "-1" );
 #endif
     
     m_pitch = Cvar_Get( "m_pitch", "0.022", CVAR_ARCHIVE );
@@ -4290,7 +4282,7 @@ void CL_Init( void )
 //  Arnout - no need // Cvar_Get ("handicap", "0", CVAR_USERINFO | CVAR_ARCHIVE );
 //  Cvar_Get ("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE );
     Cvar_Get( "cl_anonymous", "0", CVAR_USERINFO | CVAR_ARCHIVE );
-    
+    Cvar_Get( "cg_version", PRODUCT_NAME, CVAR_ROM | CVAR_USERINFO );
     Cvar_Get( "password", "", CVAR_USERINFO );
     Cvar_Get( "cg_predictItems", "1", CVAR_ARCHIVE );
     
@@ -4331,7 +4323,7 @@ void CL_Init( void )
     Cmd_AddCommand( "snd_reload", CL_Snd_Reload_f );
     Cmd_AddCommand( "snd_restart", CL_Snd_Restart_f );
     Cmd_AddCommand( "vid_restart", CL_Vid_Restart_f );
-    Cmd_AddCommand( "gui_restart", CL_UI_Restart_f );	// NERVE - SMF
+    Cmd_AddCommand( "ui_restart", CL_UI_Restart_f );
     Cmd_AddCommand( "disconnect", CL_Disconnect_f );
     Cmd_AddCommand( "record", CL_Record_f );
     Cmd_AddCommand( "demo", CL_PlayDemo_f );
@@ -4378,11 +4370,6 @@ void CL_Init( void )
     // NERVE - SMF - don't do this in multiplayer
     // RF, add this command so clients can't bind a key to send client damage commands to the server
 //  Cmd_AddCommand ("cld", CL_ClientDamageCommand );
-
-//  Cmd_AddCommand ( "startSingleplayer", CL_startSingleplayer_f );     // NERVE - SMF
-//  fretn - unused
-//  Cmd_AddCommand ( "buyNow", CL_buyNow_f );                           // NERVE - SMF
-//  Cmd_AddCommand ( "singlePlayLink", CL_singlePlayLink_f );           // NERVE - SMF
 
     Cmd_AddCommand( "setRecommended", CL_SetRecommended_f );
     

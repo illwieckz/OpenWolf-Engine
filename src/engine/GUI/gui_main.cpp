@@ -113,30 +113,30 @@ vmCvar_t ui_profile;
 
 static cvarTable_t    cvarTable[ ] =
 {
-    { &ui_browserShowFull, "gui_browserShowFull", "1", CVAR_ARCHIVE },
-    { &ui_browserShowEmpty, "gui_browserShowEmpty", "1", CVAR_ARCHIVE },
+    { &ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE },
+    { &ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE },
     
-    { &ui_dedicated, "gui_dedicated", "0", CVAR_ARCHIVE },
-    { &ui_netSource, "gui_netSource", "0", CVAR_ARCHIVE },
-    { &ui_selectedMap, "gui_selectedMap", "0", CVAR_ARCHIVE },
-    { &ui_lastServerRefresh_0, "gui_lastServerRefresh_0", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_1, "gui_lastServerRefresh_1", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_2, "gui_lastServerRefresh_2", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_3, "gui_lastServerRefresh_3", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_0, "gui_lastServerRefresh_0_time", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_1, "gui_lastServerRefresh_1_time", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_2, "gui_lastServerRefresh_2_time", "", CVAR_ARCHIVE},
-    { &ui_lastServerRefresh_3, "gui_lastServerRefresh_3_time", "", CVAR_ARCHIVE},
-    { &ui_smallFont, "gui_smallFont", "0.2", CVAR_ARCHIVE},
-    { &ui_bigFont, "gui_bigFont", "0.5", CVAR_ARCHIVE},
-    { &ui_findPlayer, "gui_findPlayer", "", CVAR_ARCHIVE},
-    { &ui_serverStatusTimeOut, "gui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
-    { &ui_textWrapCache, "gui_textWrapCache", "1", CVAR_ARCHIVE },
-    { &ui_developer, "gui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT },
-    { &ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE },
-    { &ui_screen, "gui_screen", "0", CVAR_ROM },
-    { &ui_screens, "gui_screens", "0", CVAR_ROM },
-    { &ui_screenname, "gui_screenname", "", CVAR_ROM },
+    { &ui_dedicated, "ui_dedicated", "0", CVAR_ARCHIVE },
+    { &ui_netSource, "ui_netSource", "0", CVAR_ARCHIVE },
+    { &ui_selectedMap, "ui_selectedMap", "0", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_0, "ui_lastServerRefresh_0", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_1, "ui_lastServerRefresh_1", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_2, "ui_lastServerRefresh_2", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_3, "ui_lastServerRefresh_3", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_0, "ui_lastServerRefresh_0_time", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_1, "ui_lastServerRefresh_1_time", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_2, "ui_lastServerRefresh_2_time", "", CVAR_ARCHIVE},
+    { &ui_lastServerRefresh_3, "ui_lastServerRefresh_3_time", "", CVAR_ARCHIVE},
+    { &ui_smallFont, "ui_smallFont", "0.2", CVAR_ARCHIVE},
+    { &ui_bigFont, "ui_bigFont", "0.5", CVAR_ARCHIVE},
+    { &ui_findPlayer, "ui_findPlayer", "", CVAR_ARCHIVE},
+    { &ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
+    { &ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE },
+    { &ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT },
+    { &ui_emoticons, "cg_emoticons", "0", CVAR_LATCH | CVAR_ARCHIVE },
+    { &ui_screen, "ui_screen", "0", CVAR_ROM },
+    { &ui_screens, "ui_screens", "0", CVAR_ROM },
+    { &ui_screenname, "ui_screenname", "", CVAR_ROM },
 };
 
 static S32    cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -163,7 +163,7 @@ void AssetCache( void )
     
     if( ui_emoticons.integer )
     {
-        uiInfo.uiDC.Assets.emoticonCount = bggame->LoadEmoticons( uiInfo.uiDC.Assets.emoticons, uiInfo.uiDC.Assets.emoticonWidths );
+        //uiInfo.uiDC.Assets.emoticonCount = bggame->LoadEmoticons( uiInfo.uiDC.Assets.emoticons, uiInfo.uiDC.Assets.emoticonWidths );
     }
     else
         uiInfo.uiDC.Assets.emoticonCount = 0;
@@ -611,7 +611,7 @@ static void UI_BuildFindPlayerList( bool force )
         memset( &uiInfo.pendingServerStatus, 0, sizeof( uiInfo.pendingServerStatus ) );
         uiInfo.numFoundPlayerServers = 0;
         uiInfo.currentFoundPlayerServer = 0;
-        trap_Cvar_VariableStringBuffer( "gui_findPlayer", uiInfo.findPlayerName, sizeof( uiInfo.findPlayerName ) );
+        trap_Cvar_VariableStringBuffer( "ui_findPlayer", uiInfo.findPlayerName, sizeof( uiInfo.findPlayerName ) );
         Q_CleanStr( uiInfo.findPlayerName );
         // should have a string of some length
         
@@ -1039,9 +1039,9 @@ static void UI_StartServerRefresh( bool full )
     qtime_t q;
     
     time = trap_RealTime( &q );
-    trap_Cvar_Set( va( "gui_lastServerRefresh_%i_time", ui_netSource.integer ),
+    trap_Cvar_Set( va( "ui_lastServerRefresh_%i_time", ui_netSource.integer ),
                    va( "%i", time ) );
-    trap_Cvar_Set( va( "gui_lastServerRefresh_%i", ui_netSource.integer ),
+    trap_Cvar_Set( va( "ui_lastServerRefresh_%i", ui_netSource.integer ),
                    va( "%s-%i, %i at %i:%02i", MonthAbbrev[q.tm_mon],
                        q.tm_mday, 1900 + q.tm_year, q.tm_hour, q.tm_min ) );
                        
@@ -1141,7 +1141,7 @@ void idUserInterfaceManagerLocal::Refresh( S32 realtime )
     // draw cursor
     UI_SetColor( NULL );
     
-    if( Menu_Count( ) > 0 && !trap_Cvar_VariableValue( "gui_hideCursor" ) )
+    if( Menu_Count() > 0 ) // && !trap_Cvar_VariableValue("ui_hideCursor") )
     {
         UI_DrawHandlePic( uiInfo.uiDC.cursorx - ( 16.0f * uiInfo.uiDC.aspectScale ), uiInfo.uiDC.cursory - 16.0f,
                           32.0f * uiInfo.uiDC.aspectScale, 32.0f, uiInfo.uiDC.Assets.cursor );
@@ -1231,7 +1231,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr, true );
+            uiInfo.uiDC.Assets.menuEnterSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1241,7 +1241,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr, true );
+            uiInfo.uiDC.Assets.menuExitSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1251,7 +1251,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr, true );
+            uiInfo.uiDC.Assets.itemFocusSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1261,7 +1261,7 @@ bool Asset_Parse( S32 handle )
             if( !PC_String_Parse( handle, &tempStr ) )
                 return false;
                 
-            uiInfo.uiDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr, true );
+            uiInfo.uiDC.Assets.menuBuzzSound = trap_S_RegisterSound( tempStr );
             continue;
         }
         
@@ -1444,7 +1444,7 @@ void UI_LoadMenus( StringEntry menuFile, bool reset )
         }
     }
     
-    //Com_Printf( "gui menu file '%s' loaded in %d msec\n", menuFile, trap_Milliseconds() - start );
+    //Com_Printf( "ui menu file '%s' loaded in %d msec\n", menuFile, trap_Milliseconds() - start );
     
     trap_PC_FreeSource( handle );
 }
@@ -1505,7 +1505,7 @@ void UI_LoadHelp( StringEntry helpFile )
     
     trap_PC_FreeSource( handle );
     
-    /*Com_Printf( "gui help file '%s' loaded in %d msec (%d infopanes)\n",
+    /*Com_Printf( "ui help file '%s' loaded in %d msec (%d infopanes)\n",
                 helpFile, trap_Milliseconds() - start, uiInfo.helpCount );*/
 }
 
@@ -1519,10 +1519,10 @@ void UI_Load( void )
         
     String_Init();
     
-    UI_LoadMenus( "gui/menus.txt", true );
-    UI_LoadMenus( "gui/ingame.txt", false );
-    UI_LoadMenus( "gui/tremulous.txt", false );
-    UI_LoadHelp( "gui/help.txt" );
+    UI_LoadMenus( "ui/menus.txt", true );
+    UI_LoadMenus( "ui/ingame.txt", false );
+    UI_LoadMenus( "ui/tremulous.txt", false );
+    UI_LoadHelp( "ui/help.txt" );
     Menus_CloseAll( true );
     Menus_ActivateByName( lastName );
 }
@@ -1537,7 +1537,7 @@ static stage_t UI_GetCurrentStage( void )
     UTF8    buffer[ MAX_TOKEN_CHARS ];
     stage_t stage;
     
-    trap_Cvar_VariableStringBuffer( "gui_stage", buffer, sizeof( buffer ) );
+    trap_Cvar_VariableStringBuffer( "ui_stage", buffer, sizeof( buffer ) );
     sscanf( buffer, "%d", ( S32* ) & stage );
     
     return stage;
@@ -1558,7 +1558,7 @@ static void UI_DrawInfoPane( menuItem_t* item, rectDef_t* rect, F32 text_x, F32 
     S32         _class, credits;
     UTF8        ui_currentClass[ MAX_STRING_CHARS ];
     
-    trap_Cvar_VariableStringBuffer( "gui_currentClass", ui_currentClass, MAX_STRING_CHARS );
+    trap_Cvar_VariableStringBuffer( "ui_currentClass", ui_currentClass, MAX_STRING_CHARS );
     
     sscanf( ui_currentClass, "%d %d", &_class, &credits );
     
@@ -1687,7 +1687,7 @@ static void UI_DrawSelectedMapPreview( rectDef_t* rect, F32 scale, vec4_t color 
     if( map < 0 || map > uiInfo.mapCount )
     {
         ui_selectedMap.integer = 0;
-        trap_Cvar_Set( "gui_selectedMap", "0" );
+        trap_Cvar_Set( "ui_selectedMap", "0" );
         map = 0;
     }
     
@@ -1765,7 +1765,7 @@ static StringEntry UI_OwnerDrawText( S32 ownerDraw )
                     va( "Getting info for %d servers (ESC to cancel)%s", numServers, dots );
             }
             else
-                s = va( "Refresh Time: %s", UI_Cvar_VariableString( va( "gui_lastServerRefresh_%i", ui_netSource.integer ) ) );
+                s = va( "Refresh Time: %s", UI_Cvar_VariableString( va( "ui_lastServerRefresh_%i", ui_netSource.integer ) ) );
                 
             break;
             
@@ -2017,7 +2017,7 @@ static bool UI_OwnerDrawVisible( S32 flags )
         
         if( flags & UI_SHOW_VOTEACTIVE )
         {
-            if( !trap_Cvar_VariableValue( "gui_voteActive" ) )
+            if( !trap_Cvar_VariableValue( "ui_voteActive" ) )
                 vis = false;
                 
             flags &= ~UI_SHOW_VOTEACTIVE;
@@ -2025,7 +2025,7 @@ static bool UI_OwnerDrawVisible( S32 flags )
         
         if( flags & UI_SHOW_CANVOTE )
         {
-            if( trap_Cvar_VariableValue( "gui_voteActive" ) )
+            if( trap_Cvar_VariableValue( "ui_voteActive" ) )
                 vis = false;
                 
             flags &= ~UI_SHOW_CANVOTE;
@@ -2035,12 +2035,12 @@ static bool UI_OwnerDrawVisible( S32 flags )
         {
             if( team == TEAM_ALIENS )
             {
-                if( !trap_Cvar_VariableValue( "gui_alienTeamVoteActive" ) )
+                if( !trap_Cvar_VariableValue( "ui_alienTeamVoteActive" ) )
                     vis = false;
             }
             else if( team == TEAM_HUMANS )
             {
-                if( !trap_Cvar_VariableValue( "gui_humanTeamVoteActive" ) )
+                if( !trap_Cvar_VariableValue( "ui_humanTeamVoteActive" ) )
                     vis = false;
             }
             
@@ -2051,12 +2051,12 @@ static bool UI_OwnerDrawVisible( S32 flags )
         {
             if( team == TEAM_ALIENS )
             {
-                if( trap_Cvar_VariableValue( "gui_alienTeamVoteActive" ) )
+                if( trap_Cvar_VariableValue( "ui_alienTeamVoteActive" ) )
                     vis = false;
             }
             else if( team == TEAM_HUMANS )
             {
-                if( trap_Cvar_VariableValue( "gui_humanTeamVoteActive" ) )
+                if( trap_Cvar_VariableValue( "ui_humanTeamVoteActive" ) )
                     vis = false;
             }
             
@@ -2103,7 +2103,7 @@ static bool UI_NetSource_HandleKey( S32 flags, F32* special, S32 key )
         if( ui_netSource.integer != AS_GLOBAL )
             UI_StartServerRefresh( true );
             
-        trap_Cvar_Set( "gui_netSource", va( "%d", ui_netSource.integer ) );
+        trap_Cvar_Set( "ui_netSource", va( "%d", ui_netSource.integer ) );
         return true;
     }
     
@@ -2278,7 +2278,7 @@ static void UI_ParseCarriageList( void )
 {
     UTF8 buffer[ MAX_CVAR_VALUE_STRING ];
     
-    trap_Cvar_VariableStringBuffer( "gui_carriage", buffer, sizeof( buffer ) );
+    trap_Cvar_VariableStringBuffer( "ui_carriage", buffer, sizeof( buffer ) );
     
     sscanf( buffer, "%d %d %d", &uiInfo.weapon, &uiInfo.upgrades, &uiInfo.credits );
 }
@@ -2440,7 +2440,7 @@ static void UI_LoadAlienUpgrades( void )
     UTF8    ui_currentClass[ MAX_STRING_CHARS ];
     stage_t stage = UI_GetCurrentStage( );
     
-    trap_Cvar_VariableStringBuffer( "gui_currentClass", ui_currentClass, MAX_STRING_CHARS );
+    trap_Cvar_VariableStringBuffer( "ui_currentClass", ui_currentClass, MAX_STRING_CHARS );
     
     sscanf( ui_currentClass, "%d %d", &_class, &credits );
     
@@ -2684,9 +2684,9 @@ static void UI_Update( StringEntry name )
 {
     S32 val = trap_Cvar_VariableValue( name );
     
-    if( Q_stricmp( name, "gui_SetName" ) == 0 )
-        trap_Cvar_Set( "name", UI_Cvar_VariableString( "gui_Name" ) );
-    else if( Q_stricmp( name, "gui_setRate" ) == 0 )
+    if( Q_stricmp( name, "ui_SetName" ) == 0 )
+        trap_Cvar_Set( "name", UI_Cvar_VariableString( "ui_Name" ) );
+    else if( Q_stricmp( name, "ui_setRate" ) == 0 )
     {
         F32 rate = trap_Cvar_VariableValue( "rate" );
         
@@ -2706,8 +2706,8 @@ static void UI_Update( StringEntry name )
             trap_Cvar_Set( "cl_packetdup", "1" );   // favor lower bandwidth
         }
     }
-    else if( Q_stricmp( name, "gui_GetName" ) == 0 )
-        trap_Cvar_Set( "gui_Name", UI_Cvar_VariableString( "name" ) );
+    else if( Q_stricmp( name, "ui_GetName" ) == 0 )
+        trap_Cvar_Set( "ui_Name", UI_Cvar_VariableString( "name" ) );
     else if( Q_stricmp( name, "r_colorbits" ) == 0 )
     {
         switch( val )
@@ -2744,7 +2744,7 @@ static void UI_Update( StringEntry name )
                 break;
         }
     }
-    else if( Q_stricmp( name, "gui_glCustom" ) == 0 )
+    else if( Q_stricmp( name, "ui_glCustom" ) == 0 )
     {
         switch( val )
         {
@@ -2813,7 +2813,7 @@ static void UI_Update( StringEntry name )
                 break;
         }
     }
-    else if( Q_stricmp( name, "gui_mousePitch" ) == 0 )
+    else if( Q_stricmp( name, "ui_mousePitch" ) == 0 )
     {
         if( val == 0 )
             trap_Cvar_SetValue( "m_pitch", 0.022f );
@@ -2844,7 +2844,7 @@ void UI_ScreenChange( UTF8** args )
     maxscreens += trap_FS_GetFileList( "screenshots", ".tga", buffer, sizeof( buffer ) );
     if( maxscreens > 1024 )
         maxscreens = 1024;
-    trap_Cvar_SetValue( "gui_screens", maxscreens );
+    trap_Cvar_SetValue( "ui_screens", maxscreens );
     string = buffer;
     for( ; i < maxscreens; i++ )
     {
@@ -2894,8 +2894,8 @@ void UI_ScreenChange( UTF8** args )
             current_screen = 0;
     }
     
-    trap_Cvar_SetValue( "gui_screen", current_screen );
-    trap_Cvar_Set( "gui_screenname", screenshots[ current_screen ] );
+    trap_Cvar_SetValue( "ui_screen", current_screen );
+    trap_Cvar_Set( "ui_screenname", screenshots[ current_screen ] );
 }
 
 //FIXME: lookup table
@@ -2960,7 +2960,7 @@ static void UI_RunMenuScript( UTF8** args )
             }
             
             // refresh if older than 3 days or if list is empty
-            last = atoi( UI_Cvar_VariableString( va( "gui_lastServerRefresh_%i_time",
+            last = atoi( UI_Cvar_VariableString( va( "ui_lastServerRefresh_%i_time",
                                                  ui_netSource.integer ) ) );
                                                  
             if( trap_LAN_GetServerCount( ui_netSource.integer ) < 1 ||
@@ -3073,7 +3073,7 @@ static void UI_RunMenuScript( UTF8** args )
         else if( Q_stricmp( name, "Say" ) == 0 )
         {
             UTF8 buffer[ MAX_CVAR_VALUE_STRING ];
-            trap_Cvar_VariableStringBuffer( "gui_sayBuffer", buffer, sizeof( buffer ) );
+            trap_Cvar_VariableStringBuffer( "ui_sayBuffer", buffer, sizeof( buffer ) );
             
             if( !buffer[ 0 ] )
             {
@@ -3341,8 +3341,8 @@ static void UI_RunMenuScript( UTF8** args )
                 S32 res;
                 
                 name[0] = addr[0] = '\0';
-                Q_strncpyz( name,  UI_Cvar_VariableString( "gui_favoriteName" ), MAX_NAME_LENGTH );
-                Q_strncpyz( addr,  UI_Cvar_VariableString( "gui_favoriteAddress" ), MAX_NAME_LENGTH );
+                Q_strncpyz( name,  UI_Cvar_VariableString( "ui_favoriteName" ), MAX_NAME_LENGTH );
+                Q_strncpyz( addr,  UI_Cvar_VariableString( "ui_favoriteAddress" ), MAX_NAME_LENGTH );
                 
                 if( strlen( name ) > 0 && strlen( addr ) > 0 )
                 {
@@ -3367,7 +3367,7 @@ static void UI_RunMenuScript( UTF8** args )
             }
         }
         else if( Q_stricmp( name, "glCustom" ) == 0 )
-            trap_Cvar_Set( "gui_glCustom", "4" );
+            trap_Cvar_Set( "ui_glCustom", "4" );
         else if( Q_stricmp( name, "update" ) == 0 )
         {
             if( String_Parse( args, &name2 ) )
@@ -3798,7 +3798,7 @@ static void UI_FeederSelection( F32 feederID, S32 index )
         UI_SelectedMap( index, &actual );
         
         ui_selectedMap.integer = actual;
-        trap_Cvar_Set( "gui_selectedMap", va( "%d", actual ) );
+        trap_Cvar_Set( "ui_selectedMap", va( "%d", actual ) );
         uiInfo.mapList[ui_selectedMap.integer].cinematic =
             trap_CIN_PlayCinematic( va( "%s.roq", uiInfo.mapList[ui_selectedMap.integer].mapLoadName ),
                                     0, 0, 0, 0, ( CIN_loop | CIN_silent ) );
@@ -4114,7 +4114,7 @@ void idUserInterfaceManagerLocal::Init( bool inGameLoad )
     trap_LAN_LoadCachedServers();
     
     // sets defaults for ui temp cvars
-    trap_Cvar_Set( "gui_mousePitch", ( trap_Cvar_VariableValue( "m_pitch" ) >= 0 ) ? "0" : "1" );
+    trap_Cvar_Set( "ui_mousePitch", ( trap_Cvar_VariableValue( "m_pitch" ) >= 0 ) ? "0" : "1" );
     
     uiInfo.serverStatus.currentServerCinematic = -1;
     uiInfo.previewMovie = -1;
@@ -4248,7 +4248,6 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
                 return;
                 
             case UIMENU_MAIN:
-            
                 trap_Key_SetCatcher( KEYCATCH_UI );
                 Menus_CloseAll( true );
                 Menus_ActivateByName( "backgroundmusic" );
@@ -4311,9 +4310,6 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
                     }
                 }
                 
-                trap_S_FadeAllSound( 1.0f, 1000, false );
-                
-                trap_Cvar_Set( "g_reloading", "0" );
                 return;
                 
             case UIMENU_TEAM:
@@ -4683,7 +4679,7 @@ void UI_RegisterCvars( void )
         trap_Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultString, cv->cvarFlags );
         
     // use ui messagemode
-    trap_Cvar_Set( "gui_useMessagemode", "1" );
+    trap_Cvar_Set( "ui_useMessagemode", "1" );
 }
 
 /*

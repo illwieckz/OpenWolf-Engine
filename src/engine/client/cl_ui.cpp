@@ -1242,9 +1242,9 @@ S32 trap_CM_LerpTag( orientation_t* tag, clipHandle_t mod, S32 startFrame, S32 e
     return renderSystem->LerpTag( tag, mod, startFrame, endFrame, PASSFLOAT( frac ), tagName );
 }
 
-sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
+sfxHandle_t trap_S_RegisterSound( StringEntry sample )
 {
-    S32 i = soundSystem->RegisterSound( sample, false );
+    S32 i = soundSystem->RegisterSound( sample );
 #ifdef _DEBUG
     if( i == 0 )
     {
@@ -1256,17 +1256,7 @@ sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
 
 void trap_S_StartLocalSound( sfxHandle_t sfx, S32 channelNum )
 {
-    soundSystem->StartLocalSound( sfx, channelNum, 127 );
-}
-
-void trap_S_FadeBackgroundTrack( F32 targetvol, S32 time, S32 num )
-{
-    soundSystem->FadeStreamingSound( PASSFLOAT( targetvol ), time, num );
-}
-
-void trap_S_FadeAllSound( F32 targetvol, S32 time, bool stopsound )
-{
-    soundSystem->FadeAllSounds( PASSFLOAT( targetvol ), time, stopsound );
+    soundSystem->StartLocalSound( sfx, channelNum );
 }
 
 void trap_Key_KeynumToStringBuf( S32 keynum, UTF8* buf, S32 buflen )
@@ -1582,9 +1572,9 @@ void trap_S_StopBackgroundTrack( void )
     soundSystem->StopBackgroundTrack();
 }
 
-void trap_S_StartBackgroundTrack( StringEntry intro, StringEntry loop, S32 fadeupTime )
+void trap_S_StartBackgroundTrack( StringEntry intro, StringEntry loop )
 {
-    soundSystem->StartBackgroundTrack( intro, loop, fadeupTime );
+    soundSystem->StartBackgroundTrack( intro, loop );
 }
 
 //107.

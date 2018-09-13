@@ -319,9 +319,9 @@ void idCGameLocal::ConfigStringModified( void )
         cgs.voteModified = true;
         
         if( cgs.voteTime )
-            trap_Cvar_Set( "gui_voteActive", "1" );
+            trap_Cvar_Set( "ui_voteActive", "1" );
         else
-            trap_Cvar_Set( "gui_voteActive", "0" );
+            trap_Cvar_Set( "ui_voteActive", "0" );
     }
     else if( num == CS_VOTE_YES )
     {
@@ -345,16 +345,16 @@ void idCGameLocal::ConfigStringModified( void )
         if( cs_offset == 0 )
         {
             if( cgs.teamVoteTime[ cs_offset ] )
-                trap_Cvar_Set( "gui_humanTeamVoteActive", "1" );
+                trap_Cvar_Set( "ui_humanTeamVoteActive", "1" );
             else
-                trap_Cvar_Set( "gui_humanTeamVoteActive", "0" );
+                trap_Cvar_Set( "ui_humanTeamVoteActive", "0" );
         }
         else if( cs_offset == 1 )
         {
             if( cgs.teamVoteTime[ cs_offset ] )
-                trap_Cvar_Set( "gui_alienTeamVoteActive", "1" );
+                trap_Cvar_Set( "ui_alienTeamVoteActive", "1" );
             else
-                trap_Cvar_Set( "gui_alienTeamVoteActive", "0" );
+                trap_Cvar_Set( "ui_alienTeamVoteActive", "0" );
         }
     }
     else if( num >= CS_TEAMVOTE_YES && num <= CS_TEAMVOTE_YES + 1 )
@@ -385,7 +385,7 @@ void idCGameLocal::ConfigStringModified( void )
         if( str[ 0 ] != '*' )
         {
             // player specific sounds don't register here
-            cgs.gameSounds[ num - CS_SOUNDS ] = trap_S_RegisterSound( str, false );
+            cgs.gameSounds[ num - CS_SOUNDS ] = trap_S_RegisterSound( str );
         }
     }
     else if( num >= CS_PLAYERS && num < CS_PLAYERS + MAX_CLIENTS )
@@ -395,7 +395,7 @@ void idCGameLocal::ConfigStringModified( void )
     }
     else if( num == CS_WINNER )
     {
-        trap_Cvar_Set( "gui_winner", str );
+        trap_Cvar_Set( "ui_winner", str );
     }
     else if( num == CS_SHADERSTATE )
     {
@@ -435,7 +435,7 @@ void idCGameLocal::MapRestart( void )
     
     StartMusic( );
     
-    trap_S_ClearLoopingSounds( );
+    trap_S_ClearLoopingSounds( true );
     
     // we really should clear more parts of cg here and stop sounds
     
@@ -841,7 +841,7 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
             break;
             
         case MN_A_INFEST:
-            trap_Cvar_Set( "gui_currentClass",
+            trap_Cvar_Set( "ui_currentClass",
                            va( "%d %d",  cg.snap->ps.stats[ STAT_CLASS ],
                                cg.snap->ps.persistant[ PERS_CREDIT ] ) );
             cmd       = "menu tremulous_alienupgrade\n";
@@ -900,7 +900,7 @@ void idCGameLocal::Menu( S32 menu, S32 arg )
     }
     else if( longMsg && cg_disableWarningDialogs.integer == 0 )
     {
-        trap_Cvar_Set( "gui_dialog", longMsg );
+        trap_Cvar_Set( "ui_dialog", longMsg );
         trap_SendConsoleCommand( cmd );
     }
     else if( shortMsg && cg_disableWarningDialogs.integer < 2 )

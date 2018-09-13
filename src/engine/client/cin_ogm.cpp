@@ -48,8 +48,6 @@ theora:
 
 #include <OWLib/precompiled.h>
 
-#if defined(USE_CODEC_VORBIS) && (defined(USE_CIN_XVID) || defined(USE_CIN_THEORA))
-
 #include <ogg/ogg.h>
 #include <vorbis/codec.h>
 
@@ -323,8 +321,7 @@ static bool loadAudio( void )
                 // tell libvorbis how many samples we actually consumed
                 vorbis_synthesis_read( &g_ogm.vd, i );
                 
-//              S_RawSamples( ssize, 22050, 2, 2, (U8 *)sbuf, 1.0f );
-                S_RawSamples( 0, i, g_ogm.vi.rate, 2, 2, rawBuffer, 1.0f, 1.0f );
+                soundSystem->RawSamples( 0, i, g_ogm.vi.rate, 2, 2, rawBuffer, 1.0f );
                 
                 anyDataTransferred = true;
             }
@@ -977,24 +974,3 @@ void Cin_OGM_Shutdown()
     FS_FCloseFile( g_ogm.ogmFile );
     g_ogm.ogmFile = 0;
 }
-
-#else
-
-S32 Cin_OGM_Init( StringEntry filename )
-{
-    return 1;
-}
-S32 Cin_OGM_Run( S32 time )
-{
-    return 1;
-}
-U8*  Cin_OGM_GetOutput( S32* outWidth, S32* outHeight )
-{
-    return 0;
-}
-
-void Cin_OGM_Shutdown()
-{
-}
-#endif
-

@@ -337,9 +337,9 @@ bool trap_LoadTag( StringEntry filename )
     return imports->LoadTag( filename );
 }
 
-sfxHandle_t trap_RegisterSound( StringEntry sample, bool compressed )
+sfxHandle_t trap_RegisterSound( StringEntry sample )
 {
-    return imports->soundSystem->RegisterSound( sample, compressed );
+    return imports->soundSystem->RegisterSound( sample );
 }
 
 S32 trap_GetSoundLength( sfxHandle_t sfxHandle )
@@ -1057,7 +1057,7 @@ S32 trap_S_SoundDuration( sfxHandle_t handle )
     return imports->soundSystem->SoundDuration( handle );
 }
 
-sfxHandle_t trap_S_RegisterSound( StringEntry sample, bool compressed )
+sfxHandle_t trap_S_RegisterSound( StringEntry sample )
 {
-    return soundSystem->RegisterSound( sample, compressed );
+    return soundSystem->RegisterSound( sample );
 }

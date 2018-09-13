@@ -1286,7 +1286,7 @@ void R_Register( void )
     r_roundImagesDown = Cvar_Get( "r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_colorMipLevels = Cvar_Get( "r_colorMipLevels", "0", CVAR_LATCH );
     Cvar_CheckRange( r_picmip, 0, 16, true );
-    r_detailTextures = Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_detailTextures = Cvar_Get( "r_detailtextures", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_texturebits = Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_colorbits = Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_alphabits = Cvar_Get( "r_alphabits", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1302,7 +1302,7 @@ void R_Register( void )
     r_width = Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_height = Cvar_Get( "r_height", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_pixelAspect = Cvar_Get( "r_pixelAspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_simpleMipMaps = Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_simpleMipMaps = Cvar_Get( "r_simpleMipMaps", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_vertexLight = Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_uiFullScreen = Cvar_Get( "r_uifullscreen", "0", 0 );
     r_subdivisions = Cvar_Get( "r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1310,7 +1310,7 @@ void R_Register( void )
     r_greyscale = Cvar_Get( "r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH );
     Cvar_CheckRange( r_greyscale, 0, 1, false );
     
-    r_floatLightmap = Cvar_Get( "r_floatLightmap", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_floatLightmap = Cvar_Get( "r_floatLightmap", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_postProcess = Cvar_Get( "r_postProcess", "0", CVAR_ARCHIVE );
     
     r_toneMap = Cvar_Get( "r_toneMap", "1", CVAR_ARCHIVE );
@@ -1332,7 +1332,7 @@ void R_Register( void )
     r_normalMapping = Cvar_Get( "r_normalMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_specularMapping = Cvar_Get( "r_specularMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "", CVAR_ARCHIVE | CVAR_LATCH );
+    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_cubeMapping = Cvar_Get( "r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_horizonFade = Cvar_Get( "r_horizonFade", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeSpecular = Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1478,7 +1478,7 @@ void R_Register( void )
     r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     r_lockpvs = Cvar_Get( "r_lockpvs", "0", CVAR_CHEAT );
     r_noportals = Cvar_Get( "r_noportals", "0", CVAR_CHEAT );
-    r_shadows = Cvar_Get( "cg_shadows", "4", 0 );
+    r_shadows = Cvar_Get( "cg_shadows", "0", 0 );
     
     r_marksOnTriangleMeshes = Cvar_Get( "r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE );
     

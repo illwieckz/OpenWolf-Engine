@@ -8,6 +8,8 @@
 	* Fixed big inside userinfo what made map to load start on the load, thanks @kungfooman
 	* Updated binaries
 	* Misc fixes
+	* Added ultra.cfg and low.cfg
+		NOTE: User can execute ultra.cfg and renderer will set automatically graphics to the highest level, low is doing opposite :)  
 
 2018-09-11 Dusan Jocic <dusanjocic@msn.com>
 	* Misc updates and fixes at the renderer 

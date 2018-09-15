@@ -1076,6 +1076,7 @@ public:
     static gentity_t* TempEntity( vec3_t origin, S32 event );
     static void Sound( gentity_t* ent, S32 channel, S32 soundIndex );
     static void FreeEntity( gentity_t* e );
+    void OtherTouchTriggers( gentity_t* ent );
     void TouchTriggers( gentity_t* ent );
     static UTF8* vtos( const vec3_t v );
     static void AddPredictableEvent( gentity_t* ent, S32 event, S32 eventParm );

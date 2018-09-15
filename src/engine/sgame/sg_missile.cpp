@@ -311,6 +311,8 @@ void idGameLocal::RunMissile( gentity_t* ent )
     trap_LinkEntity( ent );
     ent->r.contents = 0; //...encoding bbox information
     
+    TouchTriggers( ent );
+    
     // check think function after bouncing
     RunThink( ent );
 }

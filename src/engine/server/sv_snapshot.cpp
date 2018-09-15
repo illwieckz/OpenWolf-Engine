@@ -899,6 +899,12 @@ void SV_SendClientSnapshot( client_t* client )
     U8    msg_buf[MAX_MSGLEN];
     msg_t   msg;
     
+    //bots dont need snapshots
+    if( client->gentity && client->gentity->r.svFlags & SVF_BOT )
+    {
+        return;
+    }
+    
     //bani
     if( client->state < CS_ACTIVE )
     {

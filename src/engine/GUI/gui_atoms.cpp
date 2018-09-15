@@ -72,7 +72,7 @@ UTF8* UI_Cvar_VariableString( StringEntry var_name )
     return buffer;
 }
 
-static void  UI_Cache_f( void )
+static void UI_Cache_f( void )
 {
     Display_CacheAll();
 }

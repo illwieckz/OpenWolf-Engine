@@ -839,7 +839,7 @@ Draws the last few lines of output transparently over the game top
 void Con_DrawNotify( void )
 {
     S32             x, v;
-    S16*          text;
+    S16*            text;
     S32             i;
     S32             time;
     S32             skip;

@@ -1874,8 +1874,8 @@ static const weaponAttributes_t bg_weapons[ ] =
         "",
         0,                    //int       maxAmmo;
         0,                    //int       maxClips;
-        true,                //int       infiniteAmmo;
-        false,               //int       usesEnergy;
+        true,                 //int       infiniteAmmo;
+        false,                //int       usesEnergy;
         LEVEL0_BITE_REPEAT,   //int       repeatRate1;
         0,                    //int       repeatRate2;
         0,                    //int       repeatRate3;

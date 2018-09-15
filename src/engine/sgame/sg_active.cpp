@@ -367,6 +367,72 @@ void idGameLocal::ClientImpacts( gentity_t* ent, pmove_t* pm )
 
 /*
 ============
+idGameLocal::OtherTouchTriggers
+
+Touch Triggers even if ent is not a client
+============
+*/
+void idGameLocal::OtherTouchTriggers( gentity_t* ent )
+{
+    int             num;
+    int             touch[MAX_GENTITIES];
+    gentity_t*      hit;
+    trace_t         trace;
+    vec3_t          mins, maxs;
+    int             i;
+    static vec3_t   range = { 40, 40, 52 };
+    
+    VectorSubtract( ent->r.currentOrigin, range, mins );
+    VectorAdd( ent->r.currentOrigin, range, maxs );
+    
+    num = trap_EntitiesInBox( mins, maxs, touch, MAX_GENTITIES );
+    
+    // can't use ent->absmin, because that has a one unit pad
+    VectorAdd( ent->r.currentOrigin, ent->r.mins, mins );
+    VectorAdd( ent->r.currentOrigin, ent->r.maxs, maxs );
+    
+    for( i = 0; i < num; i++ )
+    {
+        hit = &g_entities[touch[i]];
+        
+        if( !hit->touch && !ent->touch )
+        {
+            continue;
+        }
+        if( !( hit->r.contents & CONTENTS_TRIGGER ) )
+        {
+            continue;
+        }
+        
+        if( hit->s.eType == ET_ITEM )
+        {
+            continue;
+            
+        }
+        else
+        {
+            if( !trap_EntityContactCapsule( mins, maxs, hit ) )
+            {
+                continue;
+            }
+        }
+        
+        ::memset( &trace, 0, sizeof( trace ) );
+        
+        if( hit->touch )
+        {
+            hit->touch( hit, ent, &trace );
+        }
+        
+        if( ( ent->r.svFlags & SVF_BOT ) && ( ent->touch ) )
+        {
+            ent->touch( ent, hit, &trace );
+        }
+    }
+}
+
+/*
+============
 idGameLocal::TouchTriggers
 
 Find all trigger entities that ent's current position touches.

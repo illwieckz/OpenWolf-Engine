@@ -1519,10 +1519,10 @@ void UI_Load( void )
         
     String_Init();
     
-    UI_LoadMenus( "ui/menus.txt", true );
-    UI_LoadMenus( "ui/ingame.txt", false );
-    UI_LoadMenus( "ui/tremulous.txt", false );
-    UI_LoadHelp( "ui/help.txt" );
+    UI_LoadMenus( "gui/menus.txt", true );
+    UI_LoadMenus( "gui/ingame.txt", false );
+    UI_LoadMenus( "gui/tremulous.txt", false );
+    UI_LoadHelp( "gui/help.txt" );
     Menus_CloseAll( true );
     Menus_ActivateByName( lastName );
 }

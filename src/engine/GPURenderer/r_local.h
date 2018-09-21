@@ -71,6 +71,11 @@ typedef void ( *xcommand_t )( void );
 
 extern F32    displayAspect;	// FIXME
 
+#define __DYNAMIC_SHADOWS__
+#ifdef __DYNAMIC_SHADOWS__
+#define MAX_DYNAMIC_SHADOWS 4
+#endif //__DYNAMIC_SHADOWS__
+
 // these are just here temp while I port everything to c++.
 void CL_PlayCinematic_f( void );
 void SCR_DrawCinematic( void );
@@ -112,7 +117,12 @@ void* CL_RefMalloc( S32 size );
 #define SHADERNUM_BITS	14
 #define MAX_SHADERS		(1<<SHADERNUM_BITS)
 
+#ifndef __DYNAMIC_SHADOWS__
 #define	MAX_FBOS      64
+#else //__DYNAMIC_SHADOWS__
+#define	MAX_FBOS      ((MAX_DYNAMIC_SHADOWS*4) + 64)
+#endif //__DYNAMIC_SHADOWS__
+
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS      4096
 
@@ -138,6 +148,9 @@ typedef struct dlight_s
     
     vec3_t	transformed;		// origin in local coordinate system
     S32		additive;			// texture detail is lost tho when the lightmap is dark
+#ifdef __DYNAMIC_SHADOWS__
+    bool activeShadows;
+#endif //__DYNAMIC_SHADOWS__
 } dlight_t;
 
 
@@ -866,6 +879,8 @@ typedef enum
     
     UNIFORM_MODELMATRIX,
     UNIFORM_MODELVIEWPROJECTIONMATRIX,
+    UNIFORM_INVPROJECTIONMATRIX,
+    UNIFORM_INVEYEPROJECTIONMATRIX,
     
     UNIFORM_TIME,
     UNIFORM_VERTEXLERP,
@@ -891,6 +906,10 @@ typedef enum
     UNIFORM_CUBEMAPINFO,
     
     UNIFORM_ALPHATEST,
+    
+    UNIFORM_BRIGHTNESS,
+    UNIFORM_CONTRAST,
+    UNIFORM_GAMMA,
     
     UNIFORM_DIMENSIONS,
     UNIFORM_HEIGHTMAP,
@@ -964,6 +983,9 @@ typedef struct
     S32         num_pshadows;
     struct pshadow_s* pshadows;
     
+#ifdef __DYNAMIC_SHADOWS__
+    F32         dlightShadowMvp[MAX_DYNAMIC_SHADOWS][3][16];
+#endif //__DYNAMIC_SHADOWS__
     F32         sunShadowMvp[4][16];
     F32         sunDir[4];
     F32         sunCol[4];
@@ -1569,6 +1591,8 @@ typedef struct
     mat4_t      modelview;
     mat4_t      projection;
     mat4_t		modelviewProjection;
+    mat4_t		invProjection;
+    mat4_t		invEyeProjection;
 } glstate_t;
 
 typedef enum
@@ -1713,6 +1737,7 @@ typedef struct
     image_t* identityLightImage; // full of tr.identityLightByte
     image_t* shadowCubemaps[MAX_DLIGHTS];
     image_t* renderImage;
+    image_t* normalDetailedImage;
     image_t* sunRaysImage;
     image_t* renderDepthImage;
     image_t* pshadowMaps[MAX_DRAWN_PSHADOWS];
@@ -1724,6 +1749,10 @@ typedef struct
     image_t* fixedLevelsImage;
     image_t* sunShadowDepthImage[4];
     image_t* screenShadowImage;
+#ifdef __DYNAMIC_SHADOWS__
+    image_t* dlightShadowDepthImage[MAX_DYNAMIC_SHADOWS][3];
+    //image_t* screenDlightShadowImage;
+#endif //__DYNAMIC_SHADOWS__
     image_t* screenSsaoImage;
     image_t* hdrDepthImage;
     image_t* renderCubeImage;
@@ -1743,6 +1772,10 @@ typedef struct
     FBO_t* screenSsaoFbo;
     FBO_t* hdrDepthFbo;
     FBO_t* renderCubeFbo;
+#ifdef __DYNAMIC_SHADOWS__
+    FBO_t* dlightShadowFbo[MAX_DYNAMIC_SHADOWS][3];
+    //FBO_t* screenDlightShadowFbo;
+#endif //__DYNAMIC_SHADOWS__
     
     shader_t* defaultShader;
     shader_t* shadowShader;
@@ -1811,6 +1844,9 @@ typedef struct
     shaderProgram_t bloomCombineShader;
     shaderProgram_t ssgiShader;
     shaderProgram_t ssgiBlurShader;
+    shaderProgram_t texturedetailShader;
+    shaderProgram_t rbmShader;
+    shaderProgram_t contrastShader;
     
     image_t*        bloomRenderFBOImage[3];
     image_t*        anamorphicRenderFBOImage[3];
@@ -2079,6 +2115,14 @@ extern cvar_t* r_trueAnaglyphGreen;
 extern cvar_t* r_trueAnaglyphBlue;
 extern cvar_t* r_vibrancy;
 extern cvar_t* r_multithread;
+extern cvar_t* r_texturedetail;
+extern cvar_t* r_texturedetailStrength;
+extern cvar_t* r_rbm;
+extern cvar_t* r_rbmStrength;
+extern cvar_t* r_screenblur;
+extern cvar_t* r_brightness;
+extern cvar_t* r_contrast;
+extern cvar_t* r_gamma;
 
 //====================================================================
 
@@ -2089,6 +2133,9 @@ void R_RenderDlightCubemaps( const refdef_t* fd );
 void R_RenderPshadowMaps( const refdef_t* fd );
 void R_RenderSunShadowMaps( const refdef_t* fd, S32 level );
 void R_RenderCubemapSide( S32 cubemapIndex, S32 cubemapSide, bool subscene );
+#ifdef __DYNAMIC_SHADOWS__
+void R_RenderDlightShadowMaps( const refdef_t* fd, S32 level );
+#endif //__DYNAMIC_SHADOWS__
 
 void R_AddMD3Surfaces( trRefEntity_t* e );
 void R_AddNullModelSurfaces( trRefEntity_t* e );

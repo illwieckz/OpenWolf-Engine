@@ -194,7 +194,6 @@ cvar_t*	r_swapInterval;
 cvar_t*	r_textureMode;
 cvar_t*	r_offsetFactor;
 cvar_t*	r_offsetUnits;
-cvar_t*	r_gamma;
 cvar_t*	r_intensity;
 cvar_t*	r_lockpvs;
 cvar_t*	r_noportals;
@@ -259,6 +258,14 @@ cvar_t* r_trueAnaglyphBlue;
 cvar_t* r_vibrancy;
 cvar_t* r_multithread;
 cvar_t* r_fxaa;
+cvar_t* r_texturedetail;
+cvar_t* r_texturedetailStrength;
+cvar_t* r_rbm;
+cvar_t* r_rbmStrength;
+cvar_t* r_screenblur;
+cvar_t* r_brightness;
+cvar_t* r_contrast;
+cvar_t* r_gamma;
 
 cvar_t*	r_maxpolys;
 S32		max_polys;
@@ -562,10 +569,6 @@ void RB_TakeScreenshot( S32 x, S32 y, S32 width, S32 height, UTF8* fileName )
     
     memcount = linelen * height;
     
-    // gamma correct
-    if( glConfig.deviceSupportsGamma )
-        R_GammaCorrect( allbuf + offset, memcount );
-        
     FS_WriteFile( fileName, buffer, memcount + 18 );
     
     Hunk_FreeTempMemory( allbuf );
@@ -586,10 +589,6 @@ void RB_TakeScreenshotJPEG( S32 x, S32 y, S32 width, S32 height, UTF8* fileName 
     buffer = RB_ReadPixels( x, y, width, height, &offset, &padlen );
     memcount = ( width * 3 + padlen ) * height;
     
-    // gamma correct
-    if( glConfig.deviceSupportsGamma )
-        R_GammaCorrect( buffer + offset, memcount );
-        
     RE_SaveJPG( fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen );
     Hunk_FreeTempMemory( buffer );
 }
@@ -754,12 +753,6 @@ void R_LevelShot( void )
             dst[1] = g / 12;
             dst[2] = r / 12;
         }
-    }
-    
-    // gamma correct
-    if( glConfig.deviceSupportsGamma )
-    {
-        R_GammaCorrect( buffer + 18, 128 * 128 * 3 );
     }
     
     FS_WriteFile( checkname, buffer, 128 * 128 * 3 + 18 );
@@ -981,10 +974,6 @@ const void* RB_TakeVideoFrameCmd( const void* data )
                   
     memcount = padwidth * cmd->height;
     
-    // gamma correct
-    if( glConfig.deviceSupportsGamma )
-        R_GammaCorrect( cBuf, memcount );
-        
     if( cmd->motionJpeg )
     {
         memcount = RE_SaveJPGToBuffer( cmd->encodeBuffer, linelen * cmd->height,
@@ -1395,6 +1384,14 @@ void R_Register( void )
     r_trueAnaglyphBlue = Cvar_Get( "r_trueAnaglyphBlue", "0.0", CVAR_ARCHIVE );
     r_vibrancy = Cvar_Get( "r_vibrancy", "0.4", CVAR_ARCHIVE );
     r_multithread = Cvar_Get( "r_multithread", "1", CVAR_ARCHIVE );
+    r_texturedetail = Cvar_Get( "r_texturedetail", "1", CVAR_ARCHIVE );
+    r_texturedetailStrength = Cvar_Get( "r_texturedetailStrength", "0.004", CVAR_ARCHIVE );
+    r_rbm = Cvar_Get( "r_rbm", "0", CVAR_ARCHIVE );
+    r_rbmStrength = Cvar_Get( "r_rbmStrength", "0.015", CVAR_ARCHIVE );
+    r_screenblur = Cvar_Get( "r_screenBlur", "0", CVAR_ARCHIVE );
+    r_brightness = Cvar_Get( "r_brightness", "0.0", CVAR_ARCHIVE );
+    r_contrast = Cvar_Get( "r_contrast", "1.0", CVAR_ARCHIVE );
+    r_gamma = Cvar_Get( "r_gamma", "1.0", CVAR_ARCHIVE );
     
     //
     // temporary latched variables that can only change over a restart

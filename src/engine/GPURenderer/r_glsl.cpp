@@ -29,46 +29,7 @@
 
 #include <OWLib/precompiled.h>
 
-const GPUProgramDesc fallback_bokehProgram;
-const GPUProgramDesc fallback_calclevels4xProgram;
-const GPUProgramDesc fallback_depthblurProgram;
-const GPUProgramDesc fallback_dlightProgram;
-const GPUProgramDesc fallback_down4xProgram;
-const GPUProgramDesc fallback_fogpassProgram;
-const GPUProgramDesc fallback_gaussian_blurProgram;
-const GPUProgramDesc fallback_genericProgram;
-const GPUProgramDesc fallback_lightallProgram;
-const GPUProgramDesc fallback_pshadowProgram;
-const GPUProgramDesc fallback_shadowfillProgram;
-const GPUProgramDesc fallback_shadowmaskProgram;
-const GPUProgramDesc fallback_ssaoProgram;
-const GPUProgramDesc fallback_texturecolorProgram;
-const GPUProgramDesc fallback_tonemapProgram;
-const GPUProgramDesc fallback_surface_spritesProgram;
-const GPUProgramDesc fallback_truehdr;
-const GPUProgramDesc fallback_volumelight;
-const GPUProgramDesc fallback_anaglyph;
-const GPUProgramDesc fallback_lightVolume_omni;
-const GPUProgramDesc fallback_uniquesky_vp;
-const GPUProgramDesc fallback_uniquewater_vp;
-const GPUProgramDesc fallback_ssao2;
-const GPUProgramDesc fallback_esharpening;
-const GPUProgramDesc fallback_esharpening2;
-const GPUProgramDesc fallback_textureclean;
-const GPUProgramDesc fallback_depthOfField;
-const GPUProgramDesc fallback_anamorphic_darken;
-const GPUProgramDesc fallback_anamorphic_blur;
-const GPUProgramDesc fallback_anamorphic_combine;
-const GPUProgramDesc fallback_darkexpand;
-const GPUProgramDesc fallback_lensflare;
-const GPUProgramDesc fallback_multipost;
-const GPUProgramDesc fallback_vibrancy;
-const GPUProgramDesc fallback_fxaa;
-const GPUProgramDesc fallback_bloom_blur;
-const GPUProgramDesc fallback_bloom_combine;
-const GPUProgramDesc fallback_bloom_darken;
-const GPUProgramDesc fallback_ssgi;
-const GPUProgramDesc fallback_ssgiBlur;
+const GPUProgramDesc fallback_null;
 
 struct uniformInfo_t
 {
@@ -233,6 +194,8 @@ static uniformInfo_t uniformsInfo[] =
     
     { "u_ModelMatrix",               GLSL_MAT16 },
     { "u_ModelViewProjectionMatrix", GLSL_MAT16 },
+    { "u_invProjectionMatrix", GLSL_MAT16 },
+    { "u_invEyeProjectionMatrix", GLSL_MAT16 },
     
     { "u_Time",          GLSL_FLOAT },
     { "u_VertexLerp",   GLSL_FLOAT },
@@ -258,6 +221,10 @@ static uniformInfo_t uniformsInfo[] =
     { "u_CubeMapInfo", GLSL_VEC4 },
     
     { "u_AlphaTest", GLSL_INT },
+    
+    { "u_Brightness",	GLSL_FLOAT },
+    { "u_Contrast",		GLSL_FLOAT },
+    { "u_Gamma",		GLSL_FLOAT },
     
     { "u_Dimensions",           GLSL_VEC2 },
     { "u_HeightMap",			GLSL_INT },
@@ -1048,7 +1015,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     const GPUProgramDesc* programDesc;
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "generic", allocator, fallback_genericProgram );
+    programDesc = LoadProgramSource( "generic", allocator, fallback_null );
     
     for( i = 0; i < GENERICDEF_COUNT; i++ )
     {
@@ -1100,7 +1067,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "texturecolor", allocator, fallback_texturecolorProgram );
+    programDesc = LoadProgramSource( "texturecolor", allocator, fallback_null );
     
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     
@@ -1141,7 +1108,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "dlight", allocator, fallback_dlightProgram );
+    programDesc = LoadProgramSource( "dlight", allocator, fallback_null );
     for( i = 0; i < DLIGHTDEF_COUNT; i++ )
     {
         attribs = ATTR_POSITION | ATTR_NORMAL | ATTR_TEXCOORD;
@@ -1168,7 +1135,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "lightall", allocator, fallback_lightallProgram );
+    programDesc = LoadProgramSource( "lightall", allocator, fallback_null );
     for( i = 0; i < LIGHTDEF_COUNT; i++ )
     {
         S32 lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
@@ -1335,7 +1302,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "shadowfill", allocator, fallback_shadowfillProgram );
+    programDesc = LoadProgramSource( "shadowfill", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_POSITION2 | ATTR_NORMAL | ATTR_NORMAL2 | ATTR_TEXCOORD;
     
     extradefines[0] = '\0';
@@ -1352,7 +1319,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "pshadow", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "pshadow", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_NORMAL;
     extradefines[0] = '\0';
     
@@ -1373,7 +1340,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "down4x", allocator, fallback_down4xProgram );
+    programDesc = LoadProgramSource( "down4x", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1392,7 +1359,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "bokeh", allocator, fallback_bokehProgram );
+    programDesc = LoadProgramSource( "bokeh", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1411,7 +1378,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "tonemap", allocator, fallback_tonemapProgram );
+    programDesc = LoadProgramSource( "tonemap", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1431,7 +1398,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "calclevels4x", allocator, fallback_calclevels4xProgram );
+    programDesc = LoadProgramSource( "calclevels4x", allocator, fallback_null );
     for( i = 0; i < 2; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1456,7 +1423,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "shadowmask", allocator, fallback_shadowmaskProgram );
+    programDesc = LoadProgramSource( "shadowmask", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1492,7 +1459,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "ssao", allocator, fallback_ssaoProgram );
+    programDesc = LoadProgramSource( "ssao", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1511,7 +1478,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "depthblur", allocator, fallback_depthblurProgram );
+    programDesc = LoadProgramSource( "depthblur", allocator, fallback_null );
     for( i = 0; i < 4; i++ )
     {
         attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1542,7 +1509,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "darkexpand", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "darkexpand", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1583,7 +1550,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "gaussian_blur", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "gaussian_blur", allocator, fallback_null );
     attribs = 0;
     extradefines[0] = '\0';
     Q_strcat( extradefines, sizeof( extradefines ), "#define BLUR_X" );
@@ -1611,7 +1578,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "multipost", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "multipost", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1628,7 +1595,86 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "volumelight", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "texturedetail", allocator, fallback_null );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.texturedetailShader, "texturedetail", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load texturedetail shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.texturedetailShader );
+    GLSL_SetUniformInt( &tr.texturedetailShader, UNIFORM_TEXTUREMAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &tr.texturedetailShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP );
+    
+    {
+        vec4_t viewInfo;
+        
+        float zmax = backEnd.viewParms.zFar;
+        float zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+        //VectorSet4(viewInfo, zmin, zmax, 0.0, 0.0);
+        
+        GLSL_SetUniformVec4( &tr.texturedetailShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.texturedetailShader, UNIFORM_DIMENSIONS, screensize );
+        
+        //CL_RefPrintf(PRINT_WARNING, "Sent dimensions %f %f.\n", screensize[0], screensize[1]);
+    }
+    
+    GLSL_FinishGPUShader( &tr.texturedetailShader );
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "rbm", allocator, fallback_null );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.rbmShader, "rbm", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load rbm shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.rbmShader );
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_SCREENDEPTHMAP, TB_LIGHTMAP );
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_NORMALMAP, TB_NORMALMAP );
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GLSL_FinishGPUShader( &tr.rbmShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "contrast", allocator, fallback_null );
+    attribs = ATTR_POSITION | ATTR_TEXCOORD;
+    extradefines[0] = '\0';
+    
+    if( !GLSL_InitGPUShader( &tr.contrastShader, "contrast", attribs, true, extradefines, true, *programDesc ) )
+    {
+        Com_Error( ERR_FATAL, "Could not load bloom shader!" );
+    }
+    
+    GLSL_InitUniforms( &tr.contrastShader );
+    GLSL_SetUniformInt( &tr.contrastShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP );
+    GLSL_SetUniformInt( &tr.contrastShader, UNIFORM_BRIGHTNESS, r_brightness->value );
+    GLSL_SetUniformInt( &tr.contrastShader, UNIFORM_CONTRAST, r_contrast->value );
+    GLSL_SetUniformInt( &tr.contrastShader, UNIFORM_GAMMA, r_gamma->value );
+    GLSL_FinishGPUShader( &tr.contrastShader );
+    
+    numEtcShaders++;
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "volumelight", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -1645,7 +1691,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "lensflare", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "lensflare", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.lensflareShader, "lensflare", attribs, true, extradefines, true, *programDesc ) )
@@ -1661,7 +1707,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "anamorphic_darken", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "anamorphic_darken", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.anamorphicDarkenShader, "anamorphic_darken", attribs, true, extradefines, true, *programDesc ) )
@@ -1677,7 +1723,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "anamorphic_blur", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "anamorphic_blur", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.anamorphicBlurShader, "anamorphic_blur", attribs, true, extradefines, true, *programDesc ) )
@@ -1693,7 +1739,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "anamorphic_combine", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "anamorphic_combine", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.anamorphicCombineShader, "anamorphic_combine", attribs, true, extradefines, true, *programDesc ) )
@@ -1710,7 +1756,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "truehdr", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "truehdr", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.hdrShader, "truehdr", attribs, true, extradefines, true, *programDesc ) )
@@ -1750,7 +1796,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "depthOfField", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "depthOfField", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.dofShader, "depthOfField", attribs, true, extradefines, true, *programDesc ) )
@@ -1790,7 +1836,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "esharpening", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "esharpening", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.esharpeningShader, "esharpening", attribs, true, extradefines, true, *programDesc ) )
@@ -1830,7 +1876,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "esharpening2", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "esharpening2", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.esharpening2Shader, "esharpening2", attribs, true, extradefines, true, *programDesc ) )
@@ -1870,7 +1916,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "textureclean", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "textureclean", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.texturecleanShader, "textureclean", attribs, true, extradefines, true, *programDesc ) )
@@ -1910,7 +1956,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "vibrancy", allocator, fallback_vibrancy );
+    programDesc = LoadProgramSource( "vibrancy", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.vibrancyShader, "vibrancy", attribs, true, extradefines, true, *programDesc ) )
@@ -1935,7 +1981,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "anaglyph", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "anaglyph", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.anaglyphShader, "anaglyph", attribs, true, extradefines, true, *programDesc ) )
@@ -1981,7 +2027,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "uniquewater", allocator, fallback_pshadowProgram );
+    programDesc = LoadProgramSource( "uniquewater", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD | ATTR_NORMAL | ATTR_COLOR;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.waterShader, "uniquewater", attribs, true, extradefines, true, *programDesc ) )
@@ -2026,7 +2072,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "fxaa", allocator, fallback_fxaa );
+    programDesc = LoadProgramSource( "fxaa", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     if( !GLSL_InitGPUShader( &tr.fxaaShader, "fxaa", attribs, true, extradefines, true, *programDesc ) )
@@ -2067,7 +2113,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "ssgi", allocator, fallback_ssgi );
+    programDesc = LoadProgramSource( "ssgi", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -2093,7 +2139,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "ssgiBlur", allocator, fallback_ssgiBlur );
+    programDesc = LoadProgramSource( "ssgiBlur", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -2110,7 +2156,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "bloom_darken", allocator, fallback_bloom_darken );
+    programDesc = LoadProgramSource( "bloom_darken", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -2127,7 +2173,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "bloom_blur", allocator, fallback_bloom_blur );
+    programDesc = LoadProgramSource( "bloom_blur", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -2144,7 +2190,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
-    programDesc = LoadProgramSource( "bloom_combine", allocator, fallback_bloom_combine );
+    programDesc = LoadProgramSource( "bloom_combine", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
@@ -2246,6 +2292,14 @@ void idRenderSystemLocal::ShutdownGPUShaders( void )
     GLSL_DeleteGPUShader( &tr.bloomBlurShader );
     GLSL_DeleteGPUShader( &tr.bloomCombineShader );
     GLSL_DeleteGPUShader( &tr.ssgiShader );
+    GLSL_DeleteGPUShader( &tr.ssgiBlurShader );
+    GLSL_DeleteGPUShader( &tr.texturedetailShader );
+    GLSL_DeleteGPUShader( &tr.contrastShader );
+    GLSL_DeleteGPUShader( &tr.rbmShader );
+    
+    for( i = 0; i < 2; i++ )
+        GLSL_DeleteGPUShader( &tr.gaussianBlurShader[i] );
+        
 }
 
 

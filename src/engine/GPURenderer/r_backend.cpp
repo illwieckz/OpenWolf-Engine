@@ -275,20 +275,21 @@ void GL_State( U64 stateBits )
     glState.glStateBits = stateBits;
 }
 
-
 void GL_SetProjectionMatrix( mat4_t matrix )
 {
     Mat4Copy( matrix, glState.projection );
     Mat4Multiply( glState.projection, glState.modelview, glState.modelviewProjection );
+    Mat4SimpleInverse( glState.projection, glState.invProjection );
+    Mat4SimpleInverse( glState.modelviewProjection, glState.invEyeProjection );
 }
-
 
 void GL_SetModelviewMatrix( mat4_t matrix )
 {
     Mat4Copy( matrix, glState.modelview );
     Mat4Multiply( glState.projection, glState.modelview, glState.modelviewProjection );
+    Mat4SimpleInverse( glState.projection, glState.invProjection );
+    Mat4SimpleInverse( glState.modelviewProjection, glState.invEyeProjection );
 }
-
 
 /*
 ================
@@ -1116,6 +1117,107 @@ const void*	RB_DrawSurfs( const void* data )
                 }
             }
             
+#ifdef __DYNAMIC_SHADOWS__
+            //if (backEnd.viewParms.flags & VPF_USESUNLIGHT)
+            {
+                if( backEnd.refdef.num_dlights )
+                {
+                    for( int l = 0; l < backEnd.refdef.num_dlights; l++ )
+                    {
+                        dlight_t*	dl;
+                        float radius, scale;
+                        vec3_t origin;
+                        
+                        if( l >= MAX_DYNAMIC_SHADOWS ) break; // max
+                        
+                        dl = &backEnd.refdef.dlights[l];
+                        VectorCopy( dl->transformed, origin );
+                        radius = dl->radius;
+                        scale = 1.0f / radius;
+                        
+                        if( !dl->activeShadows ) continue;
+                        
+                        vec4_t quadVerts[4];
+                        vec2_t texCoords[4];
+                        vec4_t box;
+                        
+                        FBO_Bind( tr.screenShadowFbo );
+                        
+                        box[0] = backEnd.viewParms.viewportX      * tr.screenShadowFbo->width / ( float )glConfig.vidWidth;
+                        box[1] = backEnd.viewParms.viewportY      * tr.screenShadowFbo->height / ( float )glConfig.vidHeight;
+                        box[2] = backEnd.viewParms.viewportWidth  * tr.screenShadowFbo->width / ( float )glConfig.vidWidth;
+                        box[3] = backEnd.viewParms.viewportHeight * tr.screenShadowFbo->height / ( float )glConfig.vidHeight;
+                        
+                        glViewport( box[0], box[1], box[2], box[3] );
+                        glScissor( box[0], box[1], box[2], box[3] );
+                        
+                        box[0] = backEnd.viewParms.viewportX / ( float )glConfig.vidWidth;
+                        box[1] = backEnd.viewParms.viewportY / ( float )glConfig.vidHeight;
+                        box[2] = box[0] + backEnd.viewParms.viewportWidth / ( float )glConfig.vidWidth;
+                        box[3] = box[1] + backEnd.viewParms.viewportHeight / ( float )glConfig.vidHeight;
+                        
+                        texCoords[0][0] = box[0];
+                        texCoords[0][1] = box[3];
+                        texCoords[1][0] = box[2];
+                        texCoords[1][1] = box[3];
+                        texCoords[2][0] = box[2];
+                        texCoords[2][1] = box[1];
+                        texCoords[3][0] = box[0];
+                        texCoords[3][1] = box[1];
+                        
+                        box[0] = -1.0f;
+                        box[1] = -1.0f;
+                        box[2] = 1.0f;
+                        box[3] = 1.0f;
+                        
+                        VectorSet4( quadVerts[0], box[0], box[3], 0, 1 );
+                        VectorSet4( quadVerts[1], box[2], box[3], 0, 1 );
+                        VectorSet4( quadVerts[2], box[2], box[1], 0, 1 );
+                        VectorSet4( quadVerts[3], box[0], box[1], 0, 1 );
+                        
+                        GL_State( GLS_DEPTHTEST_DISABLE );
+                        
+                        GLSL_BindProgram( &tr.shadowmaskShader );
+                        
+                        GL_BindToTMU( tr.renderDepthImage, TB_COLORMAP );
+                        GL_BindToTMU( tr.dlightShadowDepthImage[l][0], TB_SHADOWMAP );
+                        GL_BindToTMU( tr.dlightShadowDepthImage[l][1], TB_SHADOWMAP2 );
+                        GL_BindToTMU( tr.dlightShadowDepthImage[l][2], TB_SHADOWMAP3 );
+                        
+                        GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP, backEnd.refdef.dlightShadowMvp[l][0] );
+                        GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP2, backEnd.refdef.dlightShadowMvp[l][1] );
+                        GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP3, backEnd.refdef.dlightShadowMvp[l][2] );
+                        
+                        GLSL_SetUniformVec3( &tr.shadowmaskShader, UNIFORM_VIEWORIGIN, backEnd.refdef.vieworg );
+                        {
+                            vec4_t viewInfo;
+                            vec3_t viewVector;
+                            
+                            float zmax = backEnd.viewParms.zFar;
+                            float ymax = zmax * tan( backEnd.viewParms.fovY * M_PI / 360.0f );
+                            float xmax = zmax * tan( backEnd.viewParms.fovX * M_PI / 360.0f );
+                            
+                            float zmin = r_znear->value;
+                            
+                            VectorScale( backEnd.refdef.viewaxis[0], zmax, viewVector );
+                            GLSL_SetUniformVec3( &tr.shadowmaskShader, UNIFORM_VIEWFORWARD, viewVector );
+                            VectorScale( backEnd.refdef.viewaxis[1], xmax, viewVector );
+                            GLSL_SetUniformVec3( &tr.shadowmaskShader, UNIFORM_VIEWLEFT, viewVector );
+                            VectorScale( backEnd.refdef.viewaxis[2], ymax, viewVector );
+                            GLSL_SetUniformVec3( &tr.shadowmaskShader, UNIFORM_VIEWUP, viewVector );
+                            
+                            VectorSet4( viewInfo, zmax / zmin, zmax, 0.0, 0.0 );
+                            
+                            GLSL_SetUniformVec4( &tr.shadowmaskShader, UNIFORM_VIEWINFO, viewInfo );
+                        }
+                        
+                        
+                        RB_InstantQuad2( quadVerts, texCoords ); //, color, shaderProgram, invTexRes);
+                    }
+                }
+            }
+#endif //__DYNAMIC_SHADOWS__
+            
             if( r_ssao->integer )
             {
                 vec4_t quadVerts[4];
@@ -1622,6 +1724,31 @@ const void* RB_PostProcess( const void* data )
             }
         }
         
+        if( r_screenblur->integer )
+        {
+            // Blur some times
+            F32	spread = 1.0f;
+            S32	numPasses = 8;
+            
+            for( S32 i = 0; i < numPasses; i++ )
+            {
+                RB_GaussianBlur( srcFbo, tr.genericFbo, srcFbo, spread );
+                spread += 0.06f * 0.25f;
+            }
+        }
+        
+        if( r_rbm->integer )
+        {
+            RB_RBM( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
+        if( r_texturedetail->integer )
+        {
+            RB_TextureDetail( srcFbo, srcBox, tr.genericFbo, dstBox );
+            FBO_FastBlit( tr.genericFbo, srcBox, srcFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+        }
+        
         if( r_anamorphic->integer )
         {
             RB_Anamorphic( srcFbo, srcBox, tr.genericFbo, dstBox );
@@ -1696,6 +1823,8 @@ const void* RB_PostProcess( const void* data )
     if( 1 )
         RB_BokehBlur( NULL, srcBox, NULL, dstBox, backEnd.refdef.blurFactor );
         
+    RB_Contrast( NULL, srcBox, NULL, dstBox );
+    
 #if 0
     if( 0 )
     {

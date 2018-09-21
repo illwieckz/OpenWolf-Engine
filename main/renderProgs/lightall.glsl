@@ -825,7 +825,7 @@ void main()
 	#endif
 
     #if defined(USE_PBR)
-	cubeLightColor *= cubeLightColor;
+	cubeLightColor *= cubeLightColor + cubeLightColor;
     #endif
 
 	// multiply cubemap values by lighting

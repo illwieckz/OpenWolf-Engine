@@ -456,41 +456,6 @@ void RB_VBlur( FBO_t* srcFbo, FBO_t* dstFbo, F32 strength )
     RB_BlurAxis( srcFbo, dstFbo, strength, false );
 }
 
-void RB_GaussianBlur( F32 blur )
-{
-    //F32 mul = 1.f;
-    F32 factor = Com_Clamp( 0.f, 1.f, blur );
-    
-    if( factor <= 0.f )
-        return;
-        
-    {
-        ivec4_t srcBox, dstBox;
-        vec4_t color;
-        
-        VectorSet4( color, 1, 1, 1, 1 );
-        
-        // first, downsample the framebuffer
-        FBO_FastBlit( NULL, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
-        FBO_FastBlit( tr.quarterFbo[0], NULL, tr.textureScratchFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
-        
-        // set the alpha channel
-        glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE );
-        FBO_BlitFromTexture( tr.whiteImage, NULL, NULL, tr.textureScratchFbo[0], NULL, NULL, color, GLS_DEPTHTEST_DISABLE );
-        glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-        
-        // blur the tiny buffer horizontally and vertically
-        RB_HBlur( tr.textureScratchFbo[0], tr.textureScratchFbo[1], factor );
-        RB_VBlur( tr.textureScratchFbo[1], tr.textureScratchFbo[0], factor );
-        
-        // finally, merge back to framebuffer
-        VectorSet4( srcBox, 0, 0, tr.textureScratchFbo[0]->width, tr.textureScratchFbo[0]->height );
-        VectorSet4( dstBox, 0, 0, glConfig.vidWidth,              glConfig.vidHeight );
-        color[3] = factor;
-        FBO_Blit( tr.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-    }
-}
-
 void RB_GaussianBlur( FBO_t* srcFbo, FBO_t* intermediateFbo, FBO_t* dstFbo, F32 spread )
 {
     // Blur X
@@ -1572,4 +1537,117 @@ void RB_SSGI( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
     }
     
     FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.ssgiShader, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
+}
+
+void RB_TextureDetail( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
+{
+    vec4_t color;
+    
+    // bloom
+    color[0] =
+        color[1] =
+            color[2] = pow( 2, r_cameraExposure->value );
+    color[3] = 1.0f;
+    
+    GLSL_BindProgram( &tr.texturedetailShader );
+    
+    GL_BindToTMU( hdrFbo->colorImage[0], TB_LEVELSMAP );
+    
+    GLSL_SetUniformMat4( &tr.texturedetailShader, UNIFORM_INVEYEPROJECTIONMATRIX, glState.invEyeProjection );
+    GLSL_SetUniformInt( &tr.texturedetailShader, UNIFORM_SCREENDEPTHMAP, TB_LIGHTMAP );
+    GL_BindToTMU( tr.renderDepthImage, TB_LIGHTMAP );
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.texturedetailShader, UNIFORM_DIMENSIONS, screensize );
+    }
+    
+    {
+        vec4_t viewInfo;
+        
+        F32 zmax = backEnd.viewParms.zFar;
+        F32 zmin = r_znear->value;
+        
+        VectorSet4( viewInfo, zmax / zmin, zmax, zmin, zmax );
+        
+        GLSL_SetUniformVec4( &tr.texturedetailShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    {
+        vec4_t local0;
+        VectorSet4( local0, r_texturedetailStrength->value, 0.0, 0.0, 0.0 ); // non-flicker version
+        GLSL_SetUniformVec4( &tr.texturedetailShader, UNIFORM_LOCAL0, local0 );
+    }
+    
+    FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.texturedetailShader, color, 0 ); //GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+}
+
+void RB_RBM( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox )
+{
+    vec4_t		color;
+    
+    // bloom
+    color[0] =
+        color[1] =
+            color[2] = pow( 2, r_cameraExposure->value );
+    color[3] = 1.0f;
+    
+    GLSL_BindProgram( &tr.rbmShader );
+    
+    GLSL_SetUniformMat4( &tr.rbmShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
+    GLSL_SetUniformMat4( &tr.rbmShader, UNIFORM_MODELMATRIX, backEnd.orientation.transformMatrix );
+    
+    GLSL_SetUniformVec3( &tr.rbmShader, UNIFORM_VIEWORIGIN, backEnd.refdef.vieworg );
+    
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+    GL_BindToTMU( hdrFbo->colorImage[0], TB_DIFFUSEMAP );
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_NORMALMAP, TB_NORMALMAP );
+    GL_BindToTMU( tr.normalDetailedImage, TB_NORMALMAP );
+    GLSL_SetUniformInt( &tr.rbmShader, UNIFORM_SCREENDEPTHMAP, TB_LIGHTMAP );
+    GL_BindToTMU( tr.renderDepthImage, TB_LIGHTMAP );
+    
+    {
+        vec4_t local0;
+        VectorSet4( local0, r_rbmStrength->value, 0.0, 0.0, 0.0 );
+        GLSL_SetUniformVec4( &tr.rbmShader, UNIFORM_LOCAL0, local0 );
+    }
+    
+    {
+        vec2_t screensize;
+        screensize[0] = glConfig.vidWidth;
+        screensize[1] = glConfig.vidHeight;
+        
+        GLSL_SetUniformVec2( &tr.rbmShader, UNIFORM_DIMENSIONS, screensize );
+    }
+    
+    {
+        vec4_t viewInfo;
+        F32 zmax = backEnd.viewParms.zFar;
+        F32 ymax = zmax * tan( backEnd.viewParms.fovY * M_PI / 360.0f );
+        F32 xmax = zmax * tan( backEnd.viewParms.fovX * M_PI / 360.0f );
+        F32 zmin = r_znear->value;
+        VectorSet4( viewInfo, zmin, zmax, zmax / zmin, 0.0 );
+        GLSL_SetUniformVec4( &tr.rbmShader, UNIFORM_VIEWINFO, viewInfo );
+    }
+    
+    FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &tr.rbmShader, color, 0 );
+}
+
+void RB_Contrast( FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox )
+{
+    F32 brightness = 2;
+    
+    if( !glRefConfig.framebufferObject )
+    {
+        return;
+    }
+    
+    GLSL_SetUniformFloat( &tr.contrastShader, UNIFORM_BRIGHTNESS, r_brightness->value );
+    GLSL_SetUniformFloat( &tr.contrastShader, UNIFORM_CONTRAST, r_contrast->value );
+    GLSL_SetUniformFloat( &tr.contrastShader, UNIFORM_GAMMA, r_gamma->value );
+    
+    FBO_FastBlit( src, srcBox, tr.screenScratchFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+    FBO_Blit( tr.screenScratchFbo, srcBox, NULL, dst, dstBox, &tr.contrastShader, NULL, 0 );
 }

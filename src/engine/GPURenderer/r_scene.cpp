@@ -535,6 +535,15 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
         R_RenderPshadowMaps( fd );
     }
     
+#ifdef __DYNAMIC_SHADOWS__
+    if( glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ) )
+    {
+        R_RenderDlightShadowMaps( fd, 0 );
+        R_RenderDlightShadowMaps( fd, 1 );
+        R_RenderDlightShadowMaps( fd, 2 );
+    }
+#endif //__DYNAMIC_SHADOWS__
+    
     // playing with even more shadows
     if( glRefConfig.framebufferObject && r_sunlightMode->integer && !( fd->rdflags & RDF_NOWORLDMODEL ) && ( r_forceSun->integer || tr.sunShadows ) )
     {

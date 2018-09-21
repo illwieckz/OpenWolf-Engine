@@ -319,6 +319,7 @@ void idRenderSystemLocal::FBOInit( void )
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
         FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         FBO_AttachImage( tr.renderFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT_EXT, 0 );
+        FBO_AttachImage( tr.renderFbo, tr.normalDetailedImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.renderFbo );
     }
     
@@ -377,6 +378,22 @@ void idRenderSystemLocal::FBOInit( void )
         FBO_AttachImage( tr.screenShadowFbo, tr.screenShadowImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.screenShadowFbo );
     }
+    
+#ifdef __DYNAMIC_SHADOWS__
+    if( tr.dlightShadowDepthImage[0][0] != NULL )
+    {
+        for( S32 j = 0; j < MAX_DYNAMIC_SHADOWS; j++ )
+        {
+            for( i = 0; i < 3; i++ )
+            {
+                tr.dlightShadowFbo[j][i] = FBO_Create( "_dlightshadowmap", tr.dlightShadowDepthImage[j][i]->width, tr.dlightShadowDepthImage[j][i]->height );
+                FBO_CreateBuffer( tr.dlightShadowFbo[j][i], GL_RGBA8, 0, 0 );
+                FBO_AttachImage( tr.dlightShadowFbo[j][i], tr.dlightShadowDepthImage[i][j], GL_DEPTH_ATTACHMENT_EXT, 0 );
+                R_CheckFBO( tr.dlightShadowFbo[j][i] );
+            }
+        }
+    }
+#endif //__DYNAMIC_SHADOWS__
     
     if( tr.textureScratchImage[0] )
     {

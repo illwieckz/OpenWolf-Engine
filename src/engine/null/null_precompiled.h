@@ -83,7 +83,7 @@
 #include <SDL/SDL.h>
 #endif
 #include <curl/curl.h>
-#include <sys/resource.h>
+#include <platform/windows/resource.h>
 
 #include <botlib/botlib.h>
 #include <botlib/l_script.h>
@@ -132,9 +132,9 @@
 #include <qcommon/puff.h>
 #include <qcommon/surfaceflags.h>
 
-#include <sys/sdl_icon.h>
-#include <sys/sys_loadlib.h>
-#include <sys/sys_local.h>
+#include <platform/sys_icon.h>
+#include <platform/sys_loadlib.h>
+#include <platform/sys_local.h>
 
 #include <physicslib/physics_local.h>
 #include <physicslib/physics_public.h>

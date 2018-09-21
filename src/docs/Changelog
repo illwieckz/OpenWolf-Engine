@@ -1,3 +1,12 @@
+2018-09-21 Dusan Jocic <dusanjocic@msn.com>
+	* Added platform folders
+	* Moved platform source files in proper folders
+	* Moved console code to the new folder
+	* Moved gamma and contrast to the glsl files
+	* Added new GLSL effects
+	* Changed ".bsp" file format to the ".world"
+	* Recompiled binary files
+
 2018-09-15 Dusan Jocic <dusanjocic@msn.com>
 	* Misc fixes
 

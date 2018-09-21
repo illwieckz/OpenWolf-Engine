@@ -947,7 +947,7 @@ void CL_InitCGame( void )
     // find the current mapname
     info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_SERVERINFO];
     mapname = Info_ValueForKey( info, "mapname" );
-    Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.bsp", mapname );
+    Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.world", mapname );
     
     // load the dll
     cgvm = Sys_LoadDll( "cgame" );

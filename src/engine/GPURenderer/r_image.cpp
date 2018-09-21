@@ -31,26 +31,12 @@
 #include <OWLib/precompiled.h>
 
 static U8 s_intensitytable[256];
-static U8 s_gammatable[256];
 
 S32 gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 S32	gl_filter_max = GL_LINEAR;
 
 #define FILE_HASH_SIZE		1024
 static	image_t*		hashTable[FILE_HASH_SIZE];
-
-/*
-** R_GammaCorrect
-*/
-void R_GammaCorrect( U8* buffer, S32 bufSize )
-{
-    S32 i;
-    
-    for( i = 0; i < bufSize; i++ )
-    {
-        buffer[i] = s_gammatable[buffer[i]];
-    }
-}
 
 struct textureMode_t
 {
@@ -1337,48 +1323,22 @@ void R_LightScaleTexture( U8* in, S32 inwidth, S32 inheight, bool only_gamma )
 {
     if( only_gamma )
     {
-        if( !glConfig.deviceSupportsGamma )
-        {
-            S32		i, c;
-            U8*	p;
-            
-            p = in;
-            
-            c = inwidth * inheight;
-            for( i = 0 ; i < c ; i++, p += 4 )
-            {
-                p[0] = s_gammatable[p[0]];
-                p[1] = s_gammatable[p[1]];
-                p[2] = s_gammatable[p[2]];
-            }
-        }
+        return;
     }
     else
     {
-        S32		i, c;
+        S32	i, c;
         U8*	p;
         
         p = in;
         
         c = inwidth * inheight;
         
-        if( glConfig.deviceSupportsGamma )
+        for( i = 0 ; i < c ; i++, p += 4 )
         {
-            for( i = 0 ; i < c ; i++, p += 4 )
-            {
-                p[0] = s_intensitytable[p[0]];
-                p[1] = s_intensitytable[p[1]];
-                p[2] = s_intensitytable[p[2]];
-            }
-        }
-        else
-        {
-            for( i = 0 ; i < c ; i++, p += 4 )
-            {
-                p[0] = s_gammatable[s_intensitytable[p[0]]];
-                p[1] = s_gammatable[s_intensitytable[p[1]]];
-                p[2] = s_gammatable[s_intensitytable[p[2]]];
-            }
+            p[0] = s_intensitytable[p[0]];
+            p[1] = s_intensitytable[p[1]];
+            p[2] = s_intensitytable[p[2]];
         }
     }
 }
@@ -2899,11 +2859,10 @@ void R_CreateBuiltinImages( void )
         
         tr.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
-        if( r_shadowBlur->integer )
-            tr.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
-            
-        //if (r_shadowBlur->integer || r_ssao->integer)
-        //	tr.hdrDepthImage = R_CreateImage("*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_INTENSITY32F_ARB);
+        tr.normalDetailedImage = R_CreateImage( "*normaldetailed", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        
+        tr.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
+        
         if( r_shadowBlur->integer || r_ssao->integer )
             tr.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
             
@@ -2970,6 +2929,18 @@ void R_CreateBuiltinImages( void )
             tr.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
         }
         
+#ifdef __DYNAMIC_SHADOWS__
+        for( S32 y = 0; y < MAX_DYNAMIC_SHADOWS; y++ )
+        {
+            for( x = 0; x < 3; x++ )
+            {
+                tr.dlightShadowDepthImage[y][x] = R_CreateImage( va( "*dlightshadowdepth%i_%i", y, x ), NULL, r_shadowMapSize->integer, r_shadowMapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+            }
+        }
+        
+        //tr.screenDlightShadowImage = R_CreateImage("*screenDlightShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
+#endif // __DYNAMIC_SHADOWS__
+        
         if( r_cubeMapping->integer )
         {
             tr.renderCubeImage = R_CreateImage( "*renderCube", NULL, CUBE_MAP_SIZE, CUBE_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_CUBEMAP, rgbFormat );
@@ -2985,9 +2956,7 @@ R_SetColorMappings
 */
 void R_SetColorMappings( void )
 {
-    S32		i, j;
-    F32	g;
-    S32		inf;
+    S32	i, j;
     
     // setup the overbright lighting
     tr.overbrightBits = abs( r_overBrightBits->integer );
@@ -3025,30 +2994,6 @@ void R_SetColorMappings( void )
         Cvar_Set( "r_gamma", "3.0" );
     }
     
-    g = r_gamma->value;
-    
-    for( i = 0; i < 256; i++ )
-    {
-        if( g == 1 )
-        {
-            inf = i;
-        }
-        else
-        {
-            inf = 255 * pow( i / 255.0f, 1.0f / g ) + 0.5f;
-        }
-        
-        if( inf < 0 )
-        {
-            inf = 0;
-        }
-        if( inf > 255 )
-        {
-            inf = 255;
-        }
-        s_gammatable[i] = inf;
-    }
-    
     for( i = 0 ; i < 256 ; i++ )
     {
         j = i * r_intensity->value;
@@ -3057,11 +3002,6 @@ void R_SetColorMappings( void )
             j = 255;
         }
         s_intensitytable[i] = j;
-    }
-    
-    if( glConfig.deviceSupportsGamma )
-    {
-        GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
     }
 }
 

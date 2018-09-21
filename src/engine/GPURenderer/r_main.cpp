@@ -2304,6 +2304,360 @@ static F32 CalcSplit( F32 n, F32 f, F32 i, F32 m )
     return ( n * pow( f / n, i / m ) + ( f - n ) * i / m ) / 2.0f;
 }
 
+#ifdef __DYNAMIC_SHADOWS__
+void R_RenderDlightShadowMaps( const refdef_t* fd, S32 level )
+{
+    if( !backEnd.refdef.num_dlights )
+    {
+        return;
+    }
+    
+    for( int l = 0; l < MAX_DYNAMIC_SHADOWS; l++ )
+    {
+        dlight_t*	dl = &backEnd.refdef.dlights[l];
+        dl->activeShadows = false;
+    }
+    
+    for( int l = 0; l < backEnd.refdef.num_dlights; l++ )
+    {
+        dlight_t*	dl;
+        float radius, scale;
+        vec3_t origin;
+        
+        
+        if( l >= MAX_DYNAMIC_SHADOWS ) break; // max
+        
+        dl = &backEnd.refdef.dlights[l];
+        VectorCopy( dl->transformed, origin );
+        radius = dl->radius;
+        scale = 1.0f / radius;
+        
+        if( Distance( fd->vieworg, dl->origin ) > radius * 2.0 )
+        {
+            dl->activeShadows = false;
+            continue; // too far away?
+        }
+        
+        dl->activeShadows = true;
+        
+        viewParms_t		shadowParms;
+        vec4_t lightDir, lightCol;
+        vec3_t lightViewAxis[3];
+        vec3_t lightOrigin;
+        F32 splitZNear, splitZFar, splitBias;
+        F32 viewZNear, viewZFar;
+        vec3_t lightviewBounds[2];
+        bool lightViewIndependentOfCameraView = false;
+        
+        lightDir[0] = lightDir[1] = 0.0f;
+        lightDir[2] = 1.0f;
+        lightDir[3] = 1.0f;
+        
+        viewZNear = r_shadowCascadeZNear->value;
+        viewZFar = r_shadowCascadeZFar->value;
+        splitBias = r_shadowCascadeZBias->value;
+        
+        switch( level )
+        {
+            case 0:
+            default:
+                //splitZNear = r_znear->value;
+                //splitZFar  = 256;
+                splitZNear = viewZNear;
+                splitZFar = CalcSplit( viewZNear, viewZFar, 1, 3 ) + splitBias;
+                break;
+            case 1:
+                splitZNear = CalcSplit( viewZNear, viewZFar, 1, 3 ) + splitBias;
+                splitZFar = CalcSplit( viewZNear, viewZFar, 2, 3 ) + splitBias;
+                //splitZNear = 256;
+                //splitZFar  = 896;
+                break;
+            case 2:
+                splitZNear = CalcSplit( viewZNear, viewZFar, 2, 3 ) + splitBias;
+                splitZFar = viewZFar;
+                //splitZNear = 896;
+                //splitZFar  = 3072;
+                break;
+        }
+        
+        //if (level != 3)
+        //	VectorCopy(fd->vieworg, lightOrigin);
+        //else
+        //	VectorCopy(tr.world->lightGridOrigin, lightOrigin);
+        VectorCopy( dl->origin, lightOrigin );
+        
+        // Make up a projection
+        VectorScale( lightDir, -1.0f, lightViewAxis[0] );
+        
+        if( level == 3 || lightViewIndependentOfCameraView )
+        {
+            // Use world up as light view up
+            VectorSet( lightViewAxis[2], 0, 0, 1 );
+        }
+        else if( level == 0 )
+        {
+            // Level 0 tries to use a diamond texture orientation relative to camera view
+            // Use halfway between camera view forward and left for light view up
+            VectorAdd( fd->viewaxis[0], fd->viewaxis[1], lightViewAxis[2] );
+        }
+        else
+        {
+            // Use camera view up as light view up
+            VectorCopy( fd->viewaxis[2], lightViewAxis[2] );
+        }
+        
+        // Check if too close to parallel to light direction
+        if( fabsf( DotProduct( lightViewAxis[2], lightViewAxis[0] ) ) > 0.9f )
+        {
+            if( level == 3 || lightViewIndependentOfCameraView )
+            {
+                // Use world left as light view up
+                VectorSet( lightViewAxis[2], 0, 1, 0 );
+            }
+            else if( level == 0 )
+            {
+                // Level 0 tries to use a diamond texture orientation relative to camera view
+                // Use halfway between camera view forward and up for light view up
+                VectorAdd( fd->viewaxis[0], fd->viewaxis[2], lightViewAxis[2] );
+            }
+            else
+            {
+                // Use camera view left as light view up
+                VectorCopy( fd->viewaxis[1], lightViewAxis[2] );
+            }
+        }
+        
+        // clean axes
+        CrossProduct( lightViewAxis[2], lightViewAxis[0], lightViewAxis[1] );
+        VectorNormalize( lightViewAxis[1] );
+        CrossProduct( lightViewAxis[0], lightViewAxis[1], lightViewAxis[2] );
+        
+        // Create bounds for light projection using slice of view projection
+        {
+            mat4_t lightViewMatrix;
+            vec4_t point, base, lightViewPoint;
+            F32 lx, ly;
+            
+            base[3] = 1;
+            point[3] = 1;
+            lightViewPoint[3] = 1;
+            
+            Mat4View( lightViewAxis, lightOrigin, lightViewMatrix );
+            
+            ClearBounds( lightviewBounds[0], lightviewBounds[1] );
+            
+            if( level != 3 )
+            {
+                // add view near plane
+                lx = splitZNear * tan( fd->fov_x * M_PI / 360.0f );
+                ly = splitZNear * tan( fd->fov_y * M_PI / 360.0f );
+                VectorMA( fd->vieworg, splitZNear, fd->viewaxis[0], base );
+                
+                VectorMA( base, lx, fd->viewaxis[1], point );
+                VectorMA( point, ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, -lx, fd->viewaxis[1], point );
+                VectorMA( point, ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, lx, fd->viewaxis[1], point );
+                VectorMA( point, -ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, -lx, fd->viewaxis[1], point );
+                VectorMA( point, -ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                
+                // add view far plane
+                lx = splitZFar * tan( fd->fov_x * M_PI / 360.0f );
+                ly = splitZFar * tan( fd->fov_y * M_PI / 360.0f );
+                VectorMA( fd->vieworg, splitZFar, fd->viewaxis[0], base );
+                
+                VectorMA( base, lx, fd->viewaxis[1], point );
+                VectorMA( point, ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, -lx, fd->viewaxis[1], point );
+                VectorMA( point, ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, lx, fd->viewaxis[1], point );
+                VectorMA( point, -ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                VectorMA( base, -lx, fd->viewaxis[1], point );
+                VectorMA( point, -ly, fd->viewaxis[2], point );
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+            }
+            else
+            {
+                // use light grid size as level size
+                // FIXME: could be tighter
+                vec3_t bounds;
+                
+                bounds[0] = tr.world->lightGridSize[0] * tr.world->lightGridBounds[0];
+                bounds[1] = tr.world->lightGridSize[1] * tr.world->lightGridBounds[1];
+                bounds[2] = tr.world->lightGridSize[2] * tr.world->lightGridBounds[2];
+                
+                point[0] = tr.world->lightGridOrigin[0];
+                point[1] = tr.world->lightGridOrigin[1];
+                point[2] = tr.world->lightGridOrigin[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0] + bounds[0];
+                point[1] = tr.world->lightGridOrigin[1];
+                point[2] = tr.world->lightGridOrigin[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0];
+                point[1] = tr.world->lightGridOrigin[1] + bounds[1];
+                point[2] = tr.world->lightGridOrigin[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0] + bounds[0];
+                point[1] = tr.world->lightGridOrigin[1] + bounds[1];
+                point[2] = tr.world->lightGridOrigin[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0];
+                point[1] = tr.world->lightGridOrigin[1];
+                point[2] = tr.world->lightGridOrigin[2] + bounds[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0] + bounds[0];
+                point[1] = tr.world->lightGridOrigin[1];
+                point[2] = tr.world->lightGridOrigin[2] + bounds[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0];
+                point[1] = tr.world->lightGridOrigin[1] + bounds[1];
+                point[2] = tr.world->lightGridOrigin[2] + bounds[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+                
+                point[0] = tr.world->lightGridOrigin[0] + bounds[0];
+                point[1] = tr.world->lightGridOrigin[1] + bounds[1];
+                point[2] = tr.world->lightGridOrigin[2] + bounds[2];
+                Mat4Transform( lightViewMatrix, point, lightViewPoint );
+                AddPointToBounds( lightViewPoint, lightviewBounds[0], lightviewBounds[1] );
+            }
+            
+            if( !glRefConfig.depthClamp )
+                lightviewBounds[0][0] = lightviewBounds[1][0] - 8192;
+                
+            // Moving the Light in Texel-Sized Increments
+            // from http://msdn.microsoft.com/en-us/library/windows/desktop/ee416324%28v=vs.85%29.aspx
+            //
+            if( lightViewIndependentOfCameraView )
+            {
+                F32 cascadeBound, worldUnitsPerTexel, invWorldUnitsPerTexel;
+                
+                cascadeBound = MAX( lightviewBounds[1][0] - lightviewBounds[0][0], lightviewBounds[1][1] - lightviewBounds[0][1] );
+                cascadeBound = MAX( cascadeBound, lightviewBounds[1][2] - lightviewBounds[0][2] );
+                worldUnitsPerTexel = cascadeBound / tr.sunShadowFbo[level]->width;
+                invWorldUnitsPerTexel = 1.0f / worldUnitsPerTexel;
+                
+                VectorScale( lightviewBounds[0], invWorldUnitsPerTexel, lightviewBounds[0] );
+                lightviewBounds[0][0] = floor( lightviewBounds[0][0] );
+                lightviewBounds[0][1] = floor( lightviewBounds[0][1] );
+                lightviewBounds[0][2] = floor( lightviewBounds[0][2] );
+                VectorScale( lightviewBounds[0], worldUnitsPerTexel, lightviewBounds[0] );
+                
+                VectorScale( lightviewBounds[1], invWorldUnitsPerTexel, lightviewBounds[1] );
+                lightviewBounds[1][0] = floor( lightviewBounds[1][0] );
+                lightviewBounds[1][1] = floor( lightviewBounds[1][1] );
+                lightviewBounds[1][2] = floor( lightviewBounds[1][2] );
+                VectorScale( lightviewBounds[1], worldUnitsPerTexel, lightviewBounds[1] );
+            }
+            
+            //CL_RefPrintf(PRINT_ALL, "level %d znear %f zfar %f\n", level, lightviewBounds[0][0], lightviewBounds[1][0]);
+            //CL_RefPrintf(PRINT_ALL, "xmin %f xmax %f ymin %f ymax %f\n", lightviewBounds[0][1], lightviewBounds[1][1], -lightviewBounds[1][2], -lightviewBounds[0][2]);
+        }
+        
+        {
+            S32 firstDrawSurf;
+            
+            ::memset( &shadowParms, 0, sizeof( shadowParms ) );
+            
+            if( glRefConfig.framebufferObject )
+            {
+                shadowParms.viewportX = 0;
+                shadowParms.viewportY = 0;
+            }
+            else
+            {
+                shadowParms.viewportX = tr.refdef.x;
+                shadowParms.viewportY = glConfig.vidHeight - ( tr.refdef.y + tr.sunShadowFbo[level]->height );
+            }
+            shadowParms.viewportWidth = tr.sunShadowFbo[level]->width;
+            shadowParms.viewportHeight = tr.sunShadowFbo[level]->height;
+            shadowParms.isPortal = false;
+            shadowParms.isMirror = false;
+            
+            shadowParms.fovX = 90;
+            shadowParms.fovY = 90;
+            
+            if( glRefConfig.framebufferObject )
+                shadowParms.targetFbo = tr.sunShadowFbo[level];
+                
+            shadowParms.flags = VPF_DEPTHSHADOW | VPF_DEPTHCLAMP | VPF_ORTHOGRAPHIC | VPF_NOVIEWMODEL;
+            shadowParms.zFar = lightviewBounds[1][0];
+            
+            VectorCopy( lightOrigin, shadowParms.orientation.origin );
+            
+            VectorCopy( lightViewAxis[0], shadowParms.orientation.axis[0] );
+            VectorCopy( lightViewAxis[1], shadowParms.orientation.axis[1] );
+            VectorCopy( lightViewAxis[2], shadowParms.orientation.axis[2] );
+            
+            VectorCopy( lightOrigin, shadowParms.pvsOrigin );
+            
+            {
+                tr.viewCount++;
+                
+                tr.viewParms = shadowParms;
+                tr.viewParms.frameSceneNum = tr.frameSceneNum;
+                tr.viewParms.frameCount = tr.frameCount;
+                
+                firstDrawSurf = tr.refdef.numDrawSurfs;
+                
+                tr.viewCount++;
+                
+                // set viewParms.world
+                R_RotateForViewer();
+                
+                R_SetupProjectionOrtho( &tr.viewParms, lightviewBounds );
+                
+                R_AddWorldSurfaces();
+                
+                R_AddPolygonSurfaces();
+                
+                R_AddEntitySurfaces();
+                
+                R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
+            }
+            
+            Mat4Multiply( tr.viewParms.projectionMatrix, tr.viewParms.world.modelMatrix, tr.refdef.sunShadowMvp[level] );
+        }
+    }
+}
+#endif //__DYNAMIC_SHADOWS__
+
 
 void R_RenderSunShadowMaps( const refdef_t* fd, S32 level )
 {
@@ -2718,6 +3072,12 @@ void R_RenderCubemapSide( S32 cubemapIndex, S32 cubemapSide, bool subscene )
         // fix involves changing r_FBufScale to fit smaller cubemap image size, or rendering cubemap to framebuffer first
         if( 0 ) //(glRefConfig.framebufferObject && r_sunlightMode->integer && (r_forceSun->integer || tr.sunShadows))
         {
+#ifdef __DYNAMIC_SHADOWS__
+            R_RenderDlightShadowMaps( &refdef, 0 );
+            R_RenderDlightShadowMaps( &refdef, 1 );
+            R_RenderDlightShadowMaps( &refdef, 2 );
+#endif //__DYNAMIC_SHADOWS__
+            
             R_RenderSunShadowMaps( &refdef, 0 );
             R_RenderSunShadowMaps( &refdef, 1 );
             R_RenderSunShadowMaps( &refdef, 2 );

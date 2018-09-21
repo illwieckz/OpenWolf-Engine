@@ -41,7 +41,7 @@ Check if a map exists
 */
 bool idGameLocal::MapExists( UTF8* name )
 {
-    return trap_FS_FOpenFile( va( "maps/%s.bsp", name ), NULL, FS_READ );
+    return trap_FS_FOpenFile( va( "maps/%s.world", name ), NULL, FS_READ );
 }
 
 /*

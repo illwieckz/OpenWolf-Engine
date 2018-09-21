@@ -229,7 +229,7 @@ static void SV_Map_f( void )
     
     // make sure the level exists before trying to change, so that
     // a typo at the server console won't end the game
-    Com_sprintf( expanded, sizeof( expanded ), "maps/%s.bsp", map );
+    Com_sprintf( expanded, sizeof( expanded ), "maps/%s.world", map );
     
     if( FS_ReadFile( expanded, NULL ) == -1 )
     {
@@ -983,7 +983,7 @@ static void SV_CompleteMapName( UTF8* args, S32 argNum )
 {
     if( argNum == 2 )
     {
-        Field_CompleteFilename( "maps", "bsp", true );
+        Field_CompleteFilename( "maps", "world", true );
     }
 }
 

@@ -1409,7 +1409,7 @@ S32 FS_FOpenFileRead( StringEntry filename, fileHandle_t* file, bool uniqueFILE 
                     
 //#if !defined(PRE_RELEASE_DEMO) && !defined(DO_LIGHT_DEDICATED)
 //					// DHM -- Nerve :: Don't allow maps to be loaded from pak0 (singleplayer)
-//					if ( Q_stricmp(filename + l - 4, ".bsp") == 0 &&
+//					if ( Q_stricmp(filename + l - 4, ".world") == 0 &&
 //						Q_stricmp( pak->pakBasename, "pak0" ) == 0 ) {
 //
 //						*file = 0;
@@ -3230,7 +3230,7 @@ void FS_NewDir_f( void )
     if( Cmd_Argc() < 2 )
     {
         Com_Printf( "usage: fdir <filter>\n" );
-        Com_Printf( "example: fdir *q3dm*.bsp\n" );
+        Com_Printf( "example: fdir *q3dm*.world\n" );
         return;
     }
     

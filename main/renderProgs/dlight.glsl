@@ -5,12 +5,10 @@ attribute vec3 attr_Normal;
 
 uniform vec4   u_DlightInfo;
 
-#if 0
 #if defined(USE_DEFORM_VERTEXES)
 uniform int    u_DeformGen;
 uniform float  u_DeformParams[5];
 uniform float  u_Time;
-#endif
 #endif
 
 uniform mat4   u_ModelViewProjectionMatrix;
@@ -32,7 +30,6 @@ varying vec4	var_LightColor[MAX_VARYING_LIGHTS];
 varying vec3	var_LightDir[MAX_VARYING_LIGHTS];
 varying float	var_NumLights;
 
-#if 0
 #if defined(USE_DEFORM_VERTEXES)
 vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 {
@@ -87,17 +84,14 @@ vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 	return pos + normal * (base + func * amplitude);
 }
 #endif
-#endif
 
 void main()
 {
 	vec3 position = attr_Position;
 	vec3 normal = attr_Normal * 2.0 - vec3(1.0);
 
-#if 0
 #if defined(USE_DEFORM_VERTEXES)
 	position = DeformPosition(position, normal, attr_TexCoord0.st);
-#endif
 #endif
 
 	gl_Position = u_ModelViewProjectionMatrix * vec4(position, 1.0);
@@ -140,6 +134,7 @@ uniform sampler2D u_DiffuseMap;
 
 #define				MAX_VARYING_LIGHTS 2
 
+uniform int			u_AlphaTest;
 varying vec3		var_Normal;
 varying vec3		var_Position;
 varying vec2		var_Tex1[MAX_VARYING_LIGHTS];
@@ -166,7 +161,24 @@ void main (void)
 
 		vec3 lightDir = var_LightDir[light];
 		vec4 lightColor = var_LightColor[light]; //*0.33333;
-							
+
+		float alpha = tex_color.a * lightColor.a;
+		if (u_AlphaTest == 1)
+		{
+			if (alpha == 0.0)
+				discard;
+		}
+		else if (u_AlphaTest == 2)
+		{
+			if (alpha >= 0.5)
+				discard;
+		}
+		else if (u_AlphaTest == 3)
+		{
+			if (alpha < 0.5)
+				discard;
+		}
+
 		vec3 N = normalize(normal);
 		vec3 L = normalize(lightDir);
 	
@@ -183,7 +195,8 @@ void main (void)
 		}
 
 		out_color += final_color;
+		out_color.a = alpha;
 	}
 
-	gl_FragColor = out_color;			
+	gl_FragColor = out_color;
 }

@@ -113,6 +113,212 @@ MAP LOADING
 ===============================================================================
 */
 
+bool StringsContainWord( StringEntry heystack, StringEntry heystack2, UTF8* needle )
+{
+    if( StringContainsWord( heystack, needle ) )
+    {
+        return true;
+    }
+    
+    if( StringContainsWord( heystack2, needle ) )
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+S32 GetMaterialType( StringEntry name )
+{
+    //CL_RefPrintf(PRINT_WARNING, "Check material type for %s.\n", name);
+    
+    //
+    // Special cases - where we are pretty sure we want lots of specular and reflection...
+    //
+    if( StringsContainWord( name, name, "plastic" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "mp/flag" ) || StringsContainWord( name, name, "lightground" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( !StringsContainWord( name, name, "trainer" ) && StringsContainWord( name, name, "train" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "reborn" ) )
+        return MATERIAL_ARMOR;
+    else if( StringsContainWord( name, name, "textures/common/water" ) )
+        return MATERIAL_WATER;
+    else if( StringsContainWord( name, name, "grass" ) || StringsContainWord( name, name, "foliage" ) )
+        return MATERIAL_SHORTGRASS;
+    else if( StringsContainWord( name, name, "concrete" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "models/weapon" ) )
+        return MATERIAL_HOLLOWMETAL;
+    else if( StringsContainWord( name, name, "/weapon" ) || StringsContainWord( name, name, "scope" ) || StringsContainWord( name, name, "pistol" ) || StringsContainWord( name, name, "cannon" )  || StringsContainWord( name, name, "rifle" ) || StringsContainWord( name, name, "rocket" ) )
+        return MATERIAL_HOLLOWMETAL;
+    else if( StringsContainWord( name, name, "metal" ) || StringsContainWord( name, name, "pipe" ) || StringsContainWord( name, name, "shaft" ) || StringsContainWord( name, name, "elevator" ) || StringsContainWord( name, name, "vent" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "eye" ) )
+        return MATERIAL_GLASS;
+    else if( StringsContainWord( name, name, "sand" ) )
+        return MATERIAL_SAND;
+    else if( StringsContainWord( name, name, "gravel" ) )
+        return MATERIAL_GRAVEL;
+    else if( StringsContainWord( name, name, "dirt" ) || StringsContainWord( name, name, "ground" ) )
+        return MATERIAL_DIRT;
+    else if( StringsContainWord( name, name, "snow" ) )
+        return MATERIAL_SNOW;
+    else if( StringsContainWord( name, name, "hood" ) || StringsContainWord( name, name, "cloth" ) || StringsContainWord( name, name, "pants" ) )
+        return MATERIAL_FABRIC;
+    else if( StringsContainWord( name, name, "hair" ) )
+        return MATERIAL_FABRIC;//MATERIAL_CARPET; Just because it has a bit of parallax and suitable specular...
+    else if( StringsContainWord( name, name, "armor" ) || StringsContainWord( name, name, "armour" ) )
+        return MATERIAL_ARMOR;
+    else if( StringsContainWord( name, name, "flesh" ) || StringsContainWord( name, name, "body" ) || StringsContainWord( name, name, "leg" ) || StringsContainWord( name, name, "hand" ) || StringsContainWord( name, name, "head" ) || StringsContainWord( name, name, "hips" ) || StringsContainWord( name, name, "torso" ) || StringsContainWord( name, name, "tentacles" ) || StringsContainWord( name, name, "face" ) || StringsContainWord( name, name, "arms" ) )
+        return MATERIAL_FLESH;
+    else if( StringsContainWord( name, name, "players" ) | StringsContainWord( name, name, "boots" ) || StringsContainWord( name, name, "accesories" ) || StringsContainWord( name, name, "accessories" ) || StringsContainWord( name, name, "holster" ) )
+        return MATERIAL_FABRIC;
+    else if( StringsContainWord( name, name, "canvas" ) )
+        return MATERIAL_CANVAS;
+    else if( StringsContainWord( name, name, "rock" ) )
+        return MATERIAL_ROCK;
+    else if( StringsContainWord( name, name, "rubber" ) )
+        return MATERIAL_RUBBER;
+    else if( StringsContainWord( name, name, "carpet" ) )
+        return MATERIAL_CARPET;
+    else if( StringsContainWord( name, name, "plaster" ) )
+        return MATERIAL_PLASTER;
+    else if( StringsContainWord( name, name, "computer" ) || StringsContainWord( name, name, "console" ) || StringsContainWord( name, name, "button" ) || StringsContainWord( name, name, "terminal" ) || StringsContainWord( name, name, "switch" ) || StringsContainWord( name, name, "panel" ) || StringsContainWord( name, name, "control" ) )
+        return MATERIAL_COMPUTER;
+    else if( StringsContainWord( name, name, "fabric" ) )
+        return MATERIAL_FABRIC;
+    else if( StringsContainWord( name, name, "leaf" ) || StringsContainWord( name, name, "leaves" ) || StringsContainWord( name, name, "fern" ) || StringsContainWord( name, name, "vine" ) )
+        return MATERIAL_GREENLEAVES;
+    else if( StringsContainWord( name, name, "wood" ) || ( StringsContainWord( name, name, "tree" ) && !StringsContainWord( name, name, "street" ) ) )
+        return MATERIAL_SOLIDWOOD;
+    else if( StringsContainWord( name, name, "mud" ) )
+        return MATERIAL_MUD;
+    else if( StringsContainWord( name, name, "ice" ) )
+        return MATERIAL_ICE;
+    else if( ( StringsContainWord( name, name, "grass" ) || StringsContainWord( name, name, "foliage" ) ) && ( StringsContainWord( name, name, "long" ) || StringsContainWord( name, name, "tall" ) || StringsContainWord( name, name, "thick" ) ) )
+        return MATERIAL_LONGGRASS;
+    else if( StringsContainWord( name, name, "grass" ) || StringsContainWord( name, name, "foliage" ) )
+        return MATERIAL_SHORTGRASS;
+    else if( StringsContainWord( name, name, "floor" ) )
+        return MATERIAL_TILES;
+    else if( !StringsContainWord( name, name, "_cc" ) )
+        return MATERIAL_MARBLE;
+    else if( !StringsContainWord( name, name, "players" ) )
+        return MATERIAL_TILES;
+    else if( StringsContainWord( name, name, "floor" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "frame" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "wall" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "wall" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "door" ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "door" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "ground" ) )
+        return MATERIAL_TILES;
+    else if( StringsContainWord( name, name, "ground" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "desert" ) )
+        return MATERIAL_CONCRETE;
+    else if( ( StringsContainWord( name, name, "tile" ) || StringsContainWord( name, name, "lift" ) ) )
+        return MATERIAL_SOLIDMETAL;
+    else if( StringsContainWord( name, name, "tile" ) || StringsContainWord( name, name, "lift" ) )
+        return MATERIAL_TILES;
+    else if( StringsContainWord( name, name, "glass" ) || StringsContainWord( name, name, "light" ) || StringsContainWord( name, name, "screen" ) || StringsContainWord( name, name, "lamp" ) )
+        return MATERIAL_GLASS;
+    else if( StringsContainWord( name, name, "flag" ) )
+        return MATERIAL_FABRIC;
+    else if( StringsContainWord( name, name, "column" ) || StringsContainWord( name, name, "stone" ) || StringsContainWord( name, name, "statue" ) )
+        return MATERIAL_MARBLE;
+    else if( StringsContainWord( name, name, "red" ) || StringsContainWord( name, name, "blue" ) || StringsContainWord( name, name, "yellow" ) || StringsContainWord( name, name, "white" ) || StringsContainWord( name, name, "monitor" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "trim" ) || StringsContainWord( name, name, "step" ) || StringsContainWord( name, name, "pad" ) )
+        return MATERIAL_ROCK;
+    else if( !StringsContainWord( name, name, "players" ) )
+        return MATERIAL_TILES;
+    else if( !StringsContainWord( name, name, "players" ) )
+        return MATERIAL_MARBLE;
+    else if( StringsContainWord( name, name, "outside" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "out" ) && ( StringsContainWord( name, name, "trim" ) || StringsContainWord( name, name, "step" ) || StringsContainWord( name, name, "pad" ) ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "out" ) && ( StringsContainWord( name, name, "frame" ) || StringsContainWord( name, name, "wall" ) || StringsContainWord( name, name, "round" ) || StringsContainWord( name, name, "crate" ) || StringsContainWord( name, name, "trim" ) || StringsContainWord( name, name, "support" ) || StringsContainWord( name, name, "step" ) || StringsContainWord( name, name, "pad" ) || StringsContainWord( name, name, "weapon" ) || StringsContainWord( name, name, "gun" ) ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "frame" ) || StringsContainWord( name, name, "wall" ) ||  StringsContainWord( name, name, "round" ) || StringsContainWord( name, name, "crate" ) ||  StringsContainWord( name, name, "trim" ) || StringsContainWord( name, name, "support" ) ||  StringsContainWord( name, name, "step" ) || StringsContainWord( name, name, "pad" ) || StringsContainWord( name, name, "weapon" ) || StringsContainWord( name, name, "gun" ) )
+        return MATERIAL_CONCRETE;
+    else if( StringsContainWord( name, name, "black" ) || StringsContainWord( name, name, "items" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "refract" ) || StringsContainWord( name, name, "reflect" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "map_objects" ) )
+        return MATERIAL_SOLIDMETAL; // hmmm, maybe... testing...
+        
+    //
+    // Special cases - where we are pretty sure we want lots of specular and reflection... Override!
+    //
+    if( StringsContainWord( name, name, "plastic" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "mp/flag" ) || StringsContainWord( name, name, "transport" ) || StringsContainWord( name, name, "crate" ) || StringsContainWord( name, name, "container" ) || StringsContainWord( name, name, "barrel" ) || StringsContainWord( name, name, "train" ) || StringsContainWord( name, name, "crane" ) || StringsContainWord( name, name, "plate" ) || StringsContainWord( name, name, "cargo" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "grass" ) || StringsContainWord( name, name, "foliage" ) )
+        return MATERIAL_SHORTGRASS;
+    if( StringsContainWord( name, name, "plastic" ) || StringsContainWord( name, name, "medpack" ) )
+        return MATERIAL_PLASTIC;
+    else if( StringsContainWord( name, name, "water" ) && !StringsContainWord( name, name, "splash" ) && !StringsContainWord( name, name, "drip" ) )
+        return MATERIAL_WATER;
+        
+    return MATERIAL_TILES;
+}
+
+bool HaveSurfaceType( S32 surfaceFlags )
+{
+    switch( surfaceFlags & MATERIAL_MASK )
+    {
+        case MATERIAL_WATER:			// 13			// light covering of water on a surface
+        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+        case MATERIAL_SAND:				// 8			// sandy beach
+        case MATERIAL_CARPET:			// 27			// lush carpet
+        case MATERIAL_GRAVEL:			// 9			// lots of small stones
+        case MATERIAL_ROCK:				// 23			//
+        case MATERIAL_TILES:			// 26			// tiled floor
+        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines
+        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+        case MATERIAL_FABRIC:			// 21			// Cotton sheets
+        case MATERIAL_CANVAS:			// 22			// tent material
+        case MATERIAL_MARBLE:			// 12			// marble floors
+        case MATERIAL_SNOW:				// 14			// freshly laid snow
+        case MATERIAL_MUD:				// 17			// wet soil
+        case MATERIAL_DIRT:				// 7			// hard mud
+        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+        case MATERIAL_PLASTIC:			// 25			//
+        case MATERIAL_PLASTER:			// 28			// drywall style plaster
+        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+        case MATERIAL_ARMOR:			// 30			// body armor
+        case MATERIAL_ICE:				// 15			// packed snow/solid ice
+        case MATERIAL_GLASS:			// 10			//
+        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+            return true;
+            break;
+        default:
+            break;
+    }
+    
+    return false;
+}
+
 /*
 =================
 CMod_LoadShaders
@@ -146,6 +352,11 @@ void CMod_LoadShaders( lump_t* l )
         {
             out->contentFlags = LittleLong( out->contentFlags );
             out->surfaceFlags = LittleLong( out->surfaceFlags );
+            
+            if( !HaveSurfaceType( out->surfaceFlags ) )
+            {
+                out->surfaceFlags = LittleLong( GetMaterialType( in->shader ) );
+            }
         }
     }
 }

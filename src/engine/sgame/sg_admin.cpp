@@ -2375,7 +2375,7 @@ bool idAdminLocal::AdminMap( gentity_t* ent, S32 skiparg )
     
     gameLocal.SayArgv( skiparg + 1, map, sizeof( map ) );
     
-    if( !trap_FS_FOpenFile( va( "maps/%s.bsp", map ), NULL, FS_READ ) )
+    if( !trap_FS_FOpenFile( va( "maps/%s.world", map ), NULL, FS_READ ) )
     {
         adminLocal.ADMP( va( "^3!map: ^7invalid map name '%s'\n", map ) );
         return false;

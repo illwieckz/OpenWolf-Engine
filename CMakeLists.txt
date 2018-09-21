@@ -151,6 +151,8 @@ set( GPURENDERER_SOURCES
   ${MOUNT_DIR}/GPURenderer/r_surface.cpp
   ${MOUNT_DIR}/GPURenderer/r_vbo.cpp
   ${MOUNT_DIR}/GPURenderer/r_world.cpp
+  ${MOUNT_DIR}/GPURenderer/r_glimp.cpp
+  ${MOUNT_DIR}/GPURenderer/r_gamma.cpp
 )
 
 set( GPUWORKERS_HEADERS
@@ -319,36 +321,34 @@ set( AUDIO_SOURCES
   ${MOUNT_DIR}/audio/s_openal.cpp
 )
 
-set( SDLBASELIST_SOURCES
-  ${MOUNT_DIR}/sys/sdl_glimp.cpp
-  ${MOUNT_DIR}/sys/sdl_gamma.cpp
-  ${MOUNT_DIR}/sys/sys_win32.cpp
-  ${MOUNT_DIR}/sys/sys_unix.cpp
-  ${MOUNT_DIR}/sys/sys_main.cpp
-  ${MOUNT_DIR}/sys/con_log.cpp
-  ${MOUNT_DIR}/sys/con_win32.cpp
-  ${MOUNT_DIR}/sys/con_tty.cpp
-  ${MOUNT_DIR}/sys/con_curses.cpp
+set( PLATFORMLIST_SOURCES
+  ${MOUNT_DIR}/platform/windows/sys_win32.cpp
+  ${MOUNT_DIR}/platform/linux/sys_unix.cpp
+  ${MOUNT_DIR}/platform/sys_main.cpp
+  ${MOUNT_DIR}/console/con_log.cpp
+  ${MOUNT_DIR}/console/con_win32.cpp
+  ${MOUNT_DIR}/console/con_tty.cpp
+  ${MOUNT_DIR}/console/con_curses.cpp
 )
 
-SET ( SDLBASE_DEDICATED_SOURCES
-    ${MOUNT_DIR}/sys/sys_main.cpp
-	${MOUNT_DIR}/sys/sys_win32.cpp
-	${MOUNT_DIR}/sys/con_win32.cpp
-    ${MOUNT_DIR}/sys/con_log.cpp
-    ${MOUNT_DIR}/sys/con_curses.cpp
+SET ( PLATFORM_DEDICATED_SOURCES
+    ${MOUNT_DIR}/platform/sys_main.cpp
+	${MOUNT_DIR}/platform/windows/sys_win32.cpp
+	${MOUNT_DIR}/console/con_win32.cpp
+    ${MOUNT_DIR}/console/con_log.cpp
+    ${MOUNT_DIR}/console/con_curses.cpp
 )
 
-SET ( SDLBASELIST_HEADERS
-    ${MOUNT_DIR}/sys/resource.h
-	${MOUNT_DIR}/sys/sdl_icon.h
-	${MOUNT_DIR}/sys/sys_loadlib.h
-	${MOUNT_DIR}/sys/sys_local.h
+SET ( PLATFORMLIST_HEADERS
+    ${MOUNT_DIR}/platform/windows/resource.h
+	${MOUNT_DIR}/platform/sys_icon.h
+	${MOUNT_DIR}/platform/sys_loadlib.h
+	${MOUNT_DIR}/platform/sys_local.h
 )
 
 set( SDLLIST
-  ${MOUNT_DIR}/sys/sdl_input.cpp
-  ${MOUNT_DIR}/sys/sdl_snd.cpp
+  ${MOUNT_DIR}/platform/sys_input.cpp
+  ${MOUNT_DIR}/platform/sys_snd.cpp
 )
 
 set( BOTLIBLIST_HEADERS
@@ -675,7 +675,7 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Header\ Files\\QCommon                                  FILES ${QCOMMONLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Client                                   FILES ${CLIENTLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Audio                                    FILES ${AUDIO_HEADERS} )
-    SOURCE_GROUP( Header\ Files\\Platform                                 FILES ${SDLBASELIST_HEADERS} )
+    SOURCE_GROUP( Header\ Files\\Platform                                 FILES ${PLATFORMLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Botlib                                   FILES ${BOTLIBLIST_HEADERS} )
     SOURCE_GROUP( Header\ Files\\Physics                                  FILES ${PHYSICLIB_HEADERS} )
     SOURCE_GROUP( Header\ Files\\OWLib                                    FILES ${OWLIB_HEADERS} )
@@ -689,7 +689,7 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Source\ Files\\QCommon                                  FILES ${QCOMMONLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Client                                   FILES ${CLIENTLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Audio                                    FILES ${AUDIO_SOURCES} )
-    SOURCE_GROUP( Source\ Files\\Platform                                 FILES ${SDLBASELIST_SOURCES} )
+    SOURCE_GROUP( Source\ Files\\Platform                                 FILES ${PLATFORMLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\SDL                                      FILES ${SDLLIST} )
     SOURCE_GROUP( Source\ Files\\Botlib                                   FILES ${BOTLIBLIST_SOURCES} )
     SOURCE_GROUP( Source\ Files\\Physics                                  FILES ${PHYSICLIB_SOURCES} )
@@ -697,8 +697,8 @@ if( BUILD_CLIENT )
     SOURCE_GROUP( Source\ Files\\Database                                 FILES ${DATABASELIST_SOURCES} )
   endif( WIN32 )
   
-  add_executable( client ${SHAREDLIST_HEADERS} ${GPURENDERER_HEADERS} ${QCOMMONLIST_HEADERS} ${GPUWORKERS_HEADERS} ${GUI_HEADERS} ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${AUDIO_HEADERS} ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${GPURENDERER_SOURCES} ${GPUWORKERS_SOURCES} ${GUI_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} ${QCOMMONLIST_SOURCES} ${CLIENTLIST_SOURCES} ${AUDIO_SOURCES} ${SDLBASELIST} ${SDLLIST} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${DATABASELIST_SOURCES}
-  ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASELIST_SOURCES} ${SDLBASELIST_HEADERS} ${JPEG_INCLUDE_DIR} ${JPEG_SOURCES} ${MOUNT_DIR}/OWLib/precompiled.h ${MOUNT_DIR}/OWLib/precompiled.cpp )
+  add_executable( client ${SHAREDLIST_HEADERS} ${GPURENDERER_HEADERS} ${QCOMMONLIST_HEADERS} ${GPUWORKERS_HEADERS} ${GUI_HEADERS} ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${AUDIO_HEADERS} ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${GPURENDERER_SOURCES} ${GPUWORKERS_SOURCES} ${GUI_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} ${QCOMMONLIST_SOURCES} ${CLIENTLIST_SOURCES} ${AUDIO_SOURCES} ${PLATFORMLIST} ${SDLLIST} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${DATABASELIST_SOURCES}
+  ${DATABASELIST_HEADERS} ${BOTLIBLIST} ${MOUNT_DIR}/qcommon/dl_main_curl.cpp ${CRYPTOLIST_SOURCES} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORMLIST_SOURCES} ${PLATFORMLIST_HEADERS} ${JPEG_INCLUDE_DIR} ${JPEG_SOURCES} ${MOUNT_DIR}/OWLib/precompiled.h ${MOUNT_DIR}/OWLib/precompiled.cpp )
 	    
 if(WIN32)
   set_property( TARGET client APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ NDEBUG _WINDOWS BOTLIB BOTLIB_STATIC USE_CRYPTO HAVE_CONFIG_H USE_INCREASED_ENTITIES  __STDC_CONSTANT_MACROS _PHYSICSLIB BUILD_FREETYPE HAVE_BOOLEAN HAVE_BZIP2 )
@@ -783,7 +783,7 @@ endif()
 if( BUILD_SERVER )
   # Setup the target Server
   add_executable( server ${SHAREDLIST_HEADERS} ${CRYPTOLIST_HEADERS}
-    ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${CRYPTOLIST_SOURCES}  ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES}  ${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${SDLBASELIST_HEADERS} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASE_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} ${NULL_SOURCES} ${NULL_HEADERS} ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp )
+    ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${CRYPTOLIST_SOURCES}  ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES}  ${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${PLATFORMLIST_HEADERS} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORM_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} ${NULL_SOURCES} ${NULL_HEADERS} ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp )
 	
   target_link_libraries( server ${OS_LIBRARIES} )
   set_property( TARGET server APPEND PROPERTY COMPILE_DEFINITIONS BOTLIB BOTLIB_STATIC DEDICATED USE_CRYPTO _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__  _PHYSICSLIB HAVE_BZIP2 )
@@ -831,8 +831,8 @@ if( BUILD_AUTOUPDATE_SERVER )
   add_executable( autoupdateserver ${SHAREDLIST_HEADERS} ${CRYPTOLIST_HEADERS}
     ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${CRYPTOLIST_SOURCES} 
 	${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} 
-	${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${SDLBASELIST_HEADERS}
-	${OWLIB_HEADERS} ${OWLIB_SOURCES} ${SDLBASE_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} 
+	${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${PLATFORMLIST_HEADERS}
+	${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORM_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} 
     ${MOUNT_DIR}/null/null_client.cpp
     ${MOUNT_DIR}/null/null_input.cpp ${MOUNT_DIR}/null/null_snddma.cpp
     ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp )

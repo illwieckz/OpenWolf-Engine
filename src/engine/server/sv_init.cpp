@@ -759,7 +759,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // Arnout: just always use it
     if( !SV_GameIsSinglePlayer() )
     {
-        SV_SetExpectedHunkUsage( va( "maps/%s.bsp", server ) );
+        SV_SetExpectedHunkUsage( va( "maps/%s.world", server ) );
     }
     else
     {
@@ -788,7 +788,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
 #endif
     FS_Restart( sv.checksumFeed );
     
-    collisionModelManager->LoadMap( va( "maps/%s.bsp", server ), false, &checksum );
+    collisionModelManager->LoadMap( va( "maps/%s.world", server ), false, &checksum );
     
     // set serverinfo visible name
     Cvar_Set( "mapname", server );

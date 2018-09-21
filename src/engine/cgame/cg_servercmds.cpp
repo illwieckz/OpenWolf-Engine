@@ -129,7 +129,7 @@ void idCGameLocal::ParseServerinfo( void )
     cgs.maxclients = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
     cgs.markDeconstruct = atoi( Info_ValueForKey( info, "g_markDeconstruct" ) );
     mapname = Info_ValueForKey( info, "mapname" );
-    Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
+    Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.world", mapname );
 }
 
 /*

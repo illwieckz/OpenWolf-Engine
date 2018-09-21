@@ -6,6 +6,7 @@
 	* Added new GLSL effects
 	* Changed ".bsp" file format to the ".world"
 	* Recompiled binary files
+	* Fixed wrong GLSL uniforms
 
 2018-09-15 Dusan Jocic <dusanjocic@msn.com>
 	* Misc fixes

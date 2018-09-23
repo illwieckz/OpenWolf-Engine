@@ -1802,8 +1802,6 @@ void idGameLocal::ClientSpawn( gentity_t* ent, gentity_t* spawn, vec3_t origin, 
             }
         }
     }
-
-	client->characterController = BT_CreateCharacter(8.f, client->ps.origin, 15, 24);
     
     // run a client frame to drop exactly to the floor,
     // initialize animations and other things

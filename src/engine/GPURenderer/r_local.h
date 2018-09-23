@@ -71,7 +71,7 @@ typedef void ( *xcommand_t )( void );
 
 extern F32    displayAspect;	// FIXME
 
-#define __DYNAMIC_SHADOWS__
+//#define __DYNAMIC_SHADOWS__
 #ifdef __DYNAMIC_SHADOWS__
 #define MAX_DYNAMIC_SHADOWS 4
 #endif //__DYNAMIC_SHADOWS__

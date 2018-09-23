@@ -1,3 +1,8 @@
+2018-09-23 Dusan Jocic <dusanjocic@msn.com>
+	* Added new entity type tracer
+	* Fixed problems with contract shader
+	* Updated binary files
+	
 2018-09-21 Dusan Jocic <dusanjocic@msn.com>
 	* Added platform folders
 	* Moved platform source files in proper folders

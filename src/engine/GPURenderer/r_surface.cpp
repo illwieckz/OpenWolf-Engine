@@ -761,6 +761,43 @@ static void RB_SurfaceRailCore( void )
     DoRailCore( start, end, right, len, r_railCoreWidth->integer );
 }
 
+static void RB_SurfaceTracer( void )
+{
+    refEntity_t* e;
+    int			len;
+    vec3_t		right;
+    vec3_t		vec;
+    vec3_t		start, end;
+    vec3_t		v1, v2;
+    int			i;
+    
+    e = &backEnd.currentEntity->e;
+    
+    VectorCopy( e->oldorigin, end );
+    VectorCopy( e->origin, start );
+    
+    // compute variables
+    VectorSubtract( end, start, vec );
+    len = VectorNormalize( vec );
+    
+    // compute side vector
+    VectorSubtract( start, backEnd.viewParms.orientation.origin, v1 );
+    VectorNormalize( v1 );
+    VectorSubtract( end, backEnd.viewParms.orientation.origin, v2 );
+    VectorNormalize( v2 );
+    CrossProduct( v1, v2, right );
+    VectorNormalize( right );
+    
+    for( i = 0; i < 10; i++ )
+    {
+        vec3_t	temp;
+        
+        DoRailCore( start, end, right, len, 3 );
+        RotatePointAroundVector( temp, vec, right, 18 );
+        VectorCopy( temp, right );
+    }
+}
+
 /*
 ** RB_SurfaceLightningBolt
 */
@@ -1251,6 +1288,9 @@ static void RB_SurfaceEntity( surfaceType_t* surfType )
         case RT_LIGHTNING:
             RB_SurfaceLightningBolt();
             break;
+        case RT_TRACER:
+            RB_SurfaceTracer();
+            break;
         default:
             RB_SurfaceAxis();
             break;
@@ -1361,7 +1401,6 @@ void RB_SurfaceVaoMdvMesh( srfVaoMdvMesh_t* surface )
 static void RB_SurfaceSkip( void* surf )
 {
 }
-
 
 void ( *rb_surfaceTable[SF_NUM_SURFACE_TYPES] )( void* ) =
 {

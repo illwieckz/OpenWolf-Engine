@@ -177,7 +177,13 @@ void RB_ShadowTessEnd( void )
     S32		i;
     S32		numTris;
     vec3_t	lightDir;
-    GLboolean rgba[4];
+    U8 rgba[4];
+    
+    // we can only do this if we have enough space in the vertex buffers
+    if( tess.numVertexes >= SHADER_MAX_VERTEXES / 2 )
+    {
+        return;
+    }
     
     if( glConfig.stencilBits < 4 )
     {
@@ -189,7 +195,7 @@ void RB_ShadowTessEnd( void )
     // project vertexes away from light direction
     for( i = 0 ; i < tess.numVertexes ; i++ )
     {
-        VectorMA( tess.xyz[i], -512, lightDir, shadowXyz[i] );
+        VectorMA( tess.xyz[i], -512, lightDir, tess.xyz[i + tess.numVertexes] );
     }
     
     // decide which triangles face the light
@@ -234,6 +240,7 @@ void RB_ShadowTessEnd( void )
     // draw the silhouette edges
     
     GL_BindToTMU( tr.whiteImage, TB_COLORMAP );
+    glEnable( GL_CULL_FACE );
     GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );
     glColor3f( 0.2f, 0.2f, 0.2f );
     
@@ -247,15 +254,31 @@ void RB_ShadowTessEnd( void )
     glEnable( GL_STENCIL_TEST );
     glStencilFunc( GL_ALWAYS, 1, 255 );
     
-    GL_Cull( CT_BACK_SIDED );
-    glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
+    // mirrors have the culling order reversed
+    if( backEnd.viewParms.isMirror )
+    {
+        glCullFace( GL_FRONT );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
     
-    R_RenderShadowEdges();
+        R_RenderShadowEdges();
     
-    GL_Cull( CT_FRONT_SIDED );
-    glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
+        glCullFace( GL_BACK );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
     
-    R_RenderShadowEdges();
+        R_RenderShadowEdges();
+    }
+    else
+    {
+        glCullFace( GL_BACK );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
+    
+        R_RenderShadowEdges();
+    
+        glCullFace( GL_FRONT );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
+    
+        R_RenderShadowEdges();
+    }
     
     // re-enable GL_SMOOTH
     glShadeModel( GL_SMOOTH );
@@ -289,7 +312,8 @@ void RB_ShadowFinish( void )
     glStencilFunc( GL_NOTEQUAL, 0, 255 );
     
     glDisable( GL_CLIP_PLANE0 );
-    GL_Cull( CT_TWO_SIDED );
+    //GL_Cull( CT_TWO_SIDED );
+    glDisable( GL_CULL_FACE );
     
     GL_BindToTMU( tr.whiteImage, TB_COLORMAP );
     

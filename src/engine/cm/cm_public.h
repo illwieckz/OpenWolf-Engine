@@ -129,7 +129,7 @@ public:
     virtual clipHandle_t TempBoxModel( const vec3_t mins, const vec3_t maxs, S32 capsule ) = 0;
     virtual idTraceModel* GetTraceModelForEntity( S32 entityNum ) = 0;
     virtual void        ModelBounds( clipHandle_t model, vec3_t mins, vec3_t maxs ) = 0;
-    
+    virtual void        SetTempBoxModelContents( S32 contents ) = 0;
     virtual S32         NumClusters( void ) = 0;
     virtual S32         NumInlineModels( void ) = 0;
     virtual UTF8*       EntityString( void ) = 0;

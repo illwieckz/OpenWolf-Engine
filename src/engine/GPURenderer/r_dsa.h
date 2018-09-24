@@ -56,7 +56,7 @@ void GLDSA_ProgramUniform2fEXT( U32 program, S32 location, F32 v0, F32 v1 );
 void GLDSA_ProgramUniform3fEXT( U32 program, S32 location, F32 v0, F32 v1, F32 v2 );
 void GLDSA_ProgramUniform4fEXT( U32 program, S32 location, F32 v0, F32 v1, F32 v2, F32 v3 );
 void GLDSA_ProgramUniform1fvEXT( U32 program, S32 location, S32 count, const F32* value );
-void GLDSA_ProgramUniformMatrix4fvEXT( U32 program, S32 location, S32 count, GLboolean transpose, const F32* value );
+void GLDSA_ProgramUniformMatrix4fvEXT( U32 program, S32 location, S32 count, U8 transpose, const F32* value );
 
 void GL_BindNullFramebuffers( void );
 void GL_BindFramebuffer( U32 target, U32 framebuffer );

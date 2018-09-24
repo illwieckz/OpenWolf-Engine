@@ -421,7 +421,7 @@ void idRenderSystemLocal::DrawStretchPic( F32 x, F32 y, F32 w, F32 h, F32 s1, F3
 #define MODE_GREEN_MAGENTA 4
 #define MODE_MAX	MODE_GREEN_MAGENTA
 
-void R_SetColorMode( GLboolean* rgba, stereoFrame_t stereoFrame, S32 colormode )
+void R_SetColorMode( U8* rgba, stereoFrame_t stereoFrame, S32 colormode )
 {
     rgba[0] = rgba[1] = rgba[2] = rgba[3] = GL_TRUE;
     

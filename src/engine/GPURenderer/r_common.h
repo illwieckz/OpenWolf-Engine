@@ -81,9 +81,13 @@ typedef struct image_s
     S32			internalFormat;
     S32			TMU;				// only needed for voodoo2
     
+    bool		mipmap;
+    bool        allowPicmip;
+    S32			wrapClampMode;		// GL_CLAMP_TO_EDGE or GL_REPEAT
     imgType_t   type;
     S32 /*imgFlags_t*/  flags;
     
+    S32			hash;           // for fast building of the backupHash
     struct image_s*	next;
 } image_t;
 

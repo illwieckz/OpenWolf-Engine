@@ -114,10 +114,10 @@ extern int errno;
 #endif
 
 #ifndef ALLOC
-# define ALLOC(size) (malloc(size))
+# define ALLOC(size) (Z_Malloc(size))
 #endif
 #ifndef TRYFREE
-# define TRYFREE(p) {if (p) free(p);}
+# define TRYFREE(p) {if (p) Z_Free(p);}
 #endif
 
 #define SIZECENTRALDIRITEM (0x2e)
@@ -1099,6 +1099,11 @@ local int unz64local_GetCurrentFileInfoInternal( unzFile file,
                 lSeek = 0;
             else
                 err = UNZ_ERRNO;
+            lSeek += file_info.size_file_comment - uSizeRead;
+        }
+        else
+        {
+            lSeek += file_info.size_file_comment;
         }
         
         if( ( file_info.size_file_comment > 0 ) && ( commentBufferSize > 0 ) )

@@ -197,7 +197,7 @@ void GLDSA_ProgramUniform1fvEXT( U32 program, S32 location, S32 count, const F32
     glUniform1fv( location, count, value );
 }
 
-void GLDSA_ProgramUniformMatrix4fvEXT( U32 program, S32 location, S32 count, GLboolean transpose, const F32* value )
+void GLDSA_ProgramUniformMatrix4fvEXT( U32 program, S32 location, S32 count, U8 transpose, const F32* value )
 {
     GL_UseProgram( program );
     glUniformMatrix4fv( location, count, transpose, value );

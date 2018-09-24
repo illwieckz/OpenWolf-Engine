@@ -1206,7 +1206,7 @@ void idRenderSystemLocal::Init( glconfig_t* glconfigOut )
     }
     
     R_ClearFlares();
-    renderSystemLocal.ClearScene();
+    ClearScene();
     
     tr.registered = true;
 }

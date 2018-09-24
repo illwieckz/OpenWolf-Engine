@@ -359,6 +359,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     {
         if( !calledSysError )
         {
+            calledSysError = true;
             Sys_Error( "recursive error after: %s", com_errorMessage );
         }
         return;
@@ -2644,6 +2645,7 @@ S32 Com_EventLoop( void )
     
     while( 1 )
     {
+        NET_FlushPacketQueue();
         ev = Com_GetEvent();
         
         // if no more events are available
@@ -3102,6 +3104,10 @@ void Com_Init( UTF8* commandLine )
     {
         Sys_Error( "Error during initialization" );
     }
+    
+    // Clear queues
+    ::memset( &eventQueue[0], 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
+    ::memset( &sys_packetReceived[0], 0, MAX_MSGLEN * sizeof( byte ) );
     
     // bk001129 - do this before anything else decides to push events
     Com_InitPushEvent();

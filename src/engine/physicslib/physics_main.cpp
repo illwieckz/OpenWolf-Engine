@@ -66,9 +66,9 @@ void owPhysicsManagerLocal::Init( void )
     solver = new btSequentialImpulseConstraintSolver();
     dynamicsWorld = new btDiscreteDynamicsWorld( collision.GetCollisionDispatcher(), broadphase, solver, collision.GetCollisionConfiguration() );
     
-//	debugDrawer.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-//	dynamicsWorld->setDebugDrawer(&debugDrawer);
-
+    //debugDrawer.setDebugMode( btIDebugDraw::DBG_DrawWireframe );
+    //dynamicsWorld->setDebugDrawer( &debugDrawer );
+    
     dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
     broadphase->getOverlappingPairCache()->setInternalGhostPairCallback( new btGhostPairCallback() );
 }

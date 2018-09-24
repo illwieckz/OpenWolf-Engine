@@ -889,7 +889,7 @@ void AAS_InitRoutingUpdate( void )
 //===========================================================================
 void AAS_CreateAllRoutingCache( void )
 {
-    S32 i, j, t;
+    S32 i, j;
     
     aasworld.initialized = true;
     botimport.Print( PRT_MESSAGE, "AAS_CreateAllRoutingCache\n" );
@@ -900,7 +900,7 @@ void AAS_CreateAllRoutingCache( void )
         {
             if( i == j ) continue;
             if( !AAS_AreaReachability( j ) ) continue;
-            t = AAS_AreaTravelTimeToGoalArea( i, aasworld.areas[i].center, j, TFL_DEFAULT );
+            AAS_AreaTravelTimeToGoalArea( i, aasworld.areas[i].center, j, TFL_DEFAULT );
             //Log_Write("traveltime from %d to %d is %d", i, j, t);
         } //end for
     } //end for
@@ -1067,12 +1067,12 @@ S32 AAS_ReadRouteCache( void )
     botimport.FS_Read( &routecacheheader, sizeof( routecacheheader_t ), fp );
     if( routecacheheader.ident != RCID )
     {
-        AAS_Error( "%s is not a route cache dump\n" );
+        AAS_Error( "%s is not a route cache dump\n", filename );
         return false;
     } //end if
     if( routecacheheader.version != RCVERSION )
     {
-        AAS_Error( "route cache dump has wrong version %d, should be %d", routecacheheader.version, RCVERSION );
+        AAS_Error( "route cache dump has wrong version %d, should be %d\n", routecacheheader.version, RCVERSION );
         return false;
     } //end if
     if( routecacheheader.numareas != aasworld.numareas )
@@ -1629,6 +1629,10 @@ S32 AAS_AreaRouteToGoalArea( S32 areanum, vec3_t origin, S32 goalareanum, S32 tr
         {
             botimport.Print( PRT_ERROR, "AAS_AreaTravelTimeToGoalArea: goalareanum %d out of range\n", goalareanum );
         } //end if
+        return false;
+    } //end if
+    if( !aasworld.areasettings[areanum].numreachableareas || !aasworld.areasettings[goalareanum].numreachableareas )
+    {
         return false;
     } //end if
     // make sure the routing cache doesn't grow to large

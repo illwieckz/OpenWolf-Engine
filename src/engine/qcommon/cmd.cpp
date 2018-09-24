@@ -2004,7 +2004,10 @@ void Cmd_RemoveCommand( StringEntry cmd_name )
         if( !strcmp( cmd_name, cmd->name ) )
         {
             *back = cmd->next;
-            Z_Free( cmd->name );
+            if( cmd->name )
+            {
+                Z_Free( cmd->name );
+            }
             Z_Free( cmd );
             return;
         }

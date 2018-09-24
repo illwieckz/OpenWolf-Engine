@@ -226,6 +226,7 @@
 
 // includes for the OGG codec
 #include <errno.h>
+#define OV_EXCLUDE_STATIC_CALLBACKS
 #include <vorbis/vorbisfile.h>
 
 // curses.h defines COLOR_*, which are already defined in q_shared.h

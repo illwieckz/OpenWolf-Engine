@@ -424,7 +424,7 @@ static S32      numPlanes;
 static cPlane_t planes[MAX_PATCH_PLANES];
 
 static S32      numFacets;
-static cFacet_t facets[MAX_FACETS];
+static cFacet_t facets[MAX_PATCH_PLANES];
 
 #define	NORMAL_EPSILON	0.0001
 #define	DIST_EPSILON	0.02
@@ -647,6 +647,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i][j];
             p2 = grid->points[i + 1][j];
             p = CM_GridPlane( gridPlanes, i, j, 0 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p1, p2, up );
             
@@ -654,6 +658,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i][j + 1];
             p2 = grid->points[i + 1][j + 1];
             p = CM_GridPlane( gridPlanes, i, j, 1 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p2, p1, up );
             
@@ -661,6 +669,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i][j];
             p2 = grid->points[i][j + 1];
             p = CM_GridPlane( gridPlanes, i, j, 1 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p2, p1, up );
             
@@ -668,6 +680,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i + 1][j];
             p2 = grid->points[i + 1][j + 1];
             p = CM_GridPlane( gridPlanes, i, j, 0 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p1, p2, up );
             
@@ -675,6 +691,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i + 1][j + 1];
             p2 = grid->points[i][j];
             p = CM_GridPlane( gridPlanes, i, j, 0 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p1, p2, up );
             
@@ -682,6 +702,10 @@ static S32 CM_EdgePlaneNum( cGrid_t* grid, S32 gridPlanes[MAX_GRID_SIZE][MAX_GRI
             p1 = grid->points[i][j];
             p2 = grid->points[i + 1][j + 1];
             p = CM_GridPlane( gridPlanes, i, j, 1 );
+            if( p == -1 )
+            {
+                return -1;
+            }
             VectorMA( p1, 4, planes[p].plane, up );
             return CM_FindPlane( p1, p2, up );
     }
@@ -851,7 +875,7 @@ CM_AddFacetBevels
 static void CM_AddFacetBevels( cFacet_t* facet )
 {
     S32             i, j, k, l, axis, dir, order, flipped;
-    F32           plane[4], d, newplane[4];
+    F32             plane[4], d, minBack, newplane[4];
     winding_t*      w, *w2;
     vec3_t          mins, maxs, vec, vec2;
     
@@ -905,9 +929,19 @@ static void CM_AddFacetBevels( cFacet_t* facet )
             // see if the plane is allready present
             for( i = 0; i < facet->numBorders; i++ )
             {
-                if( CM_PlaneEqual( &planes[facet->borderPlanes[i]], plane, &flipped ) )
+                if( dir > 0 )
                 {
-                    break;
+                    if( planes[facet->borderPlanes[i]].plane[axis] >= 0.9999f )
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if( planes[facet->borderPlanes[i]].plane[axis] <= -0.9999f )
+                    {
+                        break;
+                    }
                 }
             }
             
@@ -968,17 +1002,27 @@ static void CM_AddFacetBevels( cFacet_t* facet )
                 
                 // if all the points of the facet winding are
                 // behind this plane, it is a proper edge bevel
+                minBack = 0.0f;
                 for( l = 0; l < w->numpoints; l++ )
                 {
                     d = DotProduct( w->p[l], plane ) - plane[3];
                     if( d > 0.1 )
-                    {
                         break;	// point in front
+                    if( d < minBack )
+                    {
+                        minBack = d;
                     }
                 }
+                // if some point was at the front
                 if( l < w->numpoints )
                 {
                     continue;
+                }
+                
+                // if no points at the back then the winding is on the bevel plane
+                if( minBack > -0.1f )
+                {
+                    break;
                 }
                 
                 //if it's the surface plane
@@ -1041,11 +1085,18 @@ static void CM_AddFacetBevels( cFacet_t* facet )
     }
     FreeWinding( w );
     
+#ifndef BSPC
     // add opposite plane
+    if( facet->numBorders >= 4 + 6 + 16 )
+    {
+        Com_Printf( "ERROR: too many bevels\n" );
+        return;
+    }
     facet->borderPlanes[facet->numBorders] = facet->surfacePlane;
     facet->borderNoAdjust[facet->numBorders] = false;
     facet->borderInward[facet->numBorders] = true;
     facet->numBorders++;
+#endif
 }
 
 typedef enum

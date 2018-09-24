@@ -790,14 +790,14 @@ S32 main( S32 argc, UTF8** argv )
 #ifdef USE_CURSES
     if( nocurses )
     {
-        CON_Init_tty( );
+        CON_Init_tty();
     }
     else
     {
-        CON_Init( );
+        CON_Init();
     }
 #else
-    CON_Init( );
+    CON_Init();
 #endif
     
     Com_Init( commandLine );

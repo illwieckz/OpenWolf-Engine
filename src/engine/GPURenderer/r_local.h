@@ -116,6 +116,8 @@ void* CL_RefMalloc( S32 size );
 // see QSORT_SHADERNUM_SHIFT
 #define SHADERNUM_BITS	14
 #define MAX_SHADERS		(1<<SHADERNUM_BITS)
+#define MAX_STATES_PER_SHADER 32
+#define MAX_STATE_NAME 32
 
 #ifndef __DYNAMIC_SHADOWS__
 #define	MAX_FBOS      64
@@ -140,19 +142,7 @@ typedef struct cubemap_s
     image_t* image;
 } cubemap_t;
 
-typedef struct dlight_s
-{
-    vec3_t	origin;
-    vec3_t	color;				// range from 0.0 to 1.0, should be color normalized
-    F32	radius;
-    
-    vec3_t	transformed;		// origin in local coordinate system
-    S32		additive;			// texture detail is lost tho when the lightmap is dark
-#ifdef __DYNAMIC_SHADOWS__
-    bool activeShadows;
-#endif //__DYNAMIC_SHADOWS__
-} dlight_t;
-
+#define ENTITY_LIGHT_STEPS 64
 
 // a trRefEntity_t has all the information passed in by
 // the client game, as well as some locally derived info
@@ -170,6 +160,8 @@ typedef struct
     vec3_t		ambientLight;	// color normalized to 0-255
     S32			ambientLightInt;	// 32 bit rgba packed
     vec3_t		directedLight;
+    S32			entityLightInt[ENTITY_LIGHT_STEPS];
+    float		brightness;
 } trRefEntity_t;
 
 
@@ -311,6 +303,7 @@ typedef enum
     AGEN_SKIP,
     AGEN_ENTITY,
     AGEN_ONE_MINUS_ENTITY,
+    AGEN_NORMALZFADE,
     AGEN_VERTEX,
     AGEN_ONE_MINUS_VERTEX,
     AGEN_LIGHTING_SPECULAR,
@@ -344,6 +337,7 @@ typedef enum
     TCGEN_LIGHTMAP,
     TCGEN_TEXTURE,
     TCGEN_ENVIRONMENT_MAPPED,
+    TCGEN_FIRERISEENV_MAPPED,
     TCGEN_FOG,
     TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
@@ -377,7 +371,8 @@ typedef enum
     TMOD_SCALE,
     TMOD_STRETCH,
     TMOD_ROTATE,
-    TMOD_ENTITY_TRANSLATE
+    TMOD_ENTITY_TRANSLATE,
+    TMOD_SWAP
 } texMod_t;
 
 #define	MAX_SHADER_DEFORMS	3
@@ -570,6 +565,13 @@ typedef struct shader_s
     
     void	( *optimalStageIteratorFunc )( void );
     
+    S32 numStates;                                    // if non-zero this is a state shader
+    struct shader_s* currentShader;                   // current state if this is a state shader
+    struct shader_s* parentShader;                    // current state if this is a state shader
+    S32 currentState;                                 // current state index for cycle purposes
+    S64 expireTime;                                  // time in milliseconds this expires
+    S32 shaderStates[MAX_STATES_PER_SHADER];          // index to valid shader states
+    
     F64 clampTime;                                  // time this shader is clamped to
     F64 timeOffset;                                 // current time offset for this shader
     
@@ -577,6 +579,46 @@ typedef struct shader_s
     
     struct	shader_s*	next;
 } shader_t;
+
+typedef struct shaderState_s
+{
+    UTF8 shaderName[MAX_QPATH];     // name of shader this state belongs to
+    UTF8 name[MAX_STATE_NAME];      // name of this state
+    UTF8 stateShader[MAX_QPATH];    // shader this name invokes
+    S32 cycleTime;                  // time this cycle lasts, <= 0 is forever
+    shader_t* shader;
+} shaderState_t;
+
+typedef struct dlight_s
+{
+    vec3_t	origin;
+    vec3_t	color;				// range from 0.0 to 1.0, should be color normalized
+    F32	radius;
+    F32 radiusInverseCubed;       // ydnar: attenuation optimization
+    vec3_t	transformed;		// origin in local coordinate system
+    S32		additive;			// texture detail is lost tho when the lightmap is dark
+    F32 intensity;                // 1.0 = fullbright, > 1.0 = overbright
+    shader_t*    shader;
+#ifdef __DYNAMIC_SHADOWS__
+    bool activeShadows;
+#endif //__DYNAMIC_SHADOWS__
+} dlight_t;
+
+// ydnar: decal projection
+typedef struct decalProjector_s
+{
+    shader_t*    shader;
+    U8 color[4];
+    int fadeStartTime, fadeEndTime;
+    vec3_t mins, maxs;
+    vec3_t center;
+    float radius, radius2;
+    bool omnidirectional;
+    int numPlanes;                  // either 5 or 6, for quad or triangle projectors
+    vec4_t planes[6];
+    vec4_t texMat[3][2];
+}
+decalProjector_t;
 
 bool ShaderRequiresCPUDeforms( const shader_t* );
 
@@ -1022,9 +1064,10 @@ typedef struct skin_s
 
 typedef struct
 {
+    S32         modelNum; //< bsp model the fog belongs to
     S32			originalBrushNumber;
     vec3_t		bounds[2];
-    
+    shader_t*   shader; //< fog shader to get colorInt and tcScale from
     U32      	colorInt;				// in packed U8 format
     F32		    tcScale;				// texture coordinate vector scales
     fogParms_t	parms;
@@ -1333,6 +1376,7 @@ typedef struct mnode_s
     S32				contents;		// -1 for nodes, to differentiate from leafs
     S32             visCounts[MAX_VISCOUNTS];	// node needs to be traversed if current
     vec3_t			mins, maxs;		// for bounding box culling
+    vec3_t		surfMins, surfMaxs;      // ydnar: bounding box including surfaces
     struct mnode_s*	parent;
     
     // node specific
@@ -1352,7 +1396,15 @@ typedef struct
     vec3_t			bounds[2];		// for culling
     S32				firstSurface;
     S32				numSurfaces;
+
+    int			firstBrush;
+    int			numBrushes;
+    orientation_t _or ;
+    bool	visible;
+    int			entityNum;
 } bmodel_t;
+
+#define WORLD_MAX_SKY_NODES 32
 
 typedef struct
 {
@@ -1374,6 +1426,9 @@ typedef struct
     S32			numDecisionNodes;
     mnode_t*	nodes;
     
+    int			numSkyNodes;
+    mnode_t**	skyNodes;
+    
     S32         numWorldSurfaces;
     
     S32			numsurfaces;
@@ -1387,6 +1442,12 @@ typedef struct
     
     S32			numfogs;
     fog_t*		fogs;
+    int			globalFog;
+    vec4_t		globalOriginalFog;
+    vec4_t		globalTransStartFog;
+    vec4_t		globalTransEndFog;
+    int			globalFogTransStartTime;
+    int			globalFogTransEndTime;
     
     vec3_t		lightGridOrigin;
     vec3_t		lightGridSize;
@@ -1499,6 +1560,8 @@ typedef struct model_s
     mdvModel_t*	mdv[MD3_MAX_LODS];	// only if type == MOD_MESH
     void*	    modelData;			// only if type == (MOD_MDR | MOD_IQM)
     S32			numLods;
+    qhandle_t	shadowShader;
+    F32			shadowParms[6];
 } model_t;
 
 
@@ -1512,7 +1575,7 @@ void R_Modellist_f( void );
 
 #define	MAX_DRAWIMAGES			2048
 #define	MAX_SKINS				1024
-
+#define	MAX_LIGHTMAPS			256
 
 #define	MAX_DRAWSURFS			0x10000
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
@@ -1569,8 +1632,8 @@ typedef struct
 } frontEndCounters_t;
 
 #define	FOG_TABLE_SIZE		256
-#define FUNCTABLE_SIZE		1024
-#define FUNCTABLE_SIZE2		10
+#define FUNCTABLE_SIZE		4096
+#define FUNCTABLE_SIZE2		12
 #define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
 
 
@@ -1725,6 +1788,7 @@ typedef struct
     vec2_t autoExposureMinMax;
     vec3_t toneMinAvgMaxLevel;
     world_t* world;
+    char* worldDir;
     
     const U8* externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
     
@@ -1780,8 +1844,8 @@ typedef struct
     shader_t* defaultShader;
     shader_t* shadowShader;
     shader_t* projectionShadowShader;
-    
     shader_t* flareShader;
+    UTF8* sunShaderName;
     shader_t* sunShader;
     shader_t* sunFlareShader;
     
@@ -1801,6 +1865,7 @@ typedef struct
     S64 currentEntityNum;
     S64	shiftedEntityNum; // currentEntityNum << QSORT_REFENTITYNUM_SHIFT
     model_t* currentModel;
+    bmodel_t* currentBModel;
     
     //
     // GPU shader programs
@@ -1875,6 +1940,8 @@ typedef struct
     bool sunShadows;
     vec3_t sunLight; // from the sky shader for this level
     vec3_t sunDirection;
+    float lightGridMulAmbient;
+    float lightGridMulDirected;
     vec3_t lastCascadeSunDirection;
     F32 lastCascadeSunMvp[16];
     
@@ -1920,6 +1987,7 @@ typedef struct
     F32 inverseSawToothTable[FUNCTABLE_SIZE];
     F32 fogTable[FOG_TABLE_SIZE];
     F32 distanceCull, distanceCullSquared;
+    int allowCompress;
 } trGlobals_t;
 
 extern backEndState_t	backEnd;
@@ -2644,7 +2712,7 @@ typedef struct
 {
     S32 commandId;
     
-    GLboolean rgba[4];
+    U8 rgba[4];
 } colorMaskCommand_t;
 
 typedef struct

@@ -1535,6 +1535,11 @@ clipHandle_t idCollisionModelManagerLocal::TempBoxModel( const vec3_t mins, cons
     return BOX_MODEL_HANDLE;
 }
 
+void idCollisionModelManagerLocal::SetTempBoxModelContents( S32 contents )
+{
+    box_brush->contents = contents;
+}
+
 /*
 ===================
 idCollisionModelManagerLocal::ModelBounds

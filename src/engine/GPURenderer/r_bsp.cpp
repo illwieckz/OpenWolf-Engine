@@ -36,6 +36,8 @@ static	U8*		fileBase;
 S32			c_subdivisions;
 S32			c_gridVerts;
 
+surfaceType_t skipData = SF_SKIP;
+
 //===============================================================================
 
 static void HSVtoRGB( F32 h, F32 s, F32 v, F32 rgb[3] )
@@ -697,6 +699,85 @@ void LoadDrawVertToSrfVert( srfVert_t* s, drawVert_t* d, S32 realLightmapNum, F3
     R_VaoPackColor( s->color, v );
 }
 
+static U8* surfHunkPtr;
+static S32 surfHunkSize;
+#define SURF_HUNK_MAXSIZE 0x40000
+#define LL( x ) LittleLong( x )
+
+/*
+==============
+R_InitSurfMemory
+==============
+*/
+void R_InitSurfMemory( void )
+{
+    // allocate a new chunk
+    surfHunkPtr = ( U8* )Hunk_Alloc( SURF_HUNK_MAXSIZE, h_low );
+    surfHunkSize = 0;
+}
+
+/*
+==============
+R_GetSurfMemory
+==============
+*/
+void* R_GetSurfMemory( S32 size )
+{
+    U8* retval;
+    
+    // round to cacheline
+    size = ( size + 31 ) & ~31;
+    
+    surfHunkSize += size;
+    if( surfHunkSize >= SURF_HUNK_MAXSIZE )
+    {
+        // allocate a new chunk
+        R_InitSurfMemory();
+        surfHunkSize += size;   // since it just got reset
+    }
+    retval = surfHunkPtr;
+    surfHunkPtr += size;
+    
+    return ( void* )retval;
+}
+
+/*
+===============
+SphereFromBounds
+creates a bounding sphere from a bounding box
+===============
+*/
+
+static void SphereFromBounds( vec3_t mins, vec3_t maxs, vec3_t origin, F32* radius )
+{
+    vec3_t temp;
+    
+    VectorAdd( mins, maxs, origin );
+    VectorScale( origin, 0.5, origin );
+    VectorSubtract( maxs, origin, temp );
+    *radius = VectorLength( temp );
+}
+
+/*
+===============
+FinishGenericSurface
+handles final surface classification
+===============
+*/
+
+static void FinishGenericSurface( dsurface_t* ds, vec3_t pt, cullinfo_t* cullinfo )
+{
+    // set bounding sphere
+    SphereFromBounds( cullinfo->bounds[0], cullinfo->bounds[1], cullinfo->localOrigin, &cullinfo->radius );
+    
+    // take the plane normal from the lightmap vector and classify it
+    cullinfo->plane.normal[0] = LittleFloat( ds->lightmapVecs[2][0] );
+    cullinfo->plane.normal[1] = LittleFloat( ds->lightmapVecs[2][1] );
+    cullinfo->plane.normal[2] = LittleFloat( ds->lightmapVecs[2][2] );
+    cullinfo->plane.dist = DotProduct( pt, cullinfo->plane.normal );
+    SetPlaneSignbits( &cullinfo->plane );
+    cullinfo->plane.type = PlaneTypeForNormal( cullinfo->plane.normal );
+}
 
 /*
 ===============
@@ -888,12 +969,16 @@ static void ParseTriSurf( dsurface_t* ds, drawVert_t* verts, F32* hdrVertColors,
     U32*  tri;
     S32             i, j;
     S32             numVerts, numIndexes, badTriangles;
+    S32				lightmapNum;
+    
+    // get lightmap num
+    lightmapNum = LittleLong( ds->lightmapNum );
     
     // get fog volume
     surf->fogIndex = LittleLong( ds->fogNum ) + 1;
     
     // get shader
-    surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
+    surf->shader = ShaderForShaderNum( ds->shaderNum, lightmapNum );
     if( r_singleShader->integer && !surf->shader->isSky )
     {
         surf->shader = tr.defaultShader;
@@ -963,6 +1048,8 @@ static void ParseTriSurf( dsurface_t* ds, drawVert_t* verts, F32* hdrVertColors,
             R_CalcTangentVectors( dv );
         }
     }
+    
+    //FinishGenericSurface(ds, cv->verts[0].xyz, &surf->cullinfo);
 }
 
 /*
@@ -1280,7 +1367,6 @@ S32 R_StitchPatches( S32 grid1num, S32 grid2num )
             }
             for( m = 0; m < 2; m++ )
             {
-            
                 if( grid2->height >= MAX_GRID_SIZE )
                     break;
                 if( m ) offset2 = grid2->width - 1;
@@ -1820,6 +1906,7 @@ static	void R_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexLump )
         }
     }
     
+    R_InitSurfMemory();
     
     // Two passes, allocate surfaces first, then load them full of data
     // This ensures surfaces are close together to reduce L2 cache misses when using VAOs,
@@ -1939,6 +2026,9 @@ static	void R_LoadSubmodels( lump_t* l )
         out->firstSurface = LittleLong( in->firstSurface );
         out->numSurfaces = LittleLong( in->numSurfaces );
         
+        out->firstBrush = LittleLong( in->firstBrush );
+        out->numBrushes = LittleLong( in->numBrushes );
+        
         if( i == 0 )
         {
             // Add this for limiting VAO surface creation
@@ -1993,6 +2083,9 @@ static	void R_LoadNodesAndLeafs( lump_t* nodeLump, lump_t* leafLump )
     s_worldData.numnodes = numNodes + numLeafs;
     s_worldData.numDecisionNodes = numNodes;
     
+    s_worldData.numSkyNodes = 0;
+    s_worldData.skyNodes = ( mnode_t** )Hunk_Alloc( WORLD_MAX_SKY_NODES * sizeof( *s_worldData.skyNodes ), h_low );
+    
     // load nodes
     for( i = 0 ; i < numNodes; i++, in++, out++ )
     {
@@ -2001,6 +2094,9 @@ static	void R_LoadNodesAndLeafs( lump_t* nodeLump, lump_t* leafLump )
             out->mins[j] = LittleLong( in->mins[j] );
             out->maxs[j] = LittleLong( in->maxs[j] );
         }
+        
+        VectorCopy( out->mins, out->surfMins );
+        VectorCopy( out->maxs, out->surfMaxs );
         
         p = LittleLong( in->planeNum );
         out->plane = s_worldData.planes + p;
@@ -2026,6 +2122,8 @@ static	void R_LoadNodesAndLeafs( lump_t* nodeLump, lump_t* leafLump )
             out->mins[j] = LittleLong( inLeaf->mins[j] );
             out->maxs[j] = LittleLong( inLeaf->maxs[j] );
         }
+        
+        ClearBounds( out->surfMins, out->surfMaxs );
         
         out->cluster = LittleLong( inLeaf->cluster );
         out->area = LittleLong( inLeaf->area );
@@ -2150,7 +2248,7 @@ R_LoadFogs
 */
 static	void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
 {
-    S32			i;
+    S32			i, j;
     fog_t*		out;
     dfog_t*		fogs;
     dbrush_t*	 brushes, *brush;
@@ -2174,6 +2272,8 @@ static	void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
     s_worldData.fogs = ( fog_t* )Hunk_Alloc( s_worldData.numfogs * sizeof( *out ), h_low );
     out = s_worldData.fogs + 1;
     
+    s_worldData.globalFog = -1;
+    
     if( !count )
     {
         return;
@@ -2193,76 +2293,96 @@ static	void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
     }
     sidesCount = sidesLump->filelen / sizeof( *sides );
     
-    for( i = 0 ; i < count ; i++, fogs++ )
+    for( i = 0; i < count; i++, fogs++ )
     {
         out->originalBrushNumber = LittleLong( fogs->brushNum );
         
-        if( ( U32 )out->originalBrushNumber >= brushesCount )
+        if( out->originalBrushNumber == -1 )
         {
-            Com_Error( ERR_DROP, "fog brushNumber out of range" );
-        }
-        brush = brushes + out->originalBrushNumber;
-        
-        firstSide = LittleLong( brush->firstSide );
-        
-        if( ( U32 )firstSide > sidesCount - 6 )
-        {
-            Com_Error( ERR_DROP, "fog brush sideNumber out of range" );
-        }
-        
-        // brushes are always sorted with the axial sides first
-        sideNum = firstSide + 0;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[0][0] = -s_worldData.planes[ planeNum ].dist;
-        
-        sideNum = firstSide + 1;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[1][0] = s_worldData.planes[ planeNum ].dist;
-        
-        sideNum = firstSide + 2;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[0][1] = -s_worldData.planes[ planeNum ].dist;
-        
-        sideNum = firstSide + 3;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[1][1] = s_worldData.planes[ planeNum ].dist;
-        
-        sideNum = firstSide + 4;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[0][2] = -s_worldData.planes[ planeNum ].dist;
-        
-        sideNum = firstSide + 5;
-        planeNum = LittleLong( sides[ sideNum ].planeNum );
-        out->bounds[1][2] = s_worldData.planes[ planeNum ].dist;
-        
-        // get information from the shader for fog parameters
-        shader = R_FindShader( fogs->shader, LIGHTMAP_NONE, true );
-        
-        out->parms = shader->fogParms;
-        
-        out->colorInt = ColorBytes4( shader->fogParms.color[0],
-                                     shader->fogParms.color[1],
-                                     shader->fogParms.color[2], 1.0 );
-                                     
-        d = shader->fogParms.depthForOpaque < 1 ? 1 : shader->fogParms.depthForOpaque;
-        out->tcScale = 1.0f / ( d * 8 );
-        
-        // set the gradient vector
-        sideNum = LittleLong( fogs->visibleSide );
-        
-        if( sideNum == -1 )
-        {
-            out->hasSurface = false;
+            VectorSet( out->bounds[0], MIN_WORLD_COORD, MIN_WORLD_COORD, MIN_WORLD_COORD );
+            VectorSet( out->bounds[1], MAX_WORLD_COORD, MAX_WORLD_COORD, MAX_WORLD_COORD );
         }
         else
         {
-            out->hasSurface = true;
-            planeNum = LittleLong( sides[ firstSide + sideNum ].planeNum );
-            VectorSubtract( vec3_origin, s_worldData.planes[ planeNum ].normal, out->surface );
-            out->surface[3] = -s_worldData.planes[ planeNum ].dist;
+            if( ( U32 )out->originalBrushNumber >= brushesCount )
+            {
+                Com_Error( ERR_DROP, "fog brushNumber out of range" );
+            }
+            for( j = 0; j < s_worldData.numBModels; j++ )
+            {
+                if( out->originalBrushNumber >= s_worldData.bmodels[j].firstBrush &&
+                        out->originalBrushNumber < ( s_worldData.bmodels[j].firstBrush + s_worldData.bmodels[j].numBrushes ) )
+                {
+                    out->modelNum = j;
+                    break;
+                }
+            }
+            
+            brush = brushes + out->originalBrushNumber;
+            
+            firstSide = LittleLong( brush->firstSide );
+            
+            if( ( U32 )firstSide > sidesCount - 6 )
+            {
+                Com_Error( ERR_DROP, "fog brush sideNumber out of range" );
+            }
+            
+            // brushes are always sorted with the axial sides first
+            sideNum = firstSide + 0;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[0][0] = -s_worldData.planes[planeNum].dist;
+            
+            sideNum = firstSide + 1;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[1][0] = s_worldData.planes[planeNum].dist;
+            
+            sideNum = firstSide + 2;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[0][1] = -s_worldData.planes[planeNum].dist;
+            
+            sideNum = firstSide + 3;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[1][1] = s_worldData.planes[planeNum].dist;
+            
+            sideNum = firstSide + 4;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[0][2] = -s_worldData.planes[planeNum].dist;
+            
+            sideNum = firstSide + 5;
+            planeNum = LittleLong( sides[sideNum].planeNum );
+            out->bounds[1][2] = s_worldData.planes[planeNum].dist;
+            
+            // get information from the shader for fog parameters
+            shader = R_FindShader( fogs->shader, LIGHTMAP_NONE, true );
+            
+            out->parms = shader->fogParms;
+            
+            out->shader = shader;
+            
+            if( out->originalBrushNumber == -1 )
+            {
+                s_worldData.globalFog = i + 1;
+                VectorCopy( shader->fogParms.color, s_worldData.globalOriginalFog );
+                s_worldData.globalOriginalFog[3] = shader->fogParms.depthForOpaque;
+            }
+            
+            // set the gradient vector
+            sideNum = LittleLong( fogs->visibleSide );
+            
+            if( sideNum < 0 || sideNum >= sidesCount )
+            {
+                out->hasSurface = false;
+            }
+            else
+            {
+                out->hasSurface = true;
+                planeNum = LittleLong( sides[firstSide + sideNum].planeNum );
+                VectorSubtract( vec3_origin, s_worldData.planes[planeNum].normal, out->surface );
+                out->surface[3] = -s_worldData.planes[planeNum].dist;
+            }
+            
+            out++;
         }
-        
-        out++;
     }
     
 }
@@ -2494,7 +2614,7 @@ bool idRenderSystemLocal::GetEntityToken( UTF8* buffer, S32 size )
     
     s = COM_Parse( &s_worldData.entityParsePoint );
     Q_strncpyz( buffer, s, size );
-    if( !s_worldData.entityParsePoint && !s[0] )
+    if( !s_worldData.entityParsePoint || !s[0] )
     {
         s_worldData.entityParsePoint = s_worldData.entityString;
         return false;
@@ -2896,6 +3016,9 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
         Com_Error( ERR_DROP, "idRenderSystemLocal::LoadWorldMap: %s not found", name );
     }
     
+    tr.worldDir = CopyString( name );
+    COM_StripExtension( tr.worldDir, tr.worldDir );
+    
     // clear tr.world so if the level fails to load, the next
     // try will not look at the partially loaded version
     tr.world = NULL;
@@ -3161,6 +3284,11 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     
     // only set tr.world now that we know the entire level has loaded properly
     tr.world = &s_worldData;
+    
+    if( tr.sunShaderName )
+    {
+        tr.sunShader = R_FindShader( tr.sunShaderName, LIGHTMAP_NONE, true );
+    }
     
     // make sure the VAO glState entry is safe
     R_BindNullVao();

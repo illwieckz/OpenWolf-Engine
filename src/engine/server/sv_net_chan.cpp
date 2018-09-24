@@ -76,7 +76,7 @@ static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString
     msg->bit = sbit;
     msg->readcount = srdc;
     
-    string = ( U8* ) commandString;
+    string = ( U8* ) client->lastClientCommandString;
     index = 0;
     // xor the client challenge with the netchan sequence number
     key = client->challenge ^ client->netchan.outgoingSequence;

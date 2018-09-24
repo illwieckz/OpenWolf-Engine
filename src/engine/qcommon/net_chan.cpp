@@ -70,7 +70,7 @@ to the new value before sending out any replies.
 #define	FRAGMENT_SIZE			(MAX_PACKETLEN - 100)
 #define	PACKET_HEADER			10			// two ints and a short
 
-#define	FRAGMENT_BIT	(1<<31)
+#define	FRAGMENT_BIT	(1U<<31)
 
 cvar_t*		showpackets;
 cvar_t*		showdrop;
@@ -735,6 +735,8 @@ void NET_OutOfBandData( netsrc_t sock, netadr_t adr, U8* format, S32 len )
     U8		string[MAX_MSGLEN * 2];
     S32			i;
     msg_t		mbuf;
+    
+    MSG_InitOOB( &mbuf, string, sizeof( string ) );
     
     // set the header
     string[0] = 0xff;

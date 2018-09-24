@@ -518,7 +518,7 @@ void BotSetBrushModelTypes( void )
         if( model[0] ) modelnum = atoi( model + 1 );
         else modelnum = 0;
         
-        if( modelnum < 0 || modelnum > MAX_MODELS )
+        if( modelnum < 0 || modelnum >= MAX_MODELS )
         {
             botimport.Print( PRT_MESSAGE, "entity %s model number out of range\n", classname );
             continue;
@@ -3573,7 +3573,7 @@ void BotResetLastAvoidReach( S32 movestate )
     if( latesttime )
     {
         ms->avoidreachtimes[latest] = 0;
-        if( ms->avoidreachtries[i] > 0 ) ms->avoidreachtries[latest]--;
+        if( ms->avoidreachtries[latest] > 0 ) ms->avoidreachtries[latest]--;
     } //end if
 } //end of the function BotResetLastAvoidReach
 //===========================================================================

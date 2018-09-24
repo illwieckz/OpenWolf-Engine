@@ -394,7 +394,7 @@ void S_Play_f( void )
     {
         if( !Q_strrchr( Cmd_Argv( i ), '.' ) )
         {
-            Com_sprintf( name, sizeof( name ), "%s.wav", Cmd_Argv( 1 ) );
+            Com_sprintf( name, sizeof( name ), "%s.ogg", Cmd_Argv( 1 ) );
         }
         else
         {

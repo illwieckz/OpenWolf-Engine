@@ -370,6 +370,7 @@ static void ResampleTexture( U8* in, S32 inwidth, S32 inheight, U8* out, S32 out
     {
         inrow = in + 4 * inwidth * ( S32 )( ( i + 0.25 ) * inheight / outheight );
         inrow2 = in + 4 * inwidth * ( S32 )( ( i + 0.75 ) * inheight / outheight );
+        frac = fracstep >> 1;
         for( j = 0 ; j < outwidth ; j++ )
         {
             pix1 = inrow + p1[j];

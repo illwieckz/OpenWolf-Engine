@@ -275,7 +275,7 @@ void SCR_DrawStringExt( S32 x, S32 y, F32 size, StringEntry string, F32* setColo
     renderSystem->SetColor( setColor );
     while( *s )
     {
-        if( Q_IsColorString( s ) )
+        if( !noColorEscape && Q_IsColorString( s ) )
         {
             if( !forceColor )
             {
@@ -291,11 +291,8 @@ void SCR_DrawStringExt( S32 x, S32 y, F32 size, StringEntry string, F32* setColo
                 color[3] = setColor[3];
                 renderSystem->SetColor( color );
             }
-            if( !noColorEscape )
-            {
-                s += 2;
-                continue;
-            }
+            s += 2;
+            continue;
         }
         SCR_DrawChar( xx, y, size, *s );
         xx += size;
@@ -523,7 +520,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame )
     
     // wide aspect ratio screens need to have the sides cleared
     // unless they are displaying game renderings
-    if( cls.state != CA_ACTIVE )
+    if( cls.state != CA_ACTIVE && cls.state != CA_CINEMATIC )
     {
         if( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 )
         {

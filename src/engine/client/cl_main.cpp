@@ -2841,13 +2841,13 @@ CL_ServersResponsePacket
 */
 void CL_ServersResponsePacket( const netadr_t* from, msg_t* msg, bool extended )
 {
-    S32 i, count, total;
+    S32 i, j, count, total;
     netadr_t addresses[MAX_SERVERSPERPACKET];
     S32 numservers;
     U8*           buffptr;
     U8*           buffend;
     
-    Com_Printf( "CL_ServersResponsePacket\n" );
+    Com_Printf( "CL_ServersResponsePacket from %s\n", NET_AdrToStringwPort( *from ) );
     
     if( cls.numglobalservers == -1 )
     {
@@ -2858,8 +2858,8 @@ void CL_ServersResponsePacket( const netadr_t* from, msg_t* msg, bool extended )
     
     // parse through server response string
     numservers = 0;
-    buffptr    = msg->data;
-    buffend    = buffptr + msg->cursize;
+    buffptr = msg->data;
+    buffend = buffptr + msg->cursize;
     
     // advance to initial token
     do
@@ -2925,6 +2925,15 @@ void CL_ServersResponsePacket( const netadr_t* from, msg_t* msg, bool extended )
         // build net address
         serverInfo_t* server = &cls.globalServers[count];
         
+        for( j = 0; j < count; j++ )
+        {
+            if( NET_CompareAdr( cls.globalServers[j].adr, addresses[i] ) )
+                break;
+        }
+        
+        if( j < count )
+            continue;
+            
         CL_InitServerInfo( server, &addresses[i] );
         // advance to next slot
         count++;

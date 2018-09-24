@@ -648,6 +648,17 @@ void SV_ClipMoveToEntities( moveclip_t* clip )
         // might intersect, so do an exact clip
         clipHandle = SV_ClipHandleForEntity( touch );
         
+        if( clipHandle == 0 )
+        {
+            continue;
+        }
+        
+        // If clipping against BBOX, set to correct contents
+        if( clipHandle == BOX_MODEL_HANDLE )
+        {
+            collisionModelManager->SetTempBoxModelContents( touch->r.contents );
+        }
+        
         origin = touch->r.currentOrigin;
         angles = touch->r.currentAngles;
         
@@ -679,6 +690,12 @@ void SV_ClipMoveToEntities( moveclip_t* clip )
             trace.entityNum = touch->s.number;
             clip->trace = trace;
             clip->trace.startsolid = ( bool )( ( ( S32 )clip->trace.startsolid | ( S32 )oldStart ) != 0 );
+        }
+        
+        // Reset contents to default
+        if( clipHandle == BOX_MODEL_HANDLE )
+        {
+            collisionModelManager->SetTempBoxModelContents( CONTENTS_BODY );
         }
     }
 }

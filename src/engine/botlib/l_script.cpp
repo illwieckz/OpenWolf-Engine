@@ -823,7 +823,7 @@ S32 PS_ReadPunctuation( script_t* script, token_t* token )
             //if the script contains the punctuation
             if( !strncmp( script->script_p, p, len ) )
             {
-                strncpy( token->string, p, MAX_TOKEN );
+                Q_strncpyz( token->string, p, MAX_TOKEN );
                 script->script_p += len;
                 token->type = TT_PUNCTUATION;
                 //sub type is the number of the punctuation
@@ -975,6 +975,7 @@ S32 PS_ExpectTokenType( script_t* script, S32 type, S32 subtype, token_t* token 
     
     if( token->type != type )
     {
+        strcpy( str, "" );
         if( type == TT_STRING ) strcpy( str, "string" );
         if( type == TT_LITERAL ) strcpy( str, "literal" );
         if( type == TT_NUMBER ) strcpy( str, "number" );
@@ -987,6 +988,7 @@ S32 PS_ExpectTokenType( script_t* script, S32 type, S32 subtype, token_t* token 
     {
         if( ( token->subtype & subtype ) != subtype )
         {
+            strcpy( str, "" );
             if( subtype & TT_DECIMAL ) strcpy( str, "decimal" );
             if( subtype & TT_HEX ) strcpy( str, "hex" );
             if( subtype & TT_OCTAL ) strcpy( str, "octal" );
@@ -1009,7 +1011,7 @@ S32 PS_ExpectTokenType( script_t* script, S32 type, S32 subtype, token_t* token 
         if( token->subtype != subtype )
         {
             ScriptError( script, "expected %s, found %s",
-                         script->punctuations[subtype], token->string );
+                         script->punctuations[subtype].p, token->string );
             return 0;
         } //end if
     } //end else if
@@ -1355,7 +1357,7 @@ script_t* LoadScriptFile( StringEntry filename )
     buffer = GetClearedMemory( sizeof( script_t ) + length + 1 );
     script = ( script_t* ) buffer;
     ::memset( script, 0, sizeof( script_t ) );
-    strcpy( script->filename, filename );
+    Q_strncpyz( script->filename, filename, sizeof( script->filename ) );
     script->buffer = ( UTF8* ) buffer + sizeof( script_t );
     script->buffer[length] = 0;
     script->length = length;
@@ -1403,7 +1405,7 @@ script_t* LoadScriptMemory( UTF8* ptr, S32 length, UTF8* name )
     buffer = GetClearedMemory( sizeof( script_t ) + length + 1 );
     script = ( script_t* ) buffer;
     ::memset( script, 0, sizeof( script_t ) );
-    strcpy( script->filename, name );
+    Q_strncpyz( script->filename, name, sizeof( script->filename ) );
     script->buffer = ( UTF8* ) buffer + sizeof( script_t );
     script->buffer[length] = 0;
     script->length = length;

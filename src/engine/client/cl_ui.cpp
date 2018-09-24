@@ -238,7 +238,7 @@ static S32 LAN_AddServer( S32 source, StringEntry name, StringEntry address )
     }
     if( servers && *count < max )
     {
-        NET_StringToAdr( address, &adr, NA_IP );
+        NET_StringToAdr( address, &adr, NA_UNSPEC );
         for( i = 0; i < *count; i++ )
         {
             if( NET_CompareAdr( servers[i].adr, adr ) )
@@ -287,7 +287,7 @@ static void LAN_RemoveServer( S32 source, StringEntry addr )
     if( servers )
     {
         netadr_t comp;
-        NET_StringToAdr( addr, &comp, NA_IP );
+        NET_StringToAdr( addr, &comp, NA_UNSPEC );
         for( i = 0; i < *count; i++ )
         {
             if( NET_CompareAdr( comp, servers[i].adr ) )

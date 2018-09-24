@@ -42,7 +42,7 @@
 #endif
 
 // always use bbox vs. bbox collision and never capsule vs. bbox or vice versa
-//#define ALWAYS_BBOX_VS_BBOX
+#define ALWAYS_BBOX_VS_BBOX
 // always use capsule vs. capsule collision and never capsule vs. bbox or vice versa
 //#define ALWAYS_CAPSULE_VS_CAPSULE
 
@@ -1012,6 +1012,123 @@ void CM_TraceThroughSurface( traceWork_t* tw, cSurface_t* surface )
 
 /*
 ================
+CM_CalcTraceBounds
+================
+*/
+static void CM_CalcTraceBounds( traceWork_t* tw, bool expand )
+{
+   S32 i;
+    
+    if( tw->sphere.use )
+    {
+        for( i = 0; i < 3; i++ )
+        {
+            if( tw->start[i] < tw->end[i] )
+            {
+                tw->bounds[0][i] = tw->start[i] - Q_fabs( tw->sphere.offset[i] ) - tw->sphere.radius;
+                tw->bounds[1][i] = tw->start[i] + tw->trace.fraction * tw->dir[i] + Q_fabs( tw->sphere.offset[i] ) + tw->sphere.radius;
+            }
+            else
+            {
+                tw->bounds[0][i] = tw->start[i] + tw->trace.fraction * tw->dir[i] - Q_fabs( tw->sphere.offset[i] ) - tw->sphere.radius;
+                tw->bounds[1][i] = tw->start[i] + Q_fabs( tw->sphere.offset[i] ) + tw->sphere.radius;
+            }
+        }
+    }
+    else
+    {
+        for( i = 0; i < 3; i++ )
+        {
+            if( tw->start[i] < tw->end[i] )
+            {
+                tw->bounds[0][i] = tw->start[i] + tw->size[0][i];
+                tw->bounds[1][i] = tw->start[i] + tw->trace.fraction * tw->dir[i] + tw->size[1][i];
+            }
+            else
+            {
+                tw->bounds[0][i] = tw->start[i] + tw->trace.fraction * tw->dir[i] + tw->size[0][i];
+                tw->bounds[1][i] = tw->start[i] + tw->size[1][i];
+            }
+        }
+    }
+    
+    if( expand )
+    {
+        // expand for epsilon
+        for( i = 0; i < 3; i++ )
+        {
+            tw->bounds[0][i] -= 1.0f;
+            tw->bounds[1][i] += 1.0f;
+        }
+    }
+}
+
+/*
+================
+CM_BoxDistanceFromPlane
+================
+*/
+static F32 CM_BoxDistanceFromPlane( vec3_t center, vec3_t extents, cplane_t* plane )
+{
+    F32 d1, d2;
+    
+    d1 = DotProduct( center, plane->normal ) - plane->dist;
+    d2 = Q_fabs( extents[0] * plane->normal[0] ) +
+         Q_fabs( extents[1] * plane->normal[1] ) +
+         Q_fabs( extents[2] * plane->normal[2] );
+         
+    if( d1 - d2 > 0.0f )
+    {
+        return d1 - d2;
+    }
+    if( d1 + d2 < 0.0f )
+    {
+        return d1 + d2;
+    }
+    return 0.0f;
+}
+
+/*
+================
+CM_BoxDistanceFromPlane
+================
+*/
+static S32 CM_TraceThroughBounds( traceWork_t* tw, vec3_t mins, vec3_t maxs )
+{
+    S32 i;
+    vec3_t center, extents;
+    
+    for( i = 0; i < 3; i++ )
+    {
+        if( mins[i] > tw->bounds[1][i] )
+        {
+            return false;
+        }
+        if( maxs[i] < tw->bounds[0][i] )
+        {
+            return false;
+        }
+    }
+    
+    VectorAdd( mins, maxs, center );
+    VectorScale( center, 0.5f, center );
+    VectorSubtract( maxs, center, extents );
+    
+    if( Q_fabs( CM_BoxDistanceFromPlane( center, extents, &tw->tracePlane1 ) ) > tw->traceDist1 )
+    {
+        return false;
+    }
+    if( Q_fabs( CM_BoxDistanceFromPlane( center, extents, &tw->tracePlane2 ) ) > tw->traceDist2 )
+    {
+        return false;
+    }
+    
+    // trace might go through the bounds
+    return true;
+}
+
+/*
+================
 CM_TraceThroughBrush
 ================
 */
@@ -1401,74 +1518,118 @@ CM_TraceThroughLeaf
 void CM_TraceThroughLeaf( traceWork_t* tw, cLeaf_t* leaf )
 {
     S32             k, brushnum;
-    cbrush_t*       b;
+    cbrush_t*       brush;
     cSurface_t*     surface;
+    F32 fraction;
     
     // trace line against all brushes in the leaf
     for( k = 0; k < leaf->numLeafBrushes; k++ )
     {
         brushnum = cm.leafbrushes[leaf->firstLeafBrush + k];
         
-        b = &cm.brushes[brushnum];
-        if( b->checkcount == cm.checkcount )
+        brush = &cm.brushes[brushnum];
+        if( brush->checkcount == cm.checkcount )
         {
             continue; // already checked this brush in another leaf
         }
-        b->checkcount = cm.checkcount;
+        brush->checkcount = cm.checkcount;
         
-        if( !( b->contents & tw->contents ) )
+        if( !( brush->contents & tw->contents ) )
         {
             continue;
         }
         
-        b->collided = false;
+        brush->collided = false;
         
-        if( !CM_BoundsIntersect( tw->bounds[0], tw->bounds[1], b->bounds[0], b->bounds[1] ) )
+        if( !CM_BoundsIntersect( tw->bounds[0], tw->bounds[1], brush->bounds[0], brush->bounds[1] ) )
         {
             continue;
         }
         
-        CM_TraceThroughBrush( tw, b );
+#ifndef BSPC
+        if( cm_optimize->integer )
+#endif
+        {
+            if( !CM_TraceThroughBounds( tw, brush->bounds[0], brush->bounds[1] ) )
+            {
+                continue;
+            }
+        }
+        
+        fraction = tw->trace.fraction;
+        
+        CM_TraceThroughBrush( tw, brush );
+        
         if( !tw->trace.fraction )
         {
             tw->trace.lateralFraction = 0.0f;
             return;
+        }
+        
+        if( tw->trace.fraction < fraction )
+        {
+            CM_CalcTraceBounds( tw, true );
         }
     }
     
     // trace line against all surfaces in the leaf
-    for( k = 0; k < leaf->numLeafSurfaces; k++ )
+#ifdef BSPC
+    if( 1 )
     {
-        surface = cm.surfaces[cm.leafsurfaces[leaf->firstLeafSurface + k]];
-        
-        if( !surface )
+#else
+    if( !cm_noCurves->integer )
+    {
+#endif
+        for( k = 0; k < leaf->numLeafSurfaces; k++ )
         {
-            continue;
-        }
-        
-        if( surface->checkcount == cm.checkcount )
-        {
-            continue; // already checked this surface in another leaf
-        }
-        
-        surface->checkcount = cm.checkcount;
-        
-        if( !( surface->contents & tw->contents ) )
-        {
-            continue;
-        }
-        
-        if( !CM_BoundsIntersect( tw->bounds[0], tw->bounds[1], surface->sc->bounds[0], surface->sc->bounds[1] ) )
-        {
-            continue;
-        }
-        
-        CM_TraceThroughSurface( tw, surface );
-        
-        if( !tw->trace.fraction )
-        {
-            tw->trace.lateralFraction = 0.0f;
-            return;
+            surface = cm.surfaces[cm.leafsurfaces[leaf->firstLeafSurface + k]];
+            
+            if( !surface )
+            {
+                continue;
+            }
+            
+            if( surface->checkcount == cm.checkcount )
+            {
+                continue; // already checked this surface in another leaf
+            }
+            
+            surface->checkcount = cm.checkcount;
+            
+            if( !( surface->contents & tw->contents ) )
+            {
+                continue;
+            }
+            
+            if( !CM_BoundsIntersect( tw->bounds[0], tw->bounds[1], surface->sc->bounds[0], surface->sc->bounds[1] ) )
+            {
+                continue;
+            }
+            
+#ifndef BSPC
+            if( cm_optimize->integer )
+#endif
+            {
+                if( !CM_TraceThroughBounds( tw, surface->sc->bounds[0], surface->sc->bounds[1] ) )
+                {
+                    continue;
+                }
+            }
+            
+            fraction = tw->trace.fraction;
+            
+            CM_TraceThroughSurface( tw, surface );
+            
+            if( !tw->trace.fraction )
+            {
+                tw->trace.lateralFraction = 0.0f;
+                return;
+            }
+            
+            if( tw->trace.fraction < fraction )
+            {
+                CM_CalcTraceBounds( tw, true );
+            }
         }
     }
     
@@ -1478,20 +1639,20 @@ void CM_TraceThroughLeaf( traceWork_t* tw, cLeaf_t* leaf )
         {
             brushnum = cm.leafbrushes[leaf->firstLeafBrush + k];
             
-            b = &cm.brushes[brushnum];
+            brush = &cm.brushes[brushnum];
             
             // This brush never collided, so don't bother
-            if( !b->collided )
+            if( !brush->collided )
             {
                 continue;
             }
             
-            if( !( b->contents & tw->contents ) )
+            if( !( brush->contents & tw->contents ) )
             {
                 continue;
             }
             
-            CM_ProximityToBrush( tw, b );
+            CM_ProximityToBrush( tw, brush );
             
             if( !tw->trace.lateralFraction )
             {
@@ -1878,8 +2039,7 @@ static void CM_TraceThroughTree( traceWork_t* tw, S32 num, F32 p1f, F32 p2f, vec
         }
         else
         {
-            // FIXME: this is silly !!!
-            offset = 2048;
+            offset = tw->maxOffset;
         }
     }
     
@@ -1967,6 +2127,9 @@ static void CM_Trace( trace_t* results, const vec3_t start, const vec3_t end, co
     traceWork_t     tw;
     vec3_t          offset;
     cmodel_t*       cmod;
+    bool            positionTest;
+    vec3_t          dir;
+    F32             dist;
     
     cmod = CM_ClipHandleToModel( model );
     
@@ -2024,6 +2187,8 @@ static void CM_Trace( trace_t* results, const vec3_t start, const vec3_t end, co
         VectorSet( tw.sphere.offset, 0, 0, tw.size[1][2] - tw.sphere.radius );
     }
     
+    positionTest = ( start[0] == end[0] && start[1] == end[1] && start[2] == end[2] );
+    
     tw.maxOffset = tw.size[1][0] + tw.size[1][1] + tw.size[1][2];
     
     // tw.offsets[signbits] = vector to apropriate corner from origin
@@ -2059,46 +2224,62 @@ static void CM_Trace( trace_t* results, const vec3_t start, const vec3_t end, co
     tw.offsets[7][1] = tw.size[1][1];
     tw.offsets[7][2] = tw.size[1][2];
     
-    //
-    // calculate bounds
-    //
-    if( tw.type == TT_CAPSULE )
+    // check for point special case
+    if( tw.size[0][0] == 0.0f && tw.size[0][1] == 0.0f && tw.size[0][2] == 0.0f )
     {
-        for( i = 0; i < 3; i++ )
-        {
-            if( tw.start[i] < tw.end[i] )
-            {
-                tw.bounds[0][i] = tw.start[i] - fabs( tw.sphere.offset[i] ) - tw.sphere.radius;
-                tw.bounds[1][i] = tw.end[i] + fabs( tw.sphere.offset[i] ) + tw.sphere.radius;
-            }
-            else
-            {
-                tw.bounds[0][i] = tw.end[i] - fabs( tw.sphere.offset[i] ) - tw.sphere.radius;
-                tw.bounds[1][i] = tw.start[i] + fabs( tw.sphere.offset[i] ) + tw.sphere.radius;
-            }
-        }
+        tw.isPoint = true;
+        VectorClear( tw.extents );
     }
     else
     {
-        for( i = 0; i < 3; i++ )
-        {
-            if( tw.start[i] < tw.end[i] )
-            {
-                tw.bounds[0][i] = tw.start[i] + tw.size[0][i];
-                tw.bounds[1][i] = tw.end[i] + tw.size[1][i];
-            }
-            else
-            {
-                tw.bounds[0][i] = tw.end[i] + tw.size[0][i];
-                tw.bounds[1][i] = tw.start[i] + tw.size[1][i];
-            }
-        }
+        tw.isPoint = false;
+        tw.extents[0] = tw.size[1][0];
+        tw.extents[1] = tw.size[1][1];
+        tw.extents[2] = tw.size[1][2];
     }
     
-    //
+    if( positionTest )
+    {
+        CM_CalcTraceBounds( &tw, false );
+    }
+    else
+    {
+        VectorSubtract( tw.end, tw.start, dir );
+        VectorCopy( dir, tw.dir );
+        VectorNormalize( dir );
+        MakeNormalVectors( dir, tw.tracePlane1.normal, tw.tracePlane2.normal );
+        tw.tracePlane1.dist = DotProduct( tw.tracePlane1.normal, tw.start );
+        tw.tracePlane2.dist = DotProduct( tw.tracePlane2.normal, tw.start );
+        if( tw.isPoint )
+        {
+            tw.traceDist1 = tw.traceDist2 = 1.0f;
+        }
+        else
+        {
+            tw.traceDist1 = tw.traceDist2 = 0.0f;
+            for( i = 0; i < 8; i++ )
+            {
+                dist = Q_fabs( DotProduct( tw.tracePlane1.normal, tw.offsets[i] ) - tw.tracePlane1.dist );
+                if( dist > tw.traceDist1 )
+                {
+                    tw.traceDist1 = dist;
+                }
+                dist = Q_fabs( DotProduct( tw.tracePlane2.normal, tw.offsets[i] ) - tw.tracePlane2.dist );
+                if( dist > tw.traceDist2 )
+                {
+                    tw.traceDist2 = dist;
+                }
+            }
+            // expand for epsilon
+            tw.traceDist1 += 1.0f;
+            tw.traceDist2 += 1.0f;
+        }
+        
+        CM_CalcTraceBounds( &tw, true );
+    }
+    
     // check for position test special case
-    //
-    if( start[0] == end[0] && start[1] == end[1] && start[2] == end[2] )
+    if( positionTest )
     {
         if( model )
         {
@@ -2139,22 +2320,6 @@ static void CM_Trace( trace_t* results, const vec3_t start, const vec3_t end, co
     }
     else
     {
-        //
-        // check for point special case
-        //
-        if( tw.size[0][0] == 0 && tw.size[0][1] == 0 && tw.size[0][2] == 0 )
-        {
-            tw.isPoint = true;
-            VectorClear( tw.extents );
-        }
-        else
-        {
-            tw.isPoint = false;
-            tw.extents[0] = tw.size[1][0];
-            tw.extents[1] = tw.size[1][1];
-            tw.extents[2] = tw.size[1][2];
-        }
-        
         //
         // general sweeping through world
         //

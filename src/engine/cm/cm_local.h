@@ -195,9 +195,10 @@ typedef struct
 // Used for oriented capsule collision detection
 typedef struct
 {
-    F32           radius;
-    F32           halfheight;
-    vec3_t          offset;
+    bool use;
+    F32 radius;
+    F32 halfheight;
+    vec3_t offset;
 } sphere_t;
 
 typedef struct
@@ -283,7 +284,7 @@ public:
     virtual void        FreeMap( void );
     virtual clipHandle_t InlineModel( S32 index );      // 0 = world, 1 + are bmodels
     virtual clipHandle_t TempBoxModel( const vec3_t mins, const vec3_t maxs, S32 capsule );
-    
+    virtual void        SetTempBoxModelContents( S32 contents );
     virtual void        ModelBounds( clipHandle_t model, vec3_t mins, vec3_t maxs );
     
     virtual S32         NumClusters( void );

@@ -989,14 +989,14 @@ S32 PC_Directive_include( source_t* source )
         script = LoadScriptFile( token.string );
         if( !script )
         {
-            strcpy( path, source->includepath );
-            strcat( path, token.string );
+            Q_strncpyz( path, source->includepath, sizeof( path ) );
+            Q_strcat( path, sizeof( path ), token.string );
             script = LoadScriptFile( path );
         } //end if
     } //end if
     else if( token.type == TT_PUNCTUATION && *token.string == '<' )
     {
-        strcpy( path, source->includepath );
+        Q_strncpyz( path, source->includepath, sizeof( path ) );
         while( PC_ReadSourceToken( source, &token ) )
         {
             if( token.linescrossed > 0 )
@@ -1005,7 +1005,7 @@ S32 PC_Directive_include( source_t* source )
                 break;
             } //end if
             if( token.type == TT_PUNCTUATION && *token.string == '>' ) break;
-            strncat( path, token.string, MAX_PATH );
+            Q_strcat( path, sizeof( path ), token.string );
         } //end while
         if( *token.string != '>' )
         {
@@ -1325,7 +1325,7 @@ define_t* PC_DefineFromString( UTF8* string )
     script = LoadScriptMemory( string, strlen( string ), "*extern" );
     //create a new source
     ::memset( &src, 0, sizeof( source_t ) );
-    strncpy( src.filename, "*extern", MAX_PATH );
+    Q_strncpyz( src.filename, "*extern", sizeof( src.filename ) );
     src.scriptstack = script;
 #if DEFINEHASHING
     src.definehash = ( define_t** )GetClearedMemory( DEFINEHASHSIZE * sizeof( define_t* ) );
@@ -2887,6 +2887,7 @@ S32 PC_ExpectTokenType( source_t* source, S32 type, S32 subtype, token_t* token 
     {
         if( ( token->subtype & subtype ) != subtype )
         {
+            strcpy( str, "" );
             if( subtype & TT_DECIMAL ) strcpy( str, "decimal" );
             if( subtype & TT_HEX ) strcpy( str, "hex" );
             if( subtype & TT_OCTAL ) strcpy( str, "octal" );
@@ -3010,10 +3011,14 @@ void PC_UnreadToken( source_t* source, token_t* token )
 //============================================================================
 void PC_SetIncludePath( source_t* source, UTF8* path )
 {
-    strncpy( source->includepath, path, MAX_PATH );
+    U64 len;
+    
+    Q_strncpyz( source->includepath, path, sizeof( source->includepath ) - 1 );
+    
+    len = strlen( source->includepath );
     //add trailing path seperator
-    if( source->includepath[strlen( source->includepath ) - 1] != '\\' &&
-            source->includepath[strlen( source->includepath ) - 1] != '/' )
+    if( len > 0 && source->includepath[len - 1] != '\\' &&
+            source->includepath[len - 1] != '/' )
     {
         strcat( source->includepath, PATHSEPERATOR_STR );
     } //end if
@@ -3049,7 +3054,7 @@ source_t* LoadSourceFile( StringEntry filename )
     source = ( source_t* ) GetMemory( sizeof( source_t ) );
     ::memset( source, 0, sizeof( source_t ) );
     
-    strncpy( source->filename, filename, MAX_PATH );
+    Q_strncpyz( source->filename, filename, sizeof( source->filename ) );
     source->scriptstack = script;
     source->tokens = NULL;
     source->defines = NULL;
@@ -3082,7 +3087,7 @@ source_t* LoadSourceMemory( UTF8* ptr, S32 length, UTF8* name )
     source = ( source_t* ) GetMemory( sizeof( source_t ) );
     ::memset( source, 0, sizeof( source_t ) );
     
-    strncpy( source->filename, name, MAX_PATH );
+    Q_strncpyz( source->filename, name, sizeof( source->filename ) );
     source->scriptstack = script;
     source->tokens = NULL;
     source->defines = NULL;

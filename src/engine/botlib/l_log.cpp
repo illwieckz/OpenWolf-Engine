@@ -60,57 +60,33 @@ static logfile_t logfile;
 //===========================================================================
 void Log_Open( StringEntry filename )
 {
-#if 0
-    if( !LibVarValue( "log", "0" ) ) return;
-    if( !filename || !strlen( filename ) )
+    StringEntry ospath;
+    
+    if( !LibVarValue( "log", "0" ) )
+        return;
+        
+    if( !filename || !*filename )
     {
         botimport.Print( PRT_MESSAGE, "openlog <filename>\n" );
         return;
     } //end if
+    
     if( logfile.fp )
     {
         botimport.Print( PRT_ERROR, "log file %s is already opened\n", logfile.filename );
         return;
     } //end if
-    logfile.fp = fopen( filename, "wb" );
+    
+    ospath = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), "", filename );
+    logfile.fp = fopen( ospath, "wb" );
     if( !logfile.fp )
     {
         botimport.Print( PRT_ERROR, "can't open the log file %s\n", filename );
         return;
     } //end if
-    strncpy( logfile.filename, filename, MAX_LOGFILENAMESIZE );
+    
+    Q_strncpyz( logfile.filename, filename, sizeof( logfile.filename ) );
     botimport.Print( PRT_MESSAGE, "Opened log %s\n", logfile.filename );
-#else
-    {
-        StringEntry ospath;
-    
-        if( !LibVarValue( "log", "0" ) )
-            return;
-    
-        if( !filename || !*filename )
-        {
-            botimport.Print( PRT_MESSAGE, "openlog <filename>\n" );
-            return;
-        } //end if
-    
-        if( logfile.fp )
-        {
-            botimport.Print( PRT_ERROR, "log file %s is already opened\n", logfile.filename );
-            return;
-        } //end if
-    
-        ospath = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), "", filename );
-        logfile.fp = fopen( ospath, "wb" );
-        if( !logfile.fp )
-        {
-            botimport.Print( PRT_ERROR, "can't open the log file %s\n", filename );
-            return;
-        } //end if
-    
-        Q_strncpyz( logfile.filename, filename, sizeof( logfile.filename ) );
-        botimport.Print( PRT_MESSAGE, "Opened log %s\n", logfile.filename );
-    } //end of the function Log_Create
-#endif
 } //end of the function Log_Create
 //===========================================================================
 //

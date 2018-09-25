@@ -1,4 +1,8 @@
 2018-09-23 Dusan Jocic <dusanjocic@msn.com>
+	* Cleaning, separating repos
+	* Misc fixing
+
+2018-09-23 Dusan Jocic <dusanjocic@msn.com>
 	* Added new entity type tracer
 	* Fixed problems with contract shader
 	* Updated binary files

@@ -112,7 +112,7 @@
 #include <botlib/be_aas_route.h>
 #include <botlib/be_aas_routealt.h>
 
-#include <sgame/sg_api.h>
+#include <API/sg_api.h>
 #include <audio/s_local.h>
 #include <bgame/bg_public.h>
 #include <bgame/bg_local.h>
@@ -143,7 +143,7 @@
 #include <cm/cm_local.h>
 #include <cm/cm_patch.h>
 
-#include <cgame/cg_api.h>
+#include <API/cg_api.h>
 
 // Dushan
 #if defined(_WIN32) || defined(_WIN64)

@@ -40,12 +40,10 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
 # Options
 option( BUILD_CLIENT                   "Build Tremulous client"                                ON )
-option( BUILD_SERVER                   "Build Tremulous dedicated server"                      OFF )
-option( BUILD_AUTOUPDATE_SERVER        "Build Tremulous AutoUpdate server"                     OFF ) #Dushan - this will be changed soon
+option( BUILD_SERVER                   "Build Tremulous dedicated server"                      ON )
+option( BUILD_AUTOUPDATE_SERVER        "Build Tremulous AutoUpdate server"                     ON ) #Dushan - this will be changed soon
 option( BUILD_GAME                     "Build game logic shared libraries"                     ON )
-option( BUILD_MASTER_SERVER            "Build master server"                                   OFF )
-option( BUILD_OWBSPC                   "Build WORLD-to-AAS compiler"                           OFF )
-option( BUILD_OWRADIANT                "Build platform level editor"                           OFF )
+option( BUILD_MASTER_SERVER            "Build master server"                                   ON )
 
 # Package info
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenWolf client" )
@@ -56,6 +54,7 @@ include( CPack )
 set( MOUNT_DIR ${CMAKE_SOURCE_DIR}/src/engine )
 set( LIB_DIR ${CMAKE_SOURCE_DIR}/src/libs )
 set( TOOLS_DIR ${CMAKE_SOURCE_DIR}/src/tools )
+set( TREMGAME_DIR ${CMAKE_SOURCE_DIR}/src/engine/gameLogic/nextTrem )
 
 find_package( PkgConfig )
 
@@ -196,7 +195,7 @@ set( GUI_SOURCES
 
 set( SERVERLIST_HEADERS
   ${MOUNT_DIR}/server/server.h
-  ${MOUNT_DIR}/sgame/sg_api.h
+  ${MOUNT_DIR}/API/sg_api.h
 )
 
 set( SERVERLIST_SOURCES
@@ -281,7 +280,7 @@ set( DATABASELIST_SOURCES
 )
 
 set( CLIENTLIST_HEADERS
-  ${MOUNT_DIR}/cgame/cg_api.h
+  ${MOUNT_DIR}/API/cg_api.h
   ${MOUNT_DIR}/client/client.h
   ${MOUNT_DIR}/client/keycodes.h
   ${MOUNT_DIR}/client/keys.h
@@ -387,10 +386,10 @@ set( BOTLIBLIST_HEADERS
   ${MOUNT_DIR}/botlib/l_script.h
   ${MOUNT_DIR}/botlib/l_struct.h
   ${MOUNT_DIR}/botlib/l_utils.h
-  ${MOUNT_DIR}/sgame/chars.h
-  ${MOUNT_DIR}/sgame/inv.h
-  ${MOUNT_DIR}/sgame/match.h
-  ${MOUNT_DIR}/sgame/syn.h
+  ${TREMGAME_DIR}/sgame/chars.h
+  ${TREMGAME_DIR}/sgame/inv.h
+  ${TREMGAME_DIR}/sgame/match.h
+  ${TREMGAME_DIR}/sgame/syn.h
 
 )
 
@@ -462,105 +461,105 @@ set ( OWLIB_SOURCES
 )
 
 set( QAGAMELIST_HEADERS
-  ${MOUNT_DIR}/sgame/sg_precompiled.h
-  ${MOUNT_DIR}/botai/ai_chat.h
-  ${MOUNT_DIR}/botai/ai_local.h
+  ${TREMGAME_DIR}/sgame/sg_precompiled.h
+  ${TREMGAME_DIR}/botai/ai_chat.h
+  ${TREMGAME_DIR}/botai/ai_local.h
   ${MOUNT_DIR}/bgame/bg_local.h
   ${MOUNT_DIR}/bgame/bg_public.h
-  ${MOUNT_DIR}/sgame/sg_admin.h
-  ${MOUNT_DIR}/sgame/sg_local.h
+  ${TREMGAME_DIR}/sgame/sg_admin.h
+  ${TREMGAME_DIR}/sgame/sg_local.h
   ${MOUNT_DIR}/qcommon/surfaceflags.h
-  ${MOUNT_DIR}/sgame/sg_api.h
-  ${MOUNT_DIR}/sgame/tremulous.h
-  ${MOUNT_DIR}/sgame/chars.h
-  ${MOUNT_DIR}/sgame/inv.h
-  ${MOUNT_DIR}/sgame/match.h
-  ${MOUNT_DIR}/sgame/syn.h
+  ${MOUNT_DIR}/API/sg_api.h
+  ${TREMGAME_DIR}/sgame/tremulous.h
+  ${TREMGAME_DIR}/sgame/chars.h
+  ${TREMGAME_DIR}/sgame/inv.h
+  ${TREMGAME_DIR}/sgame/match.h
+  ${TREMGAME_DIR}/sgame/syn.h
 )
 
 set( QAGAMELIST_SOURCES
-  ${MOUNT_DIR}/sgame/sg_precompiled.cpp
-  ${MOUNT_DIR}/botai/ai_alien.cpp
-  ${MOUNT_DIR}/botai/ai_chat.cpp
-  ${MOUNT_DIR}/botai/ai_human.cpp
-  ${MOUNT_DIR}/botai/ai_main.cpp
-  ${MOUNT_DIR}/botai/ai_utils.cpp
+  ${TREMGAME_DIR}/sgame/sg_precompiled.cpp
+  ${TREMGAME_DIR}/botai/ai_alien.cpp
+  ${TREMGAME_DIR}/botai/ai_chat.cpp
+  ${TREMGAME_DIR}/botai/ai_human.cpp
+  ${TREMGAME_DIR}/botai/ai_main.cpp
+  ${TREMGAME_DIR}/botai/ai_utils.cpp
   ${MOUNT_DIR}/bgame/bg_alloc.cpp
   ${MOUNT_DIR}/bgame/bg_misc.cpp
   ${MOUNT_DIR}/bgame/bg_pmove.cpp
   ${MOUNT_DIR}/bgame/bg_slidemove.cpp
   ${MOUNT_DIR}/bgame/bg_voice.cpp
-  ${MOUNT_DIR}/sgame/sg_active.cpp
-  ${MOUNT_DIR}/sgame/sg_admin.cpp
-  ${MOUNT_DIR}/sgame/sg_api.cpp
-  ${MOUNT_DIR}/sgame/sg_bot.cpp
-  ${MOUNT_DIR}/sgame/sg_buildable.cpp
-  ${MOUNT_DIR}/sgame/sg_client.cpp
-  ${MOUNT_DIR}/sgame/sg_cmds.cpp
-  ${MOUNT_DIR}/sgame/sg_combat.cpp
-  ${MOUNT_DIR}/sgame/sg_main.cpp
-  ${MOUNT_DIR}/sgame/sg_maprotation.cpp
-  ${MOUNT_DIR}/sgame/sg_mem.cpp
-  ${MOUNT_DIR}/sgame/sg_misc.cpp
-  ${MOUNT_DIR}/sgame/sg_missile.cpp
-  ${MOUNT_DIR}/sgame/sg_mover.cpp
-  ${MOUNT_DIR}/sgame/sg_physics.cpp
-  ${MOUNT_DIR}/sgame/sg_ptr.cpp
-  ${MOUNT_DIR}/sgame/sg_session.cpp
-  ${MOUNT_DIR}/sgame/sg_spawn.cpp
-  ${MOUNT_DIR}/sgame/sg_svcmds.cpp
-  ${MOUNT_DIR}/sgame/sg_target.cpp
-  ${MOUNT_DIR}/sgame/sg_team.cpp
-  ${MOUNT_DIR}/sgame/sg_trigger.cpp
-  ${MOUNT_DIR}/sgame/sg_utils.cpp
-  ${MOUNT_DIR}/sgame/sg_weapon.cpp
+  ${TREMGAME_DIR}/sgame/sg_active.cpp
+  ${TREMGAME_DIR}/sgame/sg_admin.cpp
+  ${TREMGAME_DIR}/sgame/sg_api.cpp
+  ${TREMGAME_DIR}/sgame/sg_bot.cpp
+  ${TREMGAME_DIR}/sgame/sg_buildable.cpp
+  ${TREMGAME_DIR}/sgame/sg_client.cpp
+  ${TREMGAME_DIR}/sgame/sg_cmds.cpp
+  ${TREMGAME_DIR}/sgame/sg_combat.cpp
+  ${TREMGAME_DIR}/sgame/sg_main.cpp
+  ${TREMGAME_DIR}/sgame/sg_maprotation.cpp
+  ${TREMGAME_DIR}/sgame/sg_mem.cpp
+  ${TREMGAME_DIR}/sgame/sg_misc.cpp
+  ${TREMGAME_DIR}/sgame/sg_missile.cpp
+  ${TREMGAME_DIR}/sgame/sg_mover.cpp
+  ${TREMGAME_DIR}/sgame/sg_physics.cpp
+  ${TREMGAME_DIR}/sgame/sg_ptr.cpp
+  ${TREMGAME_DIR}/sgame/sg_session.cpp
+  ${TREMGAME_DIR}/sgame/sg_spawn.cpp
+  ${TREMGAME_DIR}/sgame/sg_svcmds.cpp
+  ${TREMGAME_DIR}/sgame/sg_target.cpp
+  ${TREMGAME_DIR}/sgame/sg_team.cpp
+  ${TREMGAME_DIR}/sgame/sg_trigger.cpp
+  ${TREMGAME_DIR}/sgame/sg_utils.cpp
+  ${TREMGAME_DIR}/sgame/sg_weapon.cpp
 )
 
 set( CGAMELIST_HEADERS
-  ${MOUNT_DIR}/cgame/cg_precompiled.h
-  ${MOUNT_DIR}/cgame/cg_api.h
+  ${TREMGAME_DIR}/cgame/cg_precompiled.h
+  ${MOUNT_DIR}/API/cg_api.h
   ${MOUNT_DIR}/GUI/menudef.h
   ${MOUNT_DIR}/bgame/bg_local.h
   ${MOUNT_DIR}/bgame/bg_public.h
   ${MOUNT_DIR}/qcommon/surfaceflags.h
   ${MOUNT_DIR}/GUI/keycodes.h
   ${MOUNT_DIR}/GUI/gui_shared.h
-  ${MOUNT_DIR}/cgame/cg_local.h
+  ${TREMGAME_DIR}/cgame/cg_local.h
   ${MOUNT_DIR}/GPURenderer/r_types.h
 )
 
 set( CGAMELIST_SOURCES
-  ${MOUNT_DIR}/cgame/cg_precompiled.cpp
+  ${TREMGAME_DIR}/cgame/cg_precompiled.cpp
   ${MOUNT_DIR}/bgame/bg_alloc.cpp
   ${MOUNT_DIR}/bgame/bg_misc.cpp
   ${MOUNT_DIR}/bgame/bg_pmove.cpp
   ${MOUNT_DIR}/bgame/bg_voice.cpp
   ${MOUNT_DIR}/bgame/bg_slidemove.cpp
-  ${MOUNT_DIR}/cgame/cg_animation.cpp
-  ${MOUNT_DIR}/cgame/cg_animmapobj.cpp
-  ${MOUNT_DIR}/cgame/cg_api.cpp
-  ${MOUNT_DIR}/cgame/cg_attachment.cpp
-  ${MOUNT_DIR}/cgame/cg_buildable.cpp
-  ${MOUNT_DIR}/cgame/cg_consolecmds.cpp
-  ${MOUNT_DIR}/cgame/cg_draw.cpp
-  ${MOUNT_DIR}/cgame/cg_drawtools.cpp
-  ${MOUNT_DIR}/cgame/cg_ents.cpp
-  ${MOUNT_DIR}/cgame/cg_event.cpp
-  ${MOUNT_DIR}/cgame/cg_main.cpp
-  ${MOUNT_DIR}/cgame/cg_marks.cpp
-  ${MOUNT_DIR}/cgame/cg_mem.cpp
-  ${MOUNT_DIR}/cgame/cg_particles.cpp
-  ${MOUNT_DIR}/cgame/cg_players.cpp
-  ${MOUNT_DIR}/cgame/cg_playerstate.cpp
-  ${MOUNT_DIR}/cgame/cg_predict.cpp
-  ${MOUNT_DIR}/cgame/cg_ptr.cpp
-  ${MOUNT_DIR}/cgame/cg_scanner.cpp
-  ${MOUNT_DIR}/cgame/cg_servercmds.cpp
-  ${MOUNT_DIR}/cgame/cg_snapshot.cpp
-  ${MOUNT_DIR}/cgame/cg_trails.cpp
-  ${MOUNT_DIR}/cgame/cg_tutorial.cpp
-  ${MOUNT_DIR}/cgame/cg_view.cpp
-  ${MOUNT_DIR}/cgame/cg_weapons.cpp
+  ${TREMGAME_DIR}/cgame/cg_animation.cpp
+  ${TREMGAME_DIR}/cgame/cg_animmapobj.cpp
+  ${TREMGAME_DIR}/cgame/cg_api.cpp
+  ${TREMGAME_DIR}/cgame/cg_attachment.cpp
+  ${TREMGAME_DIR}/cgame/cg_buildable.cpp
+  ${TREMGAME_DIR}/cgame/cg_consolecmds.cpp
+  ${TREMGAME_DIR}/cgame/cg_draw.cpp
+  ${TREMGAME_DIR}/cgame/cg_drawtools.cpp
+  ${TREMGAME_DIR}/cgame/cg_ents.cpp
+  ${TREMGAME_DIR}/cgame/cg_event.cpp
+  ${TREMGAME_DIR}/cgame/cg_main.cpp
+  ${TREMGAME_DIR}/cgame/cg_marks.cpp
+  ${TREMGAME_DIR}/cgame/cg_mem.cpp
+  ${TREMGAME_DIR}/cgame/cg_particles.cpp
+  ${TREMGAME_DIR}/cgame/cg_players.cpp
+  ${TREMGAME_DIR}/cgame/cg_playerstate.cpp
+  ${TREMGAME_DIR}/cgame/cg_predict.cpp
+  ${TREMGAME_DIR}/cgame/cg_ptr.cpp
+  ${TREMGAME_DIR}/cgame/cg_scanner.cpp
+  ${TREMGAME_DIR}/cgame/cg_servercmds.cpp
+  ${TREMGAME_DIR}/cgame/cg_snapshot.cpp
+  ${TREMGAME_DIR}/cgame/cg_trails.cpp
+  ${TREMGAME_DIR}/cgame/cg_tutorial.cpp
+  ${TREMGAME_DIR}/cgame/cg_view.cpp
+  ${TREMGAME_DIR}/cgame/cg_weapons.cpp
   ${MOUNT_DIR}/GUI/gui_shared.cpp
 )
 
@@ -609,11 +608,11 @@ if( BUILD_GAME )
 	
 	target_link_libraries( sgame winmm.lib )
 	
-	ADD_PRECOMPILED_HEADER( sgame "${MOUNT_DIR}/sgame/sg_precompiled.h" "${MOUNT_DIR}/sgame/sg_precompiled.cpp" )
-	SET_TARGET_PROPERTIES( sgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/sgame/sgame.def" )
+	ADD_PRECOMPILED_HEADER( sgame "${TREMGAME_DIR}/sgame/sg_precompiled.h" "${TREMGAME_DIR}/sgame/sg_precompiled.cpp" )
+	SET_TARGET_PROPERTIES( sgame PROPERTIES LINK_FLAGS "/DEF:\"${TREMGAME_DIR}/sgame/sgame.def" )
   endif( WIN32 )
 
-  TARGET_INCLUDE_DIRECTORIES( sgame PRIVATE ${MOUNT_DIR} )
+  TARGET_INCLUDE_DIRECTORIES( sgame PRIVATE ${MOUNT_DIR} ${TREMGAME_DIR} )
 if(WIN32)
   set_property( TARGET sgame PROPERTY COMPILE_DEFINITIONS _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ GAMEDLL )
 elseif( UNIX )
@@ -633,11 +632,11 @@ endif()
     SOURCE_GROUP( Source\ Files\\SharedList                               FILES ${SHAREDLIST_SOURCES} )
 	SOURCE_GROUP( Source\ Files\\GameFiles                                FILES ${CGAMELIST_SOURCES} )
 	
-    ADD_PRECOMPILED_HEADER( cgame "${MOUNT_DIR}/cgame/cg_precompiled.h" "${MOUNT_DIR}/cgame/cg_precompiled.cpp" )	
-	SET_TARGET_PROPERTIES( cgame PROPERTIES LINK_FLAGS "/DEF:\"${MOUNT_DIR}/cgame/cgame.def" )
+    ADD_PRECOMPILED_HEADER( cgame "${TREMGAME_DIR}/cgame/cg_precompiled.h" "${TREMGAME_DIR}/cgame/cg_precompiled.cpp" )	
+	SET_TARGET_PROPERTIES( cgame PROPERTIES LINK_FLAGS "/DEF:\"${TREMGAME_DIR}/cgame/cgame.def" )
   endif( WIN32 )
   
-  TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} )
+  TARGET_INCLUDE_DIRECTORIES( cgame PRIVATE ${MOUNT_DIR} ${TREMGAME_DIR} )
 if(WIN32)
   set_property( TARGET cgame PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__ CGAMEDLL )
 elseif(UNIX)
@@ -736,7 +735,7 @@ if( WIN32 )
   find_package( OculusKernelSDK REQUIRED )
 endif( WIN32 )
 
-  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${SIXENSE_INCLUDE_DIRS} ${BZ2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${OGG_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR} )
+  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OPENGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${SDL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PNG_INCLUDE_DIR} ${OpenCL_INCLUDE_DIRS} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${JPEG_INCLUDE_DIR} ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${SIXENSE_INCLUDE_DIRS} ${BZ2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${OGG_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR} ${TREMGAME_DIR} )
 #if( WIN32 )
 #  TARGET_INCLUDE_DIRECTORIES( client PRIVATE ${OVR_INCLUDE_DIRS} ${OVRKERNEL_INCLUDE_DIR} ${SIXENSE_INCLUDE_DIRS} )
 #endif( WIN32 )
@@ -783,7 +782,7 @@ endif()
 if( BUILD_SERVER )
   # Setup the target Server
   add_executable( server ${SHAREDLIST_HEADERS} ${CRYPTOLIST_HEADERS}
-    ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${CRYPTOLIST_SOURCES}  ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES}  ${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${PLATFORMLIST_HEADERS} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORM_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} ${NULL_SOURCES} ${NULL_HEADERS} ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp )
+    ${SERVERLIST_HEADERS} ${COLLISIONMODEL_HEADERS} ${CLIENTLIST_HEADERS} ${CRYPTOLIST_SOURCES}  ${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES}  ${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${PLATFORMLIST_HEADERS} ${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORM_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} ${NULL_SOURCES} ${NULL_HEADERS} ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp ${MOUNT_DIR}/null/null_precompiled.h ${MOUNT_DIR}/null/null_precompiled.cpp )
 	
   target_link_libraries( server ${OS_LIBRARIES} )
   set_property( TARGET server APPEND PROPERTY COMPILE_DEFINITIONS BOTLIB BOTLIB_STATIC DEDICATED USE_CRYPTO _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__  _PHYSICSLIB HAVE_BZIP2 )
@@ -800,7 +799,7 @@ if( BUILD_SERVER )
     find_package( Zlib REQUIRED )
     find_package( BZ2 REQUIRED )
 
-    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${BZ2_INCLUDE_DIR} )
+    TARGET_INCLUDE_DIRECTORIES( server PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${BZ2_INCLUDE_DIR} ${TREMGAME_DIR} )
     target_link_libraries( server ${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} ${BZ2_LIBRARY} )
 	ADD_PRECOMPILED_HEADER( server "${MOUNT_DIR}/null/null_precompiled.h" "${MOUNT_DIR}/null/null_precompiled.cpp" )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
@@ -833,13 +832,12 @@ if( BUILD_AUTOUPDATE_SERVER )
 	${BOTLIBLIST_HEADERS} ${PHYSICLIB_HEADERS} ${SHAREDLIST_SOURCES} ${SERVERLIST_SOURCES} ${COLLISIONMODEL_SOURCES} 
 	${QCOMMONLIST_SOURCES} ${BOTLIBLIST_SOURCES} ${PHYSICLIB_SOURCES} ${PLATFORMLIST_HEADERS}
 	${OWLIB_HEADERS} ${OWLIB_SOURCES} ${PLATFORM_DEDICATED_SOURCES} ${DATABASELIST_SOURCES} ${DATABASELIST_HEADERS} 
-    ${MOUNT_DIR}/null/null_client.cpp
-    ${MOUNT_DIR}/null/null_input.cpp ${MOUNT_DIR}/null/null_snddma.cpp
-    ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp )
+    ${MOUNT_DIR}/null/null_client.cpp ${MOUNT_DIR}/null/null_input.cpp ${MOUNT_DIR}/qcommon/dl_main_stubs.cpp ${MOUNT_DIR}/null/null_precompiled.h ${MOUNT_DIR}/null/null_precompiled.cpp)
 	
   target_link_libraries( autoupdateserver ${OS_LIBRARIES} )
   set_property( TARGET autoupdateserver APPEND PROPERTY COMPILE_DEFINITIONS BOTLIB BOTLIB_STATIC DEDICATED USE_CRYPTO _AMD64_ WIN32 _AMD64 _WIN64 __WIN64__ UPDATE_SERVER  _PHYSICSLIB )
   set_target_properties( autoupdateserver PROPERTIES OUTPUT_NAME "OpenWolfupdateded.${BUILD_ARCH}" PREFIX "" LINKER_LANGUAGE CXX )
+  ADD_PRECOMPILED_HEADER( autoupdateserver "${MOUNT_DIR}/null/null_precompiled.h" "${MOUNT_DIR}/null/null_precompiled.cpp" )
   install( TARGETS autoupdateserver
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
@@ -851,7 +849,7 @@ if( BUILD_AUTOUPDATE_SERVER )
     find_package( CURL REQUIRED )
     find_package( Zlib REQUIRED )
 
-    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} )
+    TARGET_INCLUDE_DIRECTORIES( autoupdateserver PRIVATE ${SDL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR} ${BULLET_INCLUDE_COLLISION_DIR} ${BULLET_INCLUDE_DYNAMICS_DIR} ${BULLET_INCLUDE_CONVEXDECOMPOSITION_DIR} ${BULLET_INCLUDE_SOFTBODY_DIR} ${BULLET_INCLUDE_LINEARMATH_DIR} ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_FILELOADER_DIR} ${BULLET_INCLUDE_WORLDIMPORTER_DIR} ${PDCURSES_INCLUDE_DIR} ${MOUNT_DIR} ${TREMGAME_DIR} )
     target_link_libraries( autoupdateserver ${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${PDCURSES_LIBRARY} ${BULLET_LIBRARIES} ${PDCURSES_LIBRARY} )
   # The following section finds the OPTIONAL dependencies and makes them available to the target
 

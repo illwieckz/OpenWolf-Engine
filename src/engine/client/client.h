@@ -57,7 +57,7 @@
 #include <bgame/bg_public.h>
 #endif
 #ifndef __CG_API_H__
-#include <cgame/cg_api.h>
+#include <API/cg_api.h>
 #endif
 #if !defined ( DEDICATED ) && !defined ( UPDATE_SERVER ) && !defined ( BSPC )
 #ifndef __CL_HYDRAMANAGER_H__

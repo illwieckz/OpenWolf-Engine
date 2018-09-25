@@ -1,4 +1,8 @@
 2018-09-23 Dusan Jocic <dusanjocic@msn.com>
+	* Fixed compiling for the Windows platform
+	* Fixed compiling autoupdate server for the Windows platform
+
+2018-09-23 Dusan Jocic <dusanjocic@msn.com>
 	* Cleaning, separating repos
 	* Misc fixing
 

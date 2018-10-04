@@ -305,7 +305,7 @@ void Con_Dump_f( void )
     }
     
     // write the remaining lines
-    buffer[con.linewidth] = 0;
+    buffer[con.linewidth] = '\0';
     for( ; l <= con.current; l++ )
     {
         line = con.text + ( l % con.totallines ) * con.linewidth;

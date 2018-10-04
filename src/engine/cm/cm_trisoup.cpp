@@ -80,12 +80,9 @@ static bool CM_PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, co
 
 /*
 ================================================================================
-
 PATCH COLLIDE GENERATION
-
 ================================================================================
 */
-
 
 #define	USE_HASHING
 #define	PLANE_HASHES	1024

@@ -3372,9 +3372,6 @@ void Com_Init( UTF8* commandLine )
         // if the user didn't give any commands, run default action
     }
     
-    // start in full screen ui mode
-    Cvar_Set( "r_uiFullScreen", "1" );
-    
     CL_StartHunkUsers();
     
     // NERVE - SMF - force recommendedSet and don't do vid_restart if in safe mode
@@ -3686,11 +3683,8 @@ void Com_Frame( void )
         com_dedicated->modified = false;
         if( !com_dedicated->integer )
         {
-            CL_Init();
-        }
-        else
-        {
-            CL_Shutdown();
+            SV_Shutdown( "dedicated set to 0" );
+            CL_FlushMemory();
         }
     }
     

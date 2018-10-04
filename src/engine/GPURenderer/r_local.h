@@ -71,11 +71,6 @@ typedef void ( *xcommand_t )( void );
 
 extern F32    displayAspect;	// FIXME
 
-//#define __DYNAMIC_SHADOWS__
-#ifdef __DYNAMIC_SHADOWS__
-#define MAX_DYNAMIC_SHADOWS 4
-#endif //__DYNAMIC_SHADOWS__
-
 // these are just here temp while I port everything to c++.
 void CL_PlayCinematic_f( void );
 void SCR_DrawCinematic( void );
@@ -93,6 +88,7 @@ void CL_RefPrintf( S32 print_level, StringEntry fmt, ... );
 void CL_WriteAVIVideoFrame( const U8* imageBuffer, S32 size );
 bool CL_VideoRecording( void );
 S32 CL_ScaledMilliseconds( void );
+S32 Sys_Milliseconds( void );
 S32 FS_ReadFile( StringEntry qpath, void** buffer );
 void FS_FreeFile( void* buffer );
 void Cbuf_ExecuteText( S32 exec_when, StringEntry text );
@@ -119,11 +115,7 @@ void* CL_RefMalloc( S32 size );
 #define MAX_STATES_PER_SHADER 32
 #define MAX_STATE_NAME 32
 
-#ifndef __DYNAMIC_SHADOWS__
 #define	MAX_FBOS      64
-#else //__DYNAMIC_SHADOWS__
-#define	MAX_FBOS      ((MAX_DYNAMIC_SHADOWS*4) + 64)
-#endif //__DYNAMIC_SHADOWS__
 
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS      4096
@@ -466,32 +458,33 @@ typedef enum
 
 typedef struct
 {
-    bool		active;
-    bool		isDetail;
-    bool        isWater;
-    bool		hasSpecular;
+    bool active;
+    bool isDetail;
+    bool isWater;
+    bool hasSpecular;
     
     textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
     
-    waveForm_t		rgbWave;
-    colorGen_t		rgbGen;
+    waveForm_t rgbWave;
+    colorGen_t rgbGen;
     
-    waveForm_t		alphaWave;
-    alphaGen_t		alphaGen;
+    waveForm_t alphaWave;
+    alphaGen_t alphaGen;
     
-    U8			    constantColor[4];			// for CGEN_CONST and AGEN_CONST
+    U8 constantColor[4];			// for CGEN_CONST and AGEN_CONST
     
-    U32		        stateBits;					// GLS_xxxx mask
+    U32 stateBits;					// GLS_xxxx mask
     
-    acff_t			adjustColorsForFog;
+    acff_t adjustColorsForFog;
+    F32 zFadeBounds[2];
     
-    stageType_t     type;
+    stageType_t type;
     struct shaderProgram_s* glslShaderGroup;
     S32 glslShaderIndex;
     
     vec4_t normalScale;
     vec4_t specularScale;
-    
+    bool isSurfaceSprite;
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -525,7 +518,7 @@ typedef struct shader_s
     S64			sortedIndex;			// this shader == tr.sortedShaders[sortedIndex]
     
     F32		sort;					// lower numbered shaders draw before higher numbered
-    
+    bool noFog;
     bool	defaultShader;			// we want to return index 0 if the shader failed to
     // load for some reason, but R_FindShader should
     // still keep a name allocated for it, so if
@@ -545,6 +538,9 @@ typedef struct shader_s
     
     F32		portalRange;			// distance to fog out at
     bool	isPortal;
+    vec4_t distanceCull;                // opaque alpha range for foliage (inner, outer, alpha threshold, 1/(outer-inner))
+    
+    int			multitextureEnv;		// 0, GL_MODULATE, GL_ADD (FIXME: put in stage)
     
     cullType_t	cullType;				// CT_FRONT_SIDED, CT_BACK_SIDED, or CT_TWO_SIDED
     bool	polygonOffset;			// set for decals and other items that must be offset
@@ -599,9 +595,6 @@ typedef struct dlight_s
     S32		additive;			// texture detail is lost tho when the lightmap is dark
     F32 intensity;                // 1.0 = fullbright, > 1.0 = overbright
     shader_t*    shader;
-#ifdef __DYNAMIC_SHADOWS__
-    bool activeShadows;
-#endif //__DYNAMIC_SHADOWS__
 } dlight_t;
 
 // ydnar: decal projection
@@ -684,8 +677,9 @@ enum
     GENERICDEF_USE_VERTEX_ANIMATION = 0x0004,
     GENERICDEF_USE_FOG              = 0x0008,
     GENERICDEF_USE_RGBAGEN          = 0x0010,
-    GENERICDEF_ALL                  = 0x001F,
-    GENERICDEF_COUNT                = 0x0020,
+    GENERICDEF_USE_LIGHTMAP = 0x0020,
+    GENERICDEF_ALL = 0x00FF,
+    GENERICDEF_COUNT = 0x0100,
 };
 
 enum
@@ -794,6 +788,7 @@ typedef enum
     
     UNIFORM_DIFFUSETEXMATRIX,
     UNIFORM_DIFFUSETEXOFFTURB,
+    UNIFORM_TEXTURE1ENV,
     
     UNIFORM_TCGEN0,
     UNIFORM_TCGEN0VECTOR0,
@@ -964,6 +959,10 @@ typedef enum
     UNIFORM_TEXTURE2,
     UNIFORM_TEXTURE3,
     
+    UNIFORM_FIRERISEDIR,
+    UNIFORM_ZFADELOWEST,
+    UNIFORM_ZFADEHIGHEST,
+    
     UNIFORM_COUNT
 } uniform_t;
 
@@ -971,17 +970,20 @@ typedef enum
 // GLSL vertex and one GLSL fragment shader
 typedef struct shaderProgram_s
 {
-    UTF8       name[MAX_QPATH];
+    UTF8 name[MAX_QPATH];
     
-    U32        program;
-    U32        vertexShader;
-    U32        fragmentShader;
-    U32        attribs;	// vertex array attributes
+    U32 program;
+    U32 vertexShader;
+    U32 fragmentShader;
+    U32 geometryShader;
+    U32 attribs; // vertex array attributes
     
     // uniform parameters
-    S32        uniforms[UNIFORM_COUNT];
-    S16        uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
-    UTF8*      uniformBuffer;
+    S32 uniforms[UNIFORM_COUNT];
+    S16 uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
+    UTF8* uniformBuffer;
+    
+    bool geometry;
 } shaderProgram_t;
 
 // trRefdef_t holds everything that comes in refdef_t,
@@ -1025,9 +1027,6 @@ typedef struct
     S32         num_pshadows;
     struct pshadow_s* pshadows;
     
-#ifdef __DYNAMIC_SHADOWS__
-    F32         dlightShadowMvp[MAX_DYNAMIC_SHADOWS][3][16];
-#endif //__DYNAMIC_SHADOWS__
     F32         sunShadowMvp[4][16];
     F32         sunDir[4];
     F32         sunCol[4];
@@ -1396,7 +1395,7 @@ typedef struct
     vec3_t			bounds[2];		// for culling
     S32				firstSurface;
     S32				numSurfaces;
-
+    
     int			firstBrush;
     int			numBrushes;
     orientation_t _or ;
@@ -1660,53 +1659,10 @@ typedef struct
 
 typedef enum
 {
-    MI_NONE,
-    MI_NVX,
-    MI_ATI
-} memInfo_t;
-
-typedef enum
-{
     TCR_NONE = 0x0000,
     TCR_RGTC = 0x0001,
     TCR_BPTC = 0x0002,
 } textureCompressionRef_t;
-
-// We can't change glConfig_t without breaking DLL/vms compatibility, so
-// store extensions we have here.
-typedef struct
-{
-    S32 openglMajorVersion;
-    S32 openglMinorVersion;
-    
-    bool intelGraphics;
-    
-    bool occlusionQuery;
-    
-    S32 glslMajorVersion;
-    S32 glslMinorVersion;
-    
-    memInfo_t memInfo;
-    
-    bool framebufferObject;
-    S32 maxRenderbufferSize;
-    S32 maxColorAttachments;
-    
-    bool textureFloat;
-    S32 /*textureCompressionRef_t*/ textureCompression;
-    bool swizzleNormalmap;
-    
-    bool framebufferMultisample;
-    bool framebufferBlit;
-    
-    bool depthClamp;
-    bool seamlessCubeMap;
-    
-    bool vertexArrayObject;
-    bool directStateAccess;
-    bool immutableTextures;
-} glRefConfig_t;
-
 
 typedef struct
 {
@@ -1813,10 +1769,6 @@ typedef struct
     image_t* fixedLevelsImage;
     image_t* sunShadowDepthImage[4];
     image_t* screenShadowImage;
-#ifdef __DYNAMIC_SHADOWS__
-    image_t* dlightShadowDepthImage[MAX_DYNAMIC_SHADOWS][3];
-    //image_t* screenDlightShadowImage;
-#endif //__DYNAMIC_SHADOWS__
     image_t* screenSsaoImage;
     image_t* hdrDepthImage;
     image_t* renderCubeImage;
@@ -1836,20 +1788,17 @@ typedef struct
     FBO_t* screenSsaoFbo;
     FBO_t* hdrDepthFbo;
     FBO_t* renderCubeFbo;
-#ifdef __DYNAMIC_SHADOWS__
-    FBO_t* dlightShadowFbo[MAX_DYNAMIC_SHADOWS][3];
-    //FBO_t* screenDlightShadowFbo;
-#endif //__DYNAMIC_SHADOWS__
     
     shader_t* defaultShader;
     shader_t* shadowShader;
     shader_t* projectionShadowShader;
     shader_t* flareShader;
-    UTF8* sunShaderName;
     shader_t* sunShader;
+    UTF8 sunShaderName[MAX_QPATH];
     shader_t* sunFlareShader;
     
     S32	numLightmaps;
+    S32 maxLightmaps;
     S32	lightmapSize;
     image_t** lightmaps;
     image_t** deluxemaps;
@@ -2201,9 +2150,6 @@ void R_RenderDlightCubemaps( const refdef_t* fd );
 void R_RenderPshadowMaps( const refdef_t* fd );
 void R_RenderSunShadowMaps( const refdef_t* fd, S32 level );
 void R_RenderCubemapSide( S32 cubemapIndex, S32 cubemapSide, bool subscene );
-#ifdef __DYNAMIC_SHADOWS__
-void R_RenderDlightShadowMaps( const refdef_t* fd, S32 level );
-#endif //__DYNAMIC_SHADOWS__
 
 void R_AddMD3Surfaces( trRefEntity_t* e );
 void R_AddNullModelSurfaces( trRefEntity_t* e );
@@ -2311,12 +2257,13 @@ const void* RB_TakeVideoFrameCmd( const void* data );
 //
 // tr_shader.c
 //
-shader_t*	R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage );
-shader_t*	R_GetShaderByHandle( qhandle_t hShader );
-shader_t*	R_GetShaderByState( S32 index, S64* cycleTime );
+shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage );
+shader_t* R_GetShaderByHandle( qhandle_t hShader );
+shader_t* R_GetShaderByState( S32 index, S64* cycleTime );
 shader_t* R_FindShaderByName( StringEntry name );
-void		R_InitShaders( void );
-void		R_ShaderList_f( void );
+void R_InitShaders( void );
+void R_InitExternalShaders( void );
+void R_ShaderList_f( void );
 
 /*
 ====================================================================
@@ -2345,39 +2292,39 @@ typedef struct stageVars
 typedef struct shaderCommands_s
 {
     U32	indexes[SHADER_MAX_INDEXES];
-    vec4_t		xyz[SHADER_MAX_VERTEXES];
-    S16		normal[SHADER_MAX_VERTEXES][4];
-    S16		tangent[SHADER_MAX_VERTEXES][4];
-    vec2_t		texCoords[SHADER_MAX_VERTEXES];
-    vec2_t		lightCoords[SHADER_MAX_VERTEXES];
+    vec4_t xyz[SHADER_MAX_VERTEXES];
+    S16 normal[SHADER_MAX_VERTEXES][4];
+    S16 tangent[SHADER_MAX_VERTEXES][4];
+    vec2_t texCoords[SHADER_MAX_VERTEXES];
+    vec2_t lightCoords[SHADER_MAX_VERTEXES];
     U16	color[SHADER_MAX_VERTEXES][4];
-    S16		lightdir[SHADER_MAX_VERTEXES][4];
-    //S32			vertexDlightBits[SHADER_MAX_VERTEXES];
+    S16 lightdir[SHADER_MAX_VERTEXES][4];
+    //S32 vertexDlightBits[SHADER_MAX_VERTEXES];
     
     void* attribPointers[ATTR_INDEX_COUNT];
-    vao_t*       vao;
-    bool    useInternalVao;
-    bool    useCacheVao;
+    vao_t* vao;
+    bool useInternalVao;
+    bool useCacheVao;
     
     stageVars_t	svars;
     
-    //color4ub_t	constantColor255[SHADER_MAX_VERTEXES];
+    //color4ub_t constantColor255[SHADER_MAX_VERTEXES];
     
-    shader_t*	shader;
-    F64		shaderTime;
-    S32			fogNum;
-    S32         cubemapIndex;
+    shader_t* shader;
+    F64	shaderTime;
+    S32	fogNum;
+    S32 cubemapIndex;
     
-    S32			dlightBits;	// or together of all vertexDlightBits
-    S32         pshadowBits;
+    S32 dlightBits;	// or together of all vertexDlightBits
+    S32 pshadowBits;
     
-    S32			firstIndex;
-    S32			numIndexes;
-    S32			numVertexes;
+    S32 firstIndex;
+    S32 numIndexes;
+    S32 numVertexes;
     
     // info extracted from current shader
-    S32			numPasses;
-    void	( *currentStageIteratorFunc )( void );
+    S32 numPasses;
+    void ( *currentStageIteratorFunc )( void );
     shaderStage_t**	xstages;
 } shaderCommands_t;
 
@@ -2780,7 +2727,6 @@ extern	S32		max_polys;
 extern	S32		max_polyverts;
 
 extern	backEndData_t*	backEndData;	// the second one may not be allocated
-
 
 void* R_GetCommandBuffer( S32 bytes );
 void RB_ExecuteRenderCommands( const void* data );

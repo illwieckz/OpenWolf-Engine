@@ -259,24 +259,24 @@ void RB_ShadowTessEnd( void )
     {
         glCullFace( GL_FRONT );
         glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
-    
+        
         R_RenderShadowEdges();
-    
+        
         glCullFace( GL_BACK );
         glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
-    
+        
         R_RenderShadowEdges();
     }
     else
     {
         glCullFace( GL_BACK );
         glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
-    
+        
         R_RenderShadowEdges();
-    
+        
         glCullFace( GL_FRONT );
         glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
-    
+        
         R_RenderShadowEdges();
     }
     

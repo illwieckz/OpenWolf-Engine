@@ -33,7 +33,7 @@ Allocator::Allocator( U64 memorySize )
 #if defined(GLSL_BUILDTOOL)
     : memoryBase( malloc( memorySize ) )
 #else
-    : memoryBase( Z_Malloc( memorySize ) )
+    : memoryBase( CL_RefMalloc( memorySize ) )
 #endif
     , mark( memoryBase )
     , end( ( UTF8* )memoryBase + memorySize )

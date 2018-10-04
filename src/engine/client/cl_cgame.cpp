@@ -986,7 +986,7 @@ void CL_InitCGame( void )
     
     // have the renderer touch all its images, so they are present
     // on the card even if the driver does deferred loading
-    //renderSystem->EndRegistration();
+    renderSystem->EndRegistration();
     
     if( !Sys_LowPhysicalMemory() )
     {

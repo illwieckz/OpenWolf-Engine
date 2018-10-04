@@ -1055,6 +1055,13 @@ memory on the hunk from cgame, ui, and renderer
 */
 void CL_MapLoading( void )
 {
+    if( com_dedicated->integer )
+    {
+        cls.state = CA_DISCONNECTED;
+        Key_SetCatcher( KEYCATCH_CONSOLE );
+        return;
+    }
+    
     if( !com_cl_running->integer )
     {
         return;
@@ -1158,9 +1165,6 @@ void CL_Disconnect( bool showMainMenu )
     {
         return;
     }
-    
-    // shutting down the client so enter full screen ui mode
-    Cvar_Set( "r_uiFullScreen", "1" );
     
     if( clc.demorecording )
     {
@@ -3676,6 +3680,7 @@ CL_InitRenderer
 void CL_InitRenderer( void )
 {
     fileHandle_t f;
+    
     // this sets up the renderer and calls R_Init
     renderSystem->Init( &cls.glconfig );
     
@@ -3695,13 +3700,6 @@ void CL_InitRenderer( void )
         }
         FS_FCloseFile( f );
     }
-    
-    cls.whiteShader = renderSystem->RegisterShader( "white" );
-    
-// JPW NERVE
-
-    //cls.consoleShader = renderSystem->RegisterShader( "console-16bit" ); // JPW NERVE shader works with 16bit
-    //cls.consoleShader2 = renderSystem->RegisterShader( "console2-16bit" ); // JPW NERVE same
     
     cls.whiteShader = renderSystem->RegisterShader( "white" );
     cls.consoleShader = renderSystem->RegisterShader( "console" );
@@ -3951,12 +3949,12 @@ CL_RefMalloc
 ============
 */
 #ifdef ZONE_DEBUG
-void*           CL_RefMallocDebug( S32 size, UTF8* label, UTF8* file, S32 line )
+void* CL_RefMallocDebug( S32 size, UTF8* label, UTF8* file, S32 line )
 {
     return Z_TagMallocDebug( size, TAG_RENDERER, label, file, line );
 }
 #else
-void*           CL_RefMalloc( S32 size )
+void* CL_RefMalloc( S32 size )
 {
     return Z_TagMalloc( size, TAG_RENDERER );
 }
@@ -4486,7 +4484,8 @@ void CL_Shutdown( void )
     
     recursive = false;
     
-    memset( &cls, 0, sizeof( cls ) );
+    ::memset( &cls, 0, sizeof( cls ) );
+    Key_SetCatcher( 0 );
     
     Com_Printf( "-----------------------\n" );
 }

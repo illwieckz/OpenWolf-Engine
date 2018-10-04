@@ -618,7 +618,7 @@ static shader_t* ShaderForShaderNum( S32 shaderNum, S32 lightmapNum )
     }
     dsh = &s_worldData.shaders[ _shaderNum ];
     
-    if( r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2 )
+    if( r_vertexLight->integer )
     {
         lightmapNum = LIGHTMAP_BY_VERTEX;
     }
@@ -2984,6 +2984,8 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
         Com_Error( ERR_DROP, "ERROR: attempted to redundantly load world map" );
     }
     
+    CL_RefPrintf( PRINT_ALL, "----- idRenderSystemLocal::LoadWorld( %s ) -----\n", name );
+    
     // set default map light scale
     tr.sunShadowScale = 0.5f;
     
@@ -2992,6 +2994,8 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     tr.sunDirection[0] = 0.45f;
     tr.sunDirection[1] = 0.3f;
     tr.sunDirection[2] = 0.9f;
+    
+    tr.sunShader = 0;
     
     VectorNormalize( tr.sunDirection );
     
@@ -3023,6 +3027,9 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     // try will not look at the partially loaded version
     tr.world = NULL;
     
+    // tr.worldDeluxeMapping will be set by R_LoadEntities()
+    tr.worldDeluxeMapping = false;
+    
     ::memset( &s_worldData, 0, sizeof( s_worldData ) );
     Q_strncpyz( s_worldData.name, name, sizeof( s_worldData.name ) );
     
@@ -3049,16 +3056,27 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     }
     
     // load into heap
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadEntities( &header->lumps[LUMP_ENTITIES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadShaders( &header->lumps[LUMP_SHADERS] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadLightmaps( &header->lumps[LUMP_LIGHTMAPS], &header->lumps[LUMP_SURFACES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadPlanes( &header->lumps[LUMP_PLANES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadFogs( &header->lumps[LUMP_FOGS], &header->lumps[LUMP_BRUSHES], &header->lumps[LUMP_BRUSHSIDES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadSurfaces( &header->lumps[LUMP_SURFACES], &header->lumps[LUMP_DRAWVERTS], &header->lumps[LUMP_DRAWINDEXES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadMarksurfaces( &header->lumps[LUMP_LEAFSURFACES] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadNodesAndLeafs( &header->lumps[LUMP_NODES], &header->lumps[LUMP_LEAFS] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadSubmodels( &header->lumps[LUMP_MODELS] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadVisibility( &header->lumps[LUMP_VISIBILITY] );
+    Cbuf_ExecuteText( EXEC_NOW, "updatescreen\n" );
     R_LoadLightGrid( &header->lumps[LUMP_LIGHTGRID] );
     
     // determine vertex light directions
@@ -3282,6 +3300,9 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     
     s_worldData.dataSize = ( U8* )Hunk_Alloc( 0, h_low ) - startMarker;
     
+    CL_RefPrintf( PRINT_ALL, "total world data size: %d.%02d MB\n", s_worldData.dataSize / ( 1024 * 1024 ),
+                  ( s_worldData.dataSize % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
+                  
     // only set tr.world now that we know the entire level has loaded properly
     tr.world = &s_worldData;
     
@@ -3299,6 +3320,8 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
         R_LoadCubemaps();
         R_RenderMissingCubemaps();
     }
+    
+    R_InitExternalShaders();
     
     FS_FreeFile( buffer.v );
 }

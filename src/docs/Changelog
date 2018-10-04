@@ -1,3 +1,9 @@
+2018-10-04 Dusan Jocic <dusanjocic@msn.com>
+	* Updated binaries
+	* Removed GLM library
+	* Updated renderer
+	* Misc fixes
+
 2018-09-23 Dusan Jocic <dusanjocic@msn.com>
 	* Fixed compiling for the Windows platform
 	* Fixed compiling autoupdate server for the Windows platform

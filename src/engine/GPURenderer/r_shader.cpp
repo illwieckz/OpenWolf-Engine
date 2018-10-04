@@ -44,7 +44,9 @@ static	shader_t*		hashTable[FILE_HASH_SIZE];
 #define MAX_SHADERTEXT_HASH		2048
 static UTF8** shaderTextHashTable[MAX_SHADERTEXT_HASH];
 
-
+static UTF8 implicitMap[MAX_QPATH];
+static U32 implicitStateBits;
+static cullType_t implicitCullType;
 
 /*
 ================
@@ -659,9 +661,14 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                 return false;
             }
             
-            if( !Q_stricmp( token, "$whiteimage" ) )
+            if( !Q_stricmp( token, "$whiteimage" ) || !Q_stricmp( token, "*white" ) )
             {
                 stage->bundle[0].image[0] = tr.whiteImage;
+                continue;
+            }
+            else if( !Q_stricmp( token, "$dlight" ) )
+            {
+                stage->bundle[0].image[0] = tr.dlightImage;
                 continue;
             }
             else if( !Q_stricmp( token, "$lightmap" ) )
@@ -775,6 +782,52 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             {
                 CL_RefPrintf( PRINT_WARNING, "WARNING: R_FindImageFile could not find '%s' in shader '%s'\n", token, shader.name );
                 return false;
+            }
+        }
+        //
+        // lightmap <name>
+        //
+        else if( !Q_stricmp( token, "lightmap" ) )
+        {
+            token = COM_ParseExt( text, false );
+            if( !token[0] )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for 'lightmap' keyword in shader '%s'\n", shader.name );
+                return false;
+            }
+            
+            if( !Q_stricmp( token, "$whiteimage" ) || !Q_stricmp( token, "*white" ) )
+            {
+                stage->bundle[0].image[0] = tr.whiteImage;
+                continue;
+            }
+            else if( !Q_stricmp( token, "$dlight" ) )
+            {
+                stage->bundle[0].image[0] = tr.dlightImage;
+                continue;
+            }
+            else if( !Q_stricmp( token, "$lightmap" ) )
+            {
+                stage->bundle[0].isLightmap = true;
+                if( shader.lightmapIndex < 0 )
+                {
+                    stage->bundle[0].image[0] = tr.whiteImage;
+                }
+                else
+                {
+                    stage->bundle[0].image[0] = tr.lightmaps[shader.lightmapIndex];
+                }
+                continue;
+            }
+            else
+            {
+                stage->bundle[0].image[0] = R_FindImageFile( token, IMGTYPE_COLORALPHA, IMGFLAG_LIGHTMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+                if( !stage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "WARNING: R_FindImageFile could not find '%s' in shader '%s'\n", token, shader.name );
+                    return false;
+                }
+                stage->bundle[0].isLightmap = true;
             }
         }
         //
@@ -1342,15 +1395,39 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                     shader.portalRange = atof( token );
                 }
             }
+            else if( !Q_stricmp( token, "normalzfade" ) )
+            {
+                stage->alphaGen = AGEN_NORMALZFADE;
+                token = COM_ParseExt2( text, false );
+                if( token[0] )
+                {
+                    stage->constantColor[3] = 255 * atof( token );
+                }
+                else
+                {
+                    stage->constantColor[3] = 255;
+                }
+                
+                token = COM_ParseExt( text, false );
+                if( token[0] )
+                {
+                    stage->zFadeBounds[0] = atof( token );  // lower range
+                    token = COM_ParseExt2( text, false );
+                    stage->zFadeBounds[1] = atof( token );  // upper range
+                }
+                else
+                {
+                    stage->zFadeBounds[0] = -1.0;   // lower range
+                    stage->zFadeBounds[1] = 1.0;   // upper range
+                }
+            }
             else
             {
                 CL_RefPrintf( PRINT_WARNING, "WARNING: unknown alphaGen parameter '%s' in shader '%s'\n", token, shader.name );
                 continue;
             }
         }
-        //
         // tcGen <function>
-        //
         else if( !Q_stricmp( token, "texgen" ) || !Q_stricmp( token, "tcGen" ) )
         {
             token = COM_ParseExt2( text, false );
@@ -1414,6 +1491,26 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             
             continue;
         }
+        else if( !Q_stricmp( token, "surfaceSprites" ) )
+        {
+            // Mark this stage as a surface sprite so we can skip it for now
+            stage->isSurfaceSprite = true;
+            SkipRestOfLine( text );
+            /*char buffer[1024] = "";
+            
+            while ( 1 )
+            {
+            token = COM_ParseExt( text, qfalse );
+            if ( token[0] == 0 )
+            break;
+            Q_strcat( buffer, sizeof( buffer ), token );
+            Q_strcat( buffer, sizeof( buffer ), " " );
+            }
+            
+            ParseSurfaceSprites( buffer, stage );*/
+            
+            continue;
+        }
         else
         {
             CL_RefPrintf( PRINT_WARNING, "WARNING: unknown parameter '%s' in shader '%s'\n", token, shader.name );
@@ -1438,6 +1535,14 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
         }
     }
     
+    // if shader stage references a lightmap, but no lightmap is present
+    // (vertex-approximated surfaces), then set cgen to vertex
+    if( stage->bundle[0].isLightmap && shader.lightmapIndex < 0 &&
+            stage->bundle[0].image[0] == tr.whiteImage )
+    {
+        stage->bundle[0].isLightmap = false;
+        stage->rgbGen = CGEN_EXACT_VERTEX;
+    }
     
     //
     // implicitly assume that a GL_ONE GL_ZERO blend mask disables blending
@@ -2046,8 +2151,6 @@ static bool ParseShader( UTF8** text )
                 if( token[0] )
                     tr.sunShadowScale = atof( token );
             }
-            
-            SkipRestOfLine( text );
             continue;
         }
         // tonemap parms
@@ -2064,8 +2167,6 @@ static bool ParseShader( UTF8** text )
             tr.autoExposureMinMax[0] = atof( token );
             token = COM_ParseExt2( text, false );
             tr.autoExposureMinMax[1] = atof( token );
-            
-            SkipRestOfLine( text );
             continue;
         }
         // q3map_surfacelight deprecated as of 16 Jul 01
@@ -2137,6 +2238,18 @@ static bool ParseShader( UTF8** text )
             shader.entityMergable = true;
             continue;
         }
+        else if( !Q_stricmp( token, "sunshader" ) )
+        {
+            token = COM_ParseExt2( text, false );
+            if( !token[0] )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing shader name for 'sunshader'\n" );
+                continue;
+            }
+            
+            Q_strncpyz( tr.sunShaderName, token, sizeof( tr.sunShaderName ) );
+            continue;
+        }
         // fogParms
         else if( !Q_stricmp( token, "fogParms" ) )
         {
@@ -2187,6 +2300,24 @@ static bool ParseShader( UTF8** text )
             ParseSkyParms( text );
             continue;
         }
+        else if( !Q_stricmp( token, "nofog" ) )
+        {
+            shader.noFog = true;
+            continue;
+        }
+        // done.
+        // RF, allow each shader to permit compression if available
+        else if( !Q_stricmp( token, "allowcompress" ) )
+        {
+            tr.allowCompress = true;
+            continue;
+        }
+        else if( !Q_stricmp( token, "nocompress" ) )
+        {
+            tr.allowCompress = -1;
+            continue;
+        }
+        // done.
         // light <value> determines flaring in q3map, not needed here
         else if( !Q_stricmp( token, "light" ) )
         {
@@ -2217,10 +2348,77 @@ static bool ParseShader( UTF8** text )
             }
             continue;
         }
+        // distancecull <opaque distance> <transparent distance> <alpha threshold>
+        else if( !Q_stricmp( token, "distancecull" ) )
+        {
+            int i;
+            
+            
+            for( i = 0; i < 3; i++ )
+            {
+                token = COM_ParseExt2( text, false );
+                if( token[0] == 0 )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "WARNING: missing distancecull parms in shader '%s'\n", shader.name );
+                }
+                else
+                {
+                    shader.distanceCull[i] = atof( token );
+                }
+            }
+            
+            if( shader.distanceCull[1] - shader.distanceCull[0] > 0 )
+            {
+                // distanceCull[ 3 ] is an optimization
+                shader.distanceCull[3] = 1.0 / ( shader.distanceCull[1] - shader.distanceCull[0] );
+            }
+            else
+            {
+                shader.distanceCull[0] = 0;
+                shader.distanceCull[1] = 0;
+                shader.distanceCull[2] = 0;
+                shader.distanceCull[3] = 0;
+            }
+            continue;
+        }
         // sort
         else if( !Q_stricmp( token, "sort" ) )
         {
             ParseSort( text );
+            continue;
+        }
+        // implicit default mapping to eliminate redundant/incorrect explicit shader stages
+        else if( !Q_stricmpn( token, "implicit", 8 ) )
+        {
+            // set implicit mapping state
+            if( !Q_stricmp( token, "implicitBlend" ) )
+            {
+                implicitStateBits = GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+                implicitCullType = CT_TWO_SIDED;
+            }
+            else if( !Q_stricmp( token, "implicitMask" ) )
+            {
+                implicitStateBits = GLS_DEPTHMASK_TRUE | GLS_ATEST_GE_80;
+                implicitCullType = CT_TWO_SIDED;
+            }
+            else    // "implicitMap"
+            {
+                implicitStateBits = GLS_DEPTHMASK_TRUE;
+                implicitCullType = CT_FRONT_SIDED;
+            }
+            
+            // get image
+            token = COM_ParseExt2( text, false );
+            if( token[0] != '\0' )
+            {
+                Q_strncpyz( implicitMap, token, sizeof( implicitMap ) );
+            }
+            else
+            {
+                implicitMap[0] = '-';
+                implicitMap[1] = '\0';
+            }
+            
             continue;
         }
         else
@@ -2233,7 +2431,7 @@ static bool ParseShader( UTF8** text )
     //
     // ignore shaders that don't have any stages, unless it is a sky or fog
     //
-    if( s == 0 && !shader.isSky && !( shader.contentFlags & CONTENTS_FOG ) )
+    if( s == 0 && !shader.isSky && !( shader.contentFlags & CONTENTS_FOG ) && implicitMap[0] == '\0' )
     {
         return false;
     }
@@ -2426,6 +2624,185 @@ static void ComputeVertexAttribs( void )
         }
     }
 }
+
+typedef struct
+{
+    int		blendA;
+    int		blendB;
+    
+    int		multitextureEnv;
+    int		multitextureBlend;
+} collapse_t;
+
+static collapse_t	collapse[] =
+{
+    {
+        0, GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO,
+        GL_MODULATE, 0
+    },
+    
+    {
+        0, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR,
+        GL_MODULATE, 0
+    },
+    
+    {
+        GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR,
+        GL_MODULATE, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR
+    },
+    
+    {
+        GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR,
+        GL_MODULATE, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR
+    },
+    
+    {
+        GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR, GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO,
+        GL_MODULATE, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR
+    },
+    
+    {
+        GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO, GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO,
+        GL_MODULATE, GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR
+    },
+    
+    {
+        0, GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE,
+        GL_ADD, 0
+    },
+    
+    {
+        GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE, GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE,
+        GL_ADD, GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE
+    },
+#if 0
+    {
+        0, GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_SRCBLEND_SRC_ALPHA,
+        GL_DECAL, 0
+    },
+#endif
+    { -1 }
+};
+
+/*
+================
+CollapseMultitexture
+
+Attempt to combine two stages into a single multitexture stage
+FIXME: I think modulated add + modulated add collapses incorrectly
+=================
+*/
+static bool CollapseMultitexture( void )
+{
+    int abits, bbits;
+    int i;
+    textureBundle_t tmpBundle;
+    
+    if( !glActiveTextureARB )
+    {
+        return false;
+    }
+    
+    // make sure both stages are active
+    if( !stages[0].active || !stages[1].active )
+    {
+        return false;
+    }
+    
+    abits = stages[0].stateBits;
+    bbits = stages[1].stateBits;
+    
+    // make sure that both stages have identical state other than blend modes
+    if( ( abits & ~( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS | GLS_DEPTHMASK_TRUE ) ) !=
+            ( bbits & ~( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS | GLS_DEPTHMASK_TRUE ) ) )
+    {
+        return false;
+    }
+    
+    abits &= ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+    bbits &= ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+    
+    // search for a valid multitexture blend function
+    for( i = 0; collapse[i].blendA != -1; i++ )
+    {
+        if( abits == collapse[i].blendA
+                && bbits == collapse[i].blendB )
+        {
+            break;
+        }
+    }
+    
+    // nothing found
+    if( collapse[i].blendA == -1 )
+    {
+        return false;
+    }
+    
+    // GL_ADD is a separate extension
+    if( collapse[i].multitextureEnv == GL_ADD && !glConfig.textureEnvAddAvailable )
+    {
+        return false;
+    }
+    
+    // make sure waveforms have identical parameters
+    if( ( stages[0].rgbGen != stages[1].rgbGen ) ||
+            ( stages[0].alphaGen != stages[1].alphaGen ) )
+    {
+        return false;
+    }
+    
+    // an add collapse can only have identity colors
+    if( collapse[i].multitextureEnv == GL_ADD && stages[0].rgbGen != CGEN_IDENTITY )
+    {
+        return false;
+    }
+    
+    if( stages[0].rgbGen == CGEN_WAVEFORM )
+    {
+        if( memcmp( &stages[0].rgbWave,
+                    &stages[1].rgbWave,
+                    sizeof( stages[0].rgbWave ) ) )
+        {
+            return false;
+        }
+    }
+    if( stages[0].alphaGen == AGEN_WAVEFORM )
+    {
+        if( memcmp( &stages[0].alphaWave,
+                    &stages[1].alphaWave,
+                    sizeof( stages[0].alphaWave ) ) )
+        {
+            return false;
+        }
+    }
+    
+    
+    // make sure that lightmaps are in bundle 1 for 3dfx
+    if( stages[0].bundle[0].isLightmap )
+    {
+        tmpBundle = stages[0].bundle[0];
+        stages[0].bundle[0] = stages[1].bundle[0];
+        stages[0].bundle[1] = tmpBundle;
+    }
+    else
+    {
+        stages[0].bundle[1] = stages[1].bundle[0];
+    }
+    
+    // set the new blend state bits
+    shader.multitextureEnv = collapse[i].multitextureEnv;
+    stages[0].stateBits &= ~( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+    stages[0].stateBits |= collapse[i].multitextureBlend;
+    
+    //
+    // move down subsequent shaders
+    //
+    ::memmove( &stages[1], &stages[2], sizeof( stages[0] ) * ( MAX_SHADER_STAGES - 2 ) );
+    ::memset( &stages[MAX_SHADER_STAGES - 1], 0, sizeof( stages[0] ) );
+    
+    return true;
+}
+
 
 void StripCrap( const char* in, char* out, int destsize )
 {
@@ -2834,6 +3211,9 @@ static S32 CollapseStagesToGLSL( void )
         numStages++;
     }
     
+    if( numStages == i && i >= 2 && CollapseMultitexture() )
+        numStages--;
+        
     // convert any remaining lightmap stages to a lighting pass with a white texture
     // only do this with r_sunlightMode non-zero, as it's only for correct shadows.
     if( r_sunlightMode->integer && shader.numDeforms == 0 )
@@ -3055,7 +3435,7 @@ static shader_t* GeneratePermanentShader( void )
     
     *newShader = shader;
     
-    if( shader.sort <= SS_OPAQUE )
+    if( shader.sort <= SS_SEE_THROUGH )
     {
         newShader->fogPass = FP_EQUAL;
     }
@@ -3291,6 +3671,86 @@ static void InitShader( StringEntry name, S32 lightmapIndex )
 }
 
 /*
+SetImplicitShaderStages() - ydnar
+sets a shader's stages to one of several defaults
+*/
+
+static void SetImplicitShaderStages( image_t* image )
+{
+    // set implicit cull type
+    if( implicitCullType && !shader.cullType )
+    {
+        shader.cullType = implicitCullType;
+    }
+    
+    // set shader stages
+    switch( shader.lightmapIndex )
+    {
+            // dynamic colors at vertexes
+        case LIGHTMAP_NONE:
+            stages[0].bundle[0].image[0] = image;
+            stages[0].active = true;
+            stages[0].rgbGen = CGEN_LIGHTING_DIFFUSE;
+            stages[0].alphaGen = AGEN_SKIP;
+            stages[0].stateBits = implicitStateBits;
+            break;
+            
+            // gui elements (note state bits are overridden)
+        case LIGHTMAP_2D:
+            stages[0].bundle[0].image[0] = image;
+            stages[0].active = true;
+            stages[0].rgbGen = CGEN_VERTEX;
+            stages[0].alphaGen = AGEN_SKIP;
+            stages[0].stateBits = GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+            break;
+            
+            // fullbright is disabled per atvi request
+        case LIGHTMAP_WHITEIMAGE:
+        
+            // explicit colors at vertexes
+        case LIGHTMAP_BY_VERTEX:
+            stages[0].bundle[0].image[0] = image;
+            stages[0].active = true;
+            stages[0].rgbGen = CGEN_EXACT_VERTEX;
+            stages[0].alphaGen = AGEN_SKIP;
+            stages[0].stateBits = implicitStateBits;
+            break;
+            
+            // use lightmap pass
+        default:
+            // masked or blended implicit shaders need texture first
+            if( implicitStateBits & ( GLS_ATEST_BITS | GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
+            {
+                stages[0].bundle[0].image[0] = image;
+                stages[0].active = true;
+                stages[0].rgbGen = CGEN_IDENTITY;
+                stages[0].stateBits = implicitStateBits;
+                
+                stages[1].bundle[0].image[0] = tr.lightmaps[shader.lightmapIndex];
+                stages[1].bundle[0].isLightmap = true;
+                stages[1].active = true;
+                stages[1].rgbGen = CGEN_IDENTITY;
+                stages[1].stateBits = GLS_DEFAULT | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_EQUAL;
+            }
+            // otherwise do standard lightmap + texture
+            else
+            {
+                stages[0].bundle[0].image[0] = tr.lightmaps[shader.lightmapIndex];
+                stages[0].bundle[0].isLightmap = true;
+                stages[0].active = true;
+                stages[0].rgbGen = CGEN_IDENTITY;
+                stages[0].stateBits = GLS_DEFAULT;
+                
+                stages[1].bundle[0].image[0] = image;
+                stages[1].active = true;
+                stages[1].rgbGen = CGEN_IDENTITY;
+                stages[1].stateBits = GLS_DEFAULT | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
+            }
+            break;
+    }
+}
+
+/*
 =========================
 FinishShader
 
@@ -3301,11 +3761,13 @@ from the current global working shader
 static shader_t* FinishShader( void )
 {
     S32 stage;
-    bool		hasLightmapStage;
-    bool		vertexLightmap;
+    bool hasLightmapStage;
+    bool vertexLightmap;
+    bool hasOpaqueStage;
     
     hasLightmapStage = false;
     vertexLightmap = false;
+    hasOpaqueStage = false;
     
     //
     // set sky stuff appropriate
@@ -3329,10 +3791,16 @@ static shader_t* FinishShader( void )
     for( stage = 0; stage < MAX_SHADER_STAGES; )
     {
         shaderStage_t* pStage = &stages[stage];
+        bool isLightmap;
         
         if( !pStage->active )
         {
             break;
+        }
+        
+        if( ( pStage->stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) == 0 )
+        {
+            hasOpaqueStage = true;
         }
         
         // check for a missing texture
@@ -3373,6 +3841,7 @@ static shader_t* FinishShader( void )
         //
         // default texture coordinate generation
         //
+        isLightmap = true;
         if( pStage->bundle[0].isLightmap )
         {
             if( pStage->bundle[0].tcGen == TCGEN_BAD )
@@ -3387,8 +3856,10 @@ static shader_t* FinishShader( void )
             {
                 pStage->bundle[0].tcGen = TCGEN_TEXTURE;
             }
+            
+            // contains a non-lightmap bundle
+            isLightmap = false;
         }
-        
         
         // not a true lightmap but we want to leave existing
         // behaviour in place and not print out a warning
@@ -3396,13 +3867,11 @@ static shader_t* FinishShader( void )
         //  vertexLightmap = true;
         //}
         
-        
-        
         //
         // determine sort order and fog color adjustment
         //
-        if( ( pStage->stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) &&
-                ( stages[0].stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) )
+        if( ( pStage->stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
+                && !isLightmap && !hasOpaqueStage )
         {
             S32 blendSrcBits = pStage->stateBits & GLS_SRCBLEND_BITS;
             S32 blendDstBits = pStage->stateBits & GLS_DSTBLEND_BITS;
@@ -3462,7 +3931,7 @@ static shader_t* FinishShader( void )
     //
     // if we are in r_vertexLight mode, never use a lightmap texture
     //
-    if( stage > 1 && ( ( r_vertexLight->integer && !r_uiFullScreen->integer ) || glConfig.hardwareType == GLHW_PERMEDIA2 ) )
+    if( stage > 1 && ( r_vertexLight->integer && hasLightmapStage ) )
     {
         VertexLightingCollapse();
         hasLightmapStage = false;
@@ -3647,11 +4116,12 @@ most world construction surfaces.
 */
 shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
 {
-    UTF8		strippedName[MAX_QPATH];
-    S32			hash;
-    UTF8*		shaderText;
-    image_t*		image;
-    shader_t*	sh;
+    UTF8 strippedName[MAX_QPATH];
+    UTF8 fileName[MAX_QPATH];
+    S32	hash;
+    UTF8* shaderText;
+    image_t* image;
+    shader_t* sh;
     
     if( name[0] == 0 )
     {
@@ -3671,7 +4141,7 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
         lightmapIndex = LIGHTMAP_BY_VERTEX;
     }
     
-    COM_StripExtension3( name, strippedName, sizeof( strippedName ) );
+    COM_StripExtension2( name, strippedName, sizeof( strippedName ) );
     
     hash = generateHashValue( strippedName, FILE_HASH_SIZE );
     
@@ -3694,9 +4164,12 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
     
     InitShader( strippedName, lightmapIndex );
     
-    //
+    //default to no implicit mappings
+    implicitMap[0] = '\0';
+    implicitStateBits = GLS_DEFAULT;
+    implicitCullType = CT_FRONT_SIDED;
+    
     // attempt to define shader from an explicit parameter file
-    //
     shaderText = FindShaderInShaderText( strippedName );
     if( shaderText )
     {
@@ -3711,13 +4184,36 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
         {
             // had errors, so use default shader
             shader.defaultShader = true;
+            sh = FinishShader();
+            return sh;
         }
-        sh = FinishShader();
-        return sh;
+        
+        // ydnar: allow implicit mappings
+        if( implicitMap[0] == '\0' )
+        {
+            sh = FinishShader();
+            return sh;
+        }
     }
     
+    // allow implicit mapping ('-' = use shader name)
+    if( implicitMap[0] == '\0' || implicitMap[0] == '-' )
+    {
+        Q_strncpyz( fileName, name, sizeof( fileName ) );
+    }
+    else
+    {
+        Q_strncpyz( fileName, implicitMap, sizeof( fileName ) );
+    }
+    COM_DefaultExtension( fileName, sizeof( fileName ), ".tga" );
     
-    //
+    // implicit shaders were breaking nopicmip/nomipmaps
+    if( !mipRawImage )
+    {
+        shader.noMipMaps = true;
+        shader.noPicMip = true;
+    }
+    
     // if not defined in the in-memory shader descriptions,
     // look for a single supported image file
     //
@@ -3806,6 +4302,9 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
         stages[1].rgbGen = CGEN_IDENTITY;
         stages[1].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
     }
+    
+    // ydnar: set default stages (removing redundant code)
+    SetImplicitShaderStages( image );
     
     return FinishShader();
 }
@@ -3905,6 +4404,9 @@ qhandle_t RE_RegisterShaderFromImage( StringEntry name, S32 lightmapIndex, image
         stages[1].rgbGen = CGEN_IDENTITY;
         stages[1].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
     }
+    
+    // ydnar: set default stages (removing redundant code)
+    SetImplicitShaderStages( image );
     
     sh = FinishShader();
     return sh->index;
@@ -4077,6 +4579,22 @@ void	R_ShaderList_f( void )
         else
         {
             CL_RefPrintf( PRINT_ALL, "  " );
+        }
+        if( shader->multitextureEnv == GL_ADD )
+        {
+            CL_RefPrintf( PRINT_ALL, "MT(a) " );
+        }
+        else if( shader->multitextureEnv == GL_MODULATE )
+        {
+            CL_RefPrintf( PRINT_ALL, "MT(m) " );
+        }
+        else if( shader->multitextureEnv == GL_DECAL )
+        {
+            CL_RefPrintf( PRINT_ALL, "MT(d) " );
+        }
+        else
+        {
+            CL_RefPrintf( PRINT_ALL, "      " );
         }
         if( shader->explicitlyDefined )
         {
@@ -4340,6 +4858,11 @@ static void CreateExternalShaders( void )
         }
     }
     
+    if( !tr.sunShaderName[0] )
+    {
+        Q_strncpyz( tr.sunShaderName, "sun", sizeof( tr.sunShaderName ) );
+    }
+    
     tr.sunShader = R_FindShader( "sun", LIGHTMAP_NONE, true );
     
     tr.sunFlareShader = R_FindShader( "gfx/2d/sunflare", LIGHTMAP_NONE, true );
@@ -4378,5 +4901,15 @@ void R_InitShaders( void )
     
     ScanAndLoadShaderFiles();
     
+    CreateExternalShaders();
+}
+
+/*
+==================
+R_InitExternalShaders
+==================
+*/
+void R_InitExternalShaders( void )
+{
     CreateExternalShaders();
 }

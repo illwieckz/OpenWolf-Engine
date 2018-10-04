@@ -316,7 +316,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t* ent )
         // projection shadows work fine with personal models
         if( r_shadows->integer == 3
                 && fogNum == 0
-                && ( ent->e.renderfx & RF_SHADOW_PLANE )
+                && !( ent->e.renderfx & RF_SHADOW_PLANE )
                 && shader->sort == SS_OPAQUE )
         {
             R_AddDrawSurf( ( surfaceType_t* )surface, tr.projectionShadowShader, 0, false, false, 0 );

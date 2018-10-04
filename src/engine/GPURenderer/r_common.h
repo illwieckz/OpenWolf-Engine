@@ -67,6 +67,7 @@ typedef enum
     IMGFLAG_GENNORMALMAP   = 0x0100,
     IMGFLAG_MUTABLE        = 0x0200,
     IMGFLAG_SRGB           = 0x0400,
+    IMGFLAG_LIGHTMAP       = 0x0800
 } imgFlags_t;
 
 typedef struct image_s
@@ -114,18 +115,18 @@ extern cvar_t* r_ext_multisample;
 // 32 = use 32-bit textures
 // all else = error
 
-extern cvar_t*	r_width;
-extern cvar_t*	r_height;
-extern cvar_t*	r_pixelAspect;
+extern cvar_t* r_width;
+extern cvar_t* r_height;
+extern cvar_t* r_pixelAspect;
 extern cvar_t* r_noborder;
 extern cvar_t* r_fullscreen;
 extern cvar_t* r_ignorehwgamma;		// overrides hardware gamma capabilities
 extern cvar_t* r_drawBuffer;
 extern cvar_t* r_swapInterval;
-extern cvar_t*  r_glMajorVersion;  // override GL version autodetect (for testing)
-extern cvar_t*  r_glMinorVersion;
-extern cvar_t*  r_glDebugProfile;
-extern cvar_t*  r_glCoreProfile;
+extern cvar_t* r_glMajorVersion;  // override GL version autodetect (for testing)
+extern cvar_t* r_glMinorVersion;
+extern cvar_t* r_glDebugProfile;
+extern cvar_t* r_glCoreProfile;
 extern cvar_t* r_allowExtensions;				// global enable/disable of OpenGL extensions
 extern cvar_t* r_ext_compressed_textures;		// these control use of specific extensions
 extern cvar_t* r_ext_multitexture;
@@ -139,11 +140,11 @@ extern cvar_t* r_stereoEnabled;
 
 extern	cvar_t*	r_saveFontData;
 
-bool	R_GetModeInfo( S32* width, S32* height, F32* windowAspect, S32 mode );
+bool R_GetModeInfo( S32* width, S32* height, F32* windowAspect, S32 mode );
 
 F32 R_NoiseGet4f( F32 x, F32 y, F32 z, F64 t );
 void  R_NoiseInit( void );
-
+void R_LoadImage( StringEntry name, U8** pic, S32* width, S32* height, U32* picFormat, S32* numMips );
 image_t* R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ flags );
 image_t* R_CreateImage( StringEntry name, U8* pic, S32 width, S32 height, imgType_t type, S32 flags, S32 internalFormat );
 

@@ -717,15 +717,15 @@ static void GLimp_InitOpenGL3xContext()
     
 #endif
     
-    if( GLmajor < 2 || ( GLmajor == 3 && GLminor < 2 ) )
+    if( GLmajor < 2 || ( GLmajor == 4 && GLminor < 0 ) )
     {
-        // shaders are supported, but not all GL3.x features
-        CL_RefPrintf( PRINT_ALL, "Using enhanced (GL3) Renderer in GL 2.x mode...\n" );
+        // shaders are supported, but not all GL4.x features
+        CL_RefPrintf( PRINT_ALL, "Using enhanced (GL4) Renderer in GL 4.x mode...\n" );
         return;
     }
     
-    CL_RefPrintf( PRINT_ALL, "Using enhanced (GL3) Renderer in GL 3.x mode...\n" );
-    glConfig.driverType = GLDRV_OPENGL3;
+    CL_RefPrintf( PRINT_ALL, "Using enhanced (GL4) Renderer in GL 4.x mode...\n" );
+    glConfig.driverType = GLDRV_OPENGL4;
     
     return;
 }
@@ -1106,7 +1106,7 @@ static void GLimp_OGL3InitExtensions( void )
     GL_CheckErrors();
     
     // GL_ARB_multitexture
-    if( glConfig.driverType != GLDRV_OPENGL3 )
+    if( glConfig.driverType != GLDRV_OPENGL4 )
     {
         if( glewGetExtension( "GL_ARB_multitexture" ) )
         {
@@ -1601,7 +1601,7 @@ success:
     
     Q_strncpyz( glConfig.version_string, ( UTF8* ) glGetString( GL_VERSION ), sizeof( glConfig.version_string ) );
     
-    if( glConfig.driverType != GLDRV_OPENGL3 )
+    if( glConfig.driverType != GLDRV_OPENGL4 )
     {
         Q_strncpyz( glConfig.extensions_string, ( UTF8* ) glGetString( GL_EXTENSIONS ), sizeof( glConfig.extensions_string ) );
     }
@@ -1710,17 +1710,9 @@ success:
         {
             driverType = GLDRV_ICD;
         }
-        else if( !Q_stricmp( forceGL->string, "standalone" ) )
+        else if( !Q_stricmp( forceGL->string, "opengl4" ) )
         {
-            driverType = GLDRV_STANDALONE;
-        }
-        else if( !Q_stricmp( forceGL->string, "voodoo" ) )
-        {
-            driverType = GLDRV_VOODOO;
-        }
-        else if( !Q_stricmp( forceGL->string, "opengl3" ) )
-        {
-            driverType = GLDRV_OPENGL3;
+            driverType = GLDRV_OPENGL4;
         }
         else if( !Q_stricmp( forceGL->string, "mesa" ) )
         {
@@ -1732,22 +1724,6 @@ success:
         if( !Q_stricmp( forceGL->string, "generic" ) )
         {
             hardwareType = GLHW_GENERIC;
-        }
-        else if( !Q_stricmp( forceGL->string, "voodoo" ) )
-        {
-            hardwareType = GLHW_3DFX_2D3D;
-        }
-        else if( !Q_stricmp( forceGL->string, "riva128" ) )
-        {
-            hardwareType = GLHW_RIVA128;
-        }
-        else if( !Q_stricmp( forceGL->string, "ragepro" ) )
-        {
-            hardwareType = GLHW_RAGEPRO;
-        }
-        else if( !Q_stricmp( forceGL->string, "permedia2" ) )
-        {
-            hardwareType = GLHW_PERMEDIA2;
         }
         else if( !Q_stricmp( forceGL->string, "ati" ) )
         {

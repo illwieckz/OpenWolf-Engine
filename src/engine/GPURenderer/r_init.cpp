@@ -1034,7 +1034,7 @@ void GL_SetDefaultState( void )
         
     // initialize downstream texture units if we're running
     // in a multitexture environment
-    if( glConfig.driverType == GLDRV_OPENGL3 )
+    if( glConfig.driverType == GLDRV_OPENGL4 )
     {
         for( i = 31; i >= 0; i-- )
         {
@@ -1168,18 +1168,12 @@ void GfxInfo_f( void )
     CL_RefPrintf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[glLockArraysEXT != 0 ] );
     CL_RefPrintf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
     CL_RefPrintf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression != TC_NONE] );
-    if( r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2 )
+    
+    if( r_vertexLight->integer )
     {
         CL_RefPrintf( PRINT_ALL, "HACK: using vertex lightmap approximation\n" );
     }
-    if( glConfig.hardwareType == GLHW_RAGEPRO )
-    {
-        CL_RefPrintf( PRINT_ALL, "HACK: ragePro approximations\n" );
-    }
-    if( glConfig.hardwareType == GLHW_RIVA128 )
-    {
-        CL_RefPrintf( PRINT_ALL, "HACK: riva128 approximations\n" );
-    }
+    
     if( r_finish->integer )
     {
         CL_RefPrintf( PRINT_ALL, "Forcing glFinish\n" );
@@ -1246,8 +1240,8 @@ R_Register
 void R_Register( void )
 {
     // OpenGL context selection
-    r_glMajorVersion = Cvar_Get( "r_glMajorVersion", "3", CVAR_LATCH );
-    r_glMinorVersion = Cvar_Get( "r_glMinorVersion", "3", CVAR_LATCH );
+    r_glMajorVersion = Cvar_Get( "r_glMajorVersion", "4", CVAR_LATCH );
+    r_glMinorVersion = Cvar_Get( "r_glMinorVersion", "0", CVAR_LATCH );
     r_glCoreProfile = Cvar_Get( "r_glCoreProfile", "1", CVAR_LATCH );
     r_glDebugProfile = Cvar_Get( "r_glDebugProfile", "", CVAR_LATCH );
     
@@ -1318,10 +1312,10 @@ void R_Register( void )
     r_depthPrepass = Cvar_Get( "r_depthPrepass", "1", CVAR_ARCHIVE );
     r_ssao = Cvar_Get( "r_ssao", "1", CVAR_LATCH | CVAR_ARCHIVE );
     
-    r_normalMapping = Cvar_Get( "r_normalMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_specularMapping = Cvar_Get( "r_specularMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_normalMapping = Cvar_Get( "r_normalMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_specularMapping = Cvar_Get( "r_specularMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_deluxeMapping = Cvar_Get( "r_deluxeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_parallaxMapping = Cvar_Get( "r_parallaxMapping", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_cubeMapping = Cvar_Get( "r_cubeMapping", "0", CVAR_ARCHIVE | CVAR_LATCH );
     r_horizonFade = Cvar_Get( "r_horizonFade", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_deluxeSpecular = Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1332,7 +1326,7 @@ void R_Register( void )
     r_baseSpecular = Cvar_Get( "r_baseSpecular", "0.04", CVAR_ARCHIVE | CVAR_LATCH );
     r_baseGloss = Cvar_Get( "r_baseGloss", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
     r_glossType = Cvar_Get( "r_glossType", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_dlightMode = Cvar_Get( "r_dlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    r_dlightMode = Cvar_Get( "r_dlightMode", "2", CVAR_ARCHIVE | CVAR_LATCH );
     r_pshadowDist = Cvar_Get( "r_pshadowDist", "128", CVAR_ARCHIVE );
     r_mergeLightmaps = Cvar_Get( "r_mergeLightmaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_imageUpsample = Cvar_Get( "r_imageUpsample", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1344,7 +1338,7 @@ void R_Register( void )
     r_forceSunLightScale = Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
     r_forceSunAmbientScale = Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
     r_drawSunRays = Cvar_Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_sunlightMode = Cvar_Get( "r_sunlightMode", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_sunlightMode = Cvar_Get( "r_sunlightMode", "2", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_sunShadows = Cvar_Get( "r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowFilter = Cvar_Get( "r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1603,11 +1597,11 @@ void R_Init( void )
     }
     
     //Init gpuWorker
-    gpuWorker->Init();
+    //gpuWorker->Init();
     
-    gpuWorkerCLManager->InitDevice();
+    //gpuWorkerCLManager->InitDevice();
     
-    gpuWorkerCLManager->InitTexturefromCL();
+    //gpuWorkerCLManager->InitTexturefromCL();
     
     //Init GLSL
     renderSystemLocal.InitGPUShaders();
@@ -1665,7 +1659,7 @@ void idRenderSystemLocal::Shutdown( bool destroyWindow )
         R_DeleteTextures();
         R_ShutdownVaos();
         //
-        gpuWorkerLocal.Shutdown();
+        //gpuWorker->Shutdown();
         ShutdownGPUShaders();
     }
     

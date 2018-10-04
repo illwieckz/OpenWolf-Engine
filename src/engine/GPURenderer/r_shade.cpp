@@ -346,8 +346,6 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
-#define __MERGE_DLIGHTS__
-
 float DLIGHT_SIZE_MULTIPLIER = 2.5;
 
 static void ProjectDlightTexture( void )
@@ -675,6 +673,14 @@ static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t
             baseColor[3] = 1.0f;
             vertColor[3] = 0.0f;
             break;
+        case AGEN_NORMALZFADE:
+            baseColor[3] = pStage->constantColor[3] / 255.0f;
+            if( backEnd.currentEntity && backEnd.currentEntity->e.hModel )
+            {
+                baseColor[3] *= ( ( unsigned char* )backEnd.currentEntity->e.shaderRGBA )[3] / 255.0f;
+            }
+            vertColor[3] = 0.0f;
+            break;
     }
     
     // FIXME: find some way to implement this.
@@ -866,6 +872,24 @@ static void ForwardDlight( void )
         if( pStage->alphaGen == AGEN_PORTAL )
         {
             GLSL_SetUniformFloat( sp, UNIFORM_PORTALRANGE, tess.shader->portalRange );
+        }
+        else if( pStage->alphaGen == AGEN_NORMALZFADE )
+        {
+            F32 lowest, highest;
+            
+            lowest = pStage->zFadeBounds[0];
+            if( lowest == -1000 )     // use entity alpha
+            {
+                lowest = backEnd.currentEntity->e.shaderTime;
+            }
+            highest = pStage->zFadeBounds[1];
+            if( highest == -1000 )    // use entity alpha
+            {
+                highest = backEnd.currentEntity->e.shaderTime;
+            }
+            
+            GLSL_SetUniformFloat( sp, UNIFORM_ZFADELOWEST, lowest );
+            GLSL_SetUniformFloat( sp, UNIFORM_ZFADEHIGHEST, highest );
         }
         
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, pStage->rgbGen );
@@ -1091,7 +1115,6 @@ static void RB_FogPass( void )
     R_DrawElements( tess.numIndexes, tess.firstIndex );
 }
 
-
 static U32 RB_CalcShaderVertexAttribs( shaderCommands_t* input )
 {
     U32 vertexAttribs = input->shader->vertexAttribs;
@@ -1229,6 +1252,7 @@ void RB_SetStageImageDimensions( shaderProgram_t* sp, shaderStage_t* pStage )
 
 static void RB_IterateStagesGeneric( shaderCommands_t* input )
 {
+    S32 stage;
     vec4_t fogDistanceVector, fogDepthVector = { 0, 0, 0, 0 };
     F32 eyeT = 0;
     S32 deformGen;
@@ -1240,15 +1264,12 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
     
     ComputeFogValues( fogDistanceVector, fogDepthVector, &eyeT );
     
-    for( S32 stage = 0; stage < MAX_SHADER_STAGES; stage++ )
+    for( stage = 0; stage < MAX_SHADER_STAGES; stage++ )
     {
         shaderStage_t* pStage = input->xstages[stage];
         shaderProgram_t* sp;
         vec4_t texMatrix;
         vec4_t texOffTurb;
-        S32 stateBits;
-        colorGen_t forceRGBGen = CGEN_BAD;
-        alphaGen_t forceAlphaGen = AGEN_IDENTITY;
         
         if( !pStage )
         {
@@ -1260,11 +1281,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             if( pStage->glslShaderGroup == tr.lightallShader )
             {
                 S32 index = 0;
-                
-                if( backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity )
-                {
-                    index |= LIGHTDEF_ENTITY;
-                }
                 
                 if( pStage->stateBits & GLS_ATEST_BITS )
                 {
@@ -1303,17 +1319,10 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             {
                 index |= LIGHTDEF_ENTITY;
             }
-#ifdef __DYNAMIC_SHADOWS__
-            if( index & LIGHTDEF_LIGHTTYPE_MASK )
-            {
-                index |= LIGHTDEF_USE_SHADOWMAP;
-            }
-#else //!__DYNAMIC_SHADOWS__
             if( r_sunlightMode->integer && ( backEnd.viewParms.flags & VPF_USESUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) )
             {
                 index |= LIGHTDEF_USE_SHADOWMAP;
             }
-#endif //__DYNAMIC_SHADOWS__
             
             if( r_lightmap->integer && ( ( index & LIGHTDEF_LIGHTTYPE_MASK ) == LIGHTDEF_USE_LIGHTMAP ) )
             {
@@ -1330,6 +1339,8 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             
             backEnd.pc.c_genericDraws++;
         }
+        
+        GLSL_BindProgram( sp );
         
         if( pStage->isWater )
         {
@@ -1456,7 +1467,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             }
         }
         
-        stateBits = pStage->stateBits;
         
         RB_SetStageImageDimensions( sp, pStage );
         
@@ -1527,11 +1537,27 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, 0.0f );
         }
         
-        RB_SetStageImageDimensions( sp, pStage );
-        
         if( pStage->alphaGen == AGEN_PORTAL )
         {
             GLSL_SetUniformFloat( sp, UNIFORM_PORTALRANGE, tess.shader->portalRange );
+        }
+        else if( pStage->alphaGen == AGEN_NORMALZFADE )
+        {
+            F32 lowest, highest;
+            
+            lowest = pStage->zFadeBounds[0];
+            if( lowest == -1000 )     // use entity alpha
+            {
+                lowest = backEnd.currentEntity->e.shaderTime;
+            }
+            highest = pStage->zFadeBounds[1];
+            if( highest == -1000 )    // use entity alpha
+            {
+                highest = backEnd.currentEntity->e.shaderTime;
+            }
+            
+            GLSL_SetUniformFloat( sp, UNIFORM_ZFADELOWEST, lowest );
+            GLSL_SetUniformFloat( sp, UNIFORM_ZFADEHIGHEST, highest );
         }
         
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, pStage->rgbGen );
@@ -1628,7 +1654,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                 {
                     GLSL_SetUniformVec3( sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol );
                 }
-                GLSL_SetUniformVec4( sp, UNIFORM_PRIMARYLIGHTORIGIN,  backEnd.refdef.sunDir );
+                GLSL_SetUniformVec4( sp, UNIFORM_PRIMARYLIGHTORIGIN, backEnd.refdef.sunDir );
             }
             
             VectorSet4( enableTextures, 0, 0, 0, 0 );
@@ -1752,7 +1778,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             break;
     }
 }
-
 
 static void RB_RenderShadowmap( shaderCommands_t* input )
 {

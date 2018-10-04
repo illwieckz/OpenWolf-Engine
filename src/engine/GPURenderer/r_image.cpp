@@ -97,15 +97,6 @@ void GL_TextureMode( StringEntry string )
         }
     }
     
-    // hack to prevent trilinear from being set on voodoo,
-    // because their driver freaks...
-    if( i == 5 && glConfig.hardwareType == GLHW_3DFX_2D3D )
-    {
-        CL_RefPrintf( PRINT_ALL, "Refusing to set trilinear on a voodoo.\n" );
-        i = 3;
-    }
-    
-    
     if( i == 6 )
     {
         CL_RefPrintf( PRINT_ALL, "bad filter name\n" );
@@ -2454,12 +2445,12 @@ Finds or loads the given image.
 Returns NULL if it fails, not a default image.
 ==============
 */
-image_t*	R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ flags )
+image_t* R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ flags )
 {
-    image_t*	image;
-    S32		width, height;
+    image_t* image;
+    S32	width, height;
     U8*	pic;
-    U32  picFormat;
+    U32 picFormat;
     S32 picNumMips;
     S64	hash;
     S32/*imgFlags_t*/ checkFlagsTrue, checkFlagsFalse;
@@ -2930,18 +2921,6 @@ void R_CreateBuiltinImages( void )
             
             tr.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
         }
-        
-#ifdef __DYNAMIC_SHADOWS__
-        for( S32 y = 0; y < MAX_DYNAMIC_SHADOWS; y++ )
-        {
-            for( x = 0; x < 3; x++ )
-            {
-                tr.dlightShadowDepthImage[y][x] = R_CreateImage( va( "*dlightshadowdepth%i_%i", y, x ), NULL, r_shadowMapSize->integer, r_shadowMapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
-            }
-        }
-        
-        //tr.screenDlightShadowImage = R_CreateImage("*screenDlightShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
-#endif // __DYNAMIC_SHADOWS__
         
         if( r_cubeMapping->integer )
         {

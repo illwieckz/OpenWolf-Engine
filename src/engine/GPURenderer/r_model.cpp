@@ -1190,8 +1190,6 @@ static bool R_LoadMDR( model_t* mod, void* buffer, S32 filesize, StringEntry mod
 */
 void idRenderSystemLocal::Init( glconfig_t* glconfigOut )
 {
-    S32	i;
-    
     R_Init();
     
     *glconfigOut = glConfig;
@@ -1199,16 +1197,22 @@ void idRenderSystemLocal::Init( glconfig_t* glconfigOut )
     R_IssuePendingRenderCommands();
     
     tr.visIndex = 0;
-    // force markleafs to regenerate
-    for( i = 0; i < MAX_VISCOUNTS; i++ )
-    {
-        tr.visClusters[i] = -2;
-    }
+    ::memset( tr.visClusters, -2, sizeof( tr.visClusters ) );	// force markleafs to regenerate
     
     R_ClearFlares();
     ClearScene();
     
+    // HACK: give world entity white color for "colored" shader keyword
+    tr.worldEntity.e.shaderRGBA[0] = 255;
+    tr.worldEntity.e.shaderRGBA[1] = 255;
+    tr.worldEntity.e.shaderRGBA[2] = 255;
+    tr.worldEntity.e.shaderRGBA[3] = 255;
+    
+    tr.worldEntity.e.nonNormalizedAxes = false;
+    
     tr.registered = true;
+
+    DrawStretchPic( 0, 0, 0, 0, 0, 0, 1, 1, 0 );
 }
 
 //=============================================================================

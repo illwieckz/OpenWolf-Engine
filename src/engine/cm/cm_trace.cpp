@@ -1017,7 +1017,7 @@ CM_CalcTraceBounds
 */
 static void CM_CalcTraceBounds( traceWork_t* tw, bool expand )
 {
-   S32 i;
+    S32 i;
     
     if( tw->sphere.use )
     {

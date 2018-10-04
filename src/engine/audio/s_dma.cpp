@@ -245,12 +245,20 @@ static sfx_t*   S_FindName( StringEntry name )
     }
     if( !name[0] )
     {
-        Com_Error( ERR_FATAL, "S_FindName: empty name\n" );
+        Com_Printf( S_COLOR_YELLOW, "WARNING: Sound name is empty name" );
+        return NULL;
     }
     
     if( strlen( name ) >= MAX_QPATH )
     {
-        Com_Error( ERR_FATAL, "Sound name too long: %s", name );
+        Com_Printf( S_COLOR_YELLOW "WARNING: Sound name is too long: %s\n", name );
+        return NULL;
+    }
+    
+    if( name[0] == '*' && strcmp( name, "***DEFAULT***" ) )
+    {
+        Com_Printf( S_COLOR_YELLOW "WARNING: Tried to load player sound directly: %s\n", name );
+        return NULL;
     }
     
     hash = S_HashSFXName( name );
@@ -346,13 +354,11 @@ sfxHandle_t S_Base_RegisterSound( StringEntry name )
         return 0;
     }
     
-    if( strlen( name ) >= MAX_QPATH )
-    {
-        Com_Printf( "Sound name exceeds MAX_QPATH\n" );
-        return 0;
-    }
-    
     sfx = S_FindName( name );
+    
+    if( !sfx )
+        return 0;
+        
     if( sfx->soundData )
     {
         if( sfx->defaultSound )

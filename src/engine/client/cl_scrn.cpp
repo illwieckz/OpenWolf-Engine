@@ -122,7 +122,6 @@ void SCR_FillRect( F32 x, F32 y, F32 width, F32 height, const F32* color )
     renderSystem->SetColor( NULL );
 }
 
-
 /*
 ================
 SCR_DrawPic
@@ -135,8 +134,6 @@ void SCR_DrawPic( F32 x, F32 y, F32 width, F32 height, qhandle_t hShader )
     SCR_AdjustFrom640( &x, &y, &width, &height );
     renderSystem->DrawStretchPic( x, y, width, height, 0, 0, 1, 1, hShader );
 }
-
-
 
 /*
 ** SCR_DrawChar
@@ -178,8 +175,6 @@ static void SCR_DrawChar( S32 x, S32 y, F32 size, S32 ch )
                                   fcol + size, frow + size,
                                   cls.charSetShader );
 }
-
-
 
 void SCR_DrawConsoleFontChar( F32 x, F32 y, S32 ch )
 {
@@ -616,9 +611,7 @@ void SCR_UpdateScreen( void )
     if( ++recursive >= 2 )
     {
         recursive = 0;
-        // Gordon: i'm breaking this again, because we've removed most of our cases but still have one which will not fix easily
-        return;
-//      Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
+        Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
     }
     recursive = 1;
     

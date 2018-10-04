@@ -162,13 +162,6 @@ void idRenderSystemLocal::AddPolyToScene( qhandle_t hShader, S32 numVerts, const
         
         ::memcpy( poly->verts, &verts[numVerts * j], numVerts * sizeof( *verts ) );
         
-        if( glConfig.hardwareType == GLHW_RAGEPRO )
-        {
-            poly->verts->modulate[0] = 255;
-            poly->verts->modulate[1] = 255;
-            poly->verts->modulate[2] = 255;
-            poly->verts->modulate[3] = 255;
-        }
         // done.
         r_numpolys++;
         r_numpolyverts += numVerts;
@@ -286,11 +279,7 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
     {
         return;
     }
-    // these cards don't have the correct blend mode
-    if( glConfig.hardwareType == GLHW_RIVA128 || glConfig.hardwareType == GLHW_PERMEDIA2 )
-    {
-        return;
-    }
+    
     dl = &backEndData->dlights[r_numdlights++];
     VectorCopy( org, dl->origin );
     dl->radius = intensity;
@@ -461,9 +450,7 @@ void RE_BeginScene( const refdef_t* fd )
     
     // turn off dynamic lighting globally by clearing all the
     // dlights if it needs to be disabled or if vertex lighting is enabled
-    if( r_dynamiclight->integer == 0 ||
-            r_vertexLight->integer == 1 ||
-            glConfig.hardwareType == GLHW_PERMEDIA2 )
+    if( r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 )
     {
         tr.refdef.num_dlights = 0;
     }
@@ -535,15 +522,6 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
         R_RenderPshadowMaps( fd );
     }
     
-#ifdef __DYNAMIC_SHADOWS__
-    if( glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ) )
-    {
-        R_RenderDlightShadowMaps( fd, 0 );
-        R_RenderDlightShadowMaps( fd, 1 );
-        R_RenderDlightShadowMaps( fd, 2 );
-    }
-#endif //__DYNAMIC_SHADOWS__
-    
     // playing with even more shadows
     if( glRefConfig.framebufferObject && r_sunlightMode->integer && !( fd->rdflags & RDF_NOWORLDMODEL ) && ( r_forceSun->integer || tr.sunShadows ) )
     {
@@ -575,7 +553,7 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
     
     // playing with cube maps
     // this is where dynamic cubemaps would be rendered
-    if( 0 ) //(glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ))
+    if( 0 ) //glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ))
     {
         S32 i, j;
         

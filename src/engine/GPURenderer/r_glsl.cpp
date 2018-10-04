@@ -67,6 +67,7 @@ static uniformInfo_t uniformsInfo[] =
     
     { "u_DiffuseTexMatrix",  GLSL_VEC4 },
     { "u_DiffuseTexOffTurb", GLSL_VEC4 },
+    { "u_Texture1Env", GLSL_INT },
     
     { "u_TCGen0",        GLSL_INT },
     { "u_TCGen0Vector0", GLSL_VEC3 },
@@ -236,6 +237,10 @@ static uniformInfo_t uniformsInfo[] =
     { "u_Texture1",				GLSL_INT },
     { "u_Texture2",				GLSL_INT },
     { "u_Texture3",				GLSL_INT },
+    
+    { "u_FireRiseDir", GLSL_VEC3 },
+    { "u_ZFadeLowest", GLSL_FLOAT },
+    { "u_ZFadeHighest", GLSL_FLOAT },
 };
 
 typedef enum
@@ -333,6 +338,18 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
         Q_strcat( dest, size, "#define attribute in\n" );
         Q_strcat( dest, size, "#define varying out\n" );
     }
+    else if( shaderType == GL_GEOMETRY_SHADER )
+    {
+        if( extra )
+        {
+            Q_strcat( dest, size, extra );
+        }
+        
+        // OK we added a lot of stuff but if we do something bad in the GLSL shaders then we want the proper line
+        // so we have to reset the line counting
+        Q_strcat( dest, size, "#line 0\n" );
+        return;
+    }
     else
     {
         Q_strcat( dest, size, "#define varying in\n" );
@@ -400,9 +417,11 @@ static void GLSL_GetShaderHeader( U32 shaderType, StringEntry extra, S32 firstLi
                   "#define alphaGen_t\n"
                   "#define AGEN_LIGHTING_SPECULAR %i\n"
                   "#define AGEN_PORTAL %i\n"
+                  "#define AGEN_NORMALZFADE %i\n"
                   "#endif\n",
                   AGEN_LIGHTING_SPECULAR,
-                  AGEN_PORTAL ) );
+                  AGEN_PORTAL,
+                  AGEN_NORMALZFADE ) );
                   
     Q_strcat( dest, size,
               va( "#ifndef texenv_t\n"
@@ -526,6 +545,10 @@ static S32 GLSL_LoadGPUShaderText( StringEntry name, StringEntry fallback, U32 s
     {
         Com_sprintf( filename, sizeof( filename ), "renderProgs/%s.vertex", name );
     }
+    else if( shaderType == GL_GEOMETRY_SHADER )
+    {
+        Com_sprintf( filename, sizeof( filename ), "renderProgs/%s_.geometry", name );
+    }
     else
     {
         Com_sprintf( filename, sizeof( filename ), "renderProgs/%s.fragment", name );
@@ -617,7 +640,7 @@ static void GLSL_ShowProgramUniforms( U32 program )
     }
 }
 
-static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 attribs, StringEntry vpCode, StringEntry fpCode )
+static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 attribs, StringEntry vpCode, StringEntry fpCode, StringEntry gsCode )
 {
     CL_RefPrintf( PRINT_DEVELOPER, "------- GPU shader -------\n" );
     
@@ -630,6 +653,9 @@ static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 
     
     program->program = glCreateProgram();
     program->attribs = attribs;
+    
+    program->geometry = false;
+    program->geometryShader = NULL;
     
     if( !( GLSL_CompileGPUShader( program->program, &program->vertexShader, vpCode, strlen( vpCode ), GL_VERTEX_SHADER ) ) )
     {
@@ -646,6 +672,26 @@ static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 
             glDeleteProgram( program->program );
             return 0;
         }
+    }
+    
+    if( gsCode )
+    {
+        if( !( GLSL_CompileGPUShader( program->program, &program->geometryShader, gsCode, strlen( gsCode ), GL_GEOMETRY_SHADER ) ) )
+        {
+            CL_RefPrintf( PRINT_ALL, "GLSL_BeginLoadGPUShader2: Unable to load \"%s\" as GL_GEOMETRY_SHADER\n", name );
+            program->geometryShader = 0;
+            glDeleteProgram( program->program );
+            return 0;
+        }
+        else
+        {
+            //CL_RefPrintf(PRINT_ALL, "GLSL_BeginLoadGPUShader2: Load \"%s\" as GL_GEOMETRY_SHADER\n", name);
+            program->geometry = true;
+        }
+    }
+    else
+    {
+        program->geometryShader = 0;
     }
     
     if( attribs & ATTR_POSITION )
@@ -692,10 +738,13 @@ static S32 GLSL_InitGPUShader2( shaderProgram_t* program, StringEntry name, S32 
     return 1;
 }
 
-static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 attribs, bool fragmentShader, StringEntry extra, bool addHeader, const GPUProgramDesc& programDesc )
+static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 attribs, bool fragmentShader, bool geometryShader,
+                               StringEntry extra, bool addHeader, const GPUProgramDesc& programDesc )
 {
-    UTF8 vpCode[32000];
-    UTF8 fpCode[32000];
+    UTF8 vpCode[32768];
+    UTF8 fpCode[32768];
+    UTF8 gsCode[32768];
+    
     UTF8* postHeader;
     S32 size;
     S32 result;
@@ -742,7 +791,29 @@ static S32 GLSL_InitGPUShader( shaderProgram_t* program, StringEntry name, S32 a
         }
     }
     
-    result = GLSL_InitGPUShader2( program, name, attribs, vpCode, fragmentShader ? fpCode : NULL );
+    if( geometryShader )
+    {
+        size = sizeof( gsCode );
+        if( addHeader )
+        {
+            GLSL_GetShaderHeader( GL_GEOMETRY_SHADER, extra, programDesc.shaders[0].firstLineNumber, gsCode, size );
+            postHeader = &gsCode[strlen( gsCode )];
+            size -= strlen( gsCode );
+        }
+        else
+        {
+            postHeader = &gsCode[0];
+        }
+        
+        CL_RefPrintf( PRINT_WARNING, "Begin GLSL load GL_GEOMETRY_SHADER for %s.\n", name );
+        
+        if( !GLSL_LoadGPUShaderText( name, programDesc.shaders[1].source, GL_GEOMETRY_SHADER, postHeader, size ) )
+        {
+            return 0;
+        }
+    }
+    
+    result = GLSL_InitGPUShader2( program, name, attribs, vpCode, fragmentShader ? fpCode : NULL, geometryShader ? gsCode : NULL );
     
     return result;
 }
@@ -986,6 +1057,12 @@ void GLSL_DeleteGPUShader( shaderProgram_t* program )
             glDeleteShader( program->fragmentShader );
         }
         
+        if( program->geometryShader )
+        {
+            glAttachShader( program->program, program->geometryShader );
+            glDeleteShader( program->geometryShader );
+        }
+        
         glDeleteProgram( program->program );
         
         if( program->uniformBuffer )
@@ -1043,6 +1120,12 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( i & GENERICDEF_USE_RGBAGEN )
             Q_strcat( extradefines, 1024, "#define USE_RGBAGEN\n" );
             
+        if( i & GENERICDEF_USE_LIGHTMAP )
+        {
+            Q_strcat( extradefines, 1024, "#define USE_LIGHTMAP\n" );
+            attribs |= ATTR_INDEX_LIGHTCOORD;
+        }
+        
         if( r_parallaxMapping->integer ) // Parallax without normal maps...
             Q_strcat( extradefines, 1024, "#define USE_PARALLAXMAP_NONORMALS\n" );
             
@@ -1050,7 +1133,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             Q_strcat( extradefines, 1024, "#define FAST_PARALLAX\n" );
             
             
-        if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.genericShader[i], "generic", attribs, true, false, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load generic shader!" );
         }
@@ -1071,7 +1154,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     
-    if( !GLSL_InitGPUShader( &tr.textureColorShader, "texturecolor", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.textureColorShader, "texturecolor", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load texturecolor shader!" );
     }
@@ -1095,7 +1178,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( i & FOGDEF_USE_VERTEX_ANIMATION )
             Q_strcat( extradefines, 1024, "#define USE_VERTEX_ANIMATION\n" );
             
-        if( !GLSL_InitGPUShader( &tr.fogShader[i], "fogpass", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.fogShader[i], "fogpass", attribs, true, false, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load fogpass shader!" );
         }
@@ -1119,7 +1202,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             Q_strcat( extradefines, 1024, "#define USE_DEFORM_VERTEXES\n" );
         }
         
-        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, extradefines, false, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, false, extradefines, false, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load dlight shader!" );
         }
@@ -1280,7 +1363,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
             }
         }
         
-        if( !GLSL_InitGPUShader( &tr.lightallShader[i], "lightall", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.lightallShader[i], "lightall", attribs, true, false, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load lightall shader!" );
         }
@@ -1295,6 +1378,14 @@ void idRenderSystemLocal::InitGPUShaders( void )
         GLSL_SetUniformInt( &tr.lightallShader[i], UNIFORM_SHADOWMAP,   TB_SHADOWMAP );
         GLSL_SetUniformInt( &tr.lightallShader[i], UNIFORM_CUBEMAP,     TB_CUBEMAP );
         
+        {
+            vec2_t screensize;
+            screensize[0] = glConfig.vidWidth;
+            screensize[1] = glConfig.vidHeight;
+            
+            GLSL_SetUniformVec2( &tr.lightallShader[i], UNIFORM_DIMENSIONS, screensize );
+        }
+        
         GLSL_FinishGPUShader( &tr.lightallShader[i] );
         
         numLightShaders++;
@@ -1307,7 +1398,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.shadowmapShader, "shadowfill", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.shadowmapShader, "shadowfill", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load shadowfill shader!" );
     }
@@ -1325,7 +1416,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     
     Q_strcat( extradefines, 1024, "#define USE_PCF\n#define USE_DISCARD\n" );
     
-    if( !GLSL_InitGPUShader( &tr.pshadowShader, "pshadow", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.pshadowShader, "pshadow", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load pshadow shader!" );
     }
@@ -1344,7 +1435,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.down4xShader, "down4x", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.down4xShader, "down4x", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load down4x shader!" );
     }
@@ -1363,7 +1454,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.bokehShader, "bokeh", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.bokehShader, "bokeh", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bokeh shader!" );
     }
@@ -1382,7 +1473,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.tonemapShader, "tonemap", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.tonemapShader, "tonemap", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load tonemap shader!" );
     }
@@ -1407,7 +1498,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( !i )
             Q_strcat( extradefines, 1024, "#define FIRST_PASS\n" );
             
-        if( !GLSL_InitGPUShader( &tr.calclevels4xShader[i], "calclevels4x", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.calclevels4xShader[i], "calclevels4x", attribs, true, false, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load calclevels4x shader!" );
         }
@@ -1440,7 +1531,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     Q_strcat( extradefines, 1024, va( "#define r_shadowCascadeZFar %f\n", r_shadowCascadeZFar->value ) );
     
     
-    if( !GLSL_InitGPUShader( &tr.shadowmaskShader, "shadowmask", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.shadowmaskShader, "shadowmask", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load shadowmask shader!" );
     }
@@ -1463,7 +1554,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.ssaoShader, "ssao", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.ssaoShader, "ssao", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load ssao shader!" );
     }
@@ -1492,7 +1583,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
         if( !( i & 2 ) )
             Q_strcat( extradefines, 1024, "#define USE_DEPTH\n" );
             
-        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthblur", attribs, true, extradefines, true, *programDesc ) )
+        if( !GLSL_InitGPUShader( &tr.depthBlurShader[i], "depthblur", attribs, true, false, extradefines, true, *programDesc ) )
         {
             Com_Error( ERR_FATAL, "Could not load depthblur shader!" );
         }
@@ -1513,7 +1604,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.darkexpandShader, "darkexpand", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.darkexpandShader, "darkexpand", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load darkexpand shader!" );
     }
@@ -1555,7 +1646,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     extradefines[0] = '\0';
     Q_strcat( extradefines, sizeof( extradefines ), "#define BLUR_X" );
     
-    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[0], "gaussian_blur", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[0], "gaussian_blur", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load gaussian_blur (X-direction) shader!" );
     }
@@ -1563,7 +1654,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = 0;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[1], "gaussian_blur", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.gaussianBlurShader[1], "gaussian_blur", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load gaussian_blur (Y-direction) shader!" );
     }
@@ -1582,7 +1673,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.multipostShader, "multipost", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.multipostShader, "multipost", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load darkexpand shader!" );
     }
@@ -1599,7 +1690,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.texturedetailShader, "texturedetail", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.texturedetailShader, "texturedetail", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load texturedetail shader!" );
     }
@@ -1639,7 +1730,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.rbmShader, "rbm", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.rbmShader, "rbm", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load rbm shader!" );
     }
@@ -1658,7 +1749,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.contrastShader, "contrast", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.contrastShader, "contrast", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bloom shader!" );
     }
@@ -1678,7 +1769,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.volumelightShader, "volumelight", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.volumelightShader, "volumelight", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load volumelight shader!" );
     }
@@ -1694,7 +1785,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "lensflare", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.lensflareShader, "lensflare", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.lensflareShader, "lensflare", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load lensflare shader!" );
     }
@@ -1710,7 +1801,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "anamorphic_darken", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.anamorphicDarkenShader, "anamorphic_darken", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.anamorphicDarkenShader, "anamorphic_darken", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load anamorphic_darken shader!" );
     }
@@ -1726,7 +1817,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "anamorphic_blur", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.anamorphicBlurShader, "anamorphic_blur", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.anamorphicBlurShader, "anamorphic_blur", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load anamorphic_blur shader!" );
     }
@@ -1742,7 +1833,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "anamorphic_combine", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.anamorphicCombineShader, "anamorphic_combine", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.anamorphicCombineShader, "anamorphic_combine", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load anamorphic_combine shader!" );
     }
@@ -1759,7 +1850,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "truehdr", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.hdrShader, "truehdr", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.hdrShader, "truehdr", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load hdr shader!" );
     }
@@ -1799,7 +1890,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "depthOfField", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.dofShader, "depthOfField", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.dofShader, "depthOfField", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load depthOfField shader!" );
     }
@@ -1839,7 +1930,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "esharpening", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.esharpeningShader, "esharpening", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.esharpeningShader, "esharpening", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load esharpening shader!" );
     }
@@ -1879,7 +1970,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "esharpening2", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.esharpening2Shader, "esharpening2", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.esharpening2Shader, "esharpening2", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load esharpening2 shader!" );
     }
@@ -1919,7 +2010,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "textureclean", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.texturecleanShader, "textureclean", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.texturecleanShader, "textureclean", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load textureclean shader!" );
     }
@@ -1959,7 +2050,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "vibrancy", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.vibrancyShader, "vibrancy", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.vibrancyShader, "vibrancy", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load vibrancy shader!" );
     }
@@ -1984,7 +2075,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "anaglyph", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.anaglyphShader, "anaglyph", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.anaglyphShader, "anaglyph", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load anaglyph shader!" );
     }
@@ -2030,7 +2121,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "uniquewater", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD | ATTR_NORMAL | ATTR_COLOR;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.waterShader, "uniquewater", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.waterShader, "uniquewater", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load water shader!" );
     }
@@ -2075,7 +2166,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     programDesc = LoadProgramSource( "fxaa", allocator, fallback_null );
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
-    if( !GLSL_InitGPUShader( &tr.fxaaShader, "fxaa", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.fxaaShader, "fxaa", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load fxaa shader!" );
     }
@@ -2117,7 +2208,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.ssgiShader, "ssgi", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.ssgiShader, "ssgi", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load ssgi shader!" );
     }
@@ -2143,7 +2234,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.ssgiBlurShader, "ssgiBlur", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.ssgiBlurShader, "ssgiBlur", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load ssgi_blur shader!" );
     }
@@ -2160,7 +2251,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.bloomDarkenShader, "bloom_darken", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.bloomDarkenShader, "bloom_darken", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bloom_darken shader!" );
     }
@@ -2177,7 +2268,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.bloomBlurShader, "bloom_blur", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.bloomBlurShader, "bloom_blur", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bloom_blur shader!" );
     }
@@ -2194,7 +2285,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.bloomCombineShader, "bloom_combine", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.bloomCombineShader, "bloom_combine", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load bloom_combine shader!" );
     }
@@ -2212,7 +2303,7 @@ void idRenderSystemLocal::InitGPUShaders( void )
     attribs = ATTR_POSITION | ATTR_TEXCOORD;
     extradefines[0] = '\0';
     
-    if( !GLSL_InitGPUShader( &tr.testcubeShader, "testcube", attribs, true, extradefines, true, *programDesc ) )
+    if( !GLSL_InitGPUShader( &tr.testcubeShader, "testcube", attribs, true, false, extradefines, true, *programDesc ) )
     {
         Com_Error( ERR_FATAL, "Could not load testcube shader!" );
     }
@@ -2327,6 +2418,11 @@ shaderProgram_t* GLSL_GetGenericShaderProgram( S32 stage )
     if( tess.fogNum && pStage->adjustColorsForFog )
     {
         shaderAttribs |= GENERICDEF_USE_FOG;
+    }
+    
+    if( pStage->bundle[1].image[0] && tess.shader->multitextureEnv )
+    {
+        shaderAttribs |= GENERICDEF_USE_LIGHTMAP;
     }
     
     switch( pStage->rgbGen )

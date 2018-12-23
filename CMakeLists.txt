@@ -59,7 +59,7 @@ include( CPack )
 set( MOUNT_DIR ${CMAKE_SOURCE_DIR}/src/engine )
 set( LIB_DIR ${CMAKE_SOURCE_DIR}/src/libs )
 set( TOOLS_DIR ${CMAKE_SOURCE_DIR}/src/tools )
-set( TREMGAME_DIR ${CMAKE_SOURCE_DIR}/src/engine/gameLogics/nexTrem )
+set( TREMGAME_DIR ${CMAKE_SOURCE_DIR}/src/engine/gameLogics/nextTrem )
 
 find_package( PkgConfig )
 

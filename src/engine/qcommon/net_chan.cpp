@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   net_chan.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -91,9 +91,9 @@ Netchan_Init
 void Netchan_Init( S32 port )
 {
     port &= 0xffff;
-    showpackets = Cvar_Get( "showpackets", "0", CVAR_TEMP );
-    showdrop = Cvar_Get( "showdrop", "0", CVAR_TEMP );
-    qport = Cvar_Get( "net_qport", va( "%i", port ), CVAR_INIT );
+    showpackets = cvarSystem->Get( "showpackets", "0", CVAR_TEMP );
+    showdrop = cvarSystem->Get( "showdrop", "0", CVAR_TEMP );
+    qport = cvarSystem->Get( "net_qport", va( "%i", port ), CVAR_INIT );
 }
 
 /*

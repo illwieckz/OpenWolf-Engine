@@ -29,9 +29,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   qfiles.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: quake file formats
 //              This file must be identical in the quake and utils directories
 // -------------------------------------------------------------------------------------
@@ -673,11 +673,12 @@ typedef struct
 ==============================================================================
 */
 
-#define BSP_IDENT (('P' << 24) + ('S' << 16) + ('B' << 8) + 'I') // little-endian "IBSP"
-#define BSP_VERSION 46
+#define BSP_IDENT (('P' << 24) + ('S' << 16) + ('B' << 8) + 'O') // little-endian "OBSP"
+#define BSP_VERSION 1
 
 // there shouldn't be any problem with increasing these values at the
 // expense of more memory allocation in the utilities
+#ifndef Q3MAP2
 //#define   MAX_MAP_MODELS      0x400
 #define MAX_MAP_MODELS      0x800
 #define MAX_MAP_BRUSHES     16384
@@ -697,11 +698,10 @@ typedef struct
 #define MAX_MAP_LIGHTING    0x800000
 #define MAX_MAP_LIGHTGRID   0x800000
 #define MAX_MAP_VISIBILITY  0x200000
-
 #define MAX_MAP_DRAW_SURFS  0x20000
 #define MAX_MAP_DRAW_VERTS  0x80000
 #define MAX_MAP_DRAW_INDEXES    0x80000
-
+#endif
 
 // key / value pair sizes in the entities lump
 #define MAX_KEY             32
@@ -714,9 +714,11 @@ typedef struct
 #define LIGHTMAP_WIDTH      128
 #define LIGHTMAP_HEIGHT     128
 
+#ifndef Q3MAP2
 #define MAX_WORLD_COORD     ( 128 * 1024 )
 #define MIN_WORLD_COORD     ( -128 * 1024 )
 #define WORLD_SIZE          ( MAX_WORLD_COORD - MIN_WORLD_COORD )
+#endif
 
 //=============================================================================
 
@@ -821,13 +823,14 @@ typedef struct
 
 typedef struct
 {
-    vec3_t          xyz;
-    F32           st[2];
-    F32           lightmap[2];
-    vec3_t          normal;
-    U8            color[4];
+    vec3_t xyz;
+    F32 st[2];
+    F32 lightmap[2];
+    vec3_t normal;
+    F32 lightColor[4];
+    F32 paintColor[4];
+    F32 lightDirection[3];
 } drawVert_t;
-
 
 #define drawVert_t_cleared(x) drawVert_t (x) = {{0, 0, 0}, {0, 0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}}
 

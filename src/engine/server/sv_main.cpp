@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sv_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ The given command will be transmitted to the client, and is guaranteed to
 not have future snapshot_t executed before it is executed
 ======================
 */
-void SV_AddServerCommand( client_t* client, const UTF8* cmd )
+void SV_AddServerCommand( client_t* client, StringEntry cmd )
 {
     S32 index, i;
     
@@ -190,7 +190,7 @@ void SV_AddServerCommand( client_t* client, const UTF8* cmd )
             Com_Printf( "cmd %5d: %s\n", i, client->reliableCommands[i & ( MAX_RELIABLE_COMMANDS - 1 )] );
         }
         Com_Printf( "cmd %5d: %s\n", i, cmd );
-        SV_DropClient( client, "Server command overflow" );
+        serverClientLocal.DropClient( client, "Server command overflow" );
         return;
     }
     index = client->reliableSequence & ( MAX_RELIABLE_COMMANDS - 1 );
@@ -207,7 +207,7 @@ the client game module: "cp", "print", "chat", etc
 A NULL client will broadcast to all clients
 =================
 */
-void SV_SendServerCommand( client_t* cl, const UTF8* fmt, ... )
+void SV_SendServerCommand( client_t* cl, StringEntry fmt, ... )
 {
     va_list         argptr;
     U8            message[MAX_MSGLEN];
@@ -285,7 +285,7 @@ but not on every player enter or exit.
 SV_MasterHeartbeat
 ===============
 */
-void SV_MasterHeartbeat( const UTF8* hbname )
+void SV_MasterHeartbeat( StringEntry hbname )
 {
     static netadr_t adr[MAX_MASTER_SERVERS][2];
     S32				i, res, netenabled;
@@ -295,9 +295,9 @@ void SV_MasterHeartbeat( const UTF8* hbname )
     return;
 #endif
     
-    netenabled = Cvar_VariableIntegerValue( "net_enabled" );
+    netenabled = cvarSystem->VariableIntegerValue( "net_enabled" );
     
-    if( SV_GameIsSinglePlayer() )
+    if( serverGameSystem->GameIsSinglePlayer() )
     {
         return;     // no heartbeats for SP
     }
@@ -378,7 +378,7 @@ void SV_MasterHeartbeat( const UTF8* hbname )
                 // if the address failed to resolve, clear it
                 // so we don't take repeated dns hits
                 Com_Printf( "Couldn't resolve address: %s\n", sv_master[i]->string );
-                Cvar_Set( sv_master[i]->name, "" );
+                cvarSystem->Set( sv_master[i]->name, "" );
                 sv_master[i]->modified = false;
                 continue;
             }
@@ -439,7 +439,7 @@ void SV_MasterGameCompleteStatus()
                 // if the address failed to resolve, clear it
                 // so we don't take repeated dns hits
                 Com_Printf( "Couldn't resolve address: %s\n", sv_master[i]->string );
-                Cvar_Set( sv_master[i]->name, "" );
+                cvarSystem->Set( sv_master[i]->name, "" );
                 sv_master[i]->modified = false;
                 continue;
             }
@@ -484,7 +484,7 @@ void SV_MasterShutdown( void )
 SV_MasterGameStat
 =================
 */
-void SV_MasterGameStat( const UTF8* data )
+void SV_MasterGameStat( StringEntry data )
 {
     netadr_t adr;
     
@@ -571,7 +571,7 @@ void SVC_Status( netadr_t from )
     playerState_t*  ps;
     
     // ignore if we are in single player
-    if( SV_GameIsSinglePlayer() )
+    if( serverGameSystem->GameIsSinglePlayer() )
     {
         return;
     }
@@ -586,14 +586,14 @@ void SVC_Status( netadr_t from )
     return;
 #endif
     
-    strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+    strcpy( infostring, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
     
     // echo back the parameter to status. so master servers can use it as a challenge
     // to prevent timed spoofed reply packets that add ghost servers
     Info_SetValueForKey( infostring, "challenge", Cmd_Argv( 1 ) );
     
     // add "demo" to the sv_keywords if restricted
-    if( Cvar_VariableValue( "fs_restrict" ) )
+    if( cvarSystem->VariableValue( "fs_restrict" ) )
     {
         UTF8 keywords[MAX_INFO_STRING];
         
@@ -609,7 +609,7 @@ void SVC_Status( netadr_t from )
         cl = &svs.clients[i];
         if( cl->state >= CS_CONNECTED )
         {
-            ps = SV_GameClientNum( i );
+            ps = serverGameSystem->GameClientNum( i );
             Com_sprintf( player, sizeof( player ), "%i %i \"%s\"\n", ps->persistant[PERS_SCORE], cl->ping, cl->name );
             playerLength = strlen( player );
             if( statusLength + playerLength >= sizeof( status ) )
@@ -640,7 +640,7 @@ void SVC_GameCompleteStatus( netadr_t from )
     playerState_t*  ps;
     
     // ignore if we are in single player
-    if( SV_GameIsSinglePlayer() )
+    if( serverGameSystem->GameIsSinglePlayer() )
     {
         return;
     }
@@ -651,14 +651,14 @@ void SVC_GameCompleteStatus( netadr_t from )
         return;
     }
     
-    strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+    strcpy( infostring, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
     
     // echo back the parameter to status. so master servers can use it as a challenge
     // to prevent timed spoofed reply packets that add ghost servers
     Info_SetValueForKey( infostring, "challenge", Cmd_Argv( 1 ) );
     
     // add "demo" to the sv_keywords if restricted
-    if( Cvar_VariableValue( "fs_restrict" ) )
+    if( cvarSystem->VariableValue( "fs_restrict" ) )
     {
         UTF8 keywords[MAX_INFO_STRING];
         
@@ -674,7 +674,7 @@ void SVC_GameCompleteStatus( netadr_t from )
         cl = &svs.clients[i];
         if( cl->state >= CS_CONNECTED )
         {
-            ps = SV_GameClientNum( i );
+            ps = serverGameSystem->GameClientNum( i );
             Com_sprintf( player, sizeof( player ), "%i %i \"%s\"\n", ps->persistant[PERS_SCORE], cl->ping, cl->name );
             playerLength = strlen( player );
             if( statusLength + playerLength >= sizeof( status ) )
@@ -703,7 +703,7 @@ void SVC_Info( netadr_t from )
     UTF8*           gamedir, infostring[MAX_INFO_STRING], *antilag, *weaprestrict, *balancedteams;
     
     // ignore if we are in single player
-    if( SV_GameIsSinglePlayer() )
+    if( serverGameSystem->GameIsSinglePlayer() )
     {
         return;
     }
@@ -750,7 +750,7 @@ void SVC_Info( netadr_t from )
     Info_SetValueForKey( infostring, "clients", va( "%i", count ) );
     Info_SetValueForKey( infostring, "sv_maxclients", va( "%i", sv_maxclients->integer - sv_privateClients->integer ) );
     //Info_SetValueForKey( infostring, "gametype", va("%i", sv_gametype->integer ) );
-    Info_SetValueForKey( infostring, "gametype", Cvar_VariableString( "g_gametype" ) );
+    Info_SetValueForKey( infostring, "gametype", cvarSystem->VariableString( "g_gametype" ) );
     Info_SetValueForKey( infostring, "pure", va( "%i", sv_pure->integer ) );
     
     if( sv_minPing->integer )
@@ -761,7 +761,7 @@ void SVC_Info( netadr_t from )
     {
         Info_SetValueForKey( infostring, "maxPing", va( "%i", sv_maxPing->integer ) );
     }
-    gamedir = Cvar_VariableString( "fs_game" );
+    gamedir = cvarSystem->VariableString( "fs_game" );
     if( *gamedir )
     {
         Info_SetValueForKey( infostring, "game", gamedir );
@@ -778,19 +778,19 @@ void SVC_Info( netadr_t from )
     Info_SetValueForKey( infostring, "gamename", GAMENAME_STRING );	// Arnout: to be able to filter out Quake servers
     
     // TTimo
-    antilag = Cvar_VariableString( "g_antilag" );
+    antilag = cvarSystem->VariableString( "g_antilag" );
     if( antilag )
     {
         Info_SetValueForKey( infostring, "g_antilag", antilag );
     }
     
-    weaprestrict = Cvar_VariableString( "g_heavyWeaponRestriction" );
+    weaprestrict = cvarSystem->VariableString( "g_heavyWeaponRestriction" );
     if( weaprestrict )
     {
         Info_SetValueForKey( infostring, "weaprestrict", weaprestrict );
     }
     
-    balancedteams = Cvar_VariableString( "g_balancedteams" );
+    balancedteams = cvarSystem->VariableString( "g_balancedteams" );
     if( balancedteams )
     {
         Info_SetValueForKey( infostring, "balancedteams", balancedteams );
@@ -856,7 +856,10 @@ SV_FlushRedirect
 */
 void SV_FlushRedirect( UTF8* outputbuf )
 {
-    NET_OutOfBandPrint( NS_SERVER, svs.redirectAddress, "print\n%s", outputbuf );
+    if( *outputbuf )
+    {
+        NET_OutOfBandPrint( NS_SERVER, svs.redirectAddress, "print\n%s", outputbuf );
+    }
 }
 
 /*
@@ -890,7 +893,8 @@ bool SV_CheckDRDoS( netadr_t from )
     exactFrom = from;
     if( from.type == NA_IP )
     {
-        from.ip[3] = 0; // xx.xx.xx.0
+        // xx.xx.xx.0
+        from.ip[3] = 0;
     }
     else
     {
@@ -1010,17 +1014,16 @@ Redirect all printfs
 */
 void SVC_RemoteCommand( netadr_t from, msg_t* msg )
 {
-    bool        valid;
-    U32    time;
-    UTF8            remaining[1024];
+    bool valid;
+    U32 time;
+    UTF8 remaining[1024];
     
     // show_bug.cgi?id=376
     // if we send an OOB print message this size, 1.31 clients die in a Com_Printf buffer overflow
     // the buffer overflow will be fixed in > 1.31 clients
     // but we want a server side fix
     // we must NEVER send an OOB message that will be > 1.31 MAXPRINTMSG (4096)
-#define SV_OUTPUTBUF_LENGTH ( 256 - 16 )
-    UTF8            sv_outputbuf[SV_OUTPUTBUF_LENGTH], *cmd_aux;
+    UTF8 sv_outputbuf[1024 - 16], *cmd_aux;
     static U32 lasttime = 0;
     
     // TTimo - show_bug.cgi?id=534
@@ -1055,7 +1058,7 @@ void SVC_RemoteCommand( netadr_t from, msg_t* msg )
     //   which leads to client overflows
     //   see show_bug.cgi?id=51
     //     (also a Q3 issue)
-    Com_BeginRedirect( sv_outputbuf, SV_OUTPUTBUF_LENGTH, SV_FlushRedirect );
+    Com_BeginRedirect( sv_outputbuf, sizeof( sv_outputbuf ), SV_FlushRedirect );
     
     if( !strlen( sv_rconPassword->string ) )
     {
@@ -1144,11 +1147,11 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t* msg )
     }
     else if( !Q_stricmp( c, "getchallenge" ) )
     {
-        SV_GetChallenge( from );
+        serverClientLocal.GetChallenge( from );
     }
     else if( !Q_stricmp( c, "connect" ) )
     {
-        SV_DirectConnect( from );
+        serverClientLocal.DirectConnect( from );
     }
     else if( !Q_stricmp( c, "rcon" ) )
     {
@@ -1188,6 +1191,11 @@ void SV_PacketEvent( netadr_t from, msg_t* msg )
     if( msg->cursize >= 4 && *( S32* )msg->data == -1 )
     {
         SV_ConnectionlessPacket( from, msg );
+        return;
+    }
+    
+    if( sv.state == SS_DEAD )
+    {
         return;
     }
     
@@ -1233,7 +1241,7 @@ void SV_PacketEvent( netadr_t from, msg_t* msg )
             if( cl->state != CS_ZOMBIE )
             {
                 cl->lastPacketTime = svs.time;	// don't timeout
-                SV_ExecuteClientMessage( cl, msg );
+                serverClientLocal.ExecuteClientMessage( cl, msg );
             }
         }
         return;
@@ -1311,7 +1319,7 @@ void SV_CalcPings( void )
         }
         
         // let the game dll know about the ping
-        ps = SV_GameClientNum( i );
+        ps = serverGameSystem->GameClientNum( i );
         ps->ping = cl->ping;
     }
 }
@@ -1359,7 +1367,7 @@ void SV_CheckTimeouts( void )
             // cause a timeout
             if( ++cl->timeoutCount > 5 )
             {
-                SV_DropClient( cl, "timed out" );
+                serverClientLocal.DropClient( cl, "timed out" );
                 cl->state = CS_FREE;	// don't bother with zombie state
             }
         }
@@ -1401,14 +1409,14 @@ bool SV_CheckPaused( void )
         // don't pause
         if( sv_paused->integer )
         {
-            Cvar_Set( "sv_paused", "0" );
+            cvarSystem->Set( "sv_paused", "0" );
         }
         return false;
     }
     
     if( !sv_paused->integer )
     {
-        Cvar_Set( "sv_paused", "1" );
+        cvarSystem->Set( "sv_paused", "1" );
     }
     return true;
 }
@@ -1435,7 +1443,7 @@ void SV_Frame( S32 msec )
     if( sv_killserver->integer )
     {
         SV_Shutdown( "Server was killed.\n" );
-        Cvar_Set( "sv_killserver", "0" );
+        cvarSystem->Set( "sv_killserver", "0" );
         return;
     }
     
@@ -1459,7 +1467,7 @@ void SV_Frame( S32 msec )
             
             if( elapsed_time >= sv_hibernateTime->integer )
             {
-                Cvar_Set( "sv_fps", "1" );
+                cvarSystem->Set( "sv_fps", "1" );
                 sv_fps->value = svs.hibernation.sv_fps;
                 svs.hibernation.enabled = true;
                 Com_Printf( "Server switched to hibernation mode\n" );
@@ -1492,14 +1500,14 @@ void SV_Frame( S32 msec )
     // if it isn't time for the next frame, do nothing
     if( sv_fps->integer < 1 )
     {
-        Cvar_Set( "sv_fps", "10" );
+        cvarSystem->Set( "sv_fps", "10" );
     }
     
     frameMsec = 1000 / sv_fps->integer * com_timescale->value;
     // don't let it scale below 1ms
     if( frameMsec < 1 )
     {
-        Cvar_Set( "timescale", va( "%f", sv_fps->integer / 1000.0f ) );
+        cvarSystem->Set( "timescale", va( "%f", sv_fps->integer / 1000.0f ) );
         frameMsec = 1;
     }
     
@@ -1507,7 +1515,7 @@ void SV_Frame( S32 msec )
     
     if( !com_dedicated->integer )
     {
-        SV_BotFrame( svs.time + sv.timeResidual );
+        serverBotSystem->BotFrame( svs.time + sv.timeResidual );
     }
     
     if( com_dedicated->integer && sv.timeResidual < frameMsec )
@@ -1554,27 +1562,25 @@ void SV_Frame( S32 msec )
     // update infostrings if anything has been changed
     if( cvar_modifiedFlags & CVAR_SERVERINFO )
     {
-        SV_SetConfigstring( CS_SERVERINFO, Cvar_InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+        SV_SetConfigstring( CS_SERVERINFO, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
         cvar_modifiedFlags &= ~CVAR_SERVERINFO;
     }
     if( cvar_modifiedFlags & CVAR_SERVERINFO_NOUPDATE )
     {
-        SV_SetConfigstringNoUpdate( CS_SERVERINFO, Cvar_InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+        SV_SetConfigstringNoUpdate( CS_SERVERINFO, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
         cvar_modifiedFlags &= ~CVAR_SERVERINFO_NOUPDATE;
     }
     if( cvar_modifiedFlags & CVAR_SYSTEMINFO )
     {
-        SV_SetConfigstring( CS_SYSTEMINFO, Cvar_InfoString_Big( CVAR_SYSTEMINFO ) );
+        SV_SetConfigstring( CS_SYSTEMINFO, cvarSystem->InfoString_Big( CVAR_SYSTEMINFO ) );
         cvar_modifiedFlags &= ~CVAR_SYSTEMINFO;
     }
     // NERVE - SMF
-#if 0
     if( cvar_modifiedFlags & CVAR_WOLFINFO )
     {
-        SV_SetConfigstring( CS_WOLFINFO, Cvar_InfoString( CVAR_WOLFINFO ) );
+        SV_SetConfigstring( CS_WOLFINFO, cvarSystem->InfoString( CVAR_WOLFINFO ) );
         cvar_modifiedFlags &= ~CVAR_WOLFINFO;
     }
-#endif
     
     if( com_speeds->integer )
     {
@@ -1590,7 +1596,7 @@ void SV_Frame( S32 msec )
     
     if( com_dedicated->integer )
     {
-        SV_BotFrame( svs.time );
+        serverBotSystem->BotFrame( svs.time );
     }
     
     // run the game simulation in chunks
@@ -1693,13 +1699,12 @@ void SV_Frame( S32 msec )
 SV_LoadTag
 =================
 */
-S32 SV_LoadTag( const UTF8* mod_name )
+S32 SV_LoadTag( StringEntry mod_name )
 {
     U8*  buffer;
-    tagHeader_t*    pinmodel;
-    S32             version;
-    md3Tag_t*       tag, *readTag;
-    S32             i, j;
+    tagHeader_t* pinmodel;
+    S32 i, j, version;
+    md3Tag_t* tag, *readTag;
     
     for( i = 0; i < sv.num_tagheaders; i++ )
     {
@@ -1709,7 +1714,7 @@ S32 SV_LoadTag( const UTF8* mod_name )
         }
     }
     
-    FS_ReadFile( mod_name, ( void** )&buffer );
+    fileSystem->ReadFile( mod_name, ( void** )&buffer );
     
     if( !buffer )
     {
@@ -1729,7 +1734,7 @@ S32 SV_LoadTag( const UTF8* mod_name )
     {
         Com_Error( ERR_DROP, "MAX_TAG_FILES reached\n" );
         
-        FS_FreeFile( buffer );
+        fileSystem->FreeFile( buffer );
         return 0;
     }
     
@@ -1746,7 +1751,7 @@ S32 SV_LoadTag( const UTF8* mod_name )
     {
         Com_Error( ERR_DROP, "MAX_SERVER_TAGS reached\n" );
         
-        FS_FreeFile( buffer );
+        fileSystem->FreeFile( buffer );
         return false;
     }
     
@@ -1766,8 +1771,6 @@ S32 SV_LoadTag( const UTF8* mod_name )
         Q_strncpyz( tag->name, readTag->name, 64 );
     }
     
-    FS_FreeFile( buffer );
+    fileSystem->FreeFile( buffer );
     return ++sv.num_tagheaders;
 }
-
-//============================================================================

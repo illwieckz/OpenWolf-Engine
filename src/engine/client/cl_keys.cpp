@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_keys.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1284,14 +1284,14 @@ void Key_WriteBindings( fileHandle_t f )
 {
     S32 i;
     
-    FS_Printf( f, "unbindall\n" );
+    fileSystem->Printf( f, "unbindall\n" );
     
     for( i = 0 ; i < MAX_KEYS ; i++ )
     {
         if( keys[i].binding && keys[i].binding[0] )
         {
             // quote the string if it contains ; but no "
-            FS_Printf( f, "bind %s %s\n", Key_KeynumToString( i ), Com_QuoteStr( keys[i].binding ) );
+            fileSystem->Printf( f, "bind %s %s\n", Key_KeynumToString( i ), Com_QuoteStr( keys[i].binding ) );
         }
         
     }
@@ -1533,15 +1533,15 @@ void CL_KeyEvent( S32 key, S32 down, U32 time )
             if( keys[K_ALT].down )
             {
                 Key_ClearStates();
-                if( Cvar_VariableValue( "r_fullscreen" ) == 0 )
+                if( cvarSystem->VariableValue( "r_fullscreen" ) == 0 )
                 {
                     Com_Printf( "Switching to fullscreen rendering\n" );
-                    Cvar_Set( "r_fullscreen", "1" );
+                    cvarSystem->Set( "r_fullscreen", "1" );
                 }
                 else
                 {
                     Com_Printf( "Switching to windowed rendering\n" );
-                    Cvar_Set( "r_fullscreen", "0" );
+                    cvarSystem->Set( "r_fullscreen", "0" );
                 }
                 Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
                 return;
@@ -1568,7 +1568,7 @@ void CL_KeyEvent( S32 key, S32 down, U32 time )
         else if( key == K_TAB )
         {
             Key_ClearStates();
-            Cvar_SetValue( "r_minimize", 1 );
+            cvarSystem->SetValue( "r_minimize", 1 );
             return;
         }
     }
@@ -1576,7 +1576,7 @@ void CL_KeyEvent( S32 key, S32 down, U32 time )
     if( cl_altTab->integer && keys[K_ALT].down && key == K_TAB )
     {
         Key_ClearStates();
-        Cvar_SetValue( "r_minimize", 1 );
+        cvarSystem->SetValue( "r_minimize", 1 );
         return;
     }
     
@@ -1628,7 +1628,7 @@ void CL_KeyEvent( S32 key, S32 down, U32 time )
     if ( down && ( key < 128 || key == K_MOUSE1 )
     	 && ( clc.demoplaying || cls.state == CA_CINEMATIC ) && !cls.keyCatchers ) {
     
-    	Cvar_Set( "nextdemo","" );
+    	cvarSystem->Set( "nextdemo","" );
     	key = K_ESCAPE;
     }
     */

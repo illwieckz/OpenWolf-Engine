@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_ui.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -76,22 +76,22 @@ void LAN_LoadCachedServers()
     Q_strncpyz( filename, "servercache.dat", sizeof( filename ) );
     
     // Arnout: moved to mod/profiles dir
-    if( FS_SV_FOpenFileRead( filename, &fileIn ) )
+    if( fileSystem->SV_FOpenFileRead( filename, &fileIn ) )
     {
-        FS_Read( &cls.numglobalservers, sizeof( S32 ), fileIn );
-        FS_Read( &cls.numfavoriteservers, sizeof( S32 ), fileIn );
-        FS_Read( &size, sizeof( S32 ), fileIn );
+        fileSystem->Read( &cls.numglobalservers, sizeof( S32 ), fileIn );
+        fileSystem->Read( &cls.numfavoriteservers, sizeof( S32 ), fileIn );
+        fileSystem->Read( &size, sizeof( S32 ), fileIn );
         if( size == sizeof( cls.globalServers ) + sizeof( cls.favoriteServers ) )
         {
-            FS_Read( &cls.globalServers, sizeof( cls.globalServers ), fileIn );
-            FS_Read( &cls.favoriteServers, sizeof( cls.favoriteServers ), fileIn );
+            fileSystem->Read( &cls.globalServers, sizeof( cls.globalServers ), fileIn );
+            fileSystem->Read( &cls.favoriteServers, sizeof( cls.favoriteServers ), fileIn );
         }
         else
         {
             cls.numglobalservers = cls.numfavoriteservers = 0;
             cls.numGlobalServerAddresses = 0;
         }
-        FS_FCloseFile( fileIn );
+        fileSystem->FCloseFile( fileIn );
     }
 }
 
@@ -109,15 +109,15 @@ void LAN_SaveServersToCache()
     Q_strncpyz( filename, "servercache.dat", sizeof( filename ) );
     
     // Arnout: moved to mod/profiles dir
-    fileOut = FS_SV_FOpenFileWrite( filename );
-    //fileOut = FS_FOpenFileWrite( filename );
-    FS_Write( &cls.numglobalservers, sizeof( S32 ), fileOut );
-    FS_Write( &cls.numfavoriteservers, sizeof( S32 ), fileOut );
+    fileOut = fileSystem->SV_FOpenFileWrite( filename );
+    //fileOut = fileSystem->FOpenFileWrite( filename );
+    fileSystem->Write( &cls.numglobalservers, sizeof( S32 ), fileOut );
+    fileSystem->Write( &cls.numfavoriteservers, sizeof( S32 ), fileOut );
     size = sizeof( cls.globalServers ) + sizeof( cls.favoriteServers );
-    FS_Write( &size, sizeof( S32 ), fileOut );
-    FS_Write( &cls.globalServers, sizeof( cls.globalServers ), fileOut );
-    FS_Write( &cls.favoriteServers, sizeof( cls.favoriteServers ), fileOut );
-    FS_FCloseFile( fileOut );
+    fileSystem->Write( &size, sizeof( S32 ), fileOut );
+    fileSystem->Write( &cls.globalServers, sizeof( cls.globalServers ), fileOut );
+    fileSystem->Write( &cls.favoriteServers, sizeof( cls.favoriteServers ), fileOut );
+    fileSystem->FCloseFile( fileOut );
 }
 
 
@@ -135,7 +135,7 @@ bool GetNews( bool begin )
     if( !newsFile[0] )
     {
         Q_strncpyz( newsFile,
-                    FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), "", "news.dat" ),
+                    fileSystem->BuildOSPath( cvarSystem->VariableString( "fs_homepath" ), "", "news.dat" ),
                     MAX_QPATH );
         newsFile[MAX_QPATH - 1] = 0;
     }
@@ -152,9 +152,9 @@ bool GetNews( bool begin )
         }
     }
     
-    if( FS_SV_FOpenFileRead( newsFile, &clc.download ) )
+    if( fileSystem->SV_FOpenFileRead( newsFile, &clc.download ) )
     {
-        readSize = FS_Read( clc.newsString, sizeof( clc.newsString ), clc.download );
+        readSize = fileSystem->Read( clc.newsString, sizeof( clc.newsString ), clc.download );
         clc.newsString[ readSize ] = '\0';
         if( readSize > 0 )
         {
@@ -163,11 +163,11 @@ bool GetNews( bool begin )
             cls.bWWWDlDisconnected = false;
         }
     }
-    FS_FCloseFile( clc.download );
+    fileSystem->FCloseFile( clc.download );
     
     if( !finished )
         strcpy( clc.newsString, "Retrieving..." );
-    Cvar_Set( "cl_newsString", clc.newsString );
+    cvarSystem->Set( "cl_newsString", clc.newsString );
     return finished;
 }
 
@@ -889,7 +889,7 @@ static void CLUI_GetCDKey( UTF8* buf, S32 buflen )
 {
     cvar_t*         fs;
     
-    fs = Cvar_Get( "fs_game", "", CVAR_INIT | CVAR_SYSTEMINFO );
+    fs = cvarSystem->Get( "fs_game", "", CVAR_INIT | CVAR_SYSTEMINFO );
     if( UI_usesUniqueCDKey() && fs && fs->string[0] != 0 )
     {
         memcpy( buf, &cl_cdkey[16], 16 );
@@ -912,7 +912,7 @@ static void CLUI_SetCDKey( UTF8* buf )
 {
     cvar_t*         fs;
     
-    fs = Cvar_Get( "fs_game", "", CVAR_INIT | CVAR_SYSTEMINFO );
+    fs = cvarSystem->Get( "fs_game", "", CVAR_INIT | CVAR_SYSTEMINFO );
     if( UI_usesUniqueCDKey() && fs && fs->string[0] != 0 )
     {
         memcpy( &cl_cdkey[16], buf, 16 );
@@ -1049,52 +1049,52 @@ S32 trap_Milliseconds( void )
 
 void trap_Cvar_Register( vmCvar_t* cvar, StringEntry var_name, StringEntry value, S32 flags )
 {
-    Cvar_Register( cvar, var_name, value, flags );
+    cvarSystem->Register( cvar, var_name, value, flags );
 }
 
 void trap_Cvar_Update( vmCvar_t* cvar )
 {
-    Cvar_Update( cvar );
+    cvarSystem->Update( cvar );
 }
 
 void trap_Cvar_Set( StringEntry var_name, StringEntry value )
 {
-    Cvar_Set( var_name, value );
+    cvarSystem->Set( var_name, value );
 }
 
 F32 trap_Cvar_VariableValue( StringEntry var_name )
 {
-    return Cvar_VariableValue( var_name );;
+    return cvarSystem->VariableValue( var_name );;
 }
 
 void trap_Cvar_VariableStringBuffer( StringEntry var_name, UTF8* buffer, S32 bufsize )
 {
-    Cvar_VariableStringBuffer( var_name, buffer, bufsize );
+    cvarSystem->VariableStringBuffer( var_name, buffer, bufsize );
 }
 
 void trap_Cvar_LatchedVariableStringBuffer( StringEntry var_name, UTF8* buffer, S32 bufsize )
 {
-    Cvar_VariableStringBuffer( var_name, buffer, bufsize );
+    cvarSystem->VariableStringBuffer( var_name, buffer, bufsize );
 }
 
 void trap_Cvar_SetValue( StringEntry var_name, F32 value )
 {
-    Cvar_SetValue( var_name, PASSFLOAT( value ) );
+    cvarSystem->SetValue( var_name, PASSFLOAT( value ) );
 }
 
 void trap_Cvar_Reset( StringEntry name )
 {
-    Cvar_Reset( name );
+    cvarSystem->Reset( name );
 }
 
 void trap_Cvar_Create( StringEntry var_name, StringEntry var_value, S32 flags )
 {
-    Cvar_Get( var_name, var_value, flags );
+    cvarSystem->Get( var_name, var_value, flags );
 }
 
 void trap_Cvar_InfoStringBuffer( S32 bit, UTF8* buffer, S32 bufsize )
 {
-    Cvar_InfoStringBuffer( bit, buffer, bufsize );
+    cvarSystem->InfoStringBuffer( bit, buffer, bufsize );
 }
 
 S32 trap_Argc( void )
@@ -1119,37 +1119,37 @@ void trap_AddCommand( StringEntry cmdName )
 ;
 S32 trap_FS_FOpenFile( StringEntry qpath, fileHandle_t* f, fsMode_t mode )
 {
-    return FS_FOpenFileByMode( qpath, f, mode );
+    return fileSystem->FOpenFileByMode( qpath, f, mode );
 }
 
 void trap_FS_Read( void* buffer, S32 len, fileHandle_t f )
 {
-    FS_Read( buffer, len, f );
+    fileSystem->Read( buffer, len, f );
 }
 
 S32 trap_FS_Write( const void* buffer, S32 len, fileHandle_t f )
 {
-    return FS_Write( buffer, len, f );
+    return fileSystem->Write( buffer, len, f );
 }
 
 void trap_FS_FCloseFile( fileHandle_t f )
 {
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
 }
 
 S32 trap_FS_Delete( UTF8* filename )
 {
-    return FS_Delete( filename );
+    return fileSystem->Delete( filename );
 }
 
 S32 trap_FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize )
 {
-    return FS_GetFileList( path, extension, listbuf, bufsize );
+    return fileSystem->GetFileList( path, extension, listbuf, bufsize );
 }
 
 S32 trap_FS_Seek( fileHandle_t f, S64 offset, S32 origin )
 {
-    return FS_Seek( f, offset, origin );
+    return fileSystem->Seek( f, offset, origin );
 }
 
 qhandle_t trap_R_RegisterModel( StringEntry name )
@@ -1666,7 +1666,7 @@ void trap_GetAutoUpdate( void )
 }
 
 //118.
-//CL_OpenURL((const UTF8 *)VMA(1));
+//CL_OpenURL((StringEntry)VMA(1));
 void trap_openURL( StringEntry s )
 {
     CL_OpenURL( s );
@@ -1681,7 +1681,7 @@ void trap_GetHunkData( S32* hunkused, S32* hunkexpected )
 
 S32 trap_Cvar_VariableInt( StringEntry var_name )
 {
-    return Cvar_VariableIntegerValue( var_name );
+    return cvarSystem->VariableIntegerValue( var_name );
 }
 
 S32 trap_CrosshairPlayer( void )

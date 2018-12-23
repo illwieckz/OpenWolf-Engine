@@ -28,16 +28,22 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   math_angles.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
-#include <OWLib/q_splineshared.h>      //DAJ
-#include <float.h>
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#define FLT_EPSILON 1.19209290E-07F
+#include <OWLib/types.h>
+#include <OWLib/q_splineshared.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
 angles_t ang_zero( 0.0f, 0.0f, 0.0f );
 

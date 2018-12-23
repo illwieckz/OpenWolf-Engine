@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_mesh.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: triangle model functions
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -308,7 +308,7 @@ void R_AddMD3Surfaces( trRefEntity_t* ent )
     shader_t*		shader = NULL;
     S32				cull;
     S32				lod;
-    S64				fogNum;
+    S32				fogNum;
     S32             cubemapIndex;
     bool			personalModel;
     

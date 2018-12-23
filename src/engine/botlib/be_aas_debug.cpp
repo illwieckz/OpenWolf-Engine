@@ -48,8 +48,6 @@ S32 debuglines[MAX_DEBUGLINES];
 S32 debuglinevisible[MAX_DEBUGLINES];
 S32 numdebuglines;
 
-static S32 debugpolygons[MAX_DEBUGPOLYGONS];
-
 //===========================================================================
 //
 // Parameter:				-
@@ -62,8 +60,11 @@ void AAS_ClearShownPolygons( void )
 //*
     for( i = 0; i < MAX_DEBUGPOLYGONS; i++ )
     {
-        if( debugpolygons[i] ) botimport.DebugPolygonDelete( debugpolygons[i] );
-        debugpolygons[i] = 0;
+        if( debugpolygons[i].inuse )
+        {
+            botimport.DebugPolygonDelete( debugpolygons[i].inuse );
+        }
+        debugpolygons[i].inuse = 0;
     } //end for
 //*/
     /*
@@ -86,9 +87,9 @@ void AAS_ShowPolygon( S32 color, S32 numpoints, vec3_t* points )
     
     for( i = 0; i < MAX_DEBUGPOLYGONS; i++ )
     {
-        if( !debugpolygons[i] )
+        if( !debugpolygons[i].inuse )
         {
-            debugpolygons[i] = botimport.DebugPolygonCreate( color, numpoints, points );
+            debugpolygons[i].inuse = botimport.DebugPolygonCreate( color, numpoints, points );
             break;
         } //end if
     } //end for

@@ -233,7 +233,7 @@ void ScriptError( script_t* script, UTF8* str, ... )
     if( script->flags & SCFL_NOERRORS ) return;
     
     va_start( ap, str );
-    vsprintf( text, str, ap );
+    Q_vsnprintf( text, sizeof( text ), str, ap );
     va_end( ap );
 #ifdef BOTLIB
     botimport.Print( PRT_ERROR, "file %s, line %d: %s\n", script->filename, script->line, text );
@@ -259,7 +259,7 @@ void ScriptWarning( script_t* script, UTF8* str, ... )
     if( script->flags & SCFL_NOWARNINGS ) return;
     
     va_start( ap, str );
-    vsprintf( text, str, ap );
+    Q_vsnprintf( text, sizeof( text ), str, ap );
     va_end( ap );
 #ifdef BOTLIB
     botimport.Print( PRT_WARNING, "file %s, line %d: %s\n", script->filename, script->line, text );
@@ -1345,7 +1345,7 @@ script_t* LoadScriptFile( StringEntry filename )
     else
         Com_sprintf( pathname, sizeof( pathname ), "%s", filename );
     Com_DPrintf( "Attempting to open %s\n", pathname );
-    length = botimport.FS_FOpenFile( pathname, &fp, FS_READ );
+    length = fileSystem->FOpenFileByMode( pathname, &fp, FS_READ );
     if( !fp ) return NULL;
 #else
     fp = fopen( filename, "rb" );
@@ -1376,8 +1376,8 @@ script_t* LoadScriptFile( StringEntry filename )
     SetScriptPunctuations( script, NULL );
     //
 #ifdef BOTLIB
-    botimport.FS_Read( script->buffer, length, fp );
-    botimport.FS_FCloseFile( fp );
+    fileSystem->Read2( script->buffer, length, fp );
+    fileSystem->FCloseFile( fp );
 #else
     if( fread( script->buffer, length, 1, fp ) != 1 )
     {

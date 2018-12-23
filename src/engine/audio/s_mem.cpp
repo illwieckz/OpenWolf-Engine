@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_mem.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ void SND_setup( void )
     cvar_t* cv;
     S32 scs;
     
-    cv = Cvar_Get( "com_soundMegs", DEF_COMSOUNDMEGS, CVAR_LATCH | CVAR_ARCHIVE );
+    cv = cvarSystem->Get( "com_soundMegs", DEF_COMSOUNDMEGS, CVAR_LATCH | CVAR_ARCHIVE );
     
     scs = ( cv->integer * 1536 );
     

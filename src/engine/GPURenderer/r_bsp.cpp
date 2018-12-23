@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_bsp.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: Loads and prepares a map file for scene rendering.
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -284,7 +284,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
         UTF8 filename[MAX_QPATH];
         
         Com_sprintf( filename, sizeof( filename ), "maps/%s/lm_0000.hdr", s_worldData.baseName );
-        if( FS_FileExists( filename ) )
+        if( fileSystem->FileExists( filename ) )
             textureInternalFormat = GL_RGBA16;
     }
     
@@ -329,7 +329,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
                 Com_sprintf( filename, sizeof( filename ), "maps/%s/lm_%04d.hdr", s_worldData.baseName, i * ( tr.worldDeluxeMapping ? 2 : 1 ) );
                 //CL_RefPrintf(PRINT_ALL, "looking for %s\n", filename);
                 
-                size = FS_ReadFile( filename, ( void** )&hdrLightmap );
+                size = fileSystem->ReadFile( filename, ( void** )&hdrLightmap );
             }
             
             if( hdrLightmap )
@@ -462,7 +462,7 @@ static	void R_LoadLightmaps( lump_t* l, lump_t* surfs )
                 tr.lightmaps[i] = R_CreateImage( va( "*lightmap%d", i ), image, tr.lightmapSize, tr.lightmapSize, IMGTYPE_COLORALPHA, imgFlags, textureInternalFormat );
                 
             if( hdrLightmap )
-                FS_FreeFile( hdrLightmap );
+                fileSystem->FreeFile( hdrLightmap );
         }
         
         if( tr.worldDeluxeMapping )
@@ -664,6 +664,14 @@ void LoadDrawVertToSrfVert( srfVert_t* s, drawVert_t* d, S32 realLightmapNum, F3
         s->lightmap[1] = LittleFloat( d->lightmap[1] );
     }
     
+    s->paintColor[0] = Q_clamp( LittleFloat( d->paintColor[0] ), 0.0f, 1.0f );
+    s->paintColor[1] = Q_clamp( LittleFloat( d->paintColor[1] ), 0.0f, 1.0f );
+    s->paintColor[2] = Q_clamp( LittleFloat( d->paintColor[2] ), 0.0f, 1.0f );
+    
+    s->lightDirection[0] = LittleFloat( d->lightDirection[0] );
+    s->lightDirection[1] = LittleFloat( d->lightDirection[1] );
+    s->lightDirection[2] = LittleFloat( d->lightDirection[2] );
+    
     v[0] = LittleFloat( d->normal[0] );
     v[1] = LittleFloat( d->normal[1] );
     v[2] = LittleFloat( d->normal[2] );
@@ -681,22 +689,22 @@ void LoadDrawVertToSrfVert( srfVert_t* s, drawVert_t* d, S32 realLightmapNum, F3
         //hack: convert LDR vertex colors to HDR
         if( r_truehdr->integer )
         {
-            v[0] = MAX( d->color[0], 0.499f );
-            v[1] = MAX( d->color[1], 0.499f );
-            v[2] = MAX( d->color[2], 0.499f );
+            v[0] = MAX( d->lightColor[0], 0.499f );
+            v[1] = MAX( d->lightColor[1], 0.499f );
+            v[2] = MAX( d->lightColor[2], 0.499f );
         }
         else
         {
-            v[0] = d->color[0];
-            v[1] = d->color[1];
-            v[2] = d->color[2];
+            v[0] = d->lightColor[0];
+            v[1] = d->lightColor[1];
+            v[2] = d->lightColor[2];
         }
         
     }
-    v[3] = d->color[3] / 255.0f;
+    v[3] = d->lightColor[3] / 255.0f;
     
     R_ColorShiftLightingFloats( v, v );
-    R_VaoPackColor( s->color, v );
+    R_VaoPackColor( ( U16* )s->lightColor, v );
 }
 
 static U8* surfHunkPtr;
@@ -937,6 +945,7 @@ static void ParseMesh( dsurface_t* ds, drawVert_t* verts, F32* hdrVertColors, ms
         
     // pre-tesseleate
     R_SubdividePatchToGrid( grid, width, height, points );
+    surf->data = ( surfaceType_t* )grid;
     
     // copy the level of detail origin, which is the center
     // of the group of all curves that must subdivide the same
@@ -1154,7 +1163,7 @@ void R_FixSharedVertexLodError_r( S32 start, srfBspSurface_t* grid1 )
     for( j = start; j < s_worldData.numsurfaces; j++ )
     {
         //
-        grid2 = ( srfBspSurface_t* ) s_worldData.surfaces[j].data;
+        grid2 = ( srfBspSurface_t* )s_worldData.surfaces[j].data;
         // if this surface is not a grid
         if( grid2->surfaceType != SF_GRID ) continue;
         // if the LOD errors are already fixed for this patch
@@ -1896,7 +1905,7 @@ static	void R_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexLump )
         Com_sprintf( filename, sizeof( filename ), "maps/%s/vertlight.raw", s_worldData.baseName );
         //CL_RefPrintf(PRINT_ALL, "looking for %s\n", filename);
         
-        size = FS_ReadFile( filename, ( void** )&hdrVertColors );
+        size = fileSystem->ReadFile( filename, ( void** )&hdrVertColors );
         
         if( hdrVertColors )
         {
@@ -1936,12 +1945,21 @@ static	void R_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexLump )
     
     in = ( dsurface_t* )( fileBase + surfs->fileofs );
     out = s_worldData.surfaces;
-    for( i = 0 ; i < count ; i++, in++, out++ )
+    for( i = 0; i < count; i++, in++, out++ )
     {
         switch( LittleLong( in->surfaceType ) )
         {
             case MST_PATCH:
                 ParseMesh( in, dv, hdrVertColors, out );
+                {
+                    srfBspSurface_t* surface = ( srfBspSurface_t* )out->data;
+                    
+                    out->cullinfo.type = CULLINFO_BOX | CULLINFO_SPHERE;
+                    VectorCopy( surface->cullBounds[0], out->cullinfo.bounds[0] );
+                    VectorCopy( surface->cullBounds[1], out->cullinfo.bounds[1] );
+                    VectorCopy( surface->cullOrigin, out->cullinfo.localOrigin );
+                    out->cullinfo.radius = surface->cullRadius;
+                }
                 numMeshes++;
                 break;
             case MST_TRIANGLE_SOUP:
@@ -1954,6 +1972,9 @@ static	void R_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexLump )
                 break;
             case MST_FLARE:
                 ParseFlare( in, dv, out, indexes );
+                {
+                    out->cullinfo.type = CULLINFO_NONE;
+                }
                 numFlares++;
                 break;
             default:
@@ -1963,7 +1984,7 @@ static	void R_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexLump )
     
     if( hdrVertColors )
     {
-        FS_FreeFile( hdrVertColors );
+        fileSystem->FreeFile( hdrVertColors );
     }
     
 #ifdef PATCH_STITCHING
@@ -2243,10 +2264,9 @@ static	void R_LoadPlanes( lump_t* l )
 /*
 =================
 R_LoadFogs
-
 =================
 */
-static	void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
+static void R_LoadFogs( lump_t* l, lump_t* brushesLump, lump_t* sidesLump )
 {
     S32			i, j;
     fog_t*		out;
@@ -2446,7 +2466,7 @@ void R_LoadLightGrid( lump_t* l )
         Com_sprintf( filename, sizeof( filename ), "maps/%s/lightgrid.raw", s_worldData.baseName );
         //CL_RefPrintf(PRINT_ALL, "looking for %s\n", filename);
         
-        size = FS_ReadFile( filename, ( void** )&hdrLightGrid );
+        size = fileSystem->ReadFile( filename, ( void** )&hdrLightGrid );
         
         if( hdrLightGrid )
         {
@@ -2495,7 +2515,7 @@ void R_LoadLightGrid( lump_t* l )
         }
         
         if( hdrLightGrid )
-            FS_FreeFile( hdrLightGrid );
+            fileSystem->FreeFile( hdrLightGrid );
     }
 }
 
@@ -2726,7 +2746,7 @@ void R_LoadEnvironmentJson( StringEntry baseName )
     
     Com_sprintf( filename, MAX_QPATH, "cubemaps/%s/env.json", baseName );
     
-    filelen = FS_ReadFile( filename, &buffer.v );
+    filelen = fileSystem->ReadFile( filename, &buffer.v );
     if( !buffer.c )
         return;
     bufferEnd = buffer.c + filelen;
@@ -2734,7 +2754,7 @@ void R_LoadEnvironmentJson( StringEntry baseName )
     if( JSON_ValueGetType( buffer.c, bufferEnd ) != JSONTYPE_OBJECT )
     {
         CL_RefPrintf( PRINT_ALL, "Bad %s: does not start with a object\n", filename );
-        FS_FreeFile( buffer.v );
+        fileSystem->FreeFile( buffer.v );
         return;
     }
     
@@ -2742,14 +2762,14 @@ void R_LoadEnvironmentJson( StringEntry baseName )
     if( !cubemapArrayJson )
     {
         CL_RefPrintf( PRINT_ALL, "Bad %s: no Cubemaps\n", filename );
-        FS_FreeFile( buffer.v );
+        fileSystem->FreeFile( buffer.v );
         return;
     }
     
     if( JSON_ValueGetType( cubemapArrayJson, bufferEnd ) != JSONTYPE_ARRAY )
     {
         CL_RefPrintf( PRINT_ALL, "Bad %s: Cubemaps not an array\n", filename );
-        FS_FreeFile( buffer.v );
+        fileSystem->FreeFile( buffer.v );
         return;
     }
     
@@ -2780,7 +2800,7 @@ void R_LoadEnvironmentJson( StringEntry baseName )
             cubemap->parallaxRadius = JSON_ValueGetFloat( keyValueJson, bufferEnd );
     }
     
-    FS_FreeFile( buffer.v );
+    fileSystem->FreeFile( buffer.v );
 }
 
 void R_LoadCubemapEntities( StringEntry cubemapEntityName )
@@ -2851,6 +2871,115 @@ void R_LoadCubemapEntities( StringEntry cubemapEntityName )
     }
 }
 
+bool R_MaterialUsesCubemap( S32 surfaceFlags )
+{
+    switch( surfaceFlags & MATERIAL_MASK )
+    {
+        case MATERIAL_WATER:			// 13			// light covering of water on a surface
+            return true;
+            break;
+        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+            return false;
+            break;
+        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+            return false;
+            break;
+        case MATERIAL_SAND:				// 8			// sandy beach
+            return false;
+            break;
+        case MATERIAL_CARPET:			// 27			// lush carpet
+            return false;
+            break;
+        case MATERIAL_GRAVEL:			// 9			// lots of small stones
+            return false;
+            break;
+        case MATERIAL_ROCK:				// 23			//
+            return false;
+            break;
+        case MATERIAL_TILES:			// 26			// tiled floor
+            return true;
+            break;
+        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+            return false;
+            break;
+        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+            return false;
+            break;
+        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            return true;
+            break;
+        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax and high reflection...
+            return true;
+            break;
+        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+            return false;
+            break;
+        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+            return false;
+            break;
+        case MATERIAL_FABRIC:			// 21			// Cotton sheets
+            return false;
+            break;
+        case MATERIAL_CANVAS:			// 22			// tent material
+            return false;
+            break;
+        case MATERIAL_MARBLE:			// 12			// marble floors
+            return true;
+            break;
+        case MATERIAL_SNOW:				// 14			// freshly laid snow
+            return false;
+            break;
+        case MATERIAL_MUD:				// 17			// wet soil
+            return false;
+            break;
+        case MATERIAL_DIRT:				// 7			// hard mud
+            return false;
+            break;
+        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+            return false;
+            break;
+        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+            return false;
+            break;
+        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+            return false;
+            break;
+        case MATERIAL_PLASTIC:			// 25			//
+            return true;
+            break;
+        case MATERIAL_PLASTER:			// 28			// drywall style plaster
+            return false;
+            break;
+        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+            return true;
+            break;
+        case MATERIAL_ARMOR:			// 30			// body armor
+            return true;
+            break;
+        case MATERIAL_ICE:				// 15			// packed snow/solid ice
+            return true;
+            break;
+        case MATERIAL_GLASS:			// 10			//
+            return true;
+            break;
+        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+            return true;
+            break;
+        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+            return true;
+            break;
+        default:
+            return false;
+            break;
+    }
+    
+    return false;
+}
+
+//#define CUBEMAPS_AT_WAYPOINTS
+
+extern UTF8 currentMapName[128];
+
 void R_AssignCubemapsToWorldSurfaces( void )
 {
     world_t*	w;
@@ -2862,6 +2991,11 @@ void R_AssignCubemapsToWorldSurfaces( void )
     {
         msurface_t* surf = &w->surfaces[i];
         vec3_t surfOrigin;
+        
+        if( !R_MaterialUsesCubemap( surf->shader->surfaceFlags ) )
+        {
+            surf->cubemapIndex = 0;
+        }
         
         if( surf->cullinfo.type & CULLINFO_SPHERE )
         {
@@ -2909,7 +3043,7 @@ void R_RenderMissingCubemaps( void )
     
     if( r_truehdr->integer )
     {
-        cubemapFormat = GL_RGBA16F;
+        cubemapFormat = GL_RGBA16;
     }
     
     for( i = 0; i < tr.numCubemaps; i++ )
@@ -3014,7 +3148,7 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     tr.worldMapLoaded = true;
     
     // load it
-    FS_ReadFile( name, &buffer.v );
+    fileSystem->ReadFile( name, &buffer.v );
     if( !buffer.b )
     {
         Com_Error( ERR_DROP, "idRenderSystemLocal::LoadWorldMap: %s not found", name );
@@ -3045,8 +3179,7 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     i = LittleLong( header->version );
     if( i != BSP_VERSION )
     {
-        Com_Error( ERR_DROP, "idRenderSystemLocal::LoadWorldMap: %s has wrong version number (%i should be %i)",
-                   name, i, BSP_VERSION );
+        Com_Error( ERR_DROP, "idRenderSystemLocal::LoadWorldMap: %s has wrong version number (%i should be %i)", name, i, BSP_VERSION );
     }
     
     // swap all the lumps
@@ -3183,7 +3316,7 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
                     in++;
                 }
                 
-                FS_WriteFile( fileName, buffer, w->lightGridBounds[0] * w->lightGridBounds[1] * 3 + 18 );
+                fileSystem->WriteFile( fileName, buffer, w->lightGridBounds[0] * w->lightGridBounds[1] * 3 + 18 );
             }
             
             Z_Free( buffer );
@@ -3278,18 +3411,9 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
         if( !tr.numCubemaps )
         {
             R_LoadCubemapEntities( "misc_cubemap" );
-        }
-        
-        if( !tr.numCubemaps )
-        {
+            
             // location names are an assured way to get an even distribution
             R_LoadCubemapEntities( "target_location" );
-        }
-        
-        if( !tr.numCubemaps )
-        {
-            // try misc_models
-            R_LoadCubemapEntities( "misc_model" );
         }
         
         if( tr.numCubemaps )
@@ -3323,5 +3447,5 @@ void idRenderSystemLocal::LoadWorld( StringEntry name )
     
     R_InitExternalShaders();
     
-    FS_FreeFile( buffer.v );
+    fileSystem->FreeFile( buffer.v );
 }

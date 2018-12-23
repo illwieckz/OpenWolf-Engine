@@ -19,10 +19,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   cin_ogm.cpp
-// Version:     v1.00
+// File name:   cl_avi.cpp
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ SafeFS_Write
 */
 static ID_INLINE void SafeFS_Write( const void* buffer, S32 len, fileHandle_t f )
 {
-    if( FS_Write( buffer, len, f ) < len )
+    if( fileSystem->Write( buffer, len, f ) < len )
         Com_Error( ERR_DROP, "Failed to write avi file\n" );
 }
 
@@ -347,12 +347,12 @@ bool CL_OpenAVIForWriting( StringEntry fileName )
         return false;
     }
     
-    if( ( afd.f = FS_FOpenFileWrite( fileName ) ) <= 0 )
+    if( ( afd.f = fileSystem->FOpenFileWrite( fileName ) ) <= 0 )
         return false;
         
-    if( ( afd.idxF = FS_FOpenFileWrite( va( "%s" INDEX_FILE_EXTENSION, fileName ) ) ) <= 0 )
+    if( ( afd.idxF = fileSystem->FOpenFileWrite( va( "%s" INDEX_FILE_EXTENSION, fileName ) ) ) <= 0 )
     {
-        FS_FCloseFile( afd.f );
+        fileSystem->FCloseFile( afd.f );
         return false;
     }
     
@@ -392,11 +392,11 @@ bool CL_OpenAVIForWriting( StringEntry fileName )
         Com_Printf( S_COLOR_YELLOW "WARNING: cl_aviFrameRate is not a divisor " "of the audio rate, suggest %d\n", suggestRate );
     }
     
-    if( !Cvar_VariableIntegerValue( "s_initsound" ) )
+    if( !cvarSystem->VariableIntegerValue( "s_initsound" ) )
     {
         afd.audio = false;
     }
-    else if( Q_stricmp( Cvar_VariableString( "s_backend" ), "OpenAL" ) )
+    else if( Q_stricmp( cvarSystem->VariableString( "s_backend" ), "OpenAL" ) )
     {
         if( afd.a.bits == 16 && afd.a.channels == 2 )
             afd.audio = true;
@@ -601,18 +601,18 @@ bool CL_CloseAVI( void )
         
     afd.fileOpen = false;
     
-    FS_Seek( afd.idxF, 4, FS_SEEK_SET );
+    fileSystem->Seek( afd.idxF, 4, FS_SEEK_SET );
     bufIndex = 0;
     WRITE_4BYTES( indexSize );
     SafeFS_Write( buffer, bufIndex, afd.idxF );
-    FS_FCloseFile( afd.idxF );
+    fileSystem->FCloseFile( afd.idxF );
     
     // Write index
     
     // Open the temp index file
-    if( ( indexSize = FS_FOpenFileRead( idxFileName, &afd.idxF, true ) ) <= 0 )
+    if( ( indexSize = fileSystem->FOpenFileRead( idxFileName, &afd.idxF, true ) ) <= 0 )
     {
-        FS_FCloseFile( afd.f );
+        fileSystem->FCloseFile( afd.f );
         return false;
     }
     
@@ -621,21 +621,21 @@ bool CL_CloseAVI( void )
     // Append index to end of avi file
     while( indexRemainder > MAX_AVI_BUFFER )
     {
-        FS_Read( buffer, MAX_AVI_BUFFER, afd.idxF );
+        fileSystem->Read( buffer, MAX_AVI_BUFFER, afd.idxF );
         SafeFS_Write( buffer, MAX_AVI_BUFFER, afd.f );
         afd.fileSize += MAX_AVI_BUFFER;
         indexRemainder -= MAX_AVI_BUFFER;
     }
-    FS_Read( buffer, indexRemainder, afd.idxF );
+    fileSystem->Read( buffer, indexRemainder, afd.idxF );
     SafeFS_Write( buffer, indexRemainder, afd.f );
     afd.fileSize += indexRemainder;
-    FS_FCloseFile( afd.idxF );
+    fileSystem->FCloseFile( afd.idxF );
     
     // Remove temp index file
-    FS_HomeRemove( idxFileName );
+    fileSystem->HomeRemove( idxFileName );
     
     // Write the real header
-    FS_Seek( afd.f, 0, FS_SEEK_SET );
+    fileSystem->Seek( afd.f, 0, FS_SEEK_SET );
     CL_WriteAVIHeader();
     
     bufIndex = 4;
@@ -648,7 +648,7 @@ bool CL_CloseAVI( void )
     
     Z_Free( afd.cBuffer );
     Z_Free( afd.eBuffer );
-    FS_FCloseFile( afd.f );
+    fileSystem->FCloseFile( afd.f );
     
     Com_Printf( "Wrote %d:%d frames to %s\n", afd.numVideoFrames, afd.numAudioFrames, afd.fileName );
     

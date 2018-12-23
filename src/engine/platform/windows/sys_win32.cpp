@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sys_win32.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -653,8 +653,8 @@ Display an error message
 */
 void Sys_ErrorDialog( StringEntry error )
 {
-    StringEntry homepath = Cvar_VariableString( "fs_homepath" ), gamedir = Cvar_VariableString( "fs_gamedir" ), fileName = "crashlog.txt";
-    UTF8 buffer[ 1024 ], *ospath = FS_BuildOSPath( homepath, gamedir, fileName );
+    StringEntry homepath = cvarSystem->VariableString( "fs_homepath" ), gamedir = cvarSystem->VariableString( "fs_gamedir" ), fileName = "crashlog.txt";
+    UTF8 buffer[ 1024 ], *ospath = fileSystem->BuildOSPath( homepath, gamedir, fileName );
     U32 size;
     S32 f = -1;
     
@@ -665,7 +665,7 @@ void Sys_ErrorDialog( StringEntry error )
 #endif
     
     // Make sure the write path for the crashlog exists...
-    if( FS_CreatePath( ospath ) )
+    if( fileSystem->CreatePath( ospath ) )
     {
         Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", ospath );
         return;
@@ -673,7 +673,7 @@ void Sys_ErrorDialog( StringEntry error )
     
     // We might be crashing because we maxed out the Quake MAX_FILE_HANDLES,
     // which will come through here, so we don't want to recurse forever by
-    // calling FS_FOpenFileWrite()...use the Unix system APIs instead.
+    // calling fileSystem->FOpenFileWrite()...use the Unix system APIs instead.
     f = open( ospath, O_CREAT | O_TRUNC | O_WRONLY, 0640 );
     if( f == -1 )
     {
@@ -777,7 +777,7 @@ void Sys_GLimpInit( void )
         // It's a little bit weird having in_mouse control the
         // video driver, but from ioq3's point of view they're
         // virtually the same except for the mouse input anyway
-        if( Cvar_VariableIntegerValue( "in_mouse" ) == -1 )
+        if( cvarSystem->VariableIntegerValue( "in_mouse" ) == -1 )
         {
             // Use the windib SDL backend, which is closest to
             // the behaviour of idq3 with in_mouse set to -1
@@ -991,6 +991,80 @@ bool Sys_IsNumLockDown( void )
     }
     
     return false;
+}
+
+/*
+================
+Sys_SteamInit
+Steam initialization is done here.
+In order for Steam to work, two things are needed:
+- steam_api64.dll
+- steam_appid.txt
+steam_appid.txt is a text file containing "xxxxxxxxxxxxxxx" number
+Steamworks SDK is required to use the playtime tracking and overlay features
+without launching the app manually through Steam.
+Unfortunately, the SDK does not play nice with copyleft licenses.
+Fortunately! we can invoke the library directly and avoid this entirely,
+provided the end-user has the goods.
+Unfortunately! this is platform specific and so we have to do it here.
+================
+*/
+
+typedef bool( __stdcall* SteamAPIInit_Type )();
+typedef void( __stdcall* SteamAPIShutdown_Type )();
+static SteamAPIInit_Type SteamAPI_Init;
+static SteamAPIShutdown_Type SteamAPI_Shutdown;
+static void* steamLibrary = nullptr;
+
+void Sys_SteamInit( void )
+{
+    // Load the library
+    steamLibrary = Sys_LoadLibrary( "steam_api64" DLL_EXT );
+    if( !steamLibrary )
+    {
+        Com_Printf( S_COLOR_RED "Steam integration failed: Couldn't find steam_api64" DLL_EXT "\n" );
+        return;
+    }
+    
+    // Load the functions
+    SteamAPI_Init = ( SteamAPIInit_Type )Sys_LoadFunction( steamLibrary, "SteamAPI_Init" );
+    SteamAPI_Shutdown = ( SteamAPIShutdown_Type )Sys_LoadFunction( steamLibrary, "SteamAPI_Shutdown" );
+    
+    if( !SteamAPI_Shutdown || !SteamAPI_Init )
+    {
+        Com_Printf( S_COLOR_RED "Steam integration failed: Library invalid\n" );
+        Sys_UnloadLibrary( steamLibrary );
+        steamLibrary = nullptr;
+        return;
+    }
+    
+    // Finally, call the init function in Steam, which should pop up the overlay if everything went correctly
+    if( !SteamAPI_Init() )
+    {
+        Com_Printf( S_COLOR_RED "Steam integration failed: Steam init failed. Ensure steam_appid.txt exists and is valid.\n" );
+        Sys_UnloadLibrary( steamLibrary );
+        steamLibrary = nullptr;
+        return;
+    }
+}
+
+/*
+================
+Sys_SteamShutdown
+Platform-specific exit code
+================
+*/
+void Sys_SteamShutdown()
+{
+    if( !steamLibrary )
+    {
+        Com_Printf( "Skipping Steam integration shutdown...\n" );
+        return;
+    }
+    
+    SteamAPI_Shutdown();
+    Sys_UnloadLibrary( steamLibrary );
+    steamLibrary = nullptr;
 }
 
 #endif

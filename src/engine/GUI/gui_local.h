@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   gui_local.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +43,8 @@
 #ifndef __GUI_PUBLIC_H__
 #include <GUI/gui_api.h>
 #endif
-#ifndef __BG_PUBLIC_H__
-#include <bgame/bg_public.h>
+#ifndef __BG_API_H__
+#include <API/bgame_api.h>
 #endif
 #ifndef __GUI_SHARED_H__
 #include <GUI/gui_shared.h>
@@ -64,7 +64,7 @@ void UI_DrawConnectScreen( bool overlay );
 
 // new ui stuff
 #define MAX_MAPS 128
-#define MAX_PINGREQUESTS 32
+//#define MAX_PINGREQUESTS 32
 #define MAX_ADDRESSLENGTH 64
 #define MAX_DISPLAY_SERVERS 2048
 #define MAX_SERVERSTATUS_LINES 128

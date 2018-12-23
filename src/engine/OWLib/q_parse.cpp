@@ -28,14 +28,21 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   q_parse.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: support for parsing text files
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
 #include <OWLib/q_splineshared.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
 /*
 ============================================================================
@@ -76,7 +83,7 @@ void Com_BeginParseSession( const char* filename )
 #ifndef Q3MAP2
     if( parseInfoNum == MAX_PARSE_INFO - 1 )
     {
-        Com_Error( ERR_FATAL, "Com_BeginParseSession: session overflow" );
+        Com_Error( OWERR_FATAL, "Com_BeginParseSession: session overflow" );
     }
     parseInfoNum++;
     pi = &parseInfo[parseInfoNum];
@@ -96,7 +103,7 @@ void Com_EndParseSession( void )
     if( parseInfoNum == 0 )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Com_EndParseSession: session underflow" );
+        Com_Error( OWERR_FATAL, "Com_EndParseSession: session underflow" );
 #endif
     }
     parseInfoNum--;
@@ -126,11 +133,11 @@ void Com_ScriptError( const char* msg, ... )
     char string[32000];
     
     va_start( argptr, msg );
-    vsprintf( string, msg, argptr );
+    vsnprintf( string, sizeof( string ), msg, argptr );
     va_end( argptr );
     
 #ifndef Q3MAP2
-    Com_Error( ERR_DROP, "File %s, line %i: %s", pi->parseFile, pi->lines, string );
+    Com_Error( OWERR_DROP, "File %s, line %i: %s", pi->parseFile, pi->lines, string );
 #endif
 }
 
@@ -140,7 +147,7 @@ void Com_ScriptWarning( const char* msg, ... )
     char string[32000];
     
     va_start( argptr, msg );
-    vsprintf( string, msg, argptr );
+    vsnprintf( string, sizeof( string ), msg, argptr );
     va_end( argptr );
     
 #ifndef Q3MAP2
@@ -211,7 +218,7 @@ static char* Com_ParseExt( const char * ( *data_p ), bool allowLineBreaks )
     if( !data_p )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Com_ParseExt: NULL data_p" );
+        Com_Error( OWERR_FATAL, "Com_ParseExt: NULL data_p" );
 #endif
     }
     
@@ -406,7 +413,7 @@ static char* Com_ParseExt( const char * ( *data_p ), bool allowLineBreaks )
         int l;
         int j;
         
-        l = strlen( *punc );
+        l = ( int )strlen( *punc );
         for( j = 0 ; j < l ; j++ )
         {
             if( data[j] != ( *punc )[j] )
@@ -554,9 +561,9 @@ Com_ParseRestOfLine
 const char* Com_ParseRestOfLine( const char * ( *data_p ) )
 {
     static char line[MAX_TOKEN_CHARS];
+#ifndef Q3MAP2
     const char* token;
     
-#ifndef Q3MAP2
     line[0] = 0;
     while( 1 )
     {
@@ -608,7 +615,7 @@ void Com_Parse1DMatrix( const char * ( *buf_p ), int x, float* m )
     const char*  token;
     int i;
     
-    Com_MatchToken( buf_p, "(" );
+    Com_MatchToken( buf_p, "(", 0 );
     
     for( i = 0 ; i < x ; i++ )
     {
@@ -616,34 +623,34 @@ void Com_Parse1DMatrix( const char * ( *buf_p ), int x, float* m )
         m[i] = atof( token );
     }
     
-    Com_MatchToken( buf_p, ")" );
+    Com_MatchToken( buf_p, ")", 0 );
 }
 
 void Com_Parse2DMatrix( const char * ( *buf_p ), int y, int x, float* m )
 {
     int i;
     
-    Com_MatchToken( buf_p, "(" );
+    Com_MatchToken( buf_p, "(", 0 );
     
     for( i = 0 ; i < y ; i++ )
     {
         Com_Parse1DMatrix( buf_p, x, m + i * x );
     }
     
-    Com_MatchToken( buf_p, ")" );
+    Com_MatchToken( buf_p, ")", 0 );
 }
 
 void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m )
 {
     int i;
     
-    Com_MatchToken( buf_p, "(" );
+    Com_MatchToken( buf_p, "(", 0 );
     
     for( i = 0 ; i < z ; i++ )
     {
         Com_Parse2DMatrix( buf_p, y, x, m + i * x * y );
     }
     
-    Com_MatchToken( buf_p, ")" );
+    Com_MatchToken( buf_p, ")", 0 );
 }
 

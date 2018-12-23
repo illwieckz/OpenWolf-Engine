@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_codec.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ static snd_codec_t* S_FindCodecForFile( StringEntry filename )
             COM_DefaultExtension( fn, MAX_QPATH, codec->ext );
             
             // Check it exists
-            if( FS_ReadFile( fn, NULL ) != -1 )
+            if( fileSystem->ReadFile( fn, NULL ) != -1 )
                 return codec;
                 
             // Nope. Next!
@@ -203,7 +203,7 @@ snd_stream_t* S_CodecUtilOpen( StringEntry filename, snd_codec_t* codec )
     int             length;
     
     // Try to open the file
-    length = FS_FOpenFileRead( filename, &hnd, true );
+    length = fileSystem->FOpenFileRead( filename, &hnd, true );
     if( !hnd )
     {
         Com_Printf( "Can't read sound file %s\n", filename );
@@ -214,7 +214,7 @@ snd_stream_t* S_CodecUtilOpen( StringEntry filename, snd_codec_t* codec )
     stream = ( snd_stream_t* )Z_Malloc( sizeof( snd_stream_t ) );
     if( !stream )
     {
-        FS_FCloseFile( hnd );
+        fileSystem->FCloseFile( hnd );
         return NULL;
     }
     
@@ -232,7 +232,7 @@ S_CodecUtilClose
 */
 void S_CodecUtilClose( snd_stream_t** stream )
 {
-    FS_FCloseFile( ( *stream )->file );
+    fileSystem->FCloseFile( ( *stream )->file );
     Z_Free( *stream );
     *stream = NULL;
 }

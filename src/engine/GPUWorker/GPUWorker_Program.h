@@ -29,9 +29,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   GPUWorkerProgram.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -40,10 +40,10 @@
 #define __GPUWORKER_PROGGRAM_H__
 
 #ifndef __R_LOCAL_H__
-#include "../GPURenderer/r_local.h"
+#include <GPURenderer/r_local.h>
 #endif
 #ifndef __UTIL_STR_H__
-#include "../OWLib/util_str.h"
+#include <OWLib/util_str.h>
 #endif
 #ifndef __CL_PLATFORM_H
 #include <cl/cl_platform.h>

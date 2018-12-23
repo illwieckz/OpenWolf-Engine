@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_scrn.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: master for refresh, status bar, console, chat, notify, etc
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -412,7 +412,7 @@ void SCR_DrawDemoRecording( void )
     }
     
     //bani
-    Cvar_Set( "cl_demooffset", va( "%d", FS_FTell( clc.demofile ) ) );
+    cvarSystem->Set( "cl_demooffset", va( "%d", fileSystem->FTell( clc.demofile ) ) );
 }
 
 /*
@@ -490,11 +490,11 @@ SCR_Init
 */
 void SCR_Init( void )
 {
-    cl_timegraph = Cvar_Get( "timegraph", "0", CVAR_CHEAT );
-    cl_debuggraph = Cvar_Get( "debuggraph", "0", CVAR_CHEAT );
-    cl_graphheight = Cvar_Get( "graphheight", "32", CVAR_CHEAT );
-    cl_graphscale = Cvar_Get( "graphscale", "1", CVAR_CHEAT );
-    cl_graphshift = Cvar_Get( "graphshift", "0", CVAR_CHEAT );
+    cl_timegraph = cvarSystem->Get( "timegraph", "0", CVAR_CHEAT );
+    cl_debuggraph = cvarSystem->Get( "debuggraph", "0", CVAR_CHEAT );
+    cl_graphheight = cvarSystem->Get( "graphheight", "32", CVAR_CHEAT );
+    cl_graphscale = cvarSystem->Get( "graphscale", "1", CVAR_CHEAT );
+    cl_graphshift = cvarSystem->Get( "graphshift", "0", CVAR_CHEAT );
     
     scr_initialized = true;
 }
@@ -560,11 +560,14 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame )
             case CA_LOADING:
             case CA_PRIMED:
                 // draw the game information screen and loading progress
-                CL_CGameRendering( stereoFrame );
+                if( cgvm )
+                {
+                    CL_CGameRendering( stereoFrame );
+                }
                 
                 // also draw the connection information, so it doesn't
                 // flash away too briefly on local or lan games
-                //if (!com_sv_running->value || Cvar_VariableIntegerValue("sv_cheats"))	// Ridah, don't draw useless text if not in dev mode
+                //if (!com_sv_running->value || cvarSystem->VariableIntegerValue("sv_cheats"))	// Ridah, don't draw useless text if not in dev mode
                 uiManager->Refresh( cls.realtime );
                 uiManager->DrawConnectScreen( true );
                 break;

@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_image_jpg.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ void R_LoadJPG( StringEntry filename, U8** pic, S32* width, S32* height )
      * requires it in order to read binary files.
      */
     
-    len = FS_ReadFile( ( UTF8* ) filename, &fbuffer.v );
+    len = fileSystem->ReadFile( ( UTF8* ) filename, &fbuffer.v );
     if( !fbuffer.b || len < 0 )
     {
         return;
@@ -141,7 +141,7 @@ void R_LoadJPG( StringEntry filename, U8** pic, S32* width, S32* height )
          * We need to clean up the JPEG object, close the input file, and return.
          */
         jpeg_destroy_decompress( &cinfo );
-        FS_FreeFile( fbuffer.v );
+        fileSystem->FreeFile( fbuffer.v );
         
         /* Append the filename to the error for easier debugging */
         CL_RefPrintf( PRINT_ALL, ", loading file %s\n", filename );
@@ -195,7 +195,7 @@ void R_LoadJPG( StringEntry filename, U8** pic, S32* width, S32* height )
       )
     {
         // Free the memory to make sure we don't leak memory
-        FS_FreeFile( fbuffer.v );
+        fileSystem->FreeFile( fbuffer.v );
         jpeg_destroy_decompress( &cinfo );
         
         Com_Error( ERR_DROP, "LoadJPG: %s has an invalid image format: %dx%d*4=%d, components: %d", filename,
@@ -261,7 +261,7 @@ void R_LoadJPG( StringEntry filename, U8** pic, S32* width, S32* height )
      * so as to simplify the setjmp error logic above.  (Actually, I don't
      * think that jpeg_destroy can do an error exit, but why assume anything...)
      */
-    FS_FreeFile( fbuffer.v );
+    fileSystem->FreeFile( fbuffer.v );
     
     /* At this point you may want to check to see whether any corrupt-data
      * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
@@ -474,7 +474,7 @@ void RE_SaveJPG( UTF8* filename, S32 quality, S32 image_width, S32 image_height,
     out = ( U8* )Hunk_AllocateTempMemory( bufSize );
     
     bufSize = RE_SaveJPGToBuffer( out, bufSize, quality, image_width, image_height, image_buffer, padding );
-    FS_WriteFile( filename, out, bufSize );
+    fileSystem->WriteFile( filename, out, bufSize );
     
     Hunk_FreeTempMemory( out );
 }

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cm_load.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -962,7 +962,9 @@ void CMod_LoadVisibility( lump_t* l )
 CMod_LoadSurfaces
 =================
 */
+#ifdef DEDICATED
 #define	MAX_PATCH_SIZE		64
+#endif
 #define	MAX_PATCH_VERTS		(MAX_PATCH_SIZE * MAX_PATCH_SIZE)
 void CMod_LoadSurfaces( lump_t* surfs, lump_t* verts, lump_t* indexesLump )
 {
@@ -1130,7 +1132,7 @@ void idCollisionModelManagerLocal::LoadCollisionModel( StringEntry qpath )
     COM_StripExtension( qpath, cmpath );
     Com_sprintf( cmpath, sizeof( cmpath ), "%s.cm", cmpath );
     
-    S32 cmlen = FS_ReadFile( cmpath, &buffer );
+    S32 cmlen = fileSystem->ReadFile( cmpath, &buffer );
     if( cmlen <= 0 || buffer == NULL )
     {
         Com_Error( ERR_FATAL, "LoadCollisionModel: Failed to load cm %s\n", cmpath );
@@ -1141,7 +1143,7 @@ void idCollisionModelManagerLocal::LoadCollisionModel( StringEntry qpath )
         worldcm.Init( ( cmHeader_t* )buffer );
     }
     
-    FS_FreeFile( buffer );
+    fileSystem->FreeFile( buffer );
 }
 
 void* idCollisionModelManagerLocal::GetBrushModelVertexes( S32 bmodelNum )
@@ -1168,13 +1170,13 @@ void idCollisionModelManagerLocal::LoadMap( StringEntry name, bool clientload, S
     }
     
 #ifndef BSPC
-    cm_noAreas = Cvar_Get( "cm_noAreas", "0", CVAR_CHEAT );
-    cm_noCurves = Cvar_Get( "cm_noCurves", "0", CVAR_CHEAT );
-    cm_forceTriangles = Cvar_Get( "cm_forceTriangles", "0", CVAR_CHEAT | CVAR_LATCH );
-    cm_playerCurveClip = Cvar_Get( "cm_playerCurveClip", "1", CVAR_ARCHIVE | CVAR_CHEAT );
-    cm_optimize = Cvar_Get( "cm_optimize", "1", CVAR_CHEAT );
-    cm_showCurves = Cvar_Get( "cm_showCurves", "0", CVAR_CHEAT );
-    cm_showTriangles = Cvar_Get( "cm_showTriangles", "0", CVAR_CHEAT );
+    cm_noAreas = cvarSystem->Get( "cm_noAreas", "0", CVAR_CHEAT );
+    cm_noCurves = cvarSystem->Get( "cm_noCurves", "0", CVAR_CHEAT );
+    cm_forceTriangles = cvarSystem->Get( "cm_forceTriangles", "0", CVAR_CHEAT | CVAR_LATCH );
+    cm_playerCurveClip = cvarSystem->Get( "cm_playerCurveClip", "1", CVAR_ARCHIVE | CVAR_CHEAT );
+    cm_optimize = cvarSystem->Get( "cm_optimize", "1", CVAR_CHEAT );
+    cm_showCurves = cvarSystem->Get( "cm_showCurves", "0", CVAR_CHEAT );
+    cm_showTriangles = cvarSystem->Get( "cm_showTriangles", "0", CVAR_CHEAT );
 #endif
     Com_DPrintf( "CM_LoadMap( %s, %i )\n", name, clientload );
     
@@ -1202,7 +1204,7 @@ void idCollisionModelManagerLocal::LoadMap( StringEntry name, bool clientload, S
     // load the file
     //
 #ifndef BSPC
-    length = FS_ReadFile( name, ( void** )&buf );
+    length = fileSystem->ReadFile( name, ( void** )&buf );
 #else
     length = LoadQuakeFile( ( quakefile_t* ) name, ( void** )&buf );
 #endif
@@ -1221,7 +1223,6 @@ void idCollisionModelManagerLocal::LoadMap( StringEntry name, bool clientload, S
         ( ( S32* )&header )[i] = LittleLong( ( ( S32* )&header )[i] );
     }
     
-    // Dushan
     if( header.version != BSP_VERSION )
     {
         Com_Error( ERR_DROP, "idCollisionModelManagerLocal::LoadMap: %s has wrong version number (%i should be %i)", name, header.version, BSP_VERSION );
@@ -1246,7 +1247,7 @@ void idCollisionModelManagerLocal::LoadMap( StringEntry name, bool clientload, S
     CMod_CreateBrushSideWindings();
     
     // we are NOT freeing the file, because it is cached for the ref
-    FS_FreeFile( buf );
+    fileSystem->FreeFile( buf );
     
     CM_InitBoxHull();
     
@@ -1260,16 +1261,16 @@ void idCollisionModelManagerLocal::LoadMap( StringEntry name, bool clientload, S
     
     // Init the physics manager.
 #ifndef BSPC
-    physicsManager->Init();
+    //physicsManager->Init();
     
     // Load the clipMap into the physics processor.
-    physicsManager->CreateCollisionModelFromBSP( &cm );
+    //physicsManager->CreateCollisionModelFromBSP( &cm );
     
     // Load the bullet collision file
-    physicsManager->LoadBulletPhysicsFile( name );
+    //physicsManager->LoadBulletPhysicsFile( name );
     
     // Load the world collision model.
-    LoadCollisionModel( name );
+    //LoadCollisionModel( name );
 #endif
 }
 

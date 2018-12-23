@@ -29,9 +29,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   GPUWorker.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -65,8 +65,8 @@ void owGpuWorkerLocal::Init( void )
         CL_GL_CONTEXT_KHR, ( cl_context_properties ) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, ( cl_context_properties ) wglGetCurrentDC(),
 #elif __LINUX__
-        CL_GL_CONTEXT_KHR, ( cl_context_properties ) glXGetCurrentContext(),
-        CL_GLX_DISPLAY_KHR, ( cl_context_properties ) glXGetCurrentDisplay(),
+        //  CL_GL_CONTEXT_KHR, ( cl_context_properties ) glXGetCurrentContext(),
+        //  CL_GLX_DISPLAY_KHR, ( cl_context_properties ) glXGetCurrentDisplay(),
 #elif __ANDROID__
         //Dushan - also fot the Android
         CL_GL_CONTEXT_KHR, ( cl_context_properties ) eglGetCurrentDisplay(),

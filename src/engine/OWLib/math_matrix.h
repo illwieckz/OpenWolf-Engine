@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   math_matrix.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ ID_INLINE mat3_t::mat3_t()
 
 ID_INLINE mat3_t::mat3_t( float src[ 3 ][ 3 ] )
 {
-    memcpy( mat, src, sizeof( src ) );
+    //memcpy( mat, src, sizeof( src ) );
 }
 
 ID_INLINE mat3_t::mat3_t( idVec3 const& x, idVec3 const& y, idVec3 const& z )

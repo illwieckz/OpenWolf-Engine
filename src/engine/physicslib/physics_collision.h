@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   physics_collision.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,9 @@
 #define __PHYSICS_COLLISION_H__
 
 #ifndef __R_LOCAL_H__
+#ifndef Q3MAP2
 #include <GPURenderer/r_local.h>
+#endif
 #endif
 
 //
@@ -76,7 +78,7 @@ private:
     void CreateLocalInertia( F32 mass, btVector3& localInertia );
     void CreateInitialTransform( idVec3& origin, idVec3& angle, F32 mass, btVector3& localInertia );
     void CreateGhostObject( void );
-#if !defined ( DEDICATED )
+#if !defined ( DEDICATED ) && !defined  ( Q3MAP2 )
     void InitCMFromMDMayaModel( model_t* model );
     void InitCMFromBrushModel( idCollisionShape_t* shape );
 #endif

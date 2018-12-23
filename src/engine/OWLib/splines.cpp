@@ -28,32 +28,31 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   splines.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLib/q_splineshared.h>
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
 #include <OWLib/splines.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
-int FS_Write( const void* buffer, int len, fileHandle_t h );
-int FS_ReadFile( const char* qpath, void** buffer );
-void FS_FreeFile( void* buffer );
-fileHandle_t FS_FOpenFileWrite( const char* filename );
-void FS_FCloseFile( fileHandle_t f );
 void Cbuf_AddText( const char* text );
 void Cbuf_Execute( void );
 
-#ifdef __LINUX__
-static float Q_fabs( float f )
+float OWfabs( float f )
 {
     int tmp = *( int* ) &f;
     tmp &= 0x7FFFFFFF;
     return *( float* ) &tmp;
 }
-#endif
 
 // (SA) making a list of cameras so I can use
 //		the splines as targets for other things.
@@ -509,7 +508,7 @@ const idVec3* idSplineList::getPosition( long t )
 
 void idSplineList::parse( const char * ( *text ) )
 {
-#ifndef Q3MAP2
+#if 0//ndef Q3MAP2
     const char* token;
     //Com_MatchToken( text, "{" );
     do
@@ -570,21 +569,21 @@ void idSplineList::parse( const char * ( *text ) )
 
 void idSplineList::write( fileHandle_t file, const char* p )
 {
-#ifndef Q3MAP2
+#if 0//ndef Q3MAP2
     idStr s = va( "\t\t%s {\n", p );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     //s = va("\t\tname %s\n", name.c_str());
-    //FS_Write(s.c_str(), s.length(), file);
+    //fileSystem->Write(s.c_str(), s.length(), file);
     s = va( "\t\t\tgranularity %f\n", granularity );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     int count = controlPoints.Num();
     for( int i = 0; i < count; i++ )
     {
         s = va( "\t\t\t( %f %f %f )\n", controlPoints[i]->x, controlPoints[i]->y, controlPoints[i]->z );
-        FS_Write( s.c_str(), s.length(), file );
+        fileSystem->Write( s.c_str(), s.length(), file );
     }
     s = "\t\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 
@@ -1021,8 +1020,8 @@ bool idCameraDef::load( const char* filename )
 #ifndef Q3MAP2
     char* buf;
     const char* buf_p;
-    // TTimo: unused (int length = FS_ReadFile( filename, (void **)&buf );)
-    FS_ReadFile( filename, ( void** )&buf );
+    // TTimo: unused (int length = fileSystem->ReadFile( filename, (void **)&buf );)
+    fileSystem->ReadFile( filename, ( void** )&buf );
     if( !buf )
     {
         return false;
@@ -1033,7 +1032,7 @@ bool idCameraDef::load( const char* filename )
     buf_p = buf;
     parse( &buf_p );
     Com_EndParseSession();
-    FS_FreeFile( buf );
+    fileSystem->FreeFile( buf );
 #endif
     return true;
 }
@@ -1041,14 +1040,14 @@ bool idCameraDef::load( const char* filename )
 void idCameraDef::save( const char* filename )
 {
 #ifndef Q3MAP2
-    fileHandle_t file = FS_FOpenFileWrite( filename );
+    fileHandle_t file = fileSystem->FOpenFileWrite( filename );
     if( file )
     {
         int i;
         idStr s = "cameraPathDef { \n";
-        FS_Write( s.c_str(), s.length(), file );
+        fileSystem->Write( s.c_str(), s.length(), file );
         s = va( "\ttime %f\n", baseTime );
-        FS_Write( s.c_str(), s.length(), file );
+        fileSystem->Write( s.c_str(), s.length(), file );
         
         cameraPosition->write( file, va( "camera_%s", cameraPosition->typeStr() ) );
         
@@ -1065,9 +1064,9 @@ void idCameraDef::save( const char* filename )
         fov.write( file, "fov" );
         
         s = "}\n";
-        FS_Write( s.c_str(), s.length(), file );
+        fileSystem->Write( s.c_str(), s.length(), file );
     }
-    FS_FCloseFile( file );
+    fileSystem->FCloseFile( file );
 #endif
 }
 
@@ -1182,15 +1181,15 @@ void idCameraEvent::write( fileHandle_t file, const char* name )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t%s {\n", name );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = va( "\t\ttype %d\n", static_cast<int>( type ) );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = va( "\t\tparam \"%s\"\n", paramStr.c_str() );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = va( "\t\ttime %d\n", time );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = "\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 
@@ -1366,7 +1365,7 @@ bool idCameraPosition::parseToken( const char* key, const char * ( *text ) )
 
 void idFixedPosition::parse( const char * ( *text ) )
 {
-#ifndef Q3MAP2
+#if 0//ndef Q3MAP2
     const char* token;
     Com_MatchToken( text, "{" );
     do
@@ -1425,7 +1424,7 @@ void idFixedPosition::parse( const char * ( *text ) )
 
 void idInterpolatedPosition::parse( const char * ( *text ) )
 {
-#ifndef Q3MAP2
+#if 0//ndef Q3MAP2
     const char* token;
     Com_MatchToken( text, "{" );
     do
@@ -1552,22 +1551,22 @@ void idCameraFOV::write( fileHandle_t file, const char* p )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t%s {\n", p );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\tfov %f\n", fov );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\tstartFOV %f\n", startFOV );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\tendFOV %f\n", endFOV );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\ttime %i\n", time );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = "\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 
@@ -1576,21 +1575,21 @@ void idCameraPosition::write( fileHandle_t file, const char* p )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t\ttime %i\n", time );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\ttype %i\n", static_cast<int>( type ) );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\tname %s\n", name.c_str() );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     s = va( "\t\tbaseVelocity %f\n", baseVelocity );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     
     for( int i = 0; i < velocities.Num(); i++ )
     {
         s = va( "\t\tvelocity %i %i %f\n", velocities[i]->startTime, velocities[i]->time, velocities[i]->speed );
-        FS_Write( s.c_str(), s.length(), file );
+        fileSystem->Write( s.c_str(), s.length(), file );
     }
 #endif
 }
@@ -1599,12 +1598,12 @@ void idFixedPosition::write( fileHandle_t file, const char* p )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t%s {\n", p );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     idCameraPosition::write( file, p );
     s = va( "\t\tpos ( %f %f %f )\n", pos.x, pos.y, pos.z );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = "\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 
@@ -1612,14 +1611,14 @@ void idInterpolatedPosition::write( fileHandle_t file, const char* p )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t%s {\n", p );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     idCameraPosition::write( file, p );
     s = va( "\t\tstartPos ( %f %f %f )\n", startPos.x, startPos.y, startPos.z );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = va( "\t\tendPos ( %f %f %f )\n", endPos.x, endPos.y, endPos.z );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     s = "\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 
@@ -1627,11 +1626,11 @@ void idSplinePosition::write( fileHandle_t file, const char* p )
 {
 #ifndef Q3MAP2
     idStr s = va( "\t%s {\n", p );
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
     idCameraPosition::write( file, p );
     target.write( file, "target" );
     s = "\t}\n";
-    FS_Write( s.c_str(), s.length(), file );
+    fileSystem->Write( s.c_str(), s.length(), file );
 #endif
 }
 

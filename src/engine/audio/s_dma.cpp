@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_dma.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -546,7 +546,7 @@ void S_Base_StartSound( vec3_t origin, S32 entityNum, S32 entchannel, sfxHandle_
         {
             if( time - ch->allocTime < 50 )
             {
-//              if (Cvar_VariableValue( "cg_showmiss" )) {
+//              if (cvarSystem->VariableValue( "cg_showmiss" )) {
 //                  Com_Printf("double sound start\n");
 //              }
                 return;
@@ -1684,13 +1684,13 @@ bool S_Base_Init( soundInterface_t* si )
         return false;
     }
     
-    s_khz = Cvar_Get( "s_khz", "22", CVAR_ARCHIVE );
-    s_mixahead = Cvar_Get( "s_mixahead", "0.2", CVAR_ARCHIVE );
-    s_mixPreStep = Cvar_Get( "s_mixPreStep", "0.05", CVAR_ARCHIVE );
-    s_show = Cvar_Get( "s_show", "0", CVAR_CHEAT );
-    s_testsound = Cvar_Get( "s_testsound", "0", CVAR_CHEAT );
+    s_khz = cvarSystem->Get( "s_khz", "22", CVAR_ARCHIVE );
+    s_mixahead = cvarSystem->Get( "s_mixahead", "0.2", CVAR_ARCHIVE );
+    s_mixPreStep = cvarSystem->Get( "s_mixPreStep", "0.05", CVAR_ARCHIVE );
+    s_show = cvarSystem->Get( "s_show", "0", CVAR_CHEAT );
+    s_testsound = cvarSystem->Get( "s_testsound", "0", CVAR_CHEAT );
     
-    r = SNDDMA_Init();
+    r = SNDDMA_Init( s_khz->integer );
     
     if( r )
     {

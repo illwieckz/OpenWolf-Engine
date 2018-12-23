@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_cin.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: video and cinematic playback
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1231,10 +1231,10 @@ static void RoQReset( void )
 
     if( currentHandle < 0 ) return;
     
-    FS_FCloseFile( cinTable[currentHandle].iFile );
-    FS_FOpenFileRead( cinTable[currentHandle].fileName, &cinTable[currentHandle].iFile, true );
+    fileSystem->FCloseFile( cinTable[currentHandle].iFile );
+    fileSystem->FOpenFileRead( cinTable[currentHandle].fileName, &cinTable[currentHandle].iFile, true );
     // let the background thread start reading ahead
-    FS_Read( cin.file, 16, cinTable[currentHandle].iFile );
+    fileSystem->Read( cin.file, 16, cinTable[currentHandle].iFile );
     RoQ_init();
     cinTable[currentHandle].status = FMV_LOOPED;
 }
@@ -1255,7 +1255,7 @@ static void RoQInterrupt( void )
     
     if( currentHandle < 0 ) return;
     
-    FS_Read( cin.file, cinTable[currentHandle].RoQFrameSize + 8, cinTable[currentHandle].iFile );
+    fileSystem->Read( cin.file, cinTable[currentHandle].RoQFrameSize + 8, cinTable[currentHandle].iFile );
     if( cinTable[currentHandle].RoQPlayed >= cinTable[currentHandle].ROQSize )
     {
         if( cinTable[currentHandle].holdAtEnd == false )
@@ -1402,7 +1402,7 @@ redump:
 // one more frame hits the dust
 //
 //	assert(cinTable[currentHandle].RoQFrameSize <= 65536);
-//	r = FS_Read( cin.file, cinTable[currentHandle].RoQFrameSize+8, cinTable[currentHandle].iFile );
+//	r = fileSystem->Read( cin.file, cinTable[currentHandle].RoQFrameSize+8, cinTable[currentHandle].iFile );
     cinTable[currentHandle].RoQPlayed	+= cinTable[currentHandle].RoQFrameSize + 8;
 }
 
@@ -1467,7 +1467,7 @@ static void RoQShutdown( void )
     
     if( cinTable[currentHandle].iFile )
     {
-        FS_FCloseFile( cinTable[currentHandle].iFile );
+        fileSystem->FCloseFile( cinTable[currentHandle].iFile );
         cinTable[currentHandle].iFile = 0;
     }
     
@@ -1478,11 +1478,11 @@ static void RoQShutdown( void )
         // if we are aborting the intro cinematic with
         // a devmap command, nextmap would be valid by
         // the time it was referenced
-        s = Cvar_VariableString( "nextmap" );
+        s = cvarSystem->VariableString( "nextmap" );
         if( s[0] )
         {
             Cbuf_ExecuteText( EXEC_APPEND, va( "%s\n", s ) );
-            Cvar_Set( "nextmap", "" );
+            cvarSystem->Set( "nextmap", "" );
         }
         CL_handle = -1;
     }
@@ -1792,7 +1792,7 @@ S32 CIN_PlayCinematic( StringEntry arg, S32 x, S32 y, S32 w, S32 h, S32 systemBi
     }
     
     cinTable[currentHandle].ROQSize = 0;
-    cinTable[currentHandle].ROQSize = FS_FOpenFileRead( cinTable[currentHandle].fileName, &cinTable[currentHandle].iFile, true );
+    cinTable[currentHandle].ROQSize = fileSystem->FOpenFileRead( cinTable[currentHandle].fileName, &cinTable[currentHandle].iFile, true );
     
     if( cinTable[currentHandle].ROQSize <= 0 )
     {
@@ -1828,13 +1828,13 @@ S32 CIN_PlayCinematic( StringEntry arg, S32 x, S32 y, S32 w, S32 h, S32 systemBi
     
     initRoQ();
     
-    FS_Read( cin.file, 16, cinTable[currentHandle].iFile );
+    fileSystem->Read( cin.file, 16, cinTable[currentHandle].iFile );
     
     RoQID = ( U16 )( cin.file[0] ) + ( U16 )( cin.file[1] ) * 256;
     if( RoQID == 0x1084 )
     {
         RoQ_init();
-//		FS_Read (cin.file, cinTable[currentHandle].RoQFrameSize+8, cinTable[currentHandle].iFile);
+//		fileSystem->Read (cin.file, cinTable[currentHandle].RoQFrameSize+8, cinTable[currentHandle].iFile);
 
         cinTable[currentHandle].status = FMV_PLAY;
         Com_DPrintf( "trFMV::play(), playing %s\n", arg );

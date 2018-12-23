@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   surfaceflags.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: This file must be identical in the quake and utils directories
 //              contents flags are seperate bits a given brush can contribute multiple
 //              content bits these definitions also need to be in q_shared.h!

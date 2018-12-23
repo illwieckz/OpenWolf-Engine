@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   msg.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -601,16 +601,21 @@ UTF8*           MSG_ReadString( msg_t* msg )
         {
             c = '.';
         }
-        // don't allow higher ascii values
-        if( c > 127 )
+        else
+            // don't allow higher ascii values
+            if( c > 127 )
+            {
+                c = '.';
+            }
+            
+        // break only after reading all expected data from bitstream
+        if( l >= sizeof( string ) - 1 )
         {
-            c = '.';
+            break;
         }
-        
-        string[l] = c;
-        l++;
+        string[l++] = c;
     }
-    while( l < sizeof( string ) - 1 );
+    while( true );
     
     string[l] = 0;
     
@@ -630,18 +635,23 @@ UTF8*           MSG_ReadBigString( msg_t* msg )
         {
             break;
         }
-        // translate all fmt spec to avoid crash bugs
-        if( c == '%' )
+        else
+            // translate all fmt spec to avoid crash bugs
+            if( c == '%' )
+            {
+                c = '.';
+            }
+            
+        // break only after reading all expected data from bitstream
+        if( l >= sizeof( string ) - 1 )
         {
-            c = '.';
+            break;
         }
-        
-        string[l] = c;
-        l++;
+        string[l++] = c;
     }
-    while( l < sizeof( string ) - 1 );
+    while( true );
     
-    string[l] = 0;
+    string[l] = '\0';
     
     return string;
 }
@@ -659,17 +669,22 @@ UTF8*           MSG_ReadStringLine( msg_t* msg )
         {
             break;
         }
-        // translate all fmt spec to avoid crash bugs
-        if( c == '%' )
+        else
+            // translate all fmt spec to avoid crash bugs
+            if( c == '%' )
+            {
+                c = '.';
+            }
+        // break only after reading all expected data from bitstream
+        if( l >= sizeof( string ) - 1 )
         {
-            c = '.';
+            break;
         }
-        string[l] = c;
-        l++;
+        string[l++] = c;
     }
-    while( l < sizeof( string ) - 1 );
+    while( true );
     
-    string[l] = 0;
+    string[l] = '\0';
     
     return string;
 }
@@ -1120,7 +1135,8 @@ netField_t      entityStateFields[] =
     // Dushan - Tremulous stuff
     {NETF( generic1 ), 10},
     {NETF( misc ), MAX_MISC},
-    {NETF( weaponAnim ), 8}
+    {NETF( weaponAnim ), 8},
+    {NETF( extraFlags ), 32}
 };
 
 
@@ -1675,25 +1691,17 @@ netField_t      playerStateFields[] =
     {PSF( aiState ), 2}
     ,
     // Dushan - Tremulous
-    {PSF( generic1 ), 10}
-    ,
-    {PSF( loopSound ), 16}
-    ,
-    {PSF( grapplePoint[0] ), 0}
-    ,
-    {PSF( grapplePoint[1] ), 0}
-    ,
-    {PSF( grapplePoint[2] ), 0}
-    ,
-    {PSF( Ammo ), 12}
-    ,
-    {PSF( clips ), 4}
-    ,
-    {PSF( tauntTimer ), 12}
-    ,
-    {PSF( weaponAnim ), 8}
-    ,
-    {PSF( otherEntityNum ), 10}
+    {PSF( generic1 ), 10},
+    {PSF( loopSound ), 16},
+    {PSF( grapplePoint[0] ), 0},
+    {PSF( grapplePoint[1] ), 0},
+    {PSF( grapplePoint[2] ), 0},
+    {PSF( Ammo ), 12},
+    {PSF( clips ), 4},
+    {PSF( tauntTimer ), 12},
+    {PSF( weaponAnim ), 8},
+    {PSF( otherEntityNum ), 10},
+    {PSF( extraFlags ), 32 }
 };
 
 static S32 qsort_playerstatefields( const void* a, const void* b )

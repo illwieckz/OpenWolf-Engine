@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   q_shared.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: included first by ALL program modules.
 //              A user mod should never modify this file
 // -------------------------------------------------------------------------------------
@@ -39,13 +39,13 @@
 #ifndef __Q_SHARED_H__
 #define __Q_SHARED_H__
 
-#define PRODUCT_NAME            "Tremulous"
-#define PRODUCT_NAME_UPPPER     "Tremulous" // Case, No spaces
+#define PRODUCT_NAME            "Tremulous : Stellar Pray"
+#define PRODUCT_NAME_UPPPER     "TremulousStellarPray" // Case, No spaces
 #define PRODUCT_NAME_LOWER      "Tremulous" // No case, No spaces
-#define PRODUCT_VERSION         "0.0.2"
+#define PRODUCT_VERSION         "0.1.0"
 
 #define ENGINE_NAME             "OpenWolf Engine"
-#define ENGINE_VERSION          "0.4.0"
+#define ENGINE_VERSION          "0.5.0"
 
 #ifndef PRE_RELEASE_DEMO
 // Dushan for ET game, basegame folder was "ETMAIN"
@@ -238,9 +238,6 @@ typedef S32 clipHandle_t;
 #define maxow( x, y ) ( ( ( x ) > ( y ) ) ? ( x ) : ( y ) )
 #define minow( x, y ) ( ( ( x ) < ( y ) ) ? ( x ) : ( y ) )
 
-#ifndef sign
-#define sign( f )      ( ( f > 0 ) ? 1 : ( ( f < 0 ) ? -1 : 0 ) )
-#endif
 
 // RF, this is just here so different elements of the engine can be aware of this setting as it changes
 #define MAX_SP_CLIENTS      64      // increasing this will increase memory usage significantly
@@ -566,10 +563,12 @@ void ByteToDir( S32 b, vec3_t dir );
 
 #if 1
 
+#ifndef Q3MAP2
 #define DotProduct( x,y )         ( ( x )[0] * ( y )[0] + ( x )[1] * ( y )[1] + ( x )[2] * ( y )[2] )
+#define VectorCopy( a,b )         ( ( b )[0] = ( a )[0],( b )[1] = ( a )[1],( b )[2] = ( a )[2] )
+#endif
 #define VectorSubtract( a,b,c )   ( ( c )[0] = ( a )[0] - ( b )[0],( c )[1] = ( a )[1] - ( b )[1],( c )[2] = ( a )[2] - ( b )[2] )
 #define VectorAdd( a,b,c )        ( ( c )[0] = ( a )[0] + ( b )[0],( c )[1] = ( a )[1] + ( b )[1],( c )[2] = ( a )[2] + ( b )[2] )
-#define VectorCopy( a,b )         ( ( b )[0] = ( a )[0],( b )[1] = ( a )[1],( b )[2] = ( a )[2] )
 #define VectorScale( v, s, o )    ( ( o )[0] = ( v )[0] * ( s ),( o )[1] = ( v )[1] * ( s ),( o )[2] = ( v )[2] * ( s ) )
 #define VectorMA( v, s, b, o )    ( ( o )[0] = ( v )[0] + ( b )[0] * ( s ),( o )[1] = ( v )[1] + ( b )[1] * ( s ),( o )[2] = ( v )[2] + ( b )[2] * ( s ) )
 #define VectorLerpTrem( f, s, e, r ) ((r)[0]=(s)[0]+(f)*((e)[0]-(s)[0]),\
@@ -911,14 +910,17 @@ typedef enum
     FS_SEEK_SET
 } fsOrigin_t;
 
-#include "../OWLib/util_list.h"
-#include "../OWLib/util_str.h"
-#include "../OWLib/math_vector.h"
-#include "../OWLib/math_quaternion.h"
-#include "../cm/cm_public.h"
-#include "../GPURenderer/r_public.h"
-#include "../audio/s_public.h"
-#include "../database/db_public.h"
+#include <OWLib/util_list.h>
+#include <OWLib/util_str.h>
+#include <OWLib/math_vector.h>
+#include <OWLib/math_quaternion.h>
+#include <API/cm_api.h>
+#include <API/renderer_api.h>
+#include <API/sound_api.h>
+#include <API/database_api.h>
+#include <API/FileSystem_api.h>
+#include <API/CVarSystem_api.h>
+#include <API/serverBot_api.h>
 
 S32 Com_HexStrToInt( StringEntry str );
 
@@ -1022,81 +1024,6 @@ void Com_DPrintf( StringEntry msg, ... ) _attribute( ( format( printf, 1, 2 ) ) 
 #define RELOAD_ENDGAME          0x10
 
 
-/*
-==========================================================
-
-CVARS (console variables)
-
-Many variables can be used for cheating purposes, so when
-cheats is zero, force all unspecified variables to their
-default values.
-==========================================================
-*/
-//Dushan
-typedef enum cvar_flags_s
-{
-    CVAR_ARCHIVE                   = BIT( 0 ),    // set to cause it to be saved to vars.rc
-    // used for system variables, not for player
-    // specific configurations
-    CVAR_USERINFO                  = BIT( 1 ),    // sent to server on connect or change
-    CVAR_SERVERINFO                = BIT( 2 ),    // sent in response to front end requests
-    CVAR_SYSTEMINFO                = BIT( 3 ),    // these cvars will be duplicated on all clients
-    CVAR_INIT                      = BIT( 4 ),    // don't allow change from console at all,
-    // but can be set from the command line
-    CVAR_LATCH                     = BIT( 5 ),    // will only change when C code next does
-    // a Cvar_Get(), so it can't be changed
-    // without proper initialization.  modified
-    // will be set, even though the value hasn't
-    // changed yet
-    CVAR_ROM                       = BIT( 6 ),    // display only, cannot be set by user at all
-    CVAR_USER_CREATED              = BIT( 7 ),    // created by a set command
-    CVAR_TEMP                      = BIT( 8 ),    // can be set even when cheats are disabled, but is not archived
-    CVAR_CHEAT                     = BIT( 9 ),    // can not be changed if cheats are disabled
-    CVAR_NORESTART                 = BIT( 10 ),   // do not clear when a cvar_restart is issued
-    CVAR_WOLFINFO                  = BIT( 11 ),   // DHM - NERVE :: Like userinfo, but for wolf multiplayer info
-    CVAR_UNSAFE                    = BIT( 12 ),   // ydnar: unsafe system cvars (renderer, sound settings, anything that might cause a crash)
-    CVAR_SERVERINFO_NOUPDATE       = BIT( 13 ),   // gordon: WONT automatically send this to clients, but server browsers will see it
-    CVAR_SHADER                    = BIT( 14 ),   // tell renderer to recompile shaders.
-    CVAR_NONEXISTENT	           = 0xFFFFFFFF   // Cvar doesn't exist.
-} cvar_flags_t;
-
-// nothing outside the Cvar_*() functions should modify these fields!
-typedef struct cvar_s
-{
-    UTF8*           name;
-    UTF8*           string;
-    UTF8*           resetString;	// cvar_restart will reset to this value
-    UTF8*           latchedString;	// for CVAR_LATCH vars
-    S32             flags;
-    bool        modified;	// set each time the cvar is changed
-    S32             modificationCount;	// incremented each time the cvar is changed
-    F32           value;		// atof( string )
-    S32             integer;	// atoi( string )
-    bool        validate;
-    bool        integral;
-    F32           min;
-    F32           max;
-    
-    struct cvar_s*  next;
-    struct cvar_s*  hashNext;
-} cvar_t;
-
-#define MAX_CVAR_VALUE_STRING   256
-
-typedef S32 cvarHandle_t;
-
-// the modules that run in the virtual machine can't access the cvar_t directly,
-// so they must ask for structured updates
-typedef struct
-{
-    cvarHandle_t handle;
-    S32 modificationCount;
-    F32 value;
-    S32 integer;
-    UTF8 string[MAX_CVAR_VALUE_STRING];
-} vmCvar_t;
-
-
 //=====================================================================
 
 
@@ -1166,7 +1093,7 @@ typedef enum
 #define MAX_CS_SKINS        64
 #define MAX_CSSTRINGS       32
 #define MAX_EFFECTS			256
-
+#define MAX_FX	            64
 #define MAX_CS_SHADERS      32
 #define MAX_SERVER_TAGS     256
 #define MAX_TAG_FILES       64
@@ -1403,6 +1330,7 @@ typedef struct playerState_s
     S32	misc[MAX_MISC];		// misc data
     S32	jumppad_frame;
     S32	jumppad_ent;	// jumppad entity hit this frame
+    S32 extraFlags;
 } playerState_t;
 
 
@@ -1502,6 +1430,7 @@ typedef enum
     TR_DECCELERATE,
     // Dushan - Tremulous
     TR_BUOYANCY,
+    TR_NONLINEAR_STOP,
     // Gordon
     TR_SPLINE,
     TR_LINEAR_PATH
@@ -1631,6 +1560,7 @@ typedef struct entityState_s
     S32	misc;			// bit flags
     S32	generic1;
     S32	weaponAnim;		// mask off ANIM_TOGGLEBIT
+    S32	extraFlags;
 } entityState_t;
 
 typedef enum
@@ -1860,16 +1790,9 @@ void Com_Parse3DMatrix( const char * ( *buf_p ), int z, int y, int x, float* m )
 void Com_BeginParseSession( const char* filename );
 void Com_EndParseSession( void );
 
-#if (defined _MSC_VER)
-#define Q_EXPORT __declspec(dllexport)
-#elif (defined __SUNPRO_C)
-#define Q_EXPORT __global
-#elif ((__GNUC__ >= 3) && (!__EMX__) && (!sun))
-#define Q_EXPORT __attribute__((visibility("default")))
-#else
-#define Q_EXPORT
-#endif
-
 bool StringContainsWord( StringEntry haystack, StringEntry needle );
+
+#include <API/serverGame_api.h>
+#include <API/serverWorld_api.h>
 
 #endif //!__Q_SHARED_H__

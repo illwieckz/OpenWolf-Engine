@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_fbo.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ R_CheckFBO
 */
 bool R_CheckFBO( const FBO_t* fbo )
 {
-    GLenum code = glCheckNamedFramebufferStatusEXT( fbo->frameBuffer, GL_FRAMEBUFFER_EXT );
+    GLenum code = qglCheckNamedFramebufferStatusEXT( fbo->frameBuffer, GL_FRAMEBUFFER_EXT );
     
     if( code == GL_FRAMEBUFFER_COMPLETE_EXT )
         return true;
@@ -108,7 +108,7 @@ FBO_t* FBO_Create( StringEntry name, S32 width, S32 height )
     fbo->width = width;
     fbo->height = height;
     
-    glGenFramebuffersEXT( 1, &fbo->frameBuffer );
+    qglGenFramebuffers( 1, &fbo->frameBuffer );
     
     return fbo;
 }
@@ -130,10 +130,10 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
         case GL_RGBA:
         case GL_RGB8:
         case GL_RGBA8:
-        case GL_RGB16F_ARB:
-        case GL_RGBA16F_ARB:
-        case GL_RGB32F_ARB:
-        case GL_RGBA32F_ARB:
+        case GL_RGB16F:
+        case GL_RGBA16F:
+        case GL_RGB32F:
+        case GL_RGBA32F:
             fbo->colorFormat = format;
             pRenderBuffer = &fbo->colorBuffers[index];
             attachment = GL_COLOR_ATTACHMENT0_EXT + index;
@@ -172,23 +172,23 @@ void FBO_CreateBuffer( FBO_t* fbo, S32 format, S32 index, S32 multisample )
     
     absent = *pRenderBuffer == 0;
     if( absent )
-        glGenRenderbuffersEXT( 1, pRenderBuffer );
+        qglGenRenderbuffers( 1, pRenderBuffer );
         
     if( glRefConfig.framebufferMultisample )
-        glNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
+        qglNamedRenderbufferStorageMultisampleEXT( *pRenderBuffer, multisample, format, fbo->width, fbo->height );
     else
-        glNamedRenderbufferStorageEXT( *pRenderBuffer, format, fbo->width, fbo->height );
+        qglNamedRenderbufferStorageEXT( *pRenderBuffer, format, fbo->width, fbo->height );
         
     if( absent )
     {
         if( attachment == 0 )
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT_EXT,   GL_RENDERBUFFER_EXT, *pRenderBuffer );
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, *pRenderBuffer );
+            qglNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_DEPTH_ATTACHMENT_EXT,   GL_RENDERBUFFER_EXT, *pRenderBuffer );
+            qglNamedFramebufferRenderbufferEXT( fbo->frameBuffer, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, *pRenderBuffer );
         }
         else
         {
-            glNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER_EXT, *pRenderBuffer );
+            qglNamedFramebufferRenderbufferEXT( fbo->frameBuffer, attachment, GL_RENDERBUFFER_EXT, *pRenderBuffer );
         }
     }
 }
@@ -207,7 +207,7 @@ void FBO_AttachImage( FBO_t* fbo, image_t* image, GLenum attachment, GLuint cube
     if( image->flags & IMGFLAG_CUBEMAP )
         target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + cubemapside;
         
-    glNamedFramebufferTexture2DEXT( fbo->frameBuffer, attachment, target, image->texnum, 0 );
+    qglNamedFramebufferTexture2DEXT( fbo->frameBuffer, attachment, target, image->texnum, 0 );
     index = attachment - GL_COLOR_ATTACHMENT0_EXT;
     if( index >= 0 && index <= 15 )
         fbo->colorImage[index] = image;
@@ -261,8 +261,7 @@ void idRenderSystemLocal::FBOInit( void )
     
     hdrFormat = GL_RGBA8;
     if( r_truehdr->integer && glRefConfig.framebufferObject && glRefConfig.textureFloat )
-        hdrFormat = GL_RGBA16F_ARB;
-        
+        hdrFormat = GL_RGBA16;
         
     //
     // Generic FBO...
@@ -272,6 +271,25 @@ void idRenderSystemLocal::FBOInit( void )
         FBO_Bind( tr.genericFbo );
         FBO_AttachImage( tr.genericFbo, tr.genericFBOImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.genericFbo );
+    }
+    
+    //
+    // UQ1's Generic FBO2...
+    //
+    {
+        tr.genericFbo2 = FBO_Create( "_generic2", tr.genericFBO2Image->width, tr.genericFBO2Image->height );
+        FBO_Bind( tr.genericFbo2 );
+        FBO_AttachImage( tr.genericFbo2, tr.genericFBO2Image, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.genericFbo2 );
+    }
+    
+    // UQ1's Volumetric FBO...
+    //
+    {
+        tr.volumetricFbo = FBO_Create( "_volumetric", tr.volumetricFBOImage->width, tr.volumetricFBOImage->height );
+        FBO_Bind( tr.volumetricFbo );
+        FBO_AttachImage( tr.volumetricFbo, tr.volumetricFBOImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.volumetricFbo );
     }
     
     //
@@ -318,7 +336,9 @@ void idRenderSystemLocal::FBOInit( void )
     {
         tr.renderFbo = FBO_Create( "_render", tr.renderDepthImage->width, tr.renderDepthImage->height );
         FBO_AttachImage( tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        FBO_AttachImage( tr.renderFbo, tr.glowImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         FBO_AttachImage( tr.renderFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT_EXT, 0 );
+        FBO_AttachImage( tr.renderFbo, tr.normalImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         FBO_AttachImage( tr.renderFbo, tr.normalDetailedImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.renderFbo );
     }
@@ -329,6 +349,23 @@ void idRenderSystemLocal::FBOInit( void )
     {
         GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, tr.renderFbo->frameBuffer );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    }
+    
+    // glow buffers
+    {
+        for( int i = 0; i < ARRAY_LEN( tr.glowImageScaled ); i++ )
+        {
+            tr.glowFboScaled[i] = FBO_Create( va( "*glowScaled%d", i ), tr.glowImageScaled[i]->width, tr.glowImageScaled[i]->height );
+            
+            //FBO_Bind(tr.glowFboScaled[i]);
+            
+            //FBO_AttachTextureImage(tr.glowImageScaled[i], 0);
+            FBO_AttachImage( tr.glowFboScaled[i], tr.glowImageScaled[i], GL_COLOR_ATTACHMENT0_EXT, 0 );
+            
+            //FBO_SetupDrawBuffers();
+            
+            R_CheckFBO( tr.glowFboScaled[i] );
+        }
     }
     
     if( tr.screenScratchImage )
@@ -372,11 +409,43 @@ void idRenderSystemLocal::FBOInit( void )
         }
     }
     
+    //
+    // UQ1's Depth To Normal FBO...
+    //
+    {
+        tr.screenPureNormalFbo = FBO_Create( "_ssdoFbo1", tr.screenPureNormalImage->width, tr.screenPureNormalImage->height );
+        FBO_AttachImage( tr.screenPureNormalFbo, tr.screenPureNormalImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.screenPureNormalFbo );
+    }
+    
+    //
+    // UQ1's SSDO FBO1...
+    //
+    {
+        tr.ssdoFbo1 = FBO_Create( "_ssdoFbo1", tr.ssdoImage1->width, tr.ssdoImage1->height );
+        FBO_AttachImage( tr.ssdoFbo1, tr.ssdoImage1, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.ssdoFbo1 );
+    }
+    
+    //
+    // UQ1's SSDO FBO2...
+    //
+    {
+        tr.ssdoFbo2 = FBO_Create( "_ssdoFbo2", tr.ssdoImage2->width, tr.ssdoImage2->height );
+        FBO_AttachImage( tr.ssdoFbo2, tr.ssdoImage2, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.ssdoFbo2 );
+    }
+    
+    
     if( tr.screenShadowImage )
     {
         tr.screenShadowFbo = FBO_Create( "_screenshadow", tr.screenShadowImage->width, tr.screenShadowImage->height );
         FBO_AttachImage( tr.screenShadowFbo, tr.screenShadowImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
         R_CheckFBO( tr.screenShadowFbo );
+        
+        tr.screenShadowBlurFbo = FBO_Create( "_screenshadowBlur", tr.screenShadowBlurImage->width, tr.screenShadowBlurImage->height );
+        FBO_AttachImage( tr.screenShadowBlurFbo, tr.screenShadowBlurImage, GL_COLOR_ATTACHMENT0_EXT, 0 );
+        R_CheckFBO( tr.screenShadowBlurFbo );
     }
     
     if( tr.textureScratchImage[0] )
@@ -465,17 +534,17 @@ void idRenderSystemLocal::FBOShutdown( void )
         for( j = 0; j < glRefConfig.maxColorAttachments; j++ )
         {
             if( fbo->colorBuffers[j] )
-                glDeleteRenderbuffersEXT( 1, &fbo->colorBuffers[j] );
+                qglDeleteRenderbuffers( 1, &fbo->colorBuffers[j] );
         }
         
         if( fbo->depthBuffer )
-            glDeleteRenderbuffersEXT( 1, &fbo->depthBuffer );
+            qglDeleteRenderbuffers( 1, &fbo->depthBuffer );
             
         if( fbo->stencilBuffer )
-            glDeleteRenderbuffersEXT( 1, &fbo->stencilBuffer );
+            qglDeleteRenderbuffers( 1, &fbo->stencilBuffer );
             
         if( fbo->frameBuffer )
-            glDeleteFramebuffersEXT( 1, &fbo->frameBuffer );
+            qglDeleteFramebuffers( 1, &fbo->frameBuffer );
     }
 }
 
@@ -581,8 +650,8 @@ void FBO_BlitFromTexture( struct image_s* src, vec4_t inSrcTexCorners, vec2_t in
     
     FBO_Bind( dst );
     
-    glViewport( 0, 0, width, height );
-    glScissor( 0, 0, width, height );
+    qglViewport( 0, 0, width, height );
+    qglScissor( 0, 0, width, height );
     
     Mat4Ortho( 0, width, height, 0, 0, 1, projection );
     
@@ -676,35 +745,13 @@ void FBO_FastBlit( FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, S32 b
         VectorSet4( dstBoxFinal, dstBox[0], dstBox[1], dstBox[0] + dstBox[2], dstBox[1] + dstBox[3] );
     }
     
-    GL_BindFramebuffer( GL_READ_FRAMEBUFFER_EXT, srcFb );
-    GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER_EXT, dstFb );
-    glBlitFramebufferEXT( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
-                          dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
-                          buffers, filter );
-                          
+    GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
+    GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
+    qglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+                        dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+                        buffers, filter );
+                        
     GL_BindFramebuffer( GL_FRAMEBUFFER_EXT, 0 );
     glState.currentFBO = NULL;
 }
 
-void FBO_FastBlitIndexed( FBO_t* src, FBO_t* dst, S32 srcReadBuffer, S32 dstDrawBuffer, S32 buffers, S32 filter )
-{
-    assert( src != NULL );
-    assert( dst != NULL );
-    
-    glBindFramebufferEXT( GL_READ_FRAMEBUFFER_EXT, src->frameBuffer );
-    glReadBuffer( GL_COLOR_ATTACHMENT0_EXT + srcReadBuffer );
-    
-    glBindFramebufferEXT( GL_DRAW_FRAMEBUFFER_EXT, dst->frameBuffer );
-    glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT + dstDrawBuffer );
-    
-    glBlitFramebufferEXT( 0, 0, src->width, src->height,
-                          0, 0, dst->width, dst->height,
-                          buffers, filter );
-                          
-    glReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
-    
-    glState.currentFBO = dst;
-    
-    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
-    glState.currentFBO = NULL;
-}

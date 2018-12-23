@@ -125,7 +125,7 @@ void SourceError( source_t* source, UTF8* str, ... )
     va_list ap;
     
     va_start( ap, str );
-    vsprintf( text, str, ap );
+    Q_vsnprintf( text, sizeof( text ), str, ap );
     va_end( ap );
 #ifdef BOTLIB
     botimport.Print( PRT_ERROR, "file %s, line %d: %s\n", source->scriptstack->filename, source->scriptstack->line, text );
@@ -149,7 +149,7 @@ void SourceWarning( source_t* source, UTF8* str, ... )
     va_list ap;
     
     va_start( ap, str );
-    vsprintf( text, str, ap );
+    Q_vsnprintf( text, sizeof( text ), str, ap );
     va_end( ap );
 #ifdef BOTLIB
     botimport.Print( PRT_WARNING, "file %s, line %d: %s\n", source->scriptstack->filename, source->scriptstack->line, text );
@@ -2503,7 +2503,7 @@ S32 PC_Directive_eval( source_t* source )
     token.whitespace_p = source->scriptstack->script_p;
     token.endwhitespace_p = source->scriptstack->script_p;
     token.linescrossed = 0;
-    sprintf( token.string, "%d", abs( value ) );
+    sprintf( token.string, "%d", fabs( value ) );
     token.type = TT_NUMBER;
     token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL;
     PC_UnreadSourceToken( source, &token );
@@ -2610,7 +2610,7 @@ S32 PC_DollarDirective_evalint( source_t* source )
     token.whitespace_p = source->scriptstack->script_p;
     token.endwhitespace_p = source->scriptstack->script_p;
     token.linescrossed = 0;
-    sprintf( token.string, "%d", abs( value ) );
+    sprintf( token.string, "%d", fabs( value ) );
     token.type = TT_NUMBER;
     token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL;
 #ifdef NUMBERVALUE

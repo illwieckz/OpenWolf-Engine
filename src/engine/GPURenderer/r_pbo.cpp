@@ -19,9 +19,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_pbo.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -29,6 +29,7 @@
 #include <OWLib/precompiled.h>
 
 //For some future usage :)
+#if 0
 
 /*
 ==============
@@ -42,11 +43,11 @@ void idRenderSystemLocal::PBOInit( void )
     // query support for pixel buffer objects "GL_ARB_pixel_buffer_object"
     
     // Generate the pixel buffer object.
-    glGenBuffersARB( 1, &pboReadbackHandle );
-    glGenBuffersARB( 2, &pboWriteHandle[0] );
+    qglGenBuffersARB( 1, &pboReadbackHandle );
+    qglGenBuffersARB( 2, &pboWriteHandle[0] );
     
-    glBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
-    glBufferDataARB( GL_PIXEL_PACK_BUFFER_ARB, glConfig.vidWidth * glConfig.vidHeight * 4, 0, GL_STREAM_READ_ARB );
+    qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
+    qglBufferDataARB( GL_PIXEL_PACK_BUFFER_ARB, glConfig.vidWidth * glConfig.vidHeight * 4, 0, GL_STREAM_READ_ARB );
     
     buffer = NULL;
     UnbindPBO();
@@ -58,10 +59,10 @@ idRenderSystemLocal::WriteToPBO
 */
 void idRenderSystemLocal::WriteToPBO( S32 pbo, U8* buffer, S32 DestX, S32 DestY, S32 Width, S32 Height )
 {
-    glBindBufferARB( GL_PIXEL_UNPACK_BUFFER_ARB, pboWriteHandle[pbo] );
+    qglBindBufferARB( GL_PIXEL_UNPACK_BUFFER_ARB, pboWriteHandle[pbo] );
     //Dushan
     //GL_EXT_subtexture
-    glTexSubImage2D( GL_TEXTURE_2D, 0, DestX, DestY, Width, Height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+    qglTexSubImage2D( GL_TEXTURE_2D, 0, DestX, DestY, Width, Height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
 }
 
 /*
@@ -73,17 +74,17 @@ U8* idRenderSystemLocal::ReadPBO( bool readBack )
 {
     if( !readBack )
     {
-        glReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
+        qglReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
         
-        glBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
+        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
         
-        glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
-        glBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
+        qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
     }
     else
     {
-        glBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
-        buffer = ( U8* )glMapBufferARB( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY_ARB );
+        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
+        buffer = ( U8* )qglMapBufferARB( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY_ARB );
     }
     
     return buffer;
@@ -98,8 +99,9 @@ void idRenderSystemLocal::UnbindPBO( void )
 {
     if( buffer != NULL )
     {
-        glUnmapBufferARB( GL_PIXEL_PACK_BUFFER_ARB );
+        qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER_ARB );
         
     }
-    glBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
+    qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
 }
+#endif

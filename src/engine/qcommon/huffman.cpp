@@ -27,10 +27,10 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   sys_win32.cpp
-// Version:     v1.00
+// File name:   huffman.cpp
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: This is based on the Adaptive Huffman algorithm described in Sayood's Data
 //              Compression book.  The ranks are not actually stored, but implicitly defined
 //              by the location of a node within a doubly-linked list */

@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_sky.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -446,17 +446,37 @@ static void DrawSkySide( struct image_s* image, const S32 mins[2], const S32 max
     	}
     */
     {
-        shaderProgram_t* sp = &tr.lightallShader[0];
+        shaderProgram_t* sp = &tr.shadowPassShader;// &tr.lightallShader[0];
         vec4_t vector;
         
+        //GLSL_VertexAttribsState(ATTR_POSITION | ATTR_TEXCOORD0 | ATTR_NORMAL | ATTR_TANGENT);
         GLSL_BindProgram( sp );
+        
+        VectorSet4( vector, 0.0, 0.0, 0.0, 1024.0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL1, vector ); // parallaxScale, hasSpecular, specularScale, materialType
+        VectorSet4( vector, 0.0, 0.0, 0.0, 0.0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL4, vector );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL5, vector );
+        
+        {
+            // Set up basic shader settings... This way we can avoid the bind bloat of dumb vert shader #ifdefs...
+            GLSL_SetUniformVec4( sp, UNIFORM_SETTINGS0, vector );
+            GLSL_SetUniformVec4( sp, UNIFORM_SETTINGS1, vector );
+            GLSL_SetUniformVec4( sp, UNIFORM_SETTINGS2, vector );
+            GLSL_SetUniformVec4( sp, UNIFORM_SETTINGS3, vector );
+        }
+        
+        GLSL_SetUniformVec4( sp, UNIFORM_ENABLETEXTURES, vector );
+        
+        VectorSet4( vector, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value );
+        GLSL_SetUniformVec4( sp, UNIFORM_NORMALSCALE, vector );
         
         GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
         
         color[0] =
             color[1] =
-                color[2] =
-                    color[3] = 1.0f;
+                color[2] = backEnd.refdef.colorScale;
+        color[3] = 1.0f;
         GLSL_SetUniformVec4( sp, UNIFORM_BASECOLOR, color );
         
         color[0] =
@@ -474,12 +494,7 @@ static void DrawSkySide( struct image_s* image, const S32 mins[2], const S32 max
         GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
     }
     
-    R_DrawElements( tess.numIndexes - tess.firstIndex, tess.firstIndex );
-    
-    //glDrawElements(GL_TRIANGLES, tess.numIndexes - tess.firstIndex, GL_INDEX_TYPE, BUFFER_OFFSET(tess.firstIndex * sizeof(glIndex_t)));
-    
-    //R_BindNullVBO();
-    //R_BindNullIBO();
+    R_DrawElements( tess.numIndexes - tess.firstIndex, tess.firstIndex, false );
     
     tess.numIndexes = tess.firstIndex;
     tess.numVertexes = firstVertex;
@@ -739,7 +754,7 @@ void R_BuildCloudData( shaderCommands_t* input )
 ** R_InitSkyTexCoords
 ** Called when a sky shader is parsed
 */
-#define SQR( a ) ((a)*(a))
+//#define SQR( a ) ((a)*(a))
 void R_InitSkyTexCoords( F32 heightCloud )
 {
     S32 i, s, t;
@@ -798,6 +813,47 @@ void R_InitSkyTexCoords( F32 heightCloud )
 
 //======================================================================================
 
+vec3_t SUN_POSITION;
+vec2_t SUN_SCREEN_POSITION;
+bool SUN_VISIBLE = false;
+
+extern void R_WorldToLocal( const vec3_t world, vec3_t local );
+extern void TR_AxisToAngles( const vec3_t axis[3], vec3_t angles );
+
+bool SUN_InFOV( vec3_t spot )
+{
+    vec3_t from;
+    vec3_t deltaVector, angles, deltaAngles;
+    vec3_t fromAnglesCopy;
+    vec3_t fromAngles;
+    S32 hFOV = backEnd.refdef.fov_x * 1.1;
+    S32 vFOV = backEnd.refdef.fov_y * 1.1;
+    
+    VectorCopy( backEnd.refdef.vieworg, from );
+    
+    TR_AxisToAngles( tr.refdef.viewaxis, fromAngles );
+    
+    VectorSubtract( spot, from, deltaVector );
+    vectoangles( deltaVector, angles );
+    VectorCopy( fromAngles, fromAnglesCopy );
+    
+    deltaAngles[PITCH] = AngleDelta( fromAnglesCopy[PITCH], angles[PITCH] );
+    deltaAngles[YAW] = AngleDelta( fromAnglesCopy[YAW], angles[YAW] );
+    
+    if( fabs( deltaAngles[PITCH] ) <= vFOV && fabs( deltaAngles[YAW] ) <= hFOV )
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+extern vec3_t VOLUMETRIC_ROOF;
+
+extern bool RB_UpdateSunFlareVis( void );
+extern bool Volumetric_Visible( vec3_t from, vec3_t to, bool isSun );
+extern void Volumetric_RoofHeight( vec3_t from );
+
 /*
 ** RB_DrawSun
 */
@@ -812,21 +868,28 @@ void RB_DrawSun( F32 scale, shader_t* shader )
         return;
     }
     
-    //glLoadMatrixf( backEnd.viewParms.world.modelMatrix );
-    //glTranslatef (backEnd.viewParms.orientation.origin[0], backEnd.viewParms.orientation.origin[1], backEnd.viewParms.orientation.origin[2]);
+    //qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
+    //qglTranslatef (backEnd.viewParms.orientation.origin[0], backEnd.viewParms.orientation.origin[1], backEnd.viewParms.ori.origin[2]);
     {
         // FIXME: this could be a lot cleaner
-        mat4_t translation, modelview;
+        matrix_t translation, modelview;
         
         Mat4Translation( backEnd.viewParms.orientation.origin, translation );
         Mat4Multiply( backEnd.viewParms.world.modelMatrix, translation, modelview );
         GL_SetModelviewMatrix( modelview );
     }
     
-    dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+    dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
     size = dist * scale;
     
+    if( r_proceduralSun->integer )
+    {
+        size *= r_proceduralSunScale->value;
+    }
+    
+    //VectorSet(tr.sunDirection, r_testshaderValue1->value, r_testshaderValue2->value, r_testshaderValue3->value);
     VectorScale( tr.sunDirection, dist, origin );
+    
     PerpendicularVector( vec1, tr.sunDirection );
     CrossProduct( tr.sunDirection, vec1, vec2 );
     
@@ -834,20 +897,166 @@ void RB_DrawSun( F32 scale, shader_t* shader )
     VectorScale( vec2, size, vec2 );
     
     // farthest depth range
-    glDepthRange( 1.0, 1.0 );
+    qglDepthRange( 1.0, 1.0 );
     
     RB_BeginSurface( shader, 0, 0 );
     
-    RB_AddQuadStamp( origin, vec1, vec2, colorWhite );
+    RB_AddQuadStamp( origin, vec1, vec2, tr.refdef.sunAmbCol/*colorWhite*/ );
     
     RB_EndSurface();
     
     // back to normal depth range
-    glDepthRange( 0.0, 1.0 );
+    qglDepthRange( 0.0, 1.0 );
+    
+    if( r_volumelight->integer )
+    {
+        // Lets have some volumetrics with that!
+        const F32 cutoff = 0.25f;
+        F32 dot = DotProduct( tr.sunDirection, backEnd.viewParms.orientation.axis[0] );
+        
+        F32 dist;
+        vec4_t pos, hpos;
+        matrix_t trans, model, mvp;
+        
+        Mat4Translation( backEnd.viewParms.orientation.origin, trans );
+        Mat4Multiply( backEnd.viewParms.world.modelMatrix, trans, model );
+        Mat4Multiply( backEnd.viewParms.projectionMatrix, model, mvp );
+        
+        //dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+        dist = 4096.0;
+        
+        VectorScale( tr.sunDirection, dist, pos );
+        
+        VectorCopy( pos, SUN_POSITION );
+        
+        // project sun point
+        Mat4Transform( mvp, pos, hpos );
+        
+        // transform to UV coords
+        hpos[3] = 0.5f / hpos[3];
+        
+        pos[0] = 0.5f + hpos[0] * hpos[3];
+        pos[1] = 0.5f + hpos[1] * hpos[3];
+        
+        VectorCopy( pos, SUN_SCREEN_POSITION );
+        
+        if( dot < cutoff )
+        {
+            SUN_VISIBLE = false;
+            return;
+        }
+        
+        if( !RB_UpdateSunFlareVis() )
+        {
+            SUN_VISIBLE = false;
+            return;
+        }
+        
+        if( !Volumetric_Visible( backEnd.refdef.vieworg, SUN_POSITION, true ) )
+        {
+            // Trace to actual position failed... Try above...
+            vec3_t tmpOrg;
+            vec3_t eyeOrg;
+            vec3_t tmpRoof;
+            vec3_t eyeRoof;
+            
+            // Calculate ceiling heights at both positions...
+            //Volumetric_RoofHeight(SUN_POSITION);
+            //VectorCopy(VOLUMETRIC_ROOF, tmpRoof);
+            //Volumetric_RoofHeight(backEnd.refdef.vieworg);
+            //VectorCopy(VOLUMETRIC_ROOF, eyeRoof);
+            
+            VectorSet( tmpRoof, SUN_POSITION[0], SUN_POSITION[1], SUN_POSITION[2] + 512.0 );
+            VectorSet( eyeRoof, backEnd.refdef.vieworg[0], backEnd.refdef.vieworg[1], backEnd.refdef.vieworg[2] + 128.0 );
+            
+            VectorSet( tmpOrg, tmpRoof[0], SUN_POSITION[1], SUN_POSITION[2] );
+            VectorSet( eyeOrg, backEnd.refdef.vieworg[0], backEnd.refdef.vieworg[1], backEnd.refdef.vieworg[2] );
+            if( !Volumetric_Visible( eyeOrg, tmpOrg, true ) )
+            {
+                // Trace to above position failed... Try trace from above viewer...
+                VectorSet( tmpOrg, SUN_POSITION[0], SUN_POSITION[1], SUN_POSITION[2] );
+                VectorSet( eyeOrg, eyeRoof[0], backEnd.refdef.vieworg[1], backEnd.refdef.vieworg[2] );
+                if( !Volumetric_Visible( eyeOrg, tmpOrg, true ) )
+                {
+                    // Trace from above viewer failed... Try trace from above, to above...
+                    VectorSet( tmpOrg, tmpRoof[0], SUN_POSITION[1], SUN_POSITION[2] );
+                    VectorSet( eyeOrg, eyeRoof[0], backEnd.refdef.vieworg[1], backEnd.refdef.vieworg[2] );
+                    if( !Volumetric_Visible( eyeOrg, tmpOrg, true ) )
+                    {
+                        // Trace from/to above viewer failed...
+                        SUN_VISIBLE = false;
+                        return; // Can't see this...
+                    }
+                }
+            }
+        }
+        
+        SUN_VISIBLE = true;
+    }
 }
 
-
-
+void DrawSkyDome( shader_t* skyShader )
+{
+    vec4_t color;
+    
+    // bloom
+    color[0] =
+        color[1] =
+            color[2] = pow( 2, r_cameraExposure->value );
+    color[3] = 1.0f;
+    
+    GLSL_BindProgram( &tr.skyShader );
+    GL_BindToTMU( skyShader->sky.outerbox[0], TB_LEVELSMAP );
+    
+    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
+    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_INVPROJECTIONMATRIX, glState.invProjection );
+    GLSL_SetUniformFloat( &tr.skyShader, UNIFORM_TIME, backEnd.refdef.floatTime );
+    GLSL_SetUniformVec3( &tr.skyShader, UNIFORM_VIEWORIGIN, backEnd.refdef.vieworg );
+    
+    vec4_t vec;
+    VectorCopy( backEnd.currentEntity->lightDir, vec );
+    vec[3] = 0.0f;
+    GLSL_SetUniformVec4( &tr.skyShader, UNIFORM_LIGHTORIGIN, vec );
+    
+    if( skyShader->sky.outerbox[0] )
+    {
+        vec2_t screensize;
+        screensize[0] = skyShader->sky.outerbox[0]->width;
+        screensize[1] = skyShader->sky.outerbox[0]->height;
+        
+        GLSL_SetUniformVec2( &tr.skyShader, UNIFORM_DIMENSIONS, screensize );
+        
+        vec4_t		imageBox;
+        imageBox[0] = 0;
+        imageBox[1] = 0;
+        imageBox[2] = skyShader->sky.outerbox[0]->width;
+        imageBox[3] = skyShader->sky.outerbox[0]->height;
+        
+        ivec4_t		screenBox;
+        screenBox[0] = 0;
+        screenBox[1] = 0;
+        screenBox[2] = glConfig.vidWidth;
+        screenBox[3] = glConfig.vidHeight;
+        
+        FBO_BlitFromTexture( skyShader->sky.outerbox[0], imageBox, NULL, glState.currentFBO, screenBox, &tr.skyShader, NULL, 0 );
+    }
+    else
+    {
+        vec4_t		imageBox;
+        imageBox[0] = 0;
+        imageBox[1] = 0;
+        imageBox[2] = tr.whiteImage->width;
+        imageBox[3] = tr.whiteImage->height;
+        
+        ivec4_t		screenBox;
+        screenBox[0] = 0;
+        screenBox[1] = 0;
+        screenBox[2] = glConfig.vidWidth;
+        screenBox[3] = glConfig.vidHeight;
+        
+        FBO_BlitFromTexture( tr.whiteImage, imageBox, NULL, glState.currentFBO, screenBox, &tr.skyShader, NULL, 0 );
+    }
+}
 
 /*
 ================
@@ -858,6 +1067,8 @@ All of the visible sky triangles are in tess
 Other things could be stuck in here, like birds in the sky, etc
 ================
 */
+image_t* skyImage = NULL;
+
 void RB_StageIteratorSky( void )
 {
     if( r_fastsky->integer )
@@ -875,15 +1086,22 @@ void RB_StageIteratorSky( void )
     // much sky is getting sucked in
     if( r_showsky->integer )
     {
-        glDepthRange( 0.0, 0.0 );
+        qglDepthRange( 0.0, 0.0 );
     }
     else
     {
-        glDepthRange( 1.0, 1.0 );
+        qglDepthRange( 1.0, 1.0 );
     }
     
-    // draw the outer skybox
-    if( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage )
+    if( !tess.shader->sky.outerbox[0] || tess.shader->sky.outerbox[0] == tr.defaultImage )
+    {
+        // Set a default image...
+        GL_State( 0 );
+        DrawSkyDome( tess.shader );
+    }
+    else
+        // draw the outer skybox
+        //if( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage )
     {
         mat4_t oldmodelview;
         

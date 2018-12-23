@@ -28,15 +28,18 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   physics_tracemodel.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef DEDICATED
 #include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <physicslib/physics_local.h>
+#include <API/physics_api.h>
 #else
 #include <OWLib/precompiled.h>
 #endif

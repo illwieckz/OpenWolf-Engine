@@ -20,10 +20,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110 - 1301  USA
 //
 // -------------------------------------------------------------------------------------
-// File name:   r_backend.cpp
-// Version:     v1.00
+// File name:   r_image_png.cpp
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@ static struct BufferedFile* ReadBufferedFile( StringEntry name )
      *  Read the file.
      */
     
-    BF->Length = FS_ReadFile( ( UTF8* ) name, &buffer.v );
+    BF->Length = fileSystem->ReadFile( ( UTF8* ) name, &buffer.v );
     BF->Buffer = buffer.b;
     
     /*
@@ -294,7 +294,7 @@ static void CloseBufferedFile( struct BufferedFile* BF )
     {
         if( BF->Buffer )
         {
-            FS_FreeFile( BF->Buffer );
+            fileSystem->FreeFile( BF->Buffer );
         }
         
         Z_Free( BF );

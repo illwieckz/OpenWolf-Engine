@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   gui_atoms.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: User interface building blocks and support functions.
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////

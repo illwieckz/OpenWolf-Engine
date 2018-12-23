@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_dsa.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -53,20 +53,22 @@ S32 GL_UseProgram( U32 program );
 void GLDSA_ProgramUniform1iEXT( U32 program, S32 location, S32 v0 );
 void GLDSA_ProgramUniform1fEXT( U32 program, S32 location, F32 v0 );
 void GLDSA_ProgramUniform2fEXT( U32 program, S32 location, F32 v0, F32 v1 );
+void GLDSA_ProgramUniform2fvEXT( U32 program, S32 location, S32 count, const F32* value );
 void GLDSA_ProgramUniform3fEXT( U32 program, S32 location, F32 v0, F32 v1, F32 v2 );
 void GLDSA_ProgramUniform4fEXT( U32 program, S32 location, F32 v0, F32 v1, F32 v2, F32 v3 );
 void GLDSA_ProgramUniform1fvEXT( U32 program, S32 location, S32 count, const F32* value );
 void GLDSA_ProgramUniformMatrix4fvEXT( U32 program, S32 location, S32 count, U8 transpose, const F32* value );
-
+void GLDSA_ProgramUniform3fEXT( U32 program, S32 location, S32 count, const F32* value );
 void GL_BindNullFramebuffers( void );
 void GL_BindFramebuffer( U32 target, U32 framebuffer );
 void GL_BindRenderbuffer( U32 renderbuffer );
+void GL_BindFragDataLocation( U32 program, U32 color, StringEntry name );
 
 void GLDSA_NamedRenderbufferStorageEXT( U32 renderbuffer, U32 internalformat, S32 width, S32 height );
 void GLDSA_NamedRenderbufferStorageMultisampleEXT( U32 renderbuffer, S32 samples, U32 internalformat, S32 width, S32 height );
 U32 GLDSA_CheckNamedFramebufferStatusEXT( U32 framebuffer, U32 target );
 void GLDSA_NamedFramebufferTexture2DEXT( U32 framebuffer, U32 attachment, U32 textarget, U32 texture, S32 level );
 void GLDSA_NamedFramebufferRenderbufferEXT( U32 framebuffer, U32 attachment, U32 renderbuffertarget, U32 renderbuffer );
-
+void GLDSA_CopyTexImage2DEXT( U32 framebuffer, U32 target, S32 level, U32 internalformat, S32 x, S32 y, S32 width, S32 height, S32 border );;
 
 #endif

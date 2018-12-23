@@ -202,12 +202,6 @@ typedef struct botlib_import_s
     void	( *FreeMemory )( void* ptr );		// free memory from Zone
     S32( *AvailableMemory )( void );		// available Zone memory
     void*		( *HunkAlloc )( S32 size );		// allocate from hunk
-    //file system access
-    S32( *FS_FOpenFile )( StringEntry qpath, fileHandle_t* file, fsMode_t mode );
-    S32( *FS_Read )( void* buffer, S32 len, fileHandle_t f );
-    S32( *FS_Write )( const void* buffer, S32 len, fileHandle_t f );
-    void	( *FS_FCloseFile )( fileHandle_t f );
-    S32( *FS_Seek )( fileHandle_t f, S64 offset, S32 origin );
     //debug visualisation stuff
     S32( *DebugLineCreate )( void );
     void	( *DebugLineDelete )( S32 line );

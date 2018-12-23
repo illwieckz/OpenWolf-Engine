@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   q_shared.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: stateless support routines that are included in each code dll
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -38,9 +38,11 @@
 #ifdef DEDICATED
 #include <null/null_precompiled.h>
 #elif defined (CGAMEDLL)
-#include <cgame/cg_precompiled.h>
+#include <cgame/cgame_precompiled.h>
 #elif defined (GAMEDLL)
-#include <sgame/sg_precompiled.h>
+#include <sgame/sgame_precompiled.h>
+#elif Q3MAP2
+#include <qcommon/q_shared.h>
 #else
 #include <OWLib/precompiled.h>
 #endif
@@ -1786,10 +1788,12 @@ S32 Q_strncmp( StringEntry s1, StringEntry s2, S32 n )
     return 0;       // strings are equal
 }
 
+#ifndef Q3MAP2
 S32 Q_stricmp( StringEntry s1, StringEntry s2 )
 {
     return ( s1 && s2 ) ? Q_stricmpn( s1, s2, 99999 ) : -1;
 }
+#endif
 
 UTF8* Q_strlwr( UTF8* s1 )
 {
@@ -1889,6 +1893,7 @@ void Q_strncpyz2( UTF8* dst, StringEntry src, S32 dstSize )
     dst[dstSize - 1] = 0;
 }
 
+#ifndef Q3MAP2
 S32 Q_strncasecmp( StringEntry s1, StringEntry s2, S32 n )
 {
     S32		c1, c2;
@@ -1915,6 +1920,7 @@ S32 Q_strncasecmp( StringEntry s1, StringEntry s2, S32 n )
     
     return 0;		// strings are equal
 }
+#endif
 
 S32 Q_strcasecmp( StringEntry s1, StringEntry s2 )
 {
@@ -2151,7 +2157,7 @@ UTF8* va( StringEntry format, ... )
     
     
     va_start( argptr, format );
-    vsprintf( temp_buffer, format, argptr );
+    Q_vsnprintf( temp_buffer, sizeof( temp_buffer ), format, argptr );
     va_end( argptr );
     
     if( ( len = strlen( temp_buffer ) ) >= MAX_VA_STRING )
@@ -2791,7 +2797,7 @@ void Com_Printf( StringEntry msg, ... )
     static UTF8 string[4096];
     
     va_start( argptr, msg );
-    vsprintf( string, msg, argptr );
+    Q_vsnprintf( string, sizeof( string ), msg, argptr );
     va_end( argptr );
     
     printf( string );
@@ -2803,7 +2809,7 @@ void Com_Error( S32 level, StringEntry error, ... )
     static UTF8 string[4096];
     
     va_start( argptr, error );
-    vsprintf( string, error, argptr );
+    Q_vsnprintf( string, sizeof( string ), error, argptr );
     va_end( argptr );
     
     printf( string );
@@ -2843,6 +2849,7 @@ S32 Q_vsnprintf( UTF8* str, U64 size, StringEntry format, va_list ap )
 }
 #endif
 
+#ifndef Q3MAP2
 bool StringContainsWord( StringEntry haystack, StringEntry needle )
 {
     if( !*needle )
@@ -2872,3 +2879,4 @@ bool StringContainsWord( StringEntry haystack, StringEntry needle )
     }
     return false;
 }
+#endif

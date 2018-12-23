@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   client.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: primary header for client
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -51,13 +51,13 @@
 #include <client/keys.h>
 #endif
 #ifndef __GUI_PUBLIC_H__
-#include <GUI/gui_api.h>
+#include <API/gui_api.h>
 #endif
-#ifndef __BG_PUBLIC_H__
+#ifndef __BG_API_H__
 #include <bgame/bg_public.h>
 #endif
 #ifndef __CG_API_H__
-#include <API/cg_api.h>
+#include <API/cgame_api.h>
 #endif
 #if !defined ( DEDICATED ) && !defined ( UPDATE_SERVER ) && !defined ( BSPC )
 #ifndef __CL_HYDRAMANAGER_H__

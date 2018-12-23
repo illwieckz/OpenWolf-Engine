@@ -298,11 +298,11 @@ UTF8* AAS_LoadAASLump( fileHandle_t fp, S32 offset, S32 length, S32* lastoffset,
     if( offset != *lastoffset )
     {
         botimport.Print( PRT_WARNING, "AAS file not sequentially read\n" );
-        if( botimport.FS_Seek( fp, offset, FS_SEEK_SET ) )
+        if( fileSystem->Seek( fp, offset, FS_SEEK_SET ) )
         {
             AAS_Error( "can't seek to aas lump\n" );
             AAS_DumpAASData();
-            botimport.FS_FCloseFile( fp );
+            fileSystem->FCloseFile( fp );
             return NULL;
         } //end if
     } //end if
@@ -311,7 +311,7 @@ UTF8* AAS_LoadAASLump( fileHandle_t fp, S32 offset, S32 length, S32* lastoffset,
     //read the data
     if( length )
     {
-        botimport.FS_Read( buf, length, fp );
+        fileSystem->Read2( buf, length, fp );
         *lastoffset += length;
     } //end if
     return buf;
@@ -348,21 +348,21 @@ S32 AAS_LoadAASFile( UTF8* filename )
     //dump current loaded aas file
     AAS_DumpAASData();
     //open the file
-    botimport.FS_FOpenFile( filename, &fp, FS_READ );
+    fileSystem->FOpenFileByMode( filename, &fp, FS_READ );
     if( !fp )
     {
         AAS_Error( "can't open %s\n", filename );
         return BLERR_CANNOTOPENAASFILE;
     } //end if
     //read the header
-    botimport.FS_Read( &header, sizeof( aas_header_t ), fp );
+    fileSystem->Read2( &header, sizeof( aas_header_t ), fp );
     lastoffset = sizeof( aas_header_t );
     //check header identification
     header.ident = LittleLong( header.ident );
     if( header.ident != AASID )
     {
         AAS_Error( "%s is not an AAS file. The header identity should be %d but was %d\n", filename, AASID, header.ident );
-        botimport.FS_FCloseFile( fp );
+        fileSystem->FCloseFile( fp );
         return BLERR_WRONGAASFILEID;
     } //end if
     //check the version
@@ -371,7 +371,7 @@ S32 AAS_LoadAASFile( UTF8* filename )
     if( header.version != AASVERSION_OLD && header.version != AASVERSION )
     {
         AAS_Error( "aas file %s is version %i, not %i\n", filename, header.version, AASVERSION );
-        botimport.FS_FCloseFile( fp );
+        fileSystem->FCloseFile( fp );
         return BLERR_WRONGAASFILEVERSION;
     } //end if
     //
@@ -384,7 +384,7 @@ S32 AAS_LoadAASFile( UTF8* filename )
     if( LittleLong( header.bspchecksum ) != aasworld.bspchecksum )
     {
         AAS_Error( "aas file %s is out of date\n", filename );
-        botimport.FS_FCloseFile( fp );
+        fileSystem->FCloseFile( fp );
         return BLERR_WRONGAASFILEVERSION;
     } //end if
     
@@ -478,7 +478,7 @@ S32 AAS_LoadAASFile( UTF8* filename )
     //aas file is loaded
     aasworld.loaded = true;
     //close the file
-    botimport.FS_FCloseFile( fp );
+    fileSystem->FCloseFile( fp );
     //
 #ifdef AASFILEDEBUG
     AAS_FileInfo();
@@ -505,7 +505,7 @@ S32 AAS_WriteAASLump( fileHandle_t fp, aas_header_t* h, S32 lumpnum, void* data,
     
     if( length > 0 )
     {
-        botimport.FS_Write( data, length, fp );
+        fileSystem->Write( data, length, fp );
     } //end if
     
     AAS_WriteAASLump_offset += length;
@@ -533,14 +533,14 @@ bool AAS_WriteAASFile( UTF8* filename )
     header.version = LittleLong( AASVERSION );
     header.bspchecksum = LittleLong( aasworld.bspchecksum );
     //open a new file
-    botimport.FS_FOpenFile( filename, &fp, FS_WRITE );
+    fileSystem->FOpenFileByMode( filename, &fp, FS_WRITE );
     if( !fp )
     {
         botimport.Print( PRT_ERROR, "error opening %s\n", filename );
         return false;
     } //end if
     //write the header
-    botimport.FS_Write( &header, sizeof( aas_header_t ), fp );
+    fileSystem->Write( &header, sizeof( aas_header_t ), fp );
     AAS_WriteAASLump_offset = sizeof( aas_header_t );
     //add the data lumps to the file
     if( !AAS_WriteAASLump( fp, &header, AASLUMP_BBOXES, aasworld.bboxes,
@@ -572,10 +572,10 @@ bool AAS_WriteAASFile( UTF8* filename )
     if( !AAS_WriteAASLump( fp, &header, AASLUMP_CLUSTERS, aasworld.clusters,
                            aasworld.numclusters * sizeof( aas_cluster_t ) ) ) return false;
     //rewrite the header with the added lumps
-    botimport.FS_Seek( fp, 0, FS_SEEK_SET );
+    fileSystem->Seek( fp, 0, FS_SEEK_SET );
     AAS_DData( ( U8* ) &header + 8, sizeof( aas_header_t ) - 8 );
-    botimport.FS_Write( &header, sizeof( aas_header_t ), fp );
+    fileSystem->Write( &header, sizeof( aas_header_t ), fp );
     //close the file
-    botimport.FS_FCloseFile( fp );
+    fileSystem->FCloseFile( fp );
     return true;
 } //end of the function AAS_WriteAASFile

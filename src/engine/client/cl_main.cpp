@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: client main loop
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -288,13 +288,13 @@ void CL_WriteDemoMessage( msg_t* msg, S32 headerBytes )
     // write the packet sequence
     len = clc.serverMessageSequence;
     swlen = LittleLong( len );
-    FS_Write( &swlen, 4, clc.demofile );
+    fileSystem->Write( &swlen, 4, clc.demofile );
     
     // skip the packet sequencing information
     len = msg->cursize - headerBytes;
     swlen = LittleLong( len );
-    FS_Write( &swlen, 4, clc.demofile );
-    FS_Write( msg->data + headerBytes, len, clc.demofile );
+    fileSystem->Write( &swlen, 4, clc.demofile );
+    fileSystem->Write( msg->data + headerBytes, len, clc.demofile );
 }
 
 
@@ -317,15 +317,15 @@ void CL_StopRecord_f( void )
     
     // finish up
     len = -1;
-    FS_Write( &len, 4, clc.demofile );
-    FS_Write( &len, 4, clc.demofile );
-    FS_FCloseFile( clc.demofile );
+    fileSystem->Write( &len, 4, clc.demofile );
+    fileSystem->Write( &len, 4, clc.demofile );
+    fileSystem->FCloseFile( clc.demofile );
     clc.demofile = 0;
     
     clc.demorecording = false;
-    Cvar_Set( "cl_demorecording", "0" );	// fretn
-    Cvar_Set( "cl_demofilename", "" );	// bani
-    Cvar_Set( "cl_demooffset", "0" );	// bani
+    cvarSystem->Set( "cl_demorecording", "0" );	// fretn
+    cvarSystem->Set( "cl_demofilename", "" );	// bani
+    cvarSystem->Set( "cl_demooffset", "0" );	// bani
     Com_Printf( "Stopped demo.\n" );
 }
 
@@ -383,7 +383,7 @@ void CL_Record_f( void )
     
     // ATVI Wolfenstein Misc #479 - changing this to a warning
     // sync 0 doesn't prevent recording, so not forcing it off .. everyone does g_sync 1 ; record ; g_sync 0 ..
-    if( NET_IsLocalAddress( clc.serverAddress ) && !Cvar_VariableValue( "g_synchronousClients" ) )
+    if( NET_IsLocalAddress( clc.serverAddress ) && !cvarSystem->VariableValue( "g_synchronousClients" ) )
     {
         Com_Printf( S_COLOR_YELLOW "WARNING: You should set 'g_synchronousClients 1' for smoother demo recording\n" );
     }
@@ -404,7 +404,7 @@ void CL_Record_f( void )
             CL_DemoFilename( number, demoName );
             Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", demoName, com_protocol->integer );
             
-            len = FS_ReadFile( name, NULL );
+            len = fileSystem->ReadFile( name, NULL );
             if( len <= 0 )
             {
                 break;			// file doesn't exist
@@ -428,7 +428,7 @@ void CL_Record( StringEntry name )
     // open the demo file
     
     Com_Printf( "recording to %s.\n", name );
-    clc.demofile = FS_FOpenFileWrite( name );
+    clc.demofile = fileSystem->FOpenFileWrite( name );
     if( !clc.demofile )
     {
         Com_Printf( "ERROR: couldn't open.\n" );
@@ -436,10 +436,10 @@ void CL_Record( StringEntry name )
     }
     
     clc.demorecording = true;
-    Cvar_Set( "cl_demorecording", "1" );	// fretn
+    cvarSystem->Set( "cl_demorecording", "1" );	// fretn
     Q_strncpyz( clc.demoName, demoName, sizeof( clc.demoName ) );
-    Cvar_Set( "cl_demofilename", clc.demoName );	// bani
-    Cvar_Set( "cl_demooffset", "0" );	// bani
+    cvarSystem->Set( "cl_demofilename", clc.demoName );	// bani
+    cvarSystem->Set( "cl_demooffset", "0" );	// bani
     
     // don't start saving messages until a non-delta compressed message is received
     clc.demowaiting = true;
@@ -494,11 +494,11 @@ void CL_Record( StringEntry name )
     
     // write it to the demo file
     len = LittleLong( clc.serverMessageSequence - 1 );
-    FS_Write( &len, 4, clc.demofile );
+    fileSystem->Write( &len, 4, clc.demofile );
     
     len = LittleLong( buf.cursize );
-    FS_Write( &len, 4, clc.demofile );
-    FS_Write( buf.data, buf.cursize, clc.demofile );
+    fileSystem->Write( &len, 4, clc.demofile );
+    fileSystem->Write( buf.data, buf.cursize, clc.demofile );
     
     // the rest of the demo file will be copied from net messages
 }
@@ -563,7 +563,7 @@ void CL_ReadDemoMessage( void )
     }
     
     // get the sequence number
-    r = FS_Read( &s, 4, clc.demofile );
+    r = fileSystem->Read( &s, 4, clc.demofile );
     if( r != 4 )
     {
         CL_DemoCompleted();
@@ -576,7 +576,7 @@ void CL_ReadDemoMessage( void )
     MSG_Init( &buf, bufData, sizeof( bufData ) );
     
     // get the length
-    r = FS_Read( &buf.cursize, 4, clc.demofile );
+    r = fileSystem->Read( &buf.cursize, 4, clc.demofile );
     
     if( r != 4 )
     {
@@ -593,7 +593,7 @@ void CL_ReadDemoMessage( void )
     {
         Com_Error( ERR_DROP, "CL_ReadDemoMessage: demoMsglen > MAX_MSGLEN" );
     }
-    r = FS_Read( buf.data, buf.cursize, clc.demofile );
+    r = fileSystem->Read( buf.data, buf.cursize, clc.demofile );
     if( r != buf.cursize )
     {
         Com_Printf( "Demo file was truncated.\n" );
@@ -683,7 +683,7 @@ static void CL_WriteWaveHeader( void )
     hdr.Subchunk2Size = 0;		// NumSamples * NumChannels * BitsPerSample/8
     
     // ...
-    FS_Write( &hdr.ChunkID, 44, clc.wavefile );
+    fileSystem->Write( &hdr.ChunkID, 44, clc.wavefile );
 }
 
 static UTF8     wavName[MAX_QPATH];	// compiler bug workaround
@@ -727,7 +727,7 @@ void CL_WriteWaveOpen()
             CL_WavFilename( number, wavName );
             Com_sprintf( name, sizeof( name ), "wav/%s.wav", wavName );
             
-            len = FS_FileExists( name );
+            len = fileSystem->FileExists( name );
             if( len <= 0 )
             {
                 break;			// file doesn't exist
@@ -736,7 +736,7 @@ void CL_WriteWaveOpen()
     }
     
     Com_Printf( "recording to %s.\n", name );
-    clc.wavefile = FS_FOpenFileWrite( name );
+    clc.wavefile = fileSystem->FOpenFileWrite( name );
     
     if( !clc.wavefile )
     {
@@ -749,9 +749,9 @@ void CL_WriteWaveOpen()
     
     clc.waverecording = true;
     
-    Cvar_Set( "cl_waverecording", "1" );
-    Cvar_Set( "cl_wavefilename", wavName );
-    Cvar_Set( "cl_waveoffset", "0" );
+    cvarSystem->Set( "cl_waverecording", "1" );
+    cvarSystem->Set( "cl_wavefilename", wavName );
+    cvarSystem->Set( "cl_waveoffset", "0" );
 }
 
 void CL_WriteWaveClose()
@@ -761,13 +761,13 @@ void CL_WriteWaveClose()
     hdr.Subchunk2Size = hdr.NumSamples * hdr.NumChannels * ( hdr.BitsPerSample / 8 );
     hdr.ChunkSize = 36 + hdr.Subchunk2Size;
     
-    FS_Seek( clc.wavefile, 4, FS_SEEK_SET );
-    FS_Write( &hdr.ChunkSize, 4, clc.wavefile );
-    FS_Seek( clc.wavefile, 40, FS_SEEK_SET );
-    FS_Write( &hdr.Subchunk2Size, 4, clc.wavefile );
+    fileSystem->Seek( clc.wavefile, 4, FS_SEEK_SET );
+    fileSystem->Write( &hdr.ChunkSize, 4, clc.wavefile );
+    fileSystem->Seek( clc.wavefile, 40, FS_SEEK_SET );
+    fileSystem->Write( &hdr.Subchunk2Size, 4, clc.wavefile );
     
     // and we're outta here
-    FS_FCloseFile( clc.wavefile );
+    fileSystem->FCloseFile( clc.wavefile );
     clc.wavefile = 0;
 }
 
@@ -810,7 +810,7 @@ void CL_PlayDemo_f( void )
     }
     
     // make sure a local server is killed
-    Cvar_Set( "sv_killserver", "1" );
+    cvarSystem->Set( "sv_killserver", "1" );
     
     CL_Disconnect( true );
     
@@ -832,7 +832,7 @@ void CL_PlayDemo_f( void )
         {
             Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", arg, prot_ver );
         }
-        FS_FOpenFileRead( name, &clc.demofile, true );
+        fileSystem->FOpenFileRead( name, &clc.demofile, true );
         prot_ver++;
     }
     if( !clc.demofile )
@@ -847,7 +847,7 @@ void CL_PlayDemo_f( void )
     cls.state = CA_CONNECTED;
     clc.demoplaying = true;
     
-    if( Cvar_VariableValue( "cl_wavefilerecord" ) )
+    if( cvarSystem->VariableValue( "cl_wavefilerecord" ) )
     {
         CL_WriteWaveOpen();
     }
@@ -916,7 +916,7 @@ S32 CL_DemoPos( void )
 {
     if( clc.demoplaying || clc.demorecording )
     {
-        return FS_FTell( clc.demofile );
+        return fileSystem->FTell( clc.demofile );
     }
     else
     {
@@ -936,7 +936,7 @@ void CL_NextDemo( void )
 {
     UTF8            v[MAX_STRING_CHARS];
     
-    Q_strncpyz( v, Cvar_VariableString( "nextdemo" ), sizeof( v ) );
+    Q_strncpyz( v, cvarSystem->VariableString( "nextdemo" ), sizeof( v ) );
     v[MAX_STRING_CHARS - 1] = 0;
     Com_DPrintf( "CL_NextDemo: %s\n", v );
     if( !v[0] )
@@ -944,7 +944,7 @@ void CL_NextDemo( void )
         return;
     }
     
-    Cvar_Set( "nextdemo", "" );
+    cvarSystem->Set( "nextdemo", "" );
     Cbuf_AddText( v );
     Cbuf_AddText( "\n" );
     Cbuf_Execute();
@@ -1083,7 +1083,7 @@ void CL_MapLoading( void )
     else
     {
         // clear nextmap so the cinematic shutdown doesn't execute it
-        Cvar_Set( "nextmap", "" );
+        cvarSystem->Set( "nextmap", "" );
         CL_Disconnect( true );
         Q_strncpyz( cls.servername, "localhost", sizeof( cls.servername ) );
         cls.state = CA_CHALLENGING;     // so the connect screen is drawn
@@ -1122,16 +1122,16 @@ static void CL_UpdateGUID( StringEntry prefix, S32 prefix_len )
     fileHandle_t    f;
     S32             len;
     
-    len = FS_SV_FOpenFileRead( GUIDKEY_FILE, &f );
-    FS_FCloseFile( f );
+    len = fileSystem->SV_FOpenFileRead( GUIDKEY_FILE, &f );
+    fileSystem->FCloseFile( f );
     
     if( len != GUIDKEY_SIZE )
     {
-        Cvar_Set( "cl_guid", "" );
+        cvarSystem->Set( "cl_guid", "" );
     }
     else
     {
-        Cvar_Set( "cl_guid", Com_MD5File( GUIDKEY_FILE, GUIDKEY_SIZE, prefix, prefix_len ) );
+        cvarSystem->Set( "cl_guid", Com_MD5File( GUIDKEY_FILE, GUIDKEY_SIZE, prefix, prefix_len ) );
     }
 }
 /*
@@ -1175,11 +1175,11 @@ void CL_Disconnect( bool showMainMenu )
     {
         if( clc.download )
         {
-            FS_FCloseFile( clc.download );
+            fileSystem->FCloseFile( clc.download );
             clc.download = 0;
         }
         *cls.downloadTempName = *cls.downloadName = 0;
-        Cvar_Set( "cl_downloadName", "" );
+        cvarSystem->Set( "cl_downloadName", "" );
         
         autoupdateStarted = false;
         autoupdateFilename[0] = '\0';
@@ -1187,7 +1187,7 @@ void CL_Disconnect( bool showMainMenu )
     
     if( clc.demofile )
     {
-        FS_FCloseFile( clc.demofile );
+        fileSystem->FCloseFile( clc.demofile );
         clc.demofile = 0;
     }
     
@@ -1220,7 +1220,7 @@ void CL_Disconnect( bool showMainMenu )
     }
     
     // allow cheats locally
-    //Cvar_Set( "sv_cheats", "1" );
+    //cvarSystem->Set( "sv_cheats", "1" );
     
     // not connected to a pure server anymore
     cl_connectedToPureServer = false;
@@ -1307,7 +1307,7 @@ static S32 CL_Highscore_response( httpInfo_e code, v buffer, S32 length, void* n
 {
     if( code == HTTP_WRITE )
     {
-        Cvar_Set( "st_postresults", buffer );
+        cvarSystem->Set( "st_postresults", buffer );
         uiManager->ReportHighScoreRespons();
     }
     return 1;
@@ -1331,7 +1331,7 @@ static void CL_Highscore_f( void )
     
     HTTP_PostUrl(	va( "http://%s/user/report_score", AUTHORIZE_SERVER_NAME ), CL_Highscore_response, 0,
                     "c[slot]=%d&h[score]=%d&h[skill]=%d&h[kills]=%d&h[time]=%d&h[game_id]=%d&h[real_time]=%d",
-                    Cvar_VariableIntegerValue( "slot" ),
+                    cvarSystem->VariableIntegerValue( "slot" ),
                     atoi( Cmd_Argv( 1 ) ),
                     atoi( Cmd_Argv( 2 ) ),
                     atoi( Cmd_Argv( 3 ) ),
@@ -1351,7 +1351,7 @@ static S32 CL_Login_response( httpInfo_e code, StringEntry buffer, S32 length, v
 {
     if( code == HTTP_WRITE )
     {
-        Cvar_Set( "cl_servermessage", Info_ValueForKey( buffer, "message" ) );
+        cvarSystem->Set( "cl_servermessage", Info_ValueForKey( buffer, "message" ) );
         
         switch( atoi( Info_ValueForKey( buffer, "status" ) ) )
         {
@@ -1413,7 +1413,7 @@ static S32 CL_CreateCharacter_response( httpInfo_e code, StringEntry buffer, S32
 {
     if( code == HTTP_WRITE )
     {
-        Cvar_Set( "cl_servermessage", buffer );
+        cvarSystem->Set( "cl_servermessage", buffer );
         uiManager->UIAuthorized( AUTHORIZE_CREATECHARACTER );
     }
     
@@ -1484,7 +1484,7 @@ static S32 CL_GetAccount_response( httpInfo_e code, StringEntry buffer, S32 leng
 {
     if( code == HTTP_WRITE )
     {
-        Cvar_Set( "cl_servermessage", buffer );
+        cvarSystem->Set( "cl_servermessage", buffer );
         uiManager->UIAuthorized( AUTHORIZE_ACCOUNTINFO );
     }
     
@@ -1755,8 +1755,8 @@ CL_Disconnect_f
 void CL_Disconnect_f( void )
 {
     SCR_StopCinematic();
-    Cvar_Set( "savegame_loading", "0" );
-    Cvar_Set( "g_reloading", "0" );
+    cvarSystem->Set( "savegame_loading", "0" );
+    cvarSystem->Set( "g_reloading", "0" );
     if( cls.state != CA_DISCONNECTED && cls.state != CA_CINEMATIC )
     {
         Com_Error( ERR_DISCONNECT, "Disconnected from server" );
@@ -1816,8 +1816,8 @@ void CL_Connect_f( void )
     soundSystem->StopAllSounds();      // NERVE - SMF
     
     // starting to load a map so we get out of full screen ui mode
-    Cvar_Set( "r_uiFullScreen", "0" );
-    Cvar_Set( "ui_connecting", "1" );
+    cvarSystem->Set( "r_uiFullScreen", "0" );
+    cvarSystem->Set( "ui_connecting", "1" );
     
     // fire a message off to the motd server
     CL_RequestMotd();
@@ -1832,7 +1832,7 @@ void CL_Connect_f( void )
     }
     
     // make sure a local server is killed
-    Cvar_Set( "sv_killserver", "1" );
+    cvarSystem->Set( "sv_killserver", "1" );
     SV_Frame( 0 );
     
     CL_Disconnect( true );
@@ -1844,7 +1844,7 @@ void CL_Connect_f( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "ui_connecting", "0" );
+        cvarSystem->Set( "ui_connecting", "0" );
         return;
     }
     if( clc.serverAddress.port == 0 )
@@ -1871,34 +1871,34 @@ void CL_Connect_f( void )
         cls.state = CA_CONNECTING;
     }
     
-    Cvar_Set( "cl_avidemo", "0" );
+    cvarSystem->Set( "cl_avidemo", "0" );
     
     // show_bug.cgi?id=507
     // prepare to catch a connection process that would turn bad
-    Cvar_Set( "com_errorDiagnoseIP", NET_AdrToString( clc.serverAddress ) );
+    cvarSystem->Set( "com_errorDiagnoseIP", NET_AdrToString( clc.serverAddress ) );
     // ATVI Wolfenstein Misc #439
     // we need to setup a correct default for this, otherwise the first val we set might reappear
-    Cvar_Set( "com_errorMessage", "" );
+    cvarSystem->Set( "com_errorMessage", "" );
     
     cls.keyCatchers = 0;
     clc.connectTime = -99999;   // CL_CheckForResend() will fire immediately
     clc.connectPacketCount = 0;
     
     // server connection string
-    Cvar_Set( "cl_currentServerAddress", server );
-    Cvar_Set( "cl_currentServerIP", serverString );
+    cvarSystem->Set( "cl_currentServerAddress", server );
+    cvarSystem->Set( "cl_currentServerIP", serverString );
     
     // Gordon: um, couldnt this be handled
     // NERVE - SMF - reset some cvars
-    Cvar_Set( "mp_playerType", "0" );
-    Cvar_Set( "mp_currentPlayerType", "0" );
-    Cvar_Set( "mp_weapon", "0" );
-    Cvar_Set( "mp_team", "0" );
-    Cvar_Set( "mp_currentTeam", "0" );
+    cvarSystem->Set( "mp_playerType", "0" );
+    cvarSystem->Set( "mp_currentPlayerType", "0" );
+    cvarSystem->Set( "mp_weapon", "0" );
+    cvarSystem->Set( "mp_team", "0" );
+    cvarSystem->Set( "mp_currentTeam", "0" );
     
-    Cvar_Set( "ui_limboOptions", "0" );
-    Cvar_Set( "ui_limboPrevOptions", "0" );
-    Cvar_Set( "ui_limboObjective", "0" );
+    cvarSystem->Set( "ui_limboOptions", "0" );
+    cvarSystem->Set( "ui_limboPrevOptions", "0" );
+    cvarSystem->Set( "ui_limboObjective", "0" );
     // -NERVE - SMF
     
 }
@@ -1973,7 +1973,7 @@ void CL_SendPureChecksums( void )
     S32             i;
     
     // if we are pure we need to send back a command with our referenced pk3 checksums
-    pChecksums = FS_ReferencedPakPureChecksums();
+    pChecksums = fileSystem->ReferencedPakPureChecksums();
     
     // "cp"
     Com_sprintf( cMsg, sizeof( cMsg ), "Va " );
@@ -2016,7 +2016,7 @@ void CL_Vid_Restart_f( void )
     // settings may have changed so stop recording now
     if( CL_VideoRecording() )
     {
-        Cvar_Set( "cl_avidemo", "0" );
+        cvarSystem->Set( "cl_avidemo", "0" );
         CL_CloseAVI();
     }
     
@@ -2034,9 +2034,9 @@ void CL_Vid_Restart_f( void )
     // client is no longer pure untill new checksums are sent
     CL_ResetPureClientAtServer();
     // clear pak references
-    FS_ClearPakReferences( FS_CGAME_REF );
+    fileSystem->ClearPakReferences( FS_CGAME_REF );
     // reinitialize the filesystem if the game directory or checksum has changed
-    FS_ConditionalRestart( clc.checksumFeed );
+    fileSystem->ConditionalRestart( clc.checksumFeed );
     
     soundSystem->BeginRegistration();		// all sound handles are now invalid
     
@@ -2047,7 +2047,7 @@ void CL_Vid_Restart_f( void )
     autoupdateChecked = false;
     
     // unpause so the cgame definately gets a snapshot and renders a frame
-    Cvar_Set( "cl_paused", "0" );
+    cvarSystem->Set( "cl_paused", "0" );
     
     // if not running a server clear the whole hunk
     if( !com_sv_running->integer )
@@ -2137,7 +2137,7 @@ CL_PK3List_f
 */
 void CL_OpenedPK3List_f( void )
 {
-    Com_Printf( "Opened PK3 Names: %s\n", FS_LoadedPakNames() );
+    Com_Printf( "Opened PK3 Names: %s\n", fileSystem->LoadedPakNames() );
 }
 
 /*
@@ -2147,7 +2147,7 @@ CL_PureList_f
 */
 void CL_ReferencedPK3List_f( void )
 {
-    Com_Printf( "Referenced PK3 Names: %s\n", FS_ReferencedPakNames() );
+    Com_Printf( "Referenced PK3 Names: %s\n", fileSystem->ReferencedPakNames() );
 }
 
 /*
@@ -2188,7 +2188,7 @@ void CL_Clientinfo_f( void )
     Com_Printf( "state: %i\n", cls.state );
     Com_Printf( "Server: %s\n", cls.servername );
     Com_Printf( "User info settings:\n" );
-    Info_Print( Cvar_InfoString( CVAR_USERINFO ) );
+    Info_Print( cvarSystem->InfoString( CVAR_USERINFO ) );
     Com_Printf( "--------------------------------------\n" );
 }
 
@@ -2224,9 +2224,9 @@ void CL_WavStopRecord_f( void )
     }
     
     CL_WriteWaveClose();
-    Cvar_Set( "cl_waverecording", "0" );
-    Cvar_Set( "cl_wavefilename", "" );
-    Cvar_Set( "cl_waveoffset", "0" );
+    cvarSystem->Set( "cl_waverecording", "0" );
+    cvarSystem->Set( "cl_wavefilename", "" );
+    cvarSystem->Set( "cl_waveoffset", "0" );
     clc.waverecording = false;
 }
 
@@ -2276,7 +2276,7 @@ void CL_Video_f( void )
             
             Com_sprintf( filename, MAX_OSPATH, "videos/video%d%d%d%d.avi", a, b, c, d );
             
-            if( !FS_FileExists( filename ) )
+            if( !fileSystem->FileExists( filename ) )
                 break;			// file doesn't exist
         }
         
@@ -2322,8 +2322,8 @@ void CL_DownloadsComplete( void )
     
         if( strlen( autoupdateFilename ) > 4 )
         {
-            fs_write_path = Cvar_VariableString( "fs_homepath" );
-            fn = FS_BuildOSPath( fs_write_path, FS_ShiftStr( AUTOUPDATE_DIR, AUTOUPDATE_DIR_SHIFT ), autoupdateFilename );
+            fs_write_path = cvarSystem->VariableString( "fs_homepath" );
+            fn = fileSystem->BuildOSPath( fs_write_path, fileSystem->ShiftStr( AUTOUPDATE_DIR, AUTOUPDATE_DIR_SHIFT ), autoupdateFilename );
             
             // will either exit with a successful process spawn, or will Com_Error ERR_DROP
             // so we need to clear the disconnected download data if needed
@@ -2355,7 +2355,7 @@ void CL_DownloadsComplete( void )
     {
         cls.downloadRestart = false;
         
-        FS_Restart( clc.checksumFeed );	// We possibly downloaded a pak, restart the file system to load it
+        fileSystem->Restart( clc.checksumFeed );	// We possibly downloaded a pak, restart the file system to load it
         
         if( !cls.bWWWDlDisconnected )
         {
@@ -2392,7 +2392,7 @@ void CL_DownloadsComplete( void )
     }
     
     // starting to load a map so we get out of full screen ui mode
-    Cvar_Set( "r_uiFullScreen", "0" );
+    cvarSystem->Set( "r_uiFullScreen", "0" );
     
     // flush client memory and start loading stuff
     // this will also (re)load the UI
@@ -2430,10 +2430,10 @@ void CL_BeginDownload( StringEntry localName, StringEntry remoteName )
     Com_sprintf( cls.downloadTempName, sizeof( cls.downloadTempName ), "%s.tmp", localName );
     
     // Set so UI gets access to it
-    Cvar_Set( "cl_downloadName", remoteName );
-    Cvar_Set( "cl_downloadSize", "0" );
-    Cvar_Set( "cl_downloadCount", "0" );
-    Cvar_SetValue( "cl_downloadTime", cls.realtime );
+    cvarSystem->Set( "cl_downloadName", remoteName );
+    cvarSystem->Set( "cl_downloadSize", "0" );
+    cvarSystem->Set( "cl_downloadCount", "0" );
+    cvarSystem->SetValue( "cl_downloadTime", cls.realtime );
     
     clc.downloadBlock = 0;		// Starting new file
     clc.downloadCount = 0;
@@ -2509,7 +2509,7 @@ void CL_InitDownloads( void )
 {
 #ifndef PRE_RELEASE_DEMO
     UTF8            missingfiles[1024];
-    UTF8*           dir = FS_ShiftStr( AUTOUPDATE_DIR, AUTOUPDATE_DIR_SHIFT );
+    UTF8*           dir = fileSystem->ShiftStr( AUTOUPDATE_DIR, AUTOUPDATE_DIR_SHIFT );
     
     // TTimo
     // init some of the www dl data
@@ -2533,19 +2533,19 @@ void CL_InitDownloads( void )
     else
     {
         // whatever autodownlad configuration, store missing files in a cvar, use later in the ui maybe
-        if( FS_ComparePaks( missingfiles, sizeof( missingfiles ), false ) )
+        if( fileSystem->ComparePaks( missingfiles, sizeof( missingfiles ), false ) )
         {
-            Cvar_Set( "com_missingFiles", missingfiles );
+            cvarSystem->Set( "com_missingFiles", missingfiles );
         }
         else
         {
-            Cvar_Set( "com_missingFiles", "" );
+            cvarSystem->Set( "com_missingFiles", "" );
         }
         
         // reset the redirect checksum tracking
         clc.redirectedList[0] = '\0';
         
-        if( cl_allowDownload->integer && FS_ComparePaks( clc.downloadList, sizeof( clc.downloadList ), true ) )
+        if( cl_allowDownload->integer && fileSystem->ComparePaks( clc.downloadList, sizeof( clc.downloadList ), true ) )
         {
             // this gets printed to UI, i18n
             Com_Printf( CL_TranslateStringBuf( "Need paks: %s\n" ), clc.downloadList );
@@ -2610,9 +2610,9 @@ void CL_CheckForResend( void )
             
         case CA_CHALLENGING:
             // sending back the challenge
-            port = Cvar_VariableValue( "net_qport" );
+            port = cvarSystem->VariableValue( "net_qport" );
             
-            Q_strncpyz( info, Cvar_InfoString( CVAR_USERINFO ), sizeof( info ) );
+            Q_strncpyz( info, cvarSystem->InfoString( CVAR_USERINFO ), sizeof( info ) );
             Info_SetValueForKey( info, "protocol", va( "%i", com_protocol->integer ) );
             Info_SetValueForKey( info, "qport", va( "%i", port ) );
             Info_SetValueForKey( info, "challenge", va( "%i", clc.challenge ) );
@@ -2685,14 +2685,14 @@ void CL_DisconnectPacket( netadr_t from )
         // drop the connection
         message = "Server disconnected for unknown reason";
         Com_Printf( "%s", message );
-        Cvar_Set( "com_errorMessage", message );
+        cvarSystem->Set( "com_errorMessage", message );
         CL_Disconnect( true );
     }
     else
     {
         CL_Disconnect( false );
-        Cvar_Set( "ui_connecting", "1" );
-        Cvar_Set( "ui_dl_running", "1" );
+        cvarSystem->Set( "ui_connecting", "1" );
+        cvarSystem->Set( "ui_dl_running", "1" );
     }
 }
 
@@ -2762,7 +2762,7 @@ void CL_MotdPacket( netadr_t from, StringEntry info )
     w = str_replace( v, "|", "\n" );
     
     Q_strncpyz( cls.updateInfoString, info, sizeof( cls.updateInfoString ) );
-    Cvar_Set( "cl_newsString", w );
+    cvarSystem->Set( "cl_newsString", w );
     free( w );
 }
 
@@ -2787,13 +2787,13 @@ void CL_PrintPacket( netadr_t from, msg_t* msg )
     if( !Q_stricmpn( s, "[err_dialog]", 12 ) )
     {
         Q_strncpyz( clc.serverMessage, s + 12, sizeof( clc.serverMessage ) );
-        // Cvar_Set("com_errorMessage", clc.serverMessage );
+        // cvarSystem->Set("com_errorMessage", clc.serverMessage );
         Com_Error( ERR_DROP, "%s", clc.serverMessage );
     }
     else if( !Q_stricmpn( s, "[err_prot]", 10 ) )
     {
         Q_strncpyz( clc.serverMessage, s + 10, sizeof( clc.serverMessage ) );
-        // Cvar_Set("com_errorMessage", CL_TranslateStringBuf( PROTOCOL_MISMATCH_ERROR_LONG ) );
+        // cvarSystem->Set("com_errorMessage", CL_TranslateStringBuf( PROTOCOL_MISMATCH_ERROR_LONG ) );
         Com_Error( ERR_DROP, "%s", CL_TranslateStringBuf( PROTOCOL_MISMATCH_ERROR_LONG ) );
     }
     else if( !Q_stricmpn( s, "[err_update]", 12 ) )
@@ -2805,7 +2805,7 @@ void CL_PrintPacket( netadr_t from, msg_t* msg )
     {
         // fretn
         Q_strncpyz( clc.serverMessage, s, sizeof( clc.serverMessage ) );
-        Cvar_Set( "com_errorMessage", clc.serverMessage );
+        cvarSystem->Set( "com_errorMessage", clc.serverMessage );
         Com_Error( ERR_DROP, "%s", clc.serverMessage );
     }
     else
@@ -3045,7 +3045,7 @@ void CL_ConnectionlessPacket( netadr_t from, msg_t* msg )
             }
         }
         
-        Netchan_Setup( NS_CLIENT, &clc.netchan, from, Cvar_VariableValue( "net_qport" ) );
+        Netchan_Setup( NS_CLIENT, &clc.netchan, from, cvarSystem->VariableValue( "net_qport" ) );
         cls.state = CA_CONNECTED;
         clc.lastPacketSentTime = -9999;     // send first packet immediately
         return;
@@ -3213,7 +3213,7 @@ void CL_CheckTimeout( void )
         if( ++cl.timeoutcount > 5 )
         {
             // timeoutcount saves debugger
-            Cvar_Set( "com_errorMessage", "Server connection timed out." );
+            cvarSystem->Set( "com_errorMessage", "Server connection timed out." );
             CL_Disconnect( true );
             return;
         }
@@ -3236,7 +3236,7 @@ CL_CheckUserinfo
 void CL_CheckUserinfo( void )
 {
     // don't add reliable commands when not yet connected
-    if( cls.state < CA_CHALLENGING )
+    if( cls.state < CA_CONNECTED )
     {
         return;
     }
@@ -3249,7 +3249,7 @@ void CL_CheckUserinfo( void )
     if( cvar_modifiedFlags & CVAR_USERINFO )
     {
         cvar_modifiedFlags &= ~CVAR_USERINFO;
-        CL_AddReliableCommand( va( "userinfo \"%s\"", Cvar_InfoString( CVAR_USERINFO ) ) );
+        CL_AddReliableCommand( va( "userinfo \"%s\"", cvarSystem->InfoString( CVAR_USERINFO ) ) );
     }
 }
 
@@ -3291,15 +3291,15 @@ void CL_WWWDownload( void )
         // taken from CL_ParseDownload
         // we work with OS paths
         clc.download = 0;
-        to_ospath = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), cls.originalDownloadName, "" );
+        to_ospath = fileSystem->BuildOSPath( cvarSystem->VariableString( "fs_homepath" ), cls.originalDownloadName, "" );
         to_ospath[strlen( to_ospath ) - 1] = '\0';
         if( rename( cls.downloadTempName, to_ospath ) )
         {
-            FS_CopyFile( cls.downloadTempName, to_ospath );
+            fileSystem->FSCopyFile( cls.downloadTempName, to_ospath );
             remove( cls.downloadTempName );
         }
         *cls.downloadTempName = *cls.downloadName = 0;
-        Cvar_Set( "cl_downloadName", "" );
+        cvarSystem->Set( "cl_downloadName", "" );
         if( cls.bWWWDlDisconnected )
         {
             // for an auto-update in disconnected mode, we'll be spawning the setup in CL_DownloadsComplete
@@ -3357,7 +3357,7 @@ void CL_WWWDownload( void )
 ==================
 CL_WWWBadChecksum
 
-FS code calls this when doing FS_ComparePaks
+FS code calls this when doing fileSystem->ComparePaks
 we can detect files that we got from a www dl redirect with a wrong checksum
 this indicates that the redirect setup is broken, and next dl attempt should NOT redirect
 ==================
@@ -3508,7 +3508,7 @@ static void CL_Cache_StartGather_f( void )
     cacheIndex = 0;
     memset( cacheItems, 0, sizeof( cacheItems ) );
     
-    Cvar_Set( "cl_cacheGathering", "1" );
+    cvarSystem->Set( "cl_cacheGathering", "1" );
 }
 
 static void CL_Cache_UsedFile_f( void )
@@ -3609,22 +3609,22 @@ static void CL_Cache_EndGather_f( void )
         Q_strncpyz( filename, cacheGroups[i].name, MAX_QPATH );
         Q_strcat( filename, MAX_QPATH, ".cache" );
         
-        handle = FS_FOpenFileWrite( filename );
+        handle = fileSystem->FOpenFileWrite( filename );
         
         for( j = 0; j < MAX_CACHE_ITEMS; j++ )
         {
             // if it's a valid filename, and it's been hit enough times, cache it
             if( cacheItems[i][j].hits >= cachePass && strstr( cacheItems[i][j].name, "/" ) )
             {
-                FS_Write( cacheItems[i][j].name, strlen( cacheItems[i][j].name ), handle );
-                FS_Write( "\n", 1, handle );
+                fileSystem->Write( cacheItems[i][j].name, strlen( cacheItems[i][j].name ), handle );
+                fileSystem->Write( "\n", 1, handle );
             }
         }
         
-        FS_FCloseFile( handle );
+        fileSystem->FCloseFile( handle );
     }
     
-    Cvar_Set( "cl_cacheGathering", "0" );
+    cvarSystem->Set( "cl_cacheGathering", "0" );
 }
 
 // done.
@@ -3690,15 +3690,15 @@ void CL_InitRenderer( void )
     cls.useLegacyConsoleFont = true;
     
     // Register console font specified by cl_consoleFont, if any
-    // filehandle is unused but forces FS_FOpenFileRead() to heed purecheck because it does not when filehandle is NULL
+    // filehandle is unused but forces fileSystem->FOpenFileRead() to heed purecheck because it does not when filehandle is NULL
     if( cl_consoleFont->string[0] )
     {
-        if( FS_FOpenFileByMode( cl_consoleFont->string, &f, FS_READ ) >= 0 )
+        if( fileSystem->FOpenFileByMode( cl_consoleFont->string, &f, FS_READ ) >= 0 )
         {
             renderSystem->RegisterFont( cl_consoleFont->string, cl_consoleFontSize->integer, &cls.consoleFont );
             cls.useLegacyConsoleFont = false;
         }
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
     }
     
     cls.whiteShader = renderSystem->RegisterShader( "white" );
@@ -3711,7 +3711,7 @@ void CL_InitRenderer( void )
     HTTP_PostUrl( "http://localhost/user/log", 0, 0,
                   "message="
                   "[%s] %s(%s)\n"
-                  , Cvar_VariableString( "sys_osstring" )
+                  , cvarSystem->VariableString( "sys_osstring" )
                   , cls.glconfig.renderer_string
                   , cls.glconfig.version_string );
 #endif
@@ -3892,11 +3892,11 @@ void CL_GetAutoUpdate( void )
     soundSystem->StopAllSounds();			// NERVE - SMF
     
     // starting to load a map so we get out of full screen ui mode
-    Cvar_Set( "r_uiFullScreen", "0" );
+    cvarSystem->Set( "r_uiFullScreen", "0" );
     
     // toggle on all the download related cvars
-    Cvar_Set( "cl_allowDownload", "1" );	// general flag
-    Cvar_Set( "cl_wwwDownload", "1" );	// ftp/http support
+    cvarSystem->Set( "cl_allowDownload", "1" );	// general flag
+    cvarSystem->Set( "cl_wwwDownload", "1" );	// ftp/http support
     
     // clear any previous "server full" type messages
     clc.serverMessage[0] = 0;
@@ -3908,7 +3908,7 @@ void CL_GetAutoUpdate( void )
     }
     
     // make sure a local server is killed
-    Cvar_Set( "sv_killserver", "1" );
+    cvarSystem->Set( "sv_killserver", "1" );
     SV_Frame( 0 );
     
     CL_Disconnect( true );
@@ -3920,7 +3920,7 @@ void CL_GetAutoUpdate( void )
     {
         Com_Printf( "Bad server address\n" );
         cls.state = CA_DISCONNECTED;
-        Cvar_Set( "ui_connecting", "0" );
+        cvarSystem->Set( "ui_connecting", "0" );
         return;
     }
     
@@ -3938,7 +3938,7 @@ void CL_GetAutoUpdate( void )
     clc.connectPacketCount = 0;
     
     // server connection string
-    Cvar_Set( "cl_currentServerAddress", "Auto-Updater" );
+    cvarSystem->Set( "cl_currentServerAddress", "Auto-Updater" );
 }
 
 // DHM - Nerve
@@ -3988,7 +3988,7 @@ void CL_InitRef( void )
     Com_Printf( "----- Initializing Renderer ----\n" );
     
     // unpause so the cgame definately gets a snapshot and renders a frame
-    Cvar_Set( "cl_paused", "0" );
+    cvarSystem->Set( "cl_paused", "0" );
 }
 
 /*
@@ -4050,8 +4050,8 @@ static void CL_GenerateGUIDKey( void )
     U8   buff[GUIDKEY_SIZE];
     fileHandle_t    f;
     
-    len = FS_SV_FOpenFileRead( GUIDKEY_FILE, &f );
-    FS_FCloseFile( f );
+    len = fileSystem->SV_FOpenFileRead( GUIDKEY_FILE, &f );
+    fileSystem->FCloseFile( f );
     if( len == GUIDKEY_SIZE )
     {
         Com_Printf( "GUIDKEY found.\n" );
@@ -4067,14 +4067,14 @@ static void CL_GenerateGUIDKey( void )
         Com_Printf( "GUIDKEY building random string\n" );
         Com_RandomBytes( buff, sizeof( buff ) );
         
-        f = FS_SV_FOpenFileWrite( GUIDKEY_FILE );
+        f = fileSystem->SV_FOpenFileWrite( GUIDKEY_FILE );
         if( !f )
         {
             Com_Printf( "GUIDKEY could not open %s for write\n", GUIDKEY_FILE );
             return;
         }
-        FS_Write( buff, sizeof( buff ), f );
-        FS_FCloseFile( f );
+        fileSystem->Write( buff, sizeof( buff ), f );
+        fileSystem->FCloseFile( f );
         Com_Printf( "GUIDKEY generated\n" );
     }
 }
@@ -4102,217 +4102,217 @@ void CL_Init( void )
     // register our variables
     //
     
-    cl_noprint = Cvar_Get( "cl_noprint", "0", 0 );
-    cl_motd = Cvar_Get( "cl_motd", "1", 0 );
-    cl_autoupdate = Cvar_Get( "cl_autoupdate", "1", CVAR_ARCHIVE );
+    cl_noprint = cvarSystem->Get( "cl_noprint", "0", 0 );
+    cl_motd = cvarSystem->Get( "cl_motd", "1", 0 );
+    cl_autoupdate = cvarSystem->Get( "cl_autoupdate", "1", CVAR_ARCHIVE );
     
-    cl_timeout = Cvar_Get( "cl_timeout", "200", 0 );
+    cl_timeout = cvarSystem->Get( "cl_timeout", "200", 0 );
     
-    cl_wavefilerecord = Cvar_Get( "cl_wavefilerecord", "0", CVAR_TEMP );
+    cl_wavefilerecord = cvarSystem->Get( "cl_wavefilerecord", "0", CVAR_TEMP );
     
-    cl_timeNudge = Cvar_Get( "cl_timeNudge", "0", CVAR_TEMP );
-    cl_shownet = Cvar_Get( "cl_shownet", "0", CVAR_TEMP );
-    cl_shownuments = Cvar_Get( "cl_shownuments", "0", CVAR_TEMP );
-    cl_visibleClients = Cvar_Get( "cl_visibleClients", "0", CVAR_TEMP );
-    cl_showServerCommands = Cvar_Get( "cl_showServerCommands", "0", 0 );
-    cl_showSend = Cvar_Get( "cl_showSend", "0", CVAR_TEMP );
-    cl_showTimeDelta = Cvar_Get( "cl_showTimeDelta", "0", CVAR_TEMP );
-    cl_freezeDemo = Cvar_Get( "cl_freezeDemo", "0", CVAR_TEMP );
-    rcon_client_password = Cvar_Get( "rconPassword", "", CVAR_TEMP );
-    cl_activeAction = Cvar_Get( "activeAction", "", CVAR_TEMP );
-    cl_autorecord = Cvar_Get( "cl_autorecord", "0", CVAR_TEMP );
+    cl_timeNudge = cvarSystem->Get( "cl_timeNudge", "0", CVAR_TEMP );
+    cl_shownet = cvarSystem->Get( "cl_shownet", "0", CVAR_TEMP );
+    cl_shownuments = cvarSystem->Get( "cl_shownuments", "0", CVAR_TEMP );
+    cl_visibleClients = cvarSystem->Get( "cl_visibleClients", "0", CVAR_TEMP );
+    cl_showServerCommands = cvarSystem->Get( "cl_showServerCommands", "0", 0 );
+    cl_showSend = cvarSystem->Get( "cl_showSend", "0", CVAR_TEMP );
+    cl_showTimeDelta = cvarSystem->Get( "cl_showTimeDelta", "0", CVAR_TEMP );
+    cl_freezeDemo = cvarSystem->Get( "cl_freezeDemo", "0", CVAR_TEMP );
+    rcon_client_password = cvarSystem->Get( "rconPassword", "", CVAR_TEMP );
+    cl_activeAction = cvarSystem->Get( "activeAction", "", CVAR_TEMP );
+    cl_autorecord = cvarSystem->Get( "cl_autorecord", "0", CVAR_TEMP );
     
-    cl_timedemo = Cvar_Get( "timedemo", "0", 0 );
-    cl_forceavidemo = Cvar_Get( "cl_forceavidemo", "0", 0 );
-    cl_aviFrameRate = Cvar_Get( "cl_aviFrameRate", "25", CVAR_ARCHIVE );
+    cl_timedemo = cvarSystem->Get( "timedemo", "0", 0 );
+    cl_forceavidemo = cvarSystem->Get( "cl_forceavidemo", "0", 0 );
+    cl_aviFrameRate = cvarSystem->Get( "cl_aviFrameRate", "25", CVAR_ARCHIVE );
     
     // XreaL BEGIN
-    cl_aviMotionJpeg = Cvar_Get( "cl_aviMotionJpeg", "1", CVAR_ARCHIVE );
+    cl_aviMotionJpeg = cvarSystem->Get( "cl_aviMotionJpeg", "1", CVAR_ARCHIVE );
     // XreaL END
     
-    cl_razerhydra = Cvar_Get( "cl_razerhydra", "0", CVAR_ARCHIVE );
+    cl_razerhydra = cvarSystem->Get( "cl_razerhydra", "0", CVAR_ARCHIVE );
     
-    rconAddress = Cvar_Get( "rconAddress", "", 0 );
+    rconAddress = cvarSystem->Get( "rconAddress", "", 0 );
     
-    cl_yawspeed = Cvar_Get( "cl_yawspeed", "140", CVAR_ARCHIVE );
-    cl_pitchspeed = Cvar_Get( "cl_pitchspeed", "140", CVAR_ARCHIVE );
-    cl_anglespeedkey = Cvar_Get( "cl_anglespeedkey", "1.5", 0 );
+    cl_yawspeed = cvarSystem->Get( "cl_yawspeed", "140", CVAR_ARCHIVE );
+    cl_pitchspeed = cvarSystem->Get( "cl_pitchspeed", "140", CVAR_ARCHIVE );
+    cl_anglespeedkey = cvarSystem->Get( "cl_anglespeedkey", "1.5", 0 );
     
-    cl_maxpackets = Cvar_Get( "cl_maxpackets", "30", CVAR_ARCHIVE );
-    cl_packetdup = Cvar_Get( "cl_packetdup", "1", CVAR_ARCHIVE );
+    cl_maxpackets = cvarSystem->Get( "cl_maxpackets", "30", CVAR_ARCHIVE );
+    cl_packetdup = cvarSystem->Get( "cl_packetdup", "1", CVAR_ARCHIVE );
     
-    cl_run = Cvar_Get( "cl_run", "1", CVAR_ARCHIVE );
-    cl_sensitivity = Cvar_Get( "sensitivity", "5", CVAR_ARCHIVE );
-    cl_mouseAccel = Cvar_Get( "cl_mouseAccel", "0", CVAR_ARCHIVE );
-    cl_freelook = Cvar_Get( "cl_freelook", "1", CVAR_ARCHIVE );
+    cl_run = cvarSystem->Get( "cl_run", "1", CVAR_ARCHIVE );
+    cl_sensitivity = cvarSystem->Get( "sensitivity", "5", CVAR_ARCHIVE );
+    cl_mouseAccel = cvarSystem->Get( "cl_mouseAccel", "0", CVAR_ARCHIVE );
+    cl_freelook = cvarSystem->Get( "cl_freelook", "1", CVAR_ARCHIVE );
     
-    cl_xbox360ControllerAvailable = Cvar_Get( "in_xbox360ControllerAvailable", "0", CVAR_ROM );
+    cl_xbox360ControllerAvailable = cvarSystem->Get( "in_xbox360ControllerAvailable", "0", CVAR_ROM );
     
     // 0: legacy mouse acceleration
     // 1: new implementation
     
-    cl_mouseAccelStyle = Cvar_Get( "cl_mouseAccelStyle", "0", CVAR_ARCHIVE );
+    cl_mouseAccelStyle = cvarSystem->Get( "cl_mouseAccelStyle", "0", CVAR_ARCHIVE );
     // offset for the power function (for style 1, ignored otherwise)
     // this should be set to the max rate value
-    cl_mouseAccelOffset = Cvar_Get( "cl_mouseAccelOffset", "5", CVAR_ARCHIVE );
+    cl_mouseAccelOffset = cvarSystem->Get( "cl_mouseAccelOffset", "5", CVAR_ARCHIVE );
     
-    cl_showMouseRate = Cvar_Get( "cl_showmouserate", "0", 0 );
+    cl_showMouseRate = cvarSystem->Get( "cl_showmouserate", "0", 0 );
     
-    cl_allowDownload = Cvar_Get( "cl_allowDownload", "1", CVAR_ARCHIVE );
-    cl_wwwDownload = Cvar_Get( "cl_wwwDownload", "1", CVAR_USERINFO | CVAR_ARCHIVE );
+    cl_allowDownload = cvarSystem->Get( "cl_allowDownload", "1", CVAR_ARCHIVE );
+    cl_wwwDownload = cvarSystem->Get( "cl_wwwDownload", "1", CVAR_USERINFO | CVAR_ARCHIVE );
     
-    cl_profile = Cvar_Get( "cl_profile", "", CVAR_ROM );
-    cl_defaultProfile = Cvar_Get( "cl_defaultProfile", "", CVAR_ROM );
+    cl_profile = cvarSystem->Get( "cl_profile", "", CVAR_ROM );
+    cl_defaultProfile = cvarSystem->Get( "cl_defaultProfile", "", CVAR_ROM );
     
 #if defined (USE_HTTP)
-    cl_authserver = Cvar_Get( "cl_authserver", "localhost", CVAR_INIT );
+    cl_authserver = cvarSystem->Get( "cl_authserver", "localhost", CVAR_INIT );
 #endif
     
     // init autoswitch so the ui will have it correctly even
     // if the cgame hasn't been started
     // -NERVE - SMF - disabled autoswitch by default
-    Cvar_Get( "cg_autoswitch", "0", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_autoswitch", "0", CVAR_ARCHIVE );
     
     // Rafael - particle switch
-    Cvar_Get( "cg_wolfparticles", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_wolfparticles", "1", CVAR_ARCHIVE );
     // done
     
-    cl_conXOffset = Cvar_Get( "cl_conXOffset", "3", 0 );
-    cl_inGameVideo = Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
+    cl_conXOffset = cvarSystem->Get( "cl_conXOffset", "3", 0 );
+    cl_inGameVideo = cvarSystem->Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
     
-    cl_serverStatusResendTime = Cvar_Get( "cl_serverStatusResendTime", "750", 0 );
+    cl_serverStatusResendTime = cvarSystem->Get( "cl_serverStatusResendTime", "750", 0 );
     
     // RF
-    cl_recoilPitch = Cvar_Get( "cg_recoilPitch", "0", CVAR_ROM );
+    cl_recoilPitch = cvarSystem->Get( "cg_recoilPitch", "0", CVAR_ROM );
     
-    cl_bypassMouseInput = Cvar_Get( "cl_bypassMouseInput", "0", 0 );	//CVAR_ROM );          // NERVE - SMF
+    cl_bypassMouseInput = cvarSystem->Get( "cl_bypassMouseInput", "0", 0 );	//CVAR_ROM );          // NERVE - SMF
     
-    cl_doubletapdelay = Cvar_Get( "cl_doubletapdelay", "100", CVAR_ARCHIVE );	// Arnout: double tap
+    cl_doubletapdelay = cvarSystem->Get( "cl_doubletapdelay", "100", CVAR_ARCHIVE );	// Arnout: double tap
     
 #if defined (USE_HTTP)
     // Initialize ui_logged_in to -1(not logged in)
     // -2 - login in progress
     // 0 - invalid login
     // 1 - logged in
-    Cvar_Get( "ui_logged_in", "-1", CVAR_ROM );
+    cvarSystem->Get( "ui_logged_in", "-1", CVAR_ROM );
     //force ui_logged in to -1 so we can't reset it on the command line
-    Cvar_Set( "ui_logged_in", "-1" );
+    cvarSystem->Set( "ui_logged_in", "-1" );
 #endif
     
-    m_pitch = Cvar_Get( "m_pitch", "0.022", CVAR_ARCHIVE );
-    m_yaw = Cvar_Get( "m_yaw", "0.022", CVAR_ARCHIVE );
-    m_forward = Cvar_Get( "m_forward", "0.25", CVAR_ARCHIVE );
-    m_side = Cvar_Get( "m_side", "0.25", CVAR_ARCHIVE );
-    m_filter = Cvar_Get( "m_filter", "0", CVAR_ARCHIVE );
+    m_pitch = cvarSystem->Get( "m_pitch", "0.022", CVAR_ARCHIVE );
+    m_yaw = cvarSystem->Get( "m_yaw", "0.022", CVAR_ARCHIVE );
+    m_forward = cvarSystem->Get( "m_forward", "0.25", CVAR_ARCHIVE );
+    m_side = cvarSystem->Get( "m_side", "0.25", CVAR_ARCHIVE );
+    m_filter = cvarSystem->Get( "m_filter", "0", CVAR_ARCHIVE );
     
-    j_pitch = Cvar_Get( "j_pitch", "0.022", CVAR_ARCHIVE );
-    j_yaw = Cvar_Get( "j_yaw", "-0.022", CVAR_ARCHIVE );
-    j_forward = Cvar_Get( "j_forward", "-0.25", CVAR_ARCHIVE );
-    j_side = Cvar_Get( "j_side", "0.25", CVAR_ARCHIVE );
-    j_up = Cvar_Get( "j_up", "1", CVAR_ARCHIVE );
-    j_pitch_axis = Cvar_Get( "j_pitch_axis", "3", CVAR_ARCHIVE );
-    j_yaw_axis = Cvar_Get( "j_yaw_axis", "4", CVAR_ARCHIVE );
-    j_forward_axis = Cvar_Get( "j_forward_axis", "1", CVAR_ARCHIVE );
-    j_side_axis = Cvar_Get( "j_side_axis", "0", CVAR_ARCHIVE );
-    j_up_axis = Cvar_Get( "j_up_axis", "2", CVAR_ARCHIVE );
+    j_pitch = cvarSystem->Get( "j_pitch", "0.022", CVAR_ARCHIVE );
+    j_yaw = cvarSystem->Get( "j_yaw", "-0.022", CVAR_ARCHIVE );
+    j_forward = cvarSystem->Get( "j_forward", "-0.25", CVAR_ARCHIVE );
+    j_side = cvarSystem->Get( "j_side", "0.25", CVAR_ARCHIVE );
+    j_up = cvarSystem->Get( "j_up", "1", CVAR_ARCHIVE );
+    j_pitch_axis = cvarSystem->Get( "j_pitch_axis", "3", CVAR_ARCHIVE );
+    j_yaw_axis = cvarSystem->Get( "j_yaw_axis", "4", CVAR_ARCHIVE );
+    j_forward_axis = cvarSystem->Get( "j_forward_axis", "1", CVAR_ARCHIVE );
+    j_side_axis = cvarSystem->Get( "j_side_axis", "0", CVAR_ARCHIVE );
+    j_up_axis = cvarSystem->Get( "j_up_axis", "2", CVAR_ARCHIVE );
     
-    Cvar_CheckRange( j_pitch_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
-    Cvar_CheckRange( j_yaw_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
-    Cvar_CheckRange( j_forward_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
-    Cvar_CheckRange( j_side_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
-    Cvar_CheckRange( j_up_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
+    cvarSystem->CheckRange( j_pitch_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
+    cvarSystem->CheckRange( j_yaw_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
+    cvarSystem->CheckRange( j_forward_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
+    cvarSystem->CheckRange( j_side_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
+    cvarSystem->CheckRange( j_up_axis, 0, MAX_JOYSTICK_AXIS - 1, true );
     
-    cl_motdString = Cvar_Get( "cl_motdString", "", CVAR_ROM );
+    cl_motdString = cvarSystem->Get( "cl_motdString", "", CVAR_ROM );
     
     // ~ and `, as keys and characters
-    cl_consoleKeys = Cvar_Get( "cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE );
+    cl_consoleKeys = cvarSystem->Get( "cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE );
     
-    cl_consoleFont = Cvar_Get( "cl_consoleFont", "", CVAR_ARCHIVE | CVAR_LATCH );
-    cl_consoleFontSize = Cvar_Get( "cl_consoleFontSize", "16", CVAR_ARCHIVE | CVAR_LATCH );
-    cl_consoleFontKerning = Cvar_Get( "cl_consoleFontKerning", "0", CVAR_ARCHIVE );
-    cl_consolePrompt = Cvar_Get( "cl_consolePrompt", "^3->", CVAR_ARCHIVE );
+    cl_consoleFont = cvarSystem->Get( "cl_consoleFont", "", CVAR_ARCHIVE | CVAR_LATCH );
+    cl_consoleFontSize = cvarSystem->Get( "cl_consoleFontSize", "16", CVAR_ARCHIVE | CVAR_LATCH );
+    cl_consoleFontKerning = cvarSystem->Get( "cl_consoleFontKerning", "0", CVAR_ARCHIVE );
+    cl_consolePrompt = cvarSystem->Get( "cl_consolePrompt", "^3->", CVAR_ARCHIVE );
     
-    cl_gamename = Cvar_Get( "cl_gamename", GAMENAME_FOR_MASTER, CVAR_TEMP );
-    cl_altTab = Cvar_Get( "cl_altTab", "1", CVAR_ARCHIVE );
+    cl_gamename = cvarSystem->Get( "cl_gamename", GAMENAME_FOR_MASTER, CVAR_TEMP );
+    cl_altTab = cvarSystem->Get( "cl_altTab", "1", CVAR_ARCHIVE );
     
     //bani - make these cvars visible to cgame
-    cl_demorecording = Cvar_Get( "cl_demorecording", "0", CVAR_ROM );
-    cl_demofilename = Cvar_Get( "cl_demofilename", "", CVAR_ROM );
-    cl_demooffset = Cvar_Get( "cl_demooffset", "0", CVAR_ROM );
-    cl_waverecording = Cvar_Get( "cl_waverecording", "0", CVAR_ROM );
-    cl_wavefilename = Cvar_Get( "cl_wavefilename", "", CVAR_ROM );
-    cl_waveoffset = Cvar_Get( "cl_waveoffset", "0", CVAR_ROM );
+    cl_demorecording = cvarSystem->Get( "cl_demorecording", "0", CVAR_ROM );
+    cl_demofilename = cvarSystem->Get( "cl_demofilename", "", CVAR_ROM );
+    cl_demooffset = cvarSystem->Get( "cl_demooffset", "0", CVAR_ROM );
+    cl_waverecording = cvarSystem->Get( "cl_waverecording", "0", CVAR_ROM );
+    cl_wavefilename = cvarSystem->Get( "cl_wavefilename", "", CVAR_ROM );
+    cl_waveoffset = cvarSystem->Get( "cl_waveoffset", "0", CVAR_ROM );
     
     //bani
-    cl_packetloss = Cvar_Get( "cl_packetloss", "0", CVAR_CHEAT );
-    cl_packetdelay = Cvar_Get( "cl_packetdelay", "0", CVAR_CHEAT );
+    cl_packetloss = cvarSystem->Get( "cl_packetloss", "0", CVAR_CHEAT );
+    cl_packetdelay = cvarSystem->Get( "cl_packetdelay", "0", CVAR_CHEAT );
     
-    Cvar_Get( "cl_maxPing", "800", CVAR_ARCHIVE );
+    cvarSystem->Get( "cl_maxPing", "800", CVAR_ARCHIVE );
     
-    cl_guidServerUniq = Cvar_Get( "cl_guidServerUniq", "1", CVAR_ARCHIVE );
+    cl_guidServerUniq = cvarSystem->Get( "cl_guidServerUniq", "1", CVAR_ARCHIVE );
     
 #if 0 // Leftover from RTCW singleplayer days. All this is set in the gamecode now.
     // NERVE - SMF
-    Cvar_Get( "cg_drawCompass", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_drawNotifyText", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_quickMessageAlt", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_popupLimboMenu", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_descriptiveText", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_drawTeamOverlay", "2", CVAR_ARCHIVE );
-//  Cvar_Get( "cg_uselessNostalgia", "0", CVAR_ARCHIVE ); // JPW NERVE
-    Cvar_Get( "cg_drawGun", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_cursorHints", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_voiceSpriteTime", "6000", CVAR_ARCHIVE );
-//  Cvar_Get( "cg_teamChatsOnly", "0", CVAR_ARCHIVE );
-//  Cvar_Get( "cg_noVoiceChats", "0", CVAR_ARCHIVE );
-//  Cvar_Get( "cg_noVoiceText", "0", CVAR_ARCHIVE );
-    Cvar_Get( "cg_crosshairSize", "48", CVAR_ARCHIVE );
-    Cvar_Get( "cg_drawCrosshair", "1", CVAR_ARCHIVE );
-    Cvar_Get( "cg_zoomDefaultSniper", "20", CVAR_ARCHIVE );
-    Cvar_Get( "cg_zoomstepsniper", "2", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_drawCompass", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_drawNotifyText", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_quickMessageAlt", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_popupLimboMenu", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_descriptiveText", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_drawTeamOverlay", "2", CVAR_ARCHIVE );
+//  cvarSystem->Get( "cg_uselessNostalgia", "0", CVAR_ARCHIVE ); // JPW NERVE
+    cvarSystem->Get( "cg_drawGun", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_cursorHints", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_voiceSpriteTime", "6000", CVAR_ARCHIVE );
+//  cvarSystem->Get( "cg_teamChatsOnly", "0", CVAR_ARCHIVE );
+//  cvarSystem->Get( "cg_noVoiceChats", "0", CVAR_ARCHIVE );
+//  cvarSystem->Get( "cg_noVoiceText", "0", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_crosshairSize", "48", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_drawCrosshair", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_zoomDefaultSniper", "20", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_zoomstepsniper", "2", CVAR_ARCHIVE );
     
-//  Cvar_Get( "mp_playerType", "0", 0 );
-//  Cvar_Get( "mp_currentPlayerType", "0", 0 );
-//  Cvar_Get( "mp_weapon", "0", 0 );
-//  Cvar_Get( "mp_team", "0", 0 );
-//  Cvar_Get( "mp_currentTeam", "0", 0 );
+//  cvarSystem->Get( "mp_playerType", "0", 0 );
+//  cvarSystem->Get( "mp_currentPlayerType", "0", 0 );
+//  cvarSystem->Get( "mp_weapon", "0", 0 );
+//  cvarSystem->Get( "mp_team", "0", 0 );
+//  cvarSystem->Get( "mp_currentTeam", "0", 0 );
     // -NERVE - SMF
 #endif
     // userinfo
-    Cvar_Get( "name", Sys_GetCurrentUser(), CVAR_USERINFO | CVAR_ARCHIVE );
-    Cvar_Get( "rate", "25000", CVAR_USERINFO | CVAR_ARCHIVE );	// Dushan - changed from 5000
-    Cvar_Get( "snaps", "20", CVAR_USERINFO | CVAR_ARCHIVE );
-//  Cvar_Get ("model", "american", CVAR_USERINFO | CVAR_ARCHIVE );  // temp until we have an skeletal american model
-//  Arnout - no need // Cvar_Get ("model", "multi", CVAR_USERINFO | CVAR_ARCHIVE );
-//  Arnout - no need // Cvar_Get ("head", "default", CVAR_USERINFO | CVAR_ARCHIVE );
-//  Arnout - no need // Cvar_Get ("color", "4", CVAR_USERINFO | CVAR_ARCHIVE );
-//  Arnout - no need // Cvar_Get ("handicap", "0", CVAR_USERINFO | CVAR_ARCHIVE );
-//  Cvar_Get ("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE );
-    Cvar_Get( "cl_anonymous", "0", CVAR_USERINFO | CVAR_ARCHIVE );
-    Cvar_Get( "cg_version", PRODUCT_NAME, CVAR_ROM | CVAR_USERINFO );
-    Cvar_Get( "password", "", CVAR_USERINFO );
-    Cvar_Get( "cg_predictItems", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "name", Sys_GetCurrentUser(), CVAR_USERINFO | CVAR_ARCHIVE );
+    cvarSystem->Get( "rate", "25000", CVAR_USERINFO | CVAR_ARCHIVE );	// Dushan - changed from 5000
+    cvarSystem->Get( "snaps", "20", CVAR_USERINFO | CVAR_ARCHIVE );
+//  cvarSystem->Get ("model", "american", CVAR_USERINFO | CVAR_ARCHIVE );  // temp until we have an skeletal american model
+//  Arnout - no need // cvarSystem->Get ("model", "multi", CVAR_USERINFO | CVAR_ARCHIVE );
+//  Arnout - no need // cvarSystem->Get ("head", "default", CVAR_USERINFO | CVAR_ARCHIVE );
+//  Arnout - no need // cvarSystem->Get ("color", "4", CVAR_USERINFO | CVAR_ARCHIVE );
+//  Arnout - no need // cvarSystem->Get ("handicap", "0", CVAR_USERINFO | CVAR_ARCHIVE );
+//  cvarSystem->Get ("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE );
+    cvarSystem->Get( "cl_anonymous", "0", CVAR_USERINFO | CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_version", PRODUCT_NAME, CVAR_ROM | CVAR_USERINFO );
+    cvarSystem->Get( "password", "", CVAR_USERINFO );
+    cvarSystem->Get( "cg_predictItems", "1", CVAR_ARCHIVE );
     
 //----(SA) added
-    Cvar_Get( "cg_autoactivate", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_autoactivate", "1", CVAR_ARCHIVE );
 //----(SA) end
 
     // cgame might not be initialized before menu is used
-    Cvar_Get( "cg_viewsize", "100", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_viewsize", "100", CVAR_ARCHIVE );
     
-    Cvar_Get( "cg_autoReload", "1", CVAR_ARCHIVE );
+    cvarSystem->Get( "cg_autoReload", "1", CVAR_ARCHIVE );
     
-    cl_missionStats = Cvar_Get( "g_missionStats", "0", CVAR_ROM );
-    cl_waitForFire = Cvar_Get( "cl_waitForFire", "0", CVAR_ROM );
+    cl_missionStats = cvarSystem->Get( "g_missionStats", "0", CVAR_ROM );
+    cl_waitForFire = cvarSystem->Get( "cl_waitForFire", "0", CVAR_ROM );
     
     // NERVE - SMF - localization
-    cl_language = Cvar_Get( "cl_language", "0", CVAR_ARCHIVE );
-    cl_debugTranslation = Cvar_Get( "cl_debugTranslation", "0", 0 );
+    cl_language = cvarSystem->Get( "cl_language", "0", CVAR_ARCHIVE );
+    cl_debugTranslation = cvarSystem->Get( "cl_debugTranslation", "0", 0 );
     // -NERVE - SMF
     
     // DHM - Nerve :: Auto-update
-    cl_updateavailable = Cvar_Get( "cl_updateavailable", "0", CVAR_ROM );
-    cl_updatefiles = Cvar_Get( "cl_updatefiles", "", CVAR_ROM );
+    cl_updateavailable = cvarSystem->Get( "cl_updateavailable", "0", CVAR_ROM );
+    cl_updatefiles = cvarSystem->Get( "cl_updatefiles", "", CVAR_ROM );
     
     Q_strncpyz( cls.autoupdateServerNames[0], AUTOUPDATE_SERVER1_NAME, MAX_QPATH );
     Q_strncpyz( cls.autoupdateServerNames[1], AUTOUPDATE_SERVER2_NAME, MAX_QPATH );
@@ -4394,10 +4394,10 @@ void CL_Init( void )
     
     Cbuf_Execute();
     
-    Cvar_Set( "cl_running", "1" );
+    cvarSystem->Set( "cl_running", "1" );
     
     CL_GenerateGUIDKey();
-    Cvar_Get( "cl_guid", "", CVAR_USERINFO | CVAR_ROM );
+    cvarSystem->Get( "cl_guid", "", CVAR_USERINFO | CVAR_ROM );
     CL_UpdateGUID( NULL, 0 );
     
     // DHM - Nerve
@@ -4480,7 +4480,7 @@ void CL_Shutdown( void )
     Cmd_RemoveCommand( "wav_stoprecord" );
     // done.
     
-    Cvar_Set( "cl_running", "0" );
+    cvarSystem->Set( "cl_running", "0" );
     
     recursive = false;
     
@@ -4709,11 +4709,11 @@ void CL_UpdateInfoPacket( netadr_t from )
         return;
     }
     
-    Cvar_Set( "cl_updateavailable", Cmd_Argv( 1 ) );
+    cvarSystem->Set( "cl_updateavailable", Cmd_Argv( 1 ) );
     
     if( !Q_stricmp( cl_updateavailable->string, "1" ) )
     {
-        Cvar_Set( "cl_updatefiles", Cmd_Argv( 2 ) );
+        cvarSystem->Set( "cl_updatefiles", Cmd_Argv( 2 ) );
         uiManager->SetActiveMenu( UIMENU_WM_AUTOUPDATE );
     }
 }
@@ -5021,7 +5021,7 @@ void CL_GlobalServers_f( void )
     }
     
     Com_sprintf( command, sizeof( command ), "sv_master%d", masterNum );
-    masteraddress = Cvar_VariableString( command );
+    masteraddress = cvarSystem->VariableString( command );
     
     if( !*masteraddress )
     {
@@ -5050,7 +5050,7 @@ void CL_GlobalServers_f( void )
     // Use the extended query for IPv6 masters
     if( to.type == NA_IP6 || to.type == NA_MULTICAST6 )
     {
-        S32 v4enabled = Cvar_VariableIntegerValue( "net_enabled" ) & NET_ENABLEV4;
+        S32 v4enabled = cvarSystem->VariableIntegerValue( "net_enabled" ) & NET_ENABLEV4;
         
         if( v4enabled )
         {
@@ -5103,7 +5103,7 @@ void CL_GetPing( S32 n, UTF8* buf, S32 buflen, S32* pingtime )
     {
         // check for timeout
         time = cls.realtime - cl_pinglist[n].start;
-        maxPing = Cvar_VariableIntegerValue( "cl_maxPing" );
+        maxPing = cvarSystem->VariableIntegerValue( "cl_maxPing" );
         if( maxPing < 100 )
         {
             maxPing = 100;
@@ -5713,7 +5713,7 @@ void CL_SaveTransTable( StringEntry fileName, bool newOnly )
         return;
     }
     
-    FS_FOpenFileByMode( fileName, &f, FS_WRITE );
+    fileSystem->FOpenFileByMode( fileName, &f, FS_WRITE );
     
     bucketnum = 0;
     maxbucketlen = 0;
@@ -5732,7 +5732,7 @@ void CL_SaveTransTable( StringEntry fileName, bool newOnly )
     }
     
     len = strlen( buf );
-    FS_Write( buf, len, f );
+    fileSystem->Write( buf, len, f );
     
     // write out translated strings
     for( j = 0; j < 2; j++ )
@@ -5772,27 +5772,27 @@ void CL_SaveTransTable( StringEntry fileName, bool newOnly )
                 
                 buf = va( "{\n\tenglish\t\t\"%s\"\n", t->original );
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
                 
                 buf = va( "\tfrench\t\t\"%s\"\n", t->translated[LANGUAGE_FRENCH] );
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
                 
                 buf = va( "\tgerman\t\t\"%s\"\n", t->translated[LANGUAGE_GERMAN] );
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
                 
                 buf = va( "\titalian\t\t\"%s\"\n", t->translated[LANGUAGE_ITALIAN] );
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
                 
                 buf = va( "\tspanish\t\t\"%s\"\n", t->translated[LANGUAGE_SPANISH] );
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
                 
                 buf = "}\n";
                 len = strlen( buf );
-                FS_Write( buf, len, f );
+                fileSystem->Write( buf, len, f );
             }
             
             if( bucketlen > maxbucketlen )
@@ -5811,7 +5811,7 @@ void CL_SaveTransTable( StringEntry fileName, bool newOnly )
     Com_Printf( "Saved translation table.\nTotal = %i, Translated = %i, Untranslated = %i, aveblen = %2.2f, maxblen = %i\n",
                 transnum + untransnum, transnum, untransnum, ( F32 )avebucketlen / bucketnum, maxbucketlen );
                 
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
 }
 
 /*
@@ -5900,7 +5900,7 @@ void CL_LoadTransTable( StringEntry fileName )
     aborted = false;
     cl.corruptedTranslationFile = false;
     
-    len = FS_FOpenFileByMode( fileName, &f, FS_READ );
+    len = fileSystem->FOpenFileByMode( fileName, &f, FS_READ );
     if( len <= 0 )
     {
         return;
@@ -5913,9 +5913,9 @@ void CL_LoadTransTable( StringEntry fileName )
         return;
     }
     
-    FS_Read( text, len, f );
+    fileSystem->Read( text, len, f );
     text[len] = 0;
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
     
     // parse the text
     text_p = text;
@@ -6100,7 +6100,7 @@ void CL_ReloadTranslation()
     memset( transTable, 0, sizeof( trans_t* ) * FILE_HASH_SIZE );
     CL_LoadTransTable( "scripts/translation.lang" );
     
-    fileList = FS_ListFiles( "translations", ".lang", &numFiles );
+    fileList = fileSystem->ListFiles( "translations", ".lang", &numFiles );
     
     for( i = 0; i < numFiles; i++ )
     {
@@ -6121,7 +6121,7 @@ void CL_InitTranslation()
     memset( transTable, 0, sizeof( trans_t* ) * FILE_HASH_SIZE );
     CL_LoadTransTable( "scripts/translation.lang" );
     
-    fileList = FS_ListFiles( "translations", ".lang", &numFiles );
+    fileList = fileSystem->ListFiles( "translations", ".lang", &numFiles );
     
     for( i = 0; i < numFiles; i++ )
     {

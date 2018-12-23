@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_codec_wav.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@ static S32 FGetLittleLong( fileHandle_t f )
 {
     S32 v;
     
-    FS_Read( &v, sizeof( v ), f );
+    fileSystem->Read( &v, sizeof( v ), f );
     
     return LittleLong( v );
 }
@@ -53,7 +53,7 @@ static S16 FGetLittleShort( fileHandle_t f )
 {
     S16 v;
     
-    FS_Read( &v, sizeof( v ), f );
+    fileSystem->Read( &v, sizeof( v ), f );
     
     return LittleShort( v );
 }
@@ -69,7 +69,7 @@ static int S_ReadChunkInfo( fileHandle_t f, UTF8* name )
     
     name[4] = 0;
     
-    r = FS_Read( name, 4, f );
+    r = fileSystem->Read( name, 4, f );
     if( r != 4 )
         return -1;
         
@@ -104,7 +104,7 @@ static int S_FindRIFFChunk( fileHandle_t f, UTF8* chunk )
         len = PAD( len, 2 );
         
         // Not the right chunk - skip it
-        FS_Seek( f, len, FS_SEEK_CUR );
+        fileSystem->Seek( f, len, FS_SEEK_CUR );
     }
     
     return -1;
@@ -151,7 +151,7 @@ static bool S_ReadRIFFHeader( fileHandle_t file, snd_info_t* info )
     S32 fmtlen = 0;
     
     // skip the riff wav header
-    FS_Read( dump, 12, file );
+    fileSystem->Read( dump, 12, file );
     
     // Scan for the format chunk
     if( ( fmtlen = S_FindRIFFChunk( file, "fmt " ) ) < 0 )
@@ -181,7 +181,7 @@ static bool S_ReadRIFFHeader( fileHandle_t file, snd_info_t* info )
     if( fmtlen > 16 )
     {
         fmtlen -= 16;
-        FS_Seek( file, fmtlen, FS_SEEK_CUR );
+        fileSystem->Seek( file, fmtlen, FS_SEEK_CUR );
     }
     
     // Scan for the data chunk
@@ -217,7 +217,7 @@ void* S_WAV_CodecLoad( StringEntry filename, snd_info_t* info )
     void*           buffer;
     
     // Try to open the file
-    FS_FOpenFileRead( filename, &file, true );
+    fileSystem->FOpenFileRead( filename, &file, true );
     if( !file )
     {
         Com_Printf( S_COLOR_RED "ERROR: Could not open \"%s\"\n", filename );
@@ -227,7 +227,7 @@ void* S_WAV_CodecLoad( StringEntry filename, snd_info_t* info )
     // Read the RIFF header
     if( !S_ReadRIFFHeader( file, info ) )
     {
-        FS_FCloseFile( file );
+        fileSystem->FCloseFile( file );
         Com_Printf( S_COLOR_RED "ERROR: Incorrect/unsupported format in \"%s\"\n", filename );
         return NULL;
     }
@@ -236,17 +236,17 @@ void* S_WAV_CodecLoad( StringEntry filename, snd_info_t* info )
     buffer = Z_Malloc( info->size );
     if( !buffer )
     {
-        FS_FCloseFile( file );
+        fileSystem->FCloseFile( file );
         Com_Printf( S_COLOR_RED "ERROR: Out of memory reading \"%s\"\n", filename );
         return NULL;
     }
     
     // Read, byteswap
-    FS_Read( buffer, info->size, file );
-    S_ByteSwapRawSamples( info->samples, info->width, info->channels, ( byte* ) buffer );
+    fileSystem->Read( buffer, info->size, file );
+    S_ByteSwapRawSamples( info->samples, info->width, info->channels, ( U8* ) buffer );
     
     // Close and return
-    FS_FCloseFile( file );
+    fileSystem->FCloseFile( file );
     return buffer;
 }
 
@@ -300,7 +300,7 @@ int S_WAV_CodecReadStream( snd_stream_t* stream, S32 bytes, void* buffer )
         bytes = remaining;
     stream->pos += bytes;
     samples = ( bytes / stream->info.width ) / stream->info.channels;
-    FS_Read( buffer, bytes, stream->file );
+    fileSystem->Read( buffer, bytes, stream->file );
     S_ByteSwapRawSamples( samples, stream->info.width, stream->info.channels, ( U8* )buffer );
     return bytes;
 }

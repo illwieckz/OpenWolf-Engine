@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_local.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@
 
 #include <qcommon/q_shared.h>
 #include <qcommon/qcommon.h>
-#include <audio/s_public.h>
+#include <API/sound_api.h>
 
 #define	PAINTBUFFER_SIZE		4096	// this is in samples
 
@@ -80,7 +80,7 @@ typedef struct
     S32             submission_chunk;	// don't mix less than this #
     S32             samplebits;
     S32             speed;
-    byte*           buffer;
+    U8*             buffer;
 } dma_t;
 
 #define START_SAMPLE_IMMEDIATE	0x7fffffff
@@ -151,7 +151,7 @@ typedef struct
     void ( *Update )( void );
     void ( *DisableSounds )( void );
     void ( *BeginRegistration )( void );
-    sfxHandle_t( *RegisterSound )( const UTF8* sample );
+    sfxHandle_t( *RegisterSound )( StringEntry sample );
     void ( *ClearSoundBuffer )( void );
     void ( *SoundInfo )( void );
     void ( *SoundList )( void );
@@ -168,7 +168,7 @@ typedef struct
 */
 
 // initializes cycling through a DMA buffer and returns information on it
-bool            SNDDMA_Init( void );
+bool            SNDDMA_Init( S32 sampleFrequencyInKHz );
 
 // gets the current DMA position
 int             SNDDMA_GetDMAPos( void );

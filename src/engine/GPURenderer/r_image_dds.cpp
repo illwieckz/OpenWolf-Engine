@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_image_dds.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -250,7 +250,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
     //
     // load the file
     //
-    len = FS_ReadFile( ( UTF8* ) filename, &buffer.v );
+    len = fileSystem->ReadFile( ( UTF8* ) filename, &buffer.v );
     if( !buffer.b || len < 0 )
     {
         return;
@@ -262,7 +262,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
     if( len < 4 + sizeof( *ddsHeader ) )
     {
         CL_RefPrintf( PRINT_ALL, "File %s is too small to be a DDS file.\n", filename );
-        FS_FreeFile( buffer.v );
+        fileSystem->FreeFile( buffer.v );
         return;
     }
     
@@ -272,7 +272,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
     if( *( ( U32* )( buffer.b ) ) != EncodeFourCC( "DDS " ) )
     {
         CL_RefPrintf( PRINT_ALL, "File %s is not a DDS file.\n", filename );
-        FS_FreeFile( buffer.v );
+        fileSystem->FreeFile( buffer.v );
         return;
     }
     
@@ -285,7 +285,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
         if( len < 4 + sizeof( *ddsHeader ) + sizeof( *ddsHeaderDxt10 ) )
         {
             CL_RefPrintf( PRINT_ALL, "File %s indicates a DX10 header it is too small to contain.\n", filename );
-            FS_FreeFile( buffer.v );
+            fileSystem->FreeFile( buffer.v );
             return;
         }
         
@@ -398,7 +398,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
                 
             default:
                 CL_RefPrintf( PRINT_ALL, "DDS File %s has unsupported DXGI format %d.", filename, ddsHeaderDxt10->dxgiFormat );
-                FS_FreeFile( buffer.v );
+                fileSystem->FreeFile( buffer.v );
                 return;
                 break;
         }
@@ -432,7 +432,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
             else
             {
                 CL_RefPrintf( PRINT_ALL, "DDS File %s has unsupported FourCC.", filename );
-                FS_FreeFile( buffer.v );
+                fileSystem->FreeFile( buffer.v );
                 return;
             }
         }
@@ -448,7 +448,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
         else
         {
             CL_RefPrintf( PRINT_ALL, "DDS File %s has unsupported RGBA format.", filename );
-            FS_FreeFile( buffer.v );
+            fileSystem->FreeFile( buffer.v );
             return;
         }
     }
@@ -456,7 +456,7 @@ void R_LoadDDS( StringEntry filename, U8** pic, S32* width, S32* height, U32* pi
     *pic = ( U8* )CL_RefMalloc( len );
     ::memcpy( *pic, data, len );
     
-    FS_FreeFile( buffer.v );
+    fileSystem->FreeFile( buffer.v );
 }
 
 void R_SaveDDS( StringEntry filename, U8* pic, S32 width, S32 height, S32 depth )
@@ -499,7 +499,7 @@ void R_SaveDDS( StringEntry filename, U8* pic, S32 width, S32 height, S32 depth 
     
     ::memcpy( data + 4 + sizeof( *ddsHeader ), pic, picSize );
     
-    FS_WriteFile( filename, data, size );
+    fileSystem->WriteFile( filename, data, size );
     
     Z_Free( data );
 }

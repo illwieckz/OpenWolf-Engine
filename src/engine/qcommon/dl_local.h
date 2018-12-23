@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   dl_local.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -50,12 +50,10 @@
 // system API
 // only the restricted subset we need
 
-//S32 Com_VPrintf(const UTF8 *fmt, va_list pArgs) _attribute((format(printf, 1, 0)));
+//S32 Com_VPrintf(StringEntry*fmt, va_list pArgs) _attribute((format(printf, 1, 0)));
 S32 Com_DPrintf( StringEntry fmt, ... ) _attribute( ( format( printf, 1, 2 ) ) );
 S32 Com_Printf( StringEntry fmt, ... ) _attribute( ( format( printf, 1, 2 ) ) );
 void Com_Error( S32 code, StringEntry fmt, ... ) _attribute( ( format( printf, 2, 3 ) ) );	// watch out, we don't define ERR_FATAL and stuff
-void Cvar_SetValue( StringEntry var_name, F32 value );
-void Cvar_Set( StringEntry var_name, StringEntry value );
 UTF8* va( UTF8* format, ... ) _attribute( ( format( printf, 1, 2 ) ) );
 
 #ifdef WIN32

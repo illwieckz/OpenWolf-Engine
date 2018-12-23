@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cm_trace.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -42,9 +42,9 @@
 #endif
 
 // always use bbox vs. bbox collision and never capsule vs. bbox or vice versa
-#define ALWAYS_BBOX_VS_BBOX
+//#define ALWAYS_BBOX_VS_BBOX
 // always use capsule vs. capsule collision and never capsule vs. bbox or vice versa
-//#define ALWAYS_CAPSULE_VS_CAPSULE
+#define ALWAYS_CAPSULE_VS_CAPSULE
 
 //#define CAPSULE_DEBUG
 
@@ -727,7 +727,7 @@ void CM_TracePointThroughSurfaceCollide( traceWork_t* tw, const cSurfaceCollide_
 #ifndef BSPC
             if( !cv )
             {
-                cv = Cvar_Get( "r_debugSurfaceUpdate", "1", 0 );
+                cv = cvarSystem->Get( "r_debugSurfaceUpdate", "1", 0 );
             }
             
             if( cv->integer )
@@ -962,7 +962,7 @@ void CM_TraceThroughSurfaceCollide( traceWork_t* tw, const cSurfaceCollide_t* sc
 #ifndef BSPC
                 if( !cv )
                 {
-                    cv = Cvar_Get( "r_debugSurfaceUpdate", "1", 0 );
+                    cv = cvarSystem->Get( "r_debugSurfaceUpdate", "1", 0 );
                 }
                 if( cv && cv->integer )
                 {
@@ -2699,7 +2699,7 @@ void idCollisionModelManagerLocal::DrawDebugSurface( void ( *drawPoly )( S32 col
 #ifndef BSPC
     if( !cv2 )
     {
-        cv2 = Cvar_Get( "r_debugSurface", "0", 0 );
+        cv2 = cvarSystem->Get( "r_debugSurface", "0", 0 );
     }
 #endif
     
@@ -2711,7 +2711,7 @@ void idCollisionModelManagerLocal::DrawDebugSurface( void ( *drawPoly )( S32 col
 #ifndef BSPC
     if( !cv )
     {
-        cv = Cvar_Get( "cm_debugSize", "2", 0 );
+        cv = cvarSystem->Get( "cm_debugSize", "2", 0 );
     }
 #endif
     

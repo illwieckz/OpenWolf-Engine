@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   util_list.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -39,6 +39,7 @@
 #define __UTIL_LIST_H__
 
 #include <cassert>
+#include <stdio.h>
 
 template< class type >
 class idList

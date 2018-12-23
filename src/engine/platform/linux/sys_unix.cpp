@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sys_unix.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -537,10 +537,10 @@ void Sys_ErrorDialog( StringEntry error )
     UTF8 buffer[ 1024 ];
     U32 size;
     S32 f = -1;
-    StringEntry homepath = Cvar_VariableString( "fs_homepath" );
-    StringEntry gamedir = Cvar_VariableString( "fs_gamedir" );
+    StringEntry homepath = cvarSystem->VariableString( "fs_homepath" );
+    StringEntry gamedir = cvarSystem->VariableString( "fs_gamedir" );
     StringEntry fileName = "crashlog.txt";
-    UTF8* ospath = FS_BuildOSPath( homepath, gamedir, fileName );
+    UTF8* ospath = fileSystem->BuildOSPath( homepath, gamedir, fileName );
     
     Sys_Print( va( "%s\n", error ) );
     
@@ -549,7 +549,7 @@ void Sys_ErrorDialog( StringEntry error )
 #endif
     
     // Make sure the write path for the crashlog exists...
-    if( FS_CreatePath( ospath ) )
+    if( fileSystem->CreatePath( ospath ) )
     {
         Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", ospath );
         return;
@@ -557,7 +557,7 @@ void Sys_ErrorDialog( StringEntry error )
     
     // We might be crashing because we maxed out the Quake MAX_FILE_HANDLES,
     // which will come through here, so we don't want to recurse forever by
-    // calling FS_FOpenFileWrite()...use the Unix system APIs instead.
+    // calling fileSystem->FOpenFileWrite()...use the Unix system APIs instead.
     f = open( ospath, O_CREAT | O_TRUNC | O_WRONLY, 0640 );
     if( f == -1 )
     {
@@ -865,13 +865,13 @@ void Sys_OpenURL( StringEntry url, bool doexit )
     {
         Com_DPrintf( "%s not found\n", fn );
         // try in home path
-        homepath = Cvar_VariableString( "fs_homepath" );
+        homepath = cvarSystem->VariableString( "fs_homepath" );
         Com_sprintf( fn, MAX_OSPATH, "%s/%s", homepath, fname );
         if( access( fn, X_OK ) == -1 )
         {
             Com_DPrintf( "%s not found\n", fn );
             // basepath, last resort
-            basepath = Cvar_VariableString( "fs_basepath" );
+            basepath = cvarSystem->VariableString( "fs_basepath" );
             Com_sprintf( fn, MAX_OSPATH, "%s/%s", basepath, fname );
             if( access( fn, X_OK ) == -1 )
             {
@@ -1078,5 +1078,23 @@ UTF8* Sys_StripAppBundle( UTF8* dir )
     return cwd;
 }
 #endif // MACOS_X
+
+/*
+================
+Sys_SteamInit
+================
+*/
+void Sys_SteamInit( void )
+{
+}
+
+/*
+================
+Sys_SteamShutdown
+================
+*/
+void Sys_SteamShutdown( void )
+{
+}
 
 #endif

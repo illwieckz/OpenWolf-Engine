@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   q_math.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: stateless support routines that are included in each code module
 //              Some of the vector functions are static inline in q_shared.h. q3asm
 //              doesn't understand static functions though, so we only want them in
@@ -41,15 +41,19 @@
 #ifdef DEDICATED
 #include <null/null_precompiled.h>
 #elif CGAMEDLL
-#include <cgame/cg_precompiled.h>
+#include <cgame/cgame_precompiled.h>
 #elif GAMEDLL
-#include <sgame/sg_precompiled.h>
+#include <sgame/sgame_precompiled.h>
+#elif Q3MAP2
+#include <qcommon/q_shared.h>
 #else
 #include <OWLib/precompiled.h>
 #endif // !GAMEDLL
 
 // *INDENT-OFF*
+#if !defined (Q3MAP2) || defined (_WIN32)
 vec3_t vec3_origin = {0, 0, 0};
+#endif
 vec3_t axisDefault[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
 matrix_t matrixIdentity = {	1, 0, 0, 0,
@@ -480,6 +484,7 @@ RotatePointAroundVector
 This is not implemented very well...
 ===============
 */
+#ifndef Q3MAP2
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, F32 degrees )
 {
     F32           m[3][3];
@@ -543,6 +548,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
         dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
     }
 }
+#endif
 
 /*
 ===============
@@ -967,11 +973,13 @@ void ZeroBounds( vec3_t mins, vec3_t maxs )
     maxs[0] = maxs[1] = maxs[2] = 0;
 }
 
+#ifndef Q3MAP2
 void ClearBounds( vec3_t mins, vec3_t maxs )
 {
     mins[0] = mins[1] = mins[2] = 99999;
     maxs[0] = maxs[1] = maxs[2] = -99999;
 }
+#endif
 
 void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs )
 {
@@ -1100,6 +1108,7 @@ bool BoundsIntersectPoint( const vec3_t mins, const vec3_t maxs, const vec3_t or
 }
 
 
+#ifndef Q3MAP2
 S32 VectorCompare( const vec3_t v1, const vec3_t v2 )
 {
     if( v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] )
@@ -1109,7 +1118,7 @@ S32 VectorCompare( const vec3_t v1, const vec3_t v2 )
     
     return 1;
 }
-
+#endif
 
 vec_t VectorNormalize( vec3_t v )
 {
@@ -1234,10 +1243,12 @@ void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross )
     cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
+#ifndef Q3MAP2
 vec_t VectorLength( const vec3_t v )
 {
     return sqrt( v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
 }
+#endif
 
 vec_t VectorLengthSquared( const vec3_t v )
 {
@@ -1260,13 +1271,14 @@ vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 )
     return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 }
 
-
+#ifndef Q3MAP2
 void VectorInverse( vec3_t v )
 {
     v[0] = -v[0];
     v[1] = -v[1];
     v[2] = -v[2];
 }
+#endif
 
 void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out )
 {

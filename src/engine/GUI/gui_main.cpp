@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   gui_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -4254,7 +4254,7 @@ void idUserInterfaceManagerLocal::SetActiveMenu( uiMenuCommand_t menu )
                 // makes sure it doesn't get restarted every time you reach the main menu
                 if( !cl_profile->string[0] )
                 {
-                    //Menus_ActivateByName( "profilelogin", qtrue );
+                    //Menus_ActivateByName( "profilelogin", true );
                     // FIXME: initial profile popup
                     // FIXED: handled in opener now
                     Menus_ActivateByName( "main" );

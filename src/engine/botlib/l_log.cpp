@@ -77,7 +77,7 @@ void Log_Open( StringEntry filename )
         return;
     } //end if
     
-    ospath = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), "", filename );
+    ospath = fileSystem->BuildOSPath( cvarSystem->VariableString( "fs_homepath" ), "", filename );
     logfile.fp = fopen( ospath, "wb" );
     if( !logfile.fp )
     {

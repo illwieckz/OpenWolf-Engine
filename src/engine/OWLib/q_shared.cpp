@@ -28,15 +28,23 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   q_shared.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: stateless support routines that are included in each code dll
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
 #include <OWLib/q_splineshared.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
+#ifdef Q3MAP2
 static float Com_Clamp( float min, float max, float value )
 {
     if( value < min )
@@ -315,7 +323,11 @@ static void Com_DefaultExtension( char* path, int maxSize, const char* extension
     }
     
     Q_strncpyz( oldPath, path, sizeof( oldPath ) );
+#if defined ( Q3MAP2 )
+    OWCom_sprintf( path, maxSize, "%s%s", oldPath, extension );
+#else
     Com_sprintf( path, maxSize, "%s%s", oldPath, extension );
+#endif
 }
 
 /*
@@ -504,7 +516,11 @@ static int Com_ParseInfos( const char* buf, int max, char infos[][MAX_INFO_STRIN
             {
                 token = "<NULL>";
             }
+#if defined ( Q3MAP2 )
+            OWInfo_SetValueForKey( infos[count], key, token );
+#else
             Info_SetValueForKey( infos[count], key, token );
+#endif
         }
         count++;
     }
@@ -598,13 +614,13 @@ static void Q_strncpyz( char* dest, const char* src, int destsize )
     if( !src )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Q_strncpyz: NULL src" );
+        Com_Error( OWERR_FATAL, "Q_strncpyz: NULL src" );
 #endif
     }
     if( destsize < 1 )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Q_strncpyz: destsize < 1" );
+        Com_Error( OWERR_FATAL, "Q_strncpyz: destsize < 1" );
 #endif
     }
     
@@ -713,7 +729,7 @@ static void Q_strcat( char* dest, int size, const char* src )
     if( l1 >= size )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Q_strcat: already overflowed" );
+        Com_Error( OWERR_FATAL, "Q_strcat: already overflowed" );
 #endif
     }
     Q_strncpyz( dest + l1, src, size - l1 );
@@ -772,8 +788,8 @@ static char* Q_CleanStr( char* string )
     return string;
 }
 
-#if 0
-void Com_sprintf( char* dest, int size, const char* fmt, ... )
+#if 1
+void OWCom_sprintf( char* dest, int size, const char* fmt, ... )
 {
     int len;
     va_list argptr;
@@ -787,7 +803,7 @@ void Com_sprintf( char* dest, int size, const char* fmt, ... )
     if( ( len = vsnprintf( dest, size, fmt, argptr ) ) < 0 )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Com_sprintf: vsnprintf error" );
+        Com_Error( OWERR_FATAL, "Com_sprintf: vsnprintf error" );
 #endif
     }
     
@@ -795,7 +811,7 @@ void Com_sprintf( char* dest, int size, const char* fmt, ... )
     if( len >= size )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_FATAL, "Com_sprintf: overflowed bigbuffer" );
+        Com_Error( OWERR_FATAL, "Com_sprintf: overflowed bigbuffer" );
 #endif
     }
 }
@@ -849,7 +865,7 @@ FIXME: overflow check?
 static char* Info_ValueForKey( const char* s, const char* key )
 {
     char pkey[MAX_INFO_KEY];
-    static char value[2][MAX_INFO_VALUE];   // use two buffers so compares
+    static char value[2][1024];   // use two buffers so compares
     // work without stomping on each other
     static int valueindex = 0;
     char*    o;
@@ -862,7 +878,7 @@ static char* Info_ValueForKey( const char* s, const char* key )
     if( strlen( s ) >= MAX_INFO_STRING )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_DROP, "Info_ValueForKey: oversize infostring" );
+        Com_Error( OWERR_DROP, "Info_ValueForKey: oversize infostring" );
 #endif
     }
     
@@ -916,7 +932,7 @@ Info_NextPair
 Used to itterate through all the key/value pairs in an info string
 ===================
 */
-static void Info_NextPair( const char * ( *head ), char key[MAX_INFO_KEY], char value[MAX_INFO_VALUE] )
+static void Info_NextPair( const char * ( *head ), char key[MAX_INFO_KEY], char value[1024] )
 {
     char*    o;
     const char*  s;
@@ -964,13 +980,13 @@ static void Info_RemoveKey( char* s, const char* key )
 {
     char*    start;
     char pkey[MAX_INFO_KEY];
-    char value[MAX_INFO_VALUE];
+    char value[1024];
     char*    o;
     
     if( strlen( s ) >= MAX_INFO_STRING )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_DROP, "Info_RemoveKey: oversize infostring" );
+        Com_Error( OWERR_DROP, "Info_RemoveKey: oversize infostring" );
 #endif
     }
     
@@ -1054,15 +1070,15 @@ Info_SetValueForKey
 Changes or adds a key/value pair
 ==================
 */
-#if 0
-void Info_SetValueForKey( char* s, const char* key, const char* value )
+#if 1
+void OWInfo_SetValueForKey( char* s, const char* key, const char* value )
 {
     char newi[MAX_INFO_STRING];
     
     if( strlen( s ) >= MAX_INFO_STRING )
     {
 #ifndef Q3MAP2
-        Com_Error( ERR_DROP, "Info_SetValueForKey: oversize infostring" );
+        Com_Error( OWERR_DROP, "Info_SetValueForKey: oversize infostring" );
 #endif
     }
     
@@ -1096,7 +1112,7 @@ void Info_SetValueForKey( char* s, const char* key, const char* value )
         return;
     }
     
-    Com_sprintf( newi, sizeof( newi ), "\\%s\\%s", key, value );
+    OWCom_sprintf( newi, sizeof( newi ), "\\%s\\%s", key, value );
     
     if( strlen( newi ) + strlen( s ) > MAX_INFO_STRING )
     {
@@ -1145,3 +1161,4 @@ static int ParseHex( const char* text )
     return value;
 }
 
+#endif

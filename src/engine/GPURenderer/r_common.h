@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_common.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -39,8 +39,8 @@
 #ifndef __IQM_H__
 #include <GPURenderer/iqm.h>
 #endif
-#ifndef __glew_h__
-#include <gl/glew.h>
+#ifndef __QGL_H__
+#include <GPURenderer/qgl.h>
 #endif
 #ifndef __R_PUBLIC_H__
 #include <GPURenderer/r_public.h>
@@ -53,6 +53,9 @@ typedef enum
     IMGTYPE_SPECULAR,
     IMGTYPE_NORMALHEIGHT,
     IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
+    IMGTYPE_SUBSURFACE,
+    IMGTYPE_OVERLAY,
+    IMGTYPE_STEEPMAP
 } imgType_t;
 
 typedef enum
@@ -176,12 +179,11 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 ====================================================================
 */
 
-void		GLimp_Init( void );
+void		GLimp_Init( bool fixedFunction );
 void		GLimp_Shutdown( void );
 void		GLimp_EndFrame( void );
 void		GLimp_LogComment( StringEntry comment );
 void		GLimp_Minimize( void );
-void		GLimp_SetGamma( U8 red[256], U8 green[256], U8 blue[256] );
 
 #endif //!DEDICATED
 

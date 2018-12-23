@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -469,15 +469,15 @@ void idSoundSystemLocal::Init( void )
     
     Com_Printf( "------ Initializing Sound ------\n" );
     
-    s_volume = Cvar_Get( "s_volume", "0.8", CVAR_ARCHIVE );
-    s_musicVolume = Cvar_Get( "s_musicvolume", "0.25", CVAR_ARCHIVE );
-    s_muted = Cvar_Get( "s_muted", "0", CVAR_ROM );
-    s_doppler = Cvar_Get( "s_doppler", "1", CVAR_ARCHIVE );
-    s_backend = Cvar_Get( "s_backend", "", CVAR_ROM );
-    s_muteWhenMinimized = Cvar_Get( "s_muteWhenMinimized", "0", CVAR_ARCHIVE );
-    s_muteWhenUnfocused = Cvar_Get( "s_muteWhenUnfocused", "0", CVAR_ARCHIVE );
+    s_volume = cvarSystem->Get( "s_volume", "0.8", CVAR_ARCHIVE );
+    s_musicVolume = cvarSystem->Get( "s_musicvolume", "0.25", CVAR_ARCHIVE );
+    s_muted = cvarSystem->Get( "s_muted", "0", CVAR_ROM );
+    s_doppler = cvarSystem->Get( "s_doppler", "1", CVAR_ARCHIVE );
+    s_backend = cvarSystem->Get( "s_backend", "", CVAR_ROM );
+    s_muteWhenMinimized = cvarSystem->Get( "s_muteWhenMinimized", "0", CVAR_ARCHIVE );
+    s_muteWhenUnfocused = cvarSystem->Get( "s_muteWhenUnfocused", "0", CVAR_ARCHIVE );
     
-    cv = Cvar_Get( "s_initsound", "1", 0 );
+    cv = cvarSystem->Get( "s_initsound", "1", 0 );
     if( !cv->integer )
     {
         Com_Printf( "Sound disabled.\n" );
@@ -493,18 +493,18 @@ void idSoundSystemLocal::Init( void )
         //Cmd_AddCommand( "s_stop", StopAllSounds );
         Cmd_AddCommand( "s_info", S_SoundInfo );
         
-        cv = Cvar_Get( "s_useOpenAL", "1", CVAR_ARCHIVE );
+        cv = cvarSystem->Get( "s_useOpenAL", "1", CVAR_ARCHIVE );
         if( cv->integer )
         {
             //OpenAL
             started = S_AL_Init( &si );
-            Cvar_Set( "s_backend", "OpenAL" );
+            cvarSystem->Set( "s_backend", "OpenAL" );
         }
         
         if( !started )
         {
             started = S_Base_Init( &si );
-            Cvar_Set( "s_backend", "base" );
+            cvarSystem->Set( "s_backend", "base" );
         }
         
         if( started )

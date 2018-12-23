@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_image.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -112,8 +112,8 @@ void GL_TextureMode( StringEntry string )
         glt = tr.images[ i ];
         if( glt->flags & IMGFLAG_MIPMAP && !( glt->flags & IMGFLAG_CUBEMAP ) )
         {
-            glTextureParameterfEXT( glt->texnum, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-            glTextureParameterfEXT( glt->texnum, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+            qglTextureParameterfEXT( glt->texnum, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+            qglTextureParameterfEXT( glt->texnum, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
         }
     }
 }
@@ -1129,14 +1129,12 @@ static void DoLinear( U8* in, U8* out, S32 width, S32 height )
 
 static void ExpandHalfTextureToGrid( U8* data, S32 width, S32 height )
 {
-    S32 x, y;
-    
-    for( y = height / 2; y > 0; y-- )
+    for( S32 y = height / 2; y > 0; y-- )
     {
         U8* outbyte = data + ( ( y * 2 - 1 ) * ( width )     - 2 ) * 4;
         U8* inbyte  = data + ( y           * ( width / 2 ) - 1 ) * 4;
         
-        for( x = width / 2; x > 0; x-- )
+        for( S32 x = width / 2; x > 0; x-- )
         {
             COPYSAMPLE( outbyte, inbyte );
             
@@ -1936,7 +1934,7 @@ static void RawImage_UploadToRgtc2Texture( U32 texture, S32 miplevel, S32 x, S32
     }
     
     // FIXME: Won't work for x/y that aren't multiples of 4.
-    glCompressedTextureSubImage2DEXT( texture, GL_TEXTURE_2D, miplevel, x, y, width, height, GL_COMPRESSED_RG_RGTC2, size, compressedData );
+    qglCompressedTextureSubImage2DEXT( texture, GL_TEXTURE_2D, miplevel, x, y, width, height, GL_COMPRESSED_RG_RGTC2, size, compressedData );
     
     Hunk_FreeTempMemory( compressedData );
 }
@@ -2021,7 +2019,7 @@ static void RawImage_UploadTexture( U32 texture, U8* data, S32 x, S32 y, S32 wid
         
         if( !rgba )
         {
-            glCompressedTextureSubImage2DEXT( texture, target, miplevel, x, y, width, height, picFormat, size, data );
+            qglCompressedTextureSubImage2DEXT( texture, target, miplevel, x, y, width, height, picFormat, size, data );
         }
         else
         {
@@ -2031,14 +2029,14 @@ static void RawImage_UploadTexture( U32 texture, U8* data, S32 x, S32 y, S32 wid
             if( rgba8 && rgtc )
                 RawImage_UploadToRgtc2Texture( texture, miplevel, x, y, width, height, data );
             else
-                glTextureSubImage2DEXT( texture, target, miplevel, x, y, width, height, dataFormat, dataType, data );
+                qglTextureSubImage2DEXT( texture, target, miplevel, x, y, width, height, dataFormat, dataType, data );
         }
         
         if( !lastMip && numMips < 2 )
         {
             if( glRefConfig.framebufferObject )
             {
-                glGenerateTextureMipmapEXT( texture, target );
+                qglGenerateTextureMipmapEXT( texture, target );
                 break;
             }
             else if( rgba8 )
@@ -2069,7 +2067,6 @@ static void RawImage_UploadTexture( U32 texture, U8* data, S32 x, S32 y, S32 wid
 /*
 ===============
 Upload32
-
 ===============
 */
 static void Upload32( U8* data, S32 x, S32 y, S32 width, S32 height, U32 picFormat, S32 numMips, image_t* image, bool scaled )
@@ -2237,11 +2234,11 @@ image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 p
             S32 i;
             
             for( i = 0; i < 6; i++ )
-                glTextureImage2DEXT( image->texnum, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
+                qglTextureImage2DEXT( image->texnum, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
         }
         else
         {
-            glTextureImage2DEXT( image->texnum, GL_TEXTURE_2D, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
+            qglTextureImage2DEXT( image->texnum, GL_TEXTURE_2D, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
         }
         
         mipWidth  = MAX( 1, mipWidth >> 1 );
@@ -2258,16 +2255,16 @@ image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 p
         Hunk_FreeTempMemory( resampledBuffer );
         
     // Set all necessary texture parameters.
-    glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_S, glWrapClampMode );
-    glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_T, glWrapClampMode );
+    qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_S, glWrapClampMode );
+    qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_T, glWrapClampMode );
     
     if( cubemap )
-        glTextureParameteriEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode );
+        qglTextureParameteriEXT( image->texnum, textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode );
         
     if( glConfig.textureFilterAnisotropic && !cubemap )
-        glTextureParameteriEXT( image->texnum, textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                                mipmap ? ( S32 )Com_Clamp( 1, glConfig.maxAnisotropy, r_ext_max_anisotropy->integer ) : 1 );
-                                
+        qglTextureParameteriEXT( image->texnum, textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+                                 mipmap ? ( S32 )Com_Clamp( 1, glConfig.maxAnisotropy, r_ext_max_anisotropy->integer ) : 1 );
+                                 
     switch( internalFormat )
     {
         case GL_DEPTH_COMPONENT:
@@ -2276,13 +2273,13 @@ image_t* R_CreateImage2( StringEntry name, U8* pic, S32 width, S32 height, U32 p
         case GL_DEPTH_COMPONENT32:
             // Fix for sampling depth buffer on old nVidia cards.
             // from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
-            glTextureParameterfEXT( image->texnum, textureTarget, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
-            glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-            glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+            qglTextureParameterfEXT( image->texnum, textureTarget, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
+            qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+            qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
             break;
         default:
-            glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MIN_FILTER, mipmap ? gl_filter_min : GL_LINEAR );
-            glTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MAG_FILTER, mipmap ? gl_filter_max : GL_LINEAR );
+            qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MIN_FILTER, mipmap ? gl_filter_min : GL_LINEAR );
+            qglTextureParameterfEXT( image->texnum, textureTarget, GL_TEXTURE_MAG_FILTER, mipmap ? gl_filter_max : GL_LINEAR );
             break;
     }
     
@@ -2436,6 +2433,206 @@ void R_LoadImage( StringEntry name, U8** pic, S32* width, S32* height, U32* picF
     }
 }
 
+static void R_CreateNormalMap( StringEntry name, U8* pic, S32 width, S32 height, S32 flags )
+{
+    char normalName[MAX_QPATH];
+    image_t* normalImage;
+    //S32 normalWidth, normalHeight;
+    S32 normalFlags;
+    
+    normalFlags = ( flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB ) ) | IMGFLAG_NOLIGHTSCALE;
+    
+    COM_StripExtension2( name, normalName, MAX_QPATH );
+    Q_strcat( normalName, MAX_QPATH, "_n" );
+    
+    // find normalmap in case it's there
+    normalImage = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
+    
+    //if (normalImage != NULL) CL_RefPrintf(PRINT_WARNING, "Loaded real normal map file %s.\n", normalName);
+    //else CL_RefPrintf(PRINT_WARNING, "No real normal map file %s.\n", normalName);
+    
+#if 0
+    // if not, generate it
+    if( normalImage == NULL )
+    {
+        U8* normalPic;
+        S32 x, y;
+        
+        normalWidth = width;
+        normalHeight = height;
+        normalPic = ( U8* )Z_Malloc( width * height * 4, TAG_GENERAL );
+        RGBAtoNormal( pic, normalPic, width, height, ( qboolean )( flags & IMGFLAG_CLAMPTOEDGE ) );
+        
+#if 1
+        // Brighten up the original image to work with the normal map
+        RGBAtoYCoCgA( pic, pic, width, height );
+        for( y = 0; y < height; y++ )
+        {
+            U8* picbyte = pic + y * width * 4;
+            U8* normbyte = normalPic + y * width * 4;
+            for( x = 0; x < width; x++ )
+            {
+                S32 div = MAX( normbyte[2] - 127, 16 );
+                picbyte[0] = CLAMP( picbyte[0] * 128 / div, 0, 255 );
+                picbyte += 4;
+                normbyte += 4;
+            }
+        }
+        YCoCgAtoRGBA( pic, pic, width, height );
+#else
+        // Blur original image's luma to work with the normal map
+        {
+            U8* blurPic;
+        
+            RGBAtoYCoCgA( pic, pic, width, height );
+            blurPic = ri.Malloc( width * height );
+        
+            for( y = 1; y < height - 1; y++ )
+            {
+                U8* picbyte = pic + y * width * 4;
+                U8* blurbyte = blurPic + y * width;
+        
+                picbyte += 4;
+                blurbyte += 1;
+        
+                for( x = 1; x < width - 1; x++ )
+                {
+                    S32 result;
+        
+                    result = *( picbyte - ( width + 1 ) * 4 ) + *( picbyte - width * 4 ) + *( picbyte - ( width - 1 ) * 4 ) +
+                             *( picbyte - 1 * 4 ) + *( picbyte ) + *( picbyte + 1 * 4 ) +
+                             *( picbyte + ( width - 1 ) * 4 ) + *( picbyte + width * 4 ) + *( picbyte + ( width + 1 ) * 4 );
+        
+                    result /= 9;
+        
+                    *blurbyte = result;
+                    picbyte += 4;
+                    blurbyte += 1;
+                }
+            }
+        
+            // FIXME: do borders
+        
+            for( y = 1; y < height - 1; y++ )
+            {
+                U8* picbyte = pic + y * width * 4;
+                U8* blurbyte = blurPic + y * width;
+        
+                picbyte += 4;
+                blurbyte += 1;
+        
+                for( x = 1; x < width - 1; x++ )
+                {
+                    picbyte[0] = *blurbyte;
+                    picbyte += 4;
+                    blurbyte += 1;
+                }
+            }
+        
+            Z_Free( blurPic );
+        
+            YCoCgAtoRGBA( pic, pic, width, height );
+        }
+#endif
+        
+        R_CreateImage( normalName, normalPic, normalWidth, normalHeight, IMGTYPE_NORMAL, normalFlags, 0 );
+        Z_Free( normalPic );
+    }
+#endif
+}
+
+static void R_CreateSpecularMap( StringEntry name, U8* pic, S32 width, S32 height, S32 flags )
+{
+    char specularName[MAX_QPATH];
+    image_t* specularImage;
+    S32 normalFlags;
+    
+    normalFlags = ( flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE;
+    
+    COM_StripExtension2( name, specularName, MAX_QPATH );
+    Q_strcat( specularName, MAX_QPATH, "_s" );
+    
+    // find normalmap in case it's there
+    specularImage = R_FindImageFile( specularName, IMGTYPE_SPECULAR, normalFlags );
+    
+    //if (normalImage != NULL) CL_RefPrintf(PRINT_WARNING, "Loaded real normal map file %s.\n", normalName);
+    //else CL_RefPrintf(PRINT_WARNING, "No real normal map file %s.\n", normalName);
+    
+    if( specularImage == NULL )
+    {
+        memset( specularName, 0, sizeof( specularName ) );
+        COM_StripExtension2( name, specularName, MAX_QPATH );
+        Q_strcat( specularName, MAX_QPATH, "_spec" );
+        specularImage = R_FindImageFile( specularName, IMGTYPE_SPECULAR, normalFlags );
+    }
+}
+
+static void R_CreateSubsurfaceMap( StringEntry name, U8* pic, S32 width, S32 height, S32 flags )
+{
+    char SubsurfaceName[MAX_QPATH];
+    image_t* SubsurfaceImage;
+    S32 normalFlags;
+    
+    normalFlags = ( flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE;
+    
+    COM_StripExtension2( name, SubsurfaceName, MAX_QPATH );
+    Q_strcat( SubsurfaceName, MAX_QPATH, "_sub" );
+    
+    // find normalmap in case it's there
+    SubsurfaceImage = R_FindImageFile( SubsurfaceName, IMGTYPE_SUBSURFACE, normalFlags );
+    
+    //if (normalImage != NULL) CL_RefPrintf(PRINT_WARNING, "Loaded real normal map file %s.\n", normalName);
+    //else CL_RefPrintf(PRINT_WARNING, "No real normal map file %s.\n", normalName);
+    
+    if( SubsurfaceImage == NULL )
+    {
+        memset( SubsurfaceName, 0, sizeof( SubsurfaceName ) );
+        COM_StripExtension2( name, SubsurfaceName, MAX_QPATH );
+        Q_strcat( SubsurfaceName, MAX_QPATH, "_subsurface" );
+        SubsurfaceImage = R_FindImageFile( SubsurfaceName, IMGTYPE_SUBSURFACE, normalFlags );
+    }
+}
+
+static void R_CreateOverlayMap( StringEntry name, U8* pic, S32 width, S32 height, S32 flags )
+{
+    char SubsurfaceName[MAX_QPATH];
+    image_t* SubsurfaceImage;
+    S32 normalFlags;
+    
+    normalFlags = ( flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE;
+    
+    COM_StripExtension2( name, SubsurfaceName, MAX_QPATH );
+    Q_strcat( SubsurfaceName, MAX_QPATH, "_o" );
+    
+    // find normalmap in case it's there
+    SubsurfaceImage = R_FindImageFile( SubsurfaceName, IMGTYPE_OVERLAY, normalFlags );
+    
+    //if (normalImage != NULL) ri->Printf(PRINT_WARNING, "Loaded real normal map file %s.\n", normalName);
+    //else ri->Printf(PRINT_WARNING, "No real normal map file %s.\n", normalName);
+    
+    if( SubsurfaceImage == NULL )
+    {
+        memset( SubsurfaceName, 0, sizeof( SubsurfaceName ) );
+        COM_StripExtension2( name, SubsurfaceName, MAX_QPATH );
+        Q_strcat( SubsurfaceName, MAX_QPATH, "_overlay" );
+        SubsurfaceImage = R_FindImageFile( SubsurfaceName, IMGTYPE_OVERLAY, normalFlags );
+    }
+}
+
+static void R_CreateSteepMap( StringEntry name, U8* pic, S32 width, S32 height, S32 flags )
+{
+    char SubsurfaceName[MAX_QPATH];
+    image_t* SubsurfaceImage;
+    S32 normalFlags;
+    
+    normalFlags = ( flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE | IMGFLAG_MIPMAP;
+    
+    COM_StripExtension2( name, SubsurfaceName, MAX_QPATH );
+    Q_strcat( SubsurfaceName, MAX_QPATH, "_steep" );
+    
+    // find normalmap in case it's there
+    SubsurfaceImage = R_FindImageFile( SubsurfaceName, IMGTYPE_OVERLAY, normalFlags );
+}
 
 /*
 ===============
@@ -2445,17 +2642,21 @@ Finds or loads the given image.
 Returns NULL if it fails, not a default image.
 ==============
 */
-image_t* R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ flags )
+extern shader_t* R_CreateGenericAdvancedShader( StringEntry name, const S32* lightmapIndexes, const U8* styles, bool mipRawImage );
+extern bool R_ShaderExists( StringEntry name, const S32* lightmapIndexes, const U8* styles, bool mipRawImage );
+
+char previous_name_loaded[256];
+
+image_t*	R_FindImageFile( StringEntry name, imgType_t type, S32 flags )
 {
-    image_t* image;
-    S32	width, height;
+    image_t*	image;
+    S32		width, height;
     U8*	pic;
+    S64	hash;
     U32 picFormat;
     S32 picNumMips;
-    S64	hash;
-    S32/*imgFlags_t*/ checkFlagsTrue, checkFlagsFalse;
     
-    if( !name )
+    if( !name || cvarSystem->VariableIntegerValue( "dedicated" ) )
     {
         return NULL;
     }
@@ -2490,131 +2691,34 @@ image_t* R_FindImageFile( StringEntry name, imgType_t type, S32/*imgFlags_t*/ fl
         return NULL;
     }
     
-    checkFlagsTrue = IMGFLAG_PICMIP | IMGFLAG_MIPMAP | IMGFLAG_GENNORMALMAP;
-    checkFlagsFalse = IMGFLAG_CUBEMAP;
-    if( r_normalMapping->integer && ( picFormat == GL_RGBA8 ) && ( type == IMGTYPE_COLORALPHA ) &&
-            ( ( flags & checkFlagsTrue ) == checkFlagsTrue ) && !( flags & checkFlagsFalse ) )
+    if( name[0] != '*' && name[0] != '!' && name[0] != '$' && name[0] != '_' && type != IMGTYPE_NORMAL && type != IMGTYPE_SPECULAR && type != IMGTYPE_SUBSURFACE && type != IMGTYPE_OVERLAY && type != IMGTYPE_STEEPMAP && !( flags & IMGFLAG_CUBEMAP ) )
+        //if( type != IMGTYPE_NORMAL && type != IMGTYPE_SPECULAR && type != IMGTYPE_SUBSURFACE && type != IMGTYPE_OVERLAY && !( flags & IMGFLAG_CUBEMAP ) )
     {
-        UTF8 normalName[MAX_QPATH];
-        image_t* normalImage;
-        S32 normalWidth, normalHeight;
-        S32/*imgFlags_t*/ normalFlags;
-        
-        normalFlags = ( flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
-        
-        COM_StripExtension2( name, normalName, MAX_QPATH );
-        Q_strcat( normalName, MAX_QPATH, "_n" );
-        
-        // find normalmap in case it's there
-        normalImage = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
-        
-        // if not, generate it
-        if( normalImage == NULL )
+    
+        if( r_normalMapping->integer )
         {
-            U8* normalPic;
-            S32 x, y;
-            
-            normalWidth = width;
-            normalHeight = height;
-            normalPic = ( U8* )CL_RefMalloc( width * height * 4 );
-            RGBAtoNormal( pic, normalPic, width, height, flags & IMGFLAG_CLAMPTOEDGE );
-            
-#if 1
-            // Brighten up the original image to work with the normal map
-            RGBAtoYCoCgA( pic, pic, width, height );
-            for( y = 0; y < height; y++ )
-            {
-                U8* picbyte  = pic       + y * width * 4;
-                U8* normbyte = normalPic + y * width * 4;
-                for( x = 0; x < width; x++ )
-                {
-                    S32 div = MAX( normbyte[2] - 127, 16 );
-                    picbyte[0] = CLAMP( picbyte[0] * 128 / div, 0, 255 );
-                    picbyte  += 4;
-                    normbyte += 4;
-                }
-            }
-            YCoCgAtoRGBA( pic, pic, width, height );
-#else
-            // Blur original image's luma to work with the normal map
-            {
-                U8* blurPic;
-            
-                RGBAtoYCoCgA( pic, pic, width, height );
-                blurPic = CL_RefMalloc( width * height );
-            
-                for( y = 1; y < height - 1; y++ )
-                {
-                    U8* picbyte  = pic     + y * width * 4;
-                    U8* blurbyte = blurPic + y * width;
-            
-                    picbyte += 4;
-                    blurbyte += 1;
-            
-                    for( x = 1; x < width - 1; x++ )
-                    {
-                        S32 result;
-            
-                        result = *( picbyte - ( width + 1 ) * 4 ) + *( picbyte - width * 4 ) + *( picbyte - ( width - 1 ) * 4 ) +
-                                 *( picbyte -          1  * 4 ) + *( picbyte ) + *( picbyte +          1  * 4 ) +
-                                 *( picbyte + ( width - 1 ) * 4 ) + *( picbyte + width * 4 ) + *( picbyte + ( width + 1 ) * 4 );
-            
-                        result /= 9;
-            
-                        *blurbyte = result;
-                        picbyte += 4;
-                        blurbyte += 1;
-                    }
-                }
-            
-                // FIXME: do borders
-            
-                for( y = 1; y < height - 1; y++ )
-                {
-                    U8* picbyte  = pic     + y * width * 4;
-                    U8* blurbyte = blurPic + y * width;
-            
-                    picbyte += 4;
-                    blurbyte += 1;
-            
-                    for( x = 1; x < width - 1; x++ )
-                    {
-                        picbyte[0] = *blurbyte;
-                        picbyte += 4;
-                        blurbyte += 1;
-                    }
-                }
-            
-                Z_Free( blurPic );
-            
-                YCoCgAtoRGBA( pic, pic, width, height );
-            }
-#endif
-            
-            R_CreateImage( normalName, normalPic, normalWidth, normalHeight, IMGTYPE_NORMAL, normalFlags, 0 );
-            Z_Free( normalPic );
+            R_CreateNormalMap( name, pic, width, height, flags );
         }
+        
+        if( r_specularMapping->integer )
+        {
+            R_CreateSpecularMap( name, pic, width, height, flags );
+        }
+        
+        R_CreateSubsurfaceMap( name, pic, width, height, flags );
+        
+        R_CreateOverlayMap( name, pic, width, height, flags );
+        
+        R_CreateSteepMap( name, pic, width, height, flags );
     }
     
-    // force mipmaps off if image is compressed but doesn't have enough mips
-    if( ( flags & IMGFLAG_MIPMAP ) && picFormat != GL_RGBA8 && picFormat != GL_SRGB8_ALPHA8_EXT )
-    {
-        S32 wh = MAX( width, height );
-        S32 neededMips = 0;
-        while( wh )
-        {
-            neededMips++;
-            wh >>= 1;
-        }
-        if( neededMips > picNumMips )
-            flags &= ~IMGFLAG_MIPMAP;
-    }
-    
-    image = R_CreateImage2( ( UTF8* ) name, pic, width, height, picFormat, picNumMips, type, flags, 0 );
+    image = R_CreateImage( name, pic, width, height, type, flags, GL_RGBA8 );
     Z_Free( pic );
+    
+    qglBindTexture( GL_TEXTURE_2D, image->texnum );
+    
     return image;
 }
-
 
 /*
 ================
@@ -2794,14 +2898,23 @@ R_CreateBuiltinImages
 */
 void R_CreateBuiltinImages( void )
 {
-    S32		x, y;
-    U8	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
+    S32	x, y;
+    U8 data[DEFAULT_SIZE][DEFAULT_SIZE][4];
+    U8 data2[DEFAULT_SIZE][DEFAULT_SIZE][4];
     
     R_CreateDefaultImage();
     
     // we use a solid white image instead of disabling texturing
     ::memset( data, 255, sizeof( data ) );
     tr.whiteImage = R_CreateImage( "*white", ( U8* )data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0 );
+    
+    ::memset( data2, 0, sizeof( data2 ) );
+    tr.blackImage = R_CreateImage( "*black", ( U8* )data2, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0 );
+    
+    tr.randomImage = R_FindImageFile( "gfx/random.png", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION );
+    tr.random2KImage[0] = R_FindImageFile( "gfx/random2K.tga", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_NOLIGHTSCALE );
+    tr.random2KImage[1] = R_FindImageFile( "gfx/random2Ka.tga", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_NOLIGHTSCALE );
+    tr.ssdoNoiseImage = R_FindImageFile( "gfx/ssdoNoise.png", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_NOLIGHTSCALE );
     
     if( r_dlightMode->integer >= 2 )
     {
@@ -2845,20 +2958,40 @@ void R_CreateBuiltinImages( void )
         
         hdrFormat = GL_RGBA8;
         if( r_truehdr->integer && glRefConfig.textureFloat )
-            hdrFormat = GL_RGBA16F_ARB;
+            hdrFormat = GL_RGBA16F;
             
         rgbFormat = GL_RGBA8;
         
         tr.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.glowImage = R_CreateImage( "*glow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+#if 0
+        tr.glowImageScaled[0] = R_CreateImage( "*glowScaled0", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.glowImageScaled[1] = R_CreateImage( "*glowScaled1", NULL, width / 4, height / 4, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.glowImageScaled[2] = R_CreateImage( "*glowScaled2a", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.glowImageScaled[3] = R_CreateImage( "*glowScaled2b", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+#else
+        S32 glowImageWidth = width;
+        S32 glowImageHeight = height;
+        for( S32 i = 0; i < ARRAY_LEN( tr.glowImageScaled ); i++ )
+        {
+            tr.glowImageScaled[i] = R_CreateImage( va( "*glowScaled%d", i ), NULL, glowImageWidth, glowImageHeight, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+            glowImageWidth = MAX( 1, glowImageWidth >> 1 );
+            glowImageHeight = MAX( 1, glowImageHeight >> 1 );
+        }
+#endif
+        
+        tr.renderNormalImage = R_CreateImage( "*normal", NULL, width, height, IMGTYPE_NORMAL, IMGFLAG_NOLIGHTSCALE | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, 0 );
+        tr.renderPositionMapImage = R_CreateImage( "*positionMap", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA32F );
+        
+        tr.normalImage = R_CreateImage( "*normal", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
         tr.normalDetailedImage = R_CreateImage( "*normaldetailed", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
         if( r_shadowBlur->integer || r_ssao->integer )
             tr.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
             
-        if( r_shadowBlur->integer || r_ssao->integer )
-            tr.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
-            
+        tr.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
+        
         if( r_drawSunRays->integer )
             tr.sunRaysImage = R_CreateImage( "*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
             
@@ -2866,6 +2999,7 @@ void R_CreateBuiltinImages( void )
         tr.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24_ARB );
         
         tr.genericFBOImage = R_CreateImage( "_generic", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.genericFBO2Image = R_CreateImage( "_generic2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
         tr.bloomRenderFBOImage[0] = R_CreateImage( "_bloom0", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         tr.bloomRenderFBOImage[1] = R_CreateImage( "_bloom1", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
@@ -2875,6 +3009,15 @@ void R_CreateBuiltinImages( void )
         tr.anamorphicRenderFBOImage[1] = R_CreateImage( "_anamorphic1", NULL, width / 8, height / 8, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         tr.anamorphicRenderFBOImage[2] = R_CreateImage( "_anamorphic2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         
+        tr.dummyImage = R_CreateImage( "_dummy", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.dummyImage2 = R_CreateImage( "_dummy2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.dummyImage3 = R_CreateImage( "_dummy3", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.dummyImage4 = R_CreateImage( "_dummy3", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.screenPureNormalImage = R_CreateImage( "_depthToNormal", NULL, width, height, IMGTYPE_NORMAL, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.ssdoImage1 = R_CreateImage( "_ssdoImage1", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NOLIGHTSCALE | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        tr.ssdoImage2 = R_CreateImage( "_ssdoImage2", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NOLIGHTSCALE | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+        
+        tr.volumetricFBOImage = R_CreateImage( "_volumetric", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         {
             U8* p;
             
@@ -2898,10 +3041,12 @@ void R_CreateBuiltinImages( void )
             tr.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
         }
         
-        if( r_ssao->integer )
+        if( r_ssao->integer || r_hbao->integer )
         {
             tr.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
         }
+        
+        //tr.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_INTENSITY32F_ARB );
         
         for( x = 0; x < MAX_DRAWN_PSHADOWS; x++ )
         {
@@ -2915,11 +3060,12 @@ void R_CreateBuiltinImages( void )
             for( x = 0; x < 4; x++ )
             {
                 tr.sunShadowDepthImage[x] = R_CreateImage( va( "*sunshadowdepth%i", x ), NULL, r_shadowMapSize->integer, r_shadowMapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24_ARB );
-                glTextureParameterfEXT( tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
-                glTextureParameterfEXT( tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+                qglTextureParameterfEXT( tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+                qglTextureParameterfEXT( tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
             }
             
             tr.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+            tr.screenShadowBlurImage = R_CreateImage( "*screenShadowBlur", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
         }
         
         if( r_cubeMapping->integer )
@@ -2963,16 +3109,16 @@ void R_SetColorMappings( void )
     
     if( r_intensity->value <= 1 )
     {
-        Cvar_Set( "r_intensity", "1" );
+        cvarSystem->Set( "r_intensity", "1" );
     }
     
     if( r_gamma->value < 0.5f )
     {
-        Cvar_Set( "r_gamma", "0.5" );
+        cvarSystem->Set( "r_gamma", "0.5" );
     }
     else if( r_gamma->value > 3.0f )
     {
-        Cvar_Set( "r_gamma", "3.0" );
+        cvarSystem->Set( "r_gamma", "3.0" );
     }
     
     for( i = 0 ; i < 256 ; i++ )
@@ -3214,7 +3360,7 @@ qhandle_t idRenderSystemLocal::RegisterSkin( StringEntry name )
     }
     
     // load and parse the skin file
-    FS_ReadFile( name, &text.v );
+    fileSystem->ReadFile( name, &text.v );
     if( !text.c )
     {
         return 0;
@@ -3248,6 +3394,12 @@ qhandle_t idRenderSystemLocal::RegisterSkin( StringEntry name )
         // parse the shader name
         token = CommaParse( &text_p );
         
+        if( skin->numSurfaces >= MD3_MAX_SURFACES )
+        {
+            CL_RefPrintf( PRINT_WARNING, "WARNING: Ignoring surfaces in '%s', the max is %d surfaces!\n", name, MD3_MAX_SURFACES );
+            break;
+        }
+        
         if( skin->numSurfaces < MAX_SKIN_SURFACES )
         {
             surf = &parseSurfaces[skin->numSurfaces];
@@ -3259,7 +3411,7 @@ qhandle_t idRenderSystemLocal::RegisterSkin( StringEntry name )
         totalSurfaces++;
     }
     
-    FS_FreeFile( text.v );
+    fileSystem->FreeFile( text.v );
     
     if( totalSurfaces > MAX_SKIN_SURFACES )
     {

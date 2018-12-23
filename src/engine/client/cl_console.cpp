@@ -280,7 +280,7 @@ void Con_Dump_f( void )
         return;
     }
     
-    f = FS_FOpenFileWrite( Cmd_Argv( 1 ) );
+    f = fileSystem->FOpenFileWrite( Cmd_Argv( 1 ) );
     if( !f )
     {
         Com_Printf( "ERROR: couldn't open.\n" );
@@ -323,11 +323,10 @@ void Con_Dump_f( void )
             }
         }
         strcat( buffer, "\n" );
-        FS_Write( buffer, strlen( buffer ), f );
+        fileSystem->Write( buffer, strlen( buffer ), f );
     }
     
-    Hunk_FreeTempMemory( buffer );
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
 }
 
 /*
@@ -566,32 +565,32 @@ void Con_Init( void )
 {
     Com_Printf( "\n----- Console Initialization -------\n" );
     
-    con_notifytime = Cvar_Get( "con_notifytime", "7", 0 );	// JPW NERVE increased per id req for obits
-    con_conspeed = Cvar_Get( "scr_conspeed", "3", 0 );
-    con_debug = Cvar_Get( "con_debug", "0", CVAR_ARCHIVE );	//----(SA)    added
-    con_autoclear = Cvar_Get( "con_autoclear", "1", CVAR_ARCHIVE );
-    con_restricted = Cvar_Get( "con_restricted", "0", CVAR_INIT );	// DHM - Nerve
+    con_notifytime = cvarSystem->Get( "con_notifytime", "7", 0 );	// JPW NERVE increased per id req for obits
+    con_conspeed = cvarSystem->Get( "scr_conspeed", "3", 0 );
+    con_debug = cvarSystem->Get( "con_debug", "0", CVAR_ARCHIVE );	//----(SA)    added
+    con_autoclear = cvarSystem->Get( "con_autoclear", "1", CVAR_ARCHIVE );
+    con_restricted = cvarSystem->Get( "con_restricted", "0", CVAR_INIT );	// DHM - Nerve
     
     // Defines cvar for color and alpha for console/bar under console
-    scr_conUseShader = Cvar_Get( "scr_conUseShader", "0", CVAR_ARCHIVE );
+    scr_conUseShader = cvarSystem->Get( "scr_conUseShader", "0", CVAR_ARCHIVE );
     
-    scr_conColorAlpha = Cvar_Get( "scr_conColorAlpha", "0.5", CVAR_ARCHIVE );
-    scr_conColorRed = Cvar_Get( "scr_conColorRed", "0", CVAR_ARCHIVE );
-    scr_conColorBlue = Cvar_Get( "scr_conColorBlue", "0.3", CVAR_ARCHIVE );
-    scr_conColorGreen = Cvar_Get( "scr_conColorGreen", "0.23", CVAR_ARCHIVE );
+    scr_conColorAlpha = cvarSystem->Get( "scr_conColorAlpha", "0.5", CVAR_ARCHIVE );
+    scr_conColorRed = cvarSystem->Get( "scr_conColorRed", "0", CVAR_ARCHIVE );
+    scr_conColorBlue = cvarSystem->Get( "scr_conColorBlue", "0.3", CVAR_ARCHIVE );
+    scr_conColorGreen = cvarSystem->Get( "scr_conColorGreen", "0.23", CVAR_ARCHIVE );
     
-    scr_conUseOld = Cvar_Get( "scr_conUseOld", "0", CVAR_ARCHIVE );
+    scr_conUseOld = cvarSystem->Get( "scr_conUseOld", "0", CVAR_ARCHIVE );
     
-    scr_conBarHeight = Cvar_Get( "scr_conBarHeight", "2", CVAR_ARCHIVE );
+    scr_conBarHeight = cvarSystem->Get( "scr_conBarHeight", "2", CVAR_ARCHIVE );
     
-    scr_conBarColorAlpha = Cvar_Get( "scr_conBarColorAlpha", "0.3", CVAR_ARCHIVE );
-    scr_conBarColorRed = Cvar_Get( "scr_conBarColorRed", "1", CVAR_ARCHIVE );
-    scr_conBarColorBlue = Cvar_Get( "scr_conBarColorBlue", "1", CVAR_ARCHIVE );
-    scr_conBarColorGreen = Cvar_Get( "scr_conBarColorGreen", "1", CVAR_ARCHIVE );
+    scr_conBarColorAlpha = cvarSystem->Get( "scr_conBarColorAlpha", "0.3", CVAR_ARCHIVE );
+    scr_conBarColorRed = cvarSystem->Get( "scr_conBarColorRed", "1", CVAR_ARCHIVE );
+    scr_conBarColorBlue = cvarSystem->Get( "scr_conBarColorBlue", "1", CVAR_ARCHIVE );
+    scr_conBarColorGreen = cvarSystem->Get( "scr_conBarColorGreen", "1", CVAR_ARCHIVE );
     
-    scr_conHeight = Cvar_Get( "scr_conHeight", "50", CVAR_ARCHIVE );
+    scr_conHeight = cvarSystem->Get( "scr_conHeight", "50", CVAR_ARCHIVE );
     
-    scr_conBarSize = Cvar_Get( "scr_conBarSize", "2", CVAR_ARCHIVE );
+    scr_conBarSize = cvarSystem->Get( "scr_conBarSize", "2", CVAR_ARCHIVE );
     
     // Done defining cvars for console colors
     
@@ -1037,7 +1036,6 @@ void Con_DrawSolidConsole( F32 frac )
     
     
     // draw the version number
-    
     color[0] = 1.0f;
     color[1] = 1.0f;
     color[2] = 1.0f;
@@ -1070,8 +1068,6 @@ void Con_DrawSolidConsole( F32 frac )
         SCR_DrawConsoleFontChar( cls.glconfig.vidWidth - totalwidth + currentWidthLocation, lines - SCR_ConsoleFontCharHeight(), Q3_ENGINE[x] );
         currentWidthLocation += SCR_ConsoleFontCharWidth( Q3_ENGINE[x] );
     }
-    
-    
     
     // draw the text
     con.vislines = lines;

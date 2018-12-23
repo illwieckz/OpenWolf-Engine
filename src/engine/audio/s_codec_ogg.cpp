@@ -22,9 +22,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_codec_ogg.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -82,8 +82,8 @@ U64 S_OGG_Callback_read( void* ptr, U64 size, U64 nmemb, void* datasource )
     // FS_Read does not support multi-byte elements
     byteSize = nmemb * size;
     
-    // read it with the Q3 function FS_Read()
-    bytesRead = FS_Read( ptr, byteSize, stream->file );
+    // read it with the Q3 function fileSystem->Read()
+    bytesRead = fileSystem->Read( ptr, byteSize, stream->file );
     
     // update the file position
     stream->pos += bytesRead;
@@ -123,7 +123,7 @@ S32 S_OGG_Callback_seek( void* datasource, ogg_int64_t offset, S32 whence )
         case SEEK_SET:
         {
             // set the file position in the actual file with the Q3 function
-            retVal = FS_Seek( stream->file, ( S64 )offset, FS_SEEK_SET );
+            retVal = fileSystem->Seek( stream->file, ( S64 )offset, FS_SEEK_SET );
             
             // something has gone wrong, so we return here
             if( retVal < 0 )
@@ -139,7 +139,7 @@ S32 S_OGG_Callback_seek( void* datasource, ogg_int64_t offset, S32 whence )
         case SEEK_CUR:
         {
             // set the file position in the actual file with the Q3 function
-            retVal = FS_Seek( stream->file, ( S64 )offset, FS_SEEK_CUR );
+            retVal = fileSystem->Seek( stream->file, ( S64 )offset, FS_SEEK_CUR );
             
             // something has gone wrong, so we return here
             if( retVal < 0 )
@@ -158,7 +158,7 @@ S32 S_OGG_Callback_seek( void* datasource, ogg_int64_t offset, S32 whence )
             // so we use the file length and FS_SEEK_SET
             
             // set the file position in the actual file with the Q3 function
-            retVal = FS_Seek( stream->file, ( S64 )stream->length + ( S64 )offset, FS_SEEK_SET );
+            retVal = fileSystem->Seek( stream->file, ( S64 )stream->length + ( S64 )offset, FS_SEEK_SET );
             
             // something has gone wrong, so we return here
             if( retVal < 0 )
@@ -208,7 +208,7 @@ long S_OGG_Callback_tell( void* datasource )
     // snd_stream_t in the generic pointer
     stream = ( snd_stream_t* ) datasource;
     
-    return ( long )FS_FTell( stream->file );
+    return ( long )fileSystem->FTell( stream->file );
 }
 
 // the callback structure

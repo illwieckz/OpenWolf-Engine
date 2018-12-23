@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sys_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -91,25 +91,16 @@ UTF8* Sys_DefaultInstallPath( void )
     
     Com_sprintf( installdir, sizeof( installdir ), "%s", Sys_Cwd() );
     
-    Q_strreplace( installdir, sizeof( installdir ), "bin32", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "bin64", "" );
+    // Windows
+    Q_strreplace( installdir, sizeof( installdir ), "bin/windows", "" );
+    Q_strreplace( installdir, sizeof( installdir ), "bin\\windows", "" );
     
-    Q_strreplace( installdir, sizeof( installdir ), "src/engine", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "src\\engine", "" );
+    // Linux
+    Q_strreplace( installdir, sizeof( installdir ), "bin/unix", "" );
     
-    Q_strreplace( installdir, sizeof( installdir ), "bin/win32", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "bin\\win32", "" );
-    
-    Q_strreplace( installdir, sizeof( installdir ), "bin/win64", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "bin\\win64", "" );
-    
-    Q_strreplace( installdir, sizeof( installdir ), "bin/linux-x86", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "bin/linux-x86_64", "" );
-    
-    Q_strreplace( installdir, sizeof( installdir ), "bin/freebsd-i386", "" );
-    Q_strreplace( installdir, sizeof( installdir ), "bin/freebsd-amd64", "" );
-    
-    // MacOS X x86 and x64
+    // BSD
+    Q_strreplace( installdir, sizeof( installdir ), "bin/bsd", "" );
+    // MacOS X
     Q_strreplace( installdir, sizeof( installdir ), "bin/macosx", "" );
     
     return installdir;
@@ -276,8 +267,8 @@ Sys_Init
 void Sys_Init( void )
 {
     Cmd_AddCommand( "in_restart", Sys_In_Restart_f );
-    Cvar_Set( "arch", OS_STRING " " ARCH_STRING );
-    Cvar_Set( "username", Sys_GetCurrentUser( ) );
+    cvarSystem->Set( "arch", OS_STRING " " ARCH_STRING );
+    cvarSystem->Set( "username", Sys_GetCurrentUser( ) );
 }
 
 /*
@@ -524,18 +515,18 @@ void* Sys_LoadDll( StringEntry name )
         }
     }
     
-    basepath = Cvar_VariableString( "fs_basepath" );
-    homepath = Cvar_VariableString( "fs_homepath" );
-    gamedir = Cvar_VariableString( "fs_game" );
+    basepath = cvarSystem->VariableString( "fs_basepath" );
+    homepath = cvarSystem->VariableString( "fs_homepath" );
+    gamedir = cvarSystem->VariableString( "fs_game" );
     
-    fn = FS_BuildOSPath( basepath, gamedir, filename );
+    fn = fileSystem->BuildOSPath( basepath, gamedir, filename );
     
-#ifndef DEDICATED
+#if !defined( DEDICATED )
     // if the server is pure, extract the dlls from the mp_bin.pk3 so
     // that they can be referenced
-    if( Cvar_VariableValue( "sv_pure" ) && Q_stricmp( name, "sgame" ) )
+    if( cvarSystem->VariableValue( "sv_pure" ) && Q_stricmp( name, "sgame" ) )
     {
-        FS_CL_ExtractFromPakFile( homepath, gamedir, filename );
+        fileSystem->CL_ExtractFromPakFile( homepath, gamedir, filename );
     }
 #endif
     
@@ -545,7 +536,7 @@ void* Sys_LoadDll( StringEntry name )
     {
         if( homepath[0] )
         {
-            fn = FS_BuildOSPath( basepath, gamedir, filename );
+            fn = fileSystem->BuildOSPath( basepath, gamedir, filename );
             libHandle = Sys_LoadLibrary( fn );
         }
         
@@ -718,10 +709,6 @@ S32 main( S32 argc, UTF8** argv )
 {
     S32   i;
     UTF8  commandLine[ MAX_STRING_CHARS ] = { 0 };
-#ifndef DEDICATED
-    // Run time
-    const SDL_version* ver = SDL_Linked_Version( );
-#endif
     
 #ifndef DEDICATED
     // SDL version check
@@ -731,16 +718,21 @@ S32 main( S32 argc, UTF8** argv )
 #		error A more recent version of SDL is required
 #	endif
     
+    // Run time
+    SDL_version ver;
+    SDL_GetVersion( &ver );
+    
 #define MINSDL_VERSION \
 	XSTRING(MINSDL_MAJOR) "." \
 	XSTRING(MINSDL_MINOR) "." \
 	XSTRING(MINSDL_PATCH)
     
-    if( SDL_VERSIONNUM( ver->major, ver->minor, ver->patch ) < SDL_VERSIONNUM( MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH ) )
+    if( SDL_VERSIONNUM( ver.major, ver.minor, ver.patch ) <
+            SDL_VERSIONNUM( MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH ) )
     {
         Sys_Dialog( DT_ERROR, va( "SDL version " MINSDL_VERSION " or greater is required, "
                                   "but only version %d.%d.%d was found. You may be able to obtain a more recent copy "
-                                  "from http://www.libsdl.org/.", ver->major, ver->minor, ver->patch ), "SDL Library Too Old" );
+                                  "from http://www.libsdl.org/.", ver.major, ver.minor, ver.patch ), "SDL Library Too Old" );
                                   
         Sys_Exit( 1 );
     }

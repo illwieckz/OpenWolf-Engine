@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cin_ogm.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -213,15 +213,16 @@ static S32 loadBlockToSync( void )
     UTF8*           buffer;
     S32             bytes;
     
+#if 0
     if( g_ogm.ogmFile )
     {
         buffer = ogg_sync_buffer( &g_ogm.oy, OGG_BUFFER_SIZE );
-        bytes = FS_Read( buffer, OGG_BUFFER_SIZE, g_ogm.ogmFile );
+        bytes = fileSystem->Read( buffer, OGG_BUFFER_SIZE, g_ogm.ogmFile );
         ogg_sync_wrote( &g_ogm.oy, bytes );
         
         r = ( bytes == 0 );
     }
-    
+#endif
     return r;
 }
 
@@ -234,6 +235,7 @@ static S32 loadBlockToSync( void )
 static S32 loadPagesToStreams( void )
 {
     S32             r = -1;
+#if 0
     S32             AudioPages = 0;
     S32             VideoPages = 0;
     ogg_stream_state* osptr = NULL;
@@ -263,7 +265,7 @@ static S32 loadPagesToStreams( void )
     
     if( AudioPages && VideoPages )
         r = 0;
-        
+#endif
     return r;
 }
 
@@ -329,6 +331,7 @@ static bool loadAudio( void )
         
         if( !anyDataTransferred )
         {
+#if 0
             // op -> vorbis
             if( ogg_stream_packetout( &g_ogm.os_audio, &op ) )
             {
@@ -336,6 +339,7 @@ static bool loadAudio( void )
                     vorbis_synthesis_blockin( &g_ogm.vd, &vb );
                 anyDataTransferred = true;
             }
+#endif
         }
     }
     
@@ -445,7 +449,7 @@ static S32 loadVideoFrameTheora( void )
     ogg_packet      op;
     
     memset( &op, 0, sizeof( op ) );
-    
+#if 0
     while( !r && ( ogg_stream_packetout( &g_ogm.os_video, &op ) ) )
     {
         ogg_int64_t     th_frame;
@@ -538,7 +542,7 @@ static S32 loadVideoFrameTheora( void )
         
         
     }
-    
+#endif
     return r;
 }
 #endif
@@ -560,7 +564,7 @@ static S32 loadVideoFrame( void )
     if( g_ogm.videoStreamIsTheora )
         return loadVideoFrameTheora();
 #endif
-        
+#if 0
     // if we come to this point, there will be no codec that use the stream content ...
     if( g_ogm.os_video.serialno )
     {
@@ -568,7 +572,7 @@ static S32 loadVideoFrame( void )
         
         while( ogg_stream_packetout( &g_ogm.os_video, &op ) );
     }
-    
+#endif
     return 1;
 }
 
@@ -684,6 +688,7 @@ bool isPowerOf2( S32 x )
 //TODO: "clean" error-returns ...
 S32 Cin_OGM_Init( StringEntry filename )
 {
+#if 0
     S32             status;
     ogg_page        og;
     ogg_packet      op;
@@ -697,7 +702,7 @@ S32 Cin_OGM_Init( StringEntry filename )
     
     memset( &g_ogm, 0, sizeof( cin_ogm_t ) );
     
-    FS_FOpenFileRead( filename, &g_ogm.ogmFile, true );
+    fileSystem->FOpenFileRead( filename, &g_ogm.ogmFile, true );
     if( !g_ogm.ogmFile )
     {
         Com_Printf( S_COLOR_YELLOW "WARNING: Can't open ogm-file for reading (%s)\n", filename );
@@ -899,7 +904,7 @@ S32 Cin_OGM_Init( StringEntry filename )
 #endif
     
     Com_DPrintf( "OGM-Init done (%s)\n", filename );
-    
+#endif
     return 0;
 }
 
@@ -944,6 +949,7 @@ U8*  Cin_OGM_GetOutput( S32* outWidth, S32* outHeight )
 
 void Cin_OGM_Shutdown()
 {
+#if 0
 #ifdef USE_CIN_XVID
     S32             status;
     
@@ -971,6 +977,7 @@ void Cin_OGM_Shutdown()
     
     ogg_sync_clear( &g_ogm.oy );
     
-    FS_FCloseFile( g_ogm.ogmFile );
+    fileSystem->FCloseFile( g_ogm.ogmFile );
     g_ogm.ogmFile = 0;
+#endif
 }

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   qcommon.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: definitions common between client and server, but not game or ref module
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,7 @@
 
 #ifdef _PHYSICSLIB
 #ifndef __PHYSICS_PUBLIC_H__
-#include <physicslib/physics_public.h>
+#include <API/physics_api.h>
 #endif
 #endif
 
@@ -506,338 +506,6 @@ void            Cmd_ExecuteString( StringEntry text );
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
 
-
-/*
-==============================================================
-
-CVAR
-
-==============================================================
-*/
-
-/*
-
-cvar_t variables are used to hold scalar or string variables that can be changed
-or displayed at the console or prog code as well as accessed directly
-in C code.
-
-The user can access cvars from the console in three ways:
-r_draworder			prints the current value
-r_draworder 0		sets the current value to 0
-set r_draworder 0	as above, but creates the cvar if not present
-
-Cvars are restricted from having the same names as commands to keep this
-interface from being ambiguous.
-
-The are also occasionally used to communicated information between different
-modules of the program.
-
-*/
-
-cvar_t*         Cvar_Get( StringEntry var_name, StringEntry value, S32 flags );
-
-// creates the variable if it doesn't exist, or returns the existing one
-// if it exists, the value will not be changed, but flags will be ORed in
-// that allows variables to be unarchived without needing bitflags
-// if value is "", the value will not override a previously set value.
-
-void            Cvar_Register( vmCvar_t* vmCvar, StringEntry varName, StringEntry defaultValue, S32 flags );
-
-// basically a slightly modified Cvar_Get for the interpreted modules
-
-void            Cvar_Update( vmCvar_t* vmCvar );
-
-// updates an interpreted modules' version of a cvar
-
-void            Cvar_Set( StringEntry var_name, StringEntry value );
-
-// will create the variable with no flags if it doesn't exist
-
-void            Cvar_SetLatched( StringEntry var_name, StringEntry value );
-
-// don't set the cvar immediately
-
-void            Cvar_SetValue( StringEntry var_name, F32 value );
-void			Cvar_SetValueSafe( StringEntry var_name, F32 value );
-void            Cvar_SetValueLatched( StringEntry var_name, F32 value );
-
-// expands value to a string and calls Cvar_Set
-
-F32           Cvar_VariableValue( StringEntry var_name );
-S32             Cvar_VariableIntegerValue( StringEntry var_name );
-
-// returns 0 if not defined or non numeric
-
-UTF8*           Cvar_VariableString( StringEntry var_name );
-void            Cvar_VariableStringBuffer( StringEntry var_name, UTF8* buffer, S32 bufsize );
-
-// returns an empty string if not defined
-void            Cvar_LatchedVariableStringBuffer( StringEntry var_name, UTF8* buffer, S32 bufsize );
-
-// Gordon: returns the latched value if there is one, else the normal one, empty string if not defined as usual
-
-S32	Cvar_Flags( StringEntry var_name );
-void            Cvar_CommandCompletion( void ( *callback )( StringEntry s ) );
-
-// callback with each valid string
-
-void            Cvar_Reset( StringEntry var_name );
-
-void            Cvar_SetCheatState( void );
-
-// reset all testing vars to a safe value
-
-bool        Cvar_Command( void );
-
-// called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
-// command.  Returns true if the command was a variable reference that
-// was handled. (print or change)
-
-void            Cvar_WriteVariables( fileHandle_t f );
-
-// writes lines containing "set variable value" for all variables
-// with the archive flag set to true.
-void Cvar_CompleteCvarName( UTF8* args, S32 argNum );
-void            Cvar_Init( void );
-
-UTF8*           Cvar_InfoString( S32 bit );
-UTF8*           Cvar_InfoString_Big( S32 bit );
-
-// returns an info string containing all the cvars that have the given bit set
-// in their flags ( CVAR_USERINFO, CVAR_SERVERINFO, CVAR_SYSTEMINFO, etc )
-void            Cvar_InfoStringBuffer( S32 bit, UTF8* buff, S32 buffsize );
-void            Cvar_CheckRange( cvar_t* cv, F32 minVal, F32 maxVal, bool shouldBeIntegral );
-
-void            Cvar_Restart_f( void );
-
-extern S32      cvar_modifiedFlags;
-
-// whenever a cvar is modifed, its flags will be OR'd into this, so
-// a single check can determine if any CVAR_USERINFO, CVAR_SERVERINFO,
-// etc, variables have been modified since the last check.  The bit
-// can then be cleared to allow another change detection.
-
-/*
-==============================================================
-
-FILESYSTEM
-
-No stdio calls should be used by any part of the game, because
-we need to deal with all sorts of directory and seperator UTF8
-issues.
-==============================================================
-*/
-
-// referenced flags
-// these are in loop specific order so don't change the order
-#define FS_GENERAL_REF  0x01
-#define FS_UI_REF       0x02
-#define FS_CGAME_REF    0x04
-#define FS_QAGAME_REF   0x08
-// number of id paks that will never be autodownloaded from baseq3
-#define NUM_ID_PAKS     9
-
-#define MAX_FILE_HANDLES    64
-
-#ifdef WIN32
-#define Q_rmdir _rmdir
-#else
-#define Q_rmdir rmdir
-#endif
-
-bool        FS_Initialized();
-
-void            FS_InitFilesystem( void );
-void            FS_Shutdown( bool closemfp );
-
-bool        FS_ConditionalRestart( S32 checksumFeed );
-void            FS_Restart( S32 checksumFeed );
-
-// shutdown and restart the filesystem so changes to fs_gamedir can take effect
-
-UTF8**          FS_ListFiles( StringEntry directory, StringEntry extension, S32* numfiles );
-
-// directory should not have either a leading or trailing /
-// if extension is "/", only subdirectories will be returned
-// the returned files will not include any directories or /
-
-void            FS_FreeFileList( UTF8** list );
-
-bool        FS_FileExists( StringEntry file );
-bool        FS_OS_FileExists( StringEntry file );	// TTimo - test file existence given OS path
-
-S32             FS_LoadStack();
-
-S32             FS_GetFileList( StringEntry path, StringEntry extension, UTF8* listbuf, S32 bufsize );
-S32             FS_GetModList( UTF8* listbuf, S32 bufsize );
-
-fileHandle_t    FS_FOpenFileWrite( StringEntry qpath );
-
-// will properly create any needed paths and deal with seperater character issues
-
-S32             FS_filelength( fileHandle_t f );
-fileHandle_t    FS_SV_FOpenFileWrite( StringEntry filename );
-S32             FS_SV_FOpenFileRead( StringEntry filename, fileHandle_t* fp );
-void            FS_SV_Rename( StringEntry from, StringEntry to );
-S32             FS_FOpenFileRead( StringEntry qpath, fileHandle_t* file, bool uniqueFILE );
-
-/*
-if uniqueFILE is true, then a new FILE will be fopened even if the file
-is found in an already open pak file.  If uniqueFILE is false, you must call
-FS_FCloseFile instead of fclose, otherwise the pak FILE would be improperly closed
-It is generally safe to always set uniqueFILE to true, because the majority of
-file IO goes through FS_ReadFile, which Does The Right Thing already.
-*/
-/* TTimo
-show_bug.cgi?id=506
-added exclude flag to filter out regular dirs or pack files on demand
-would rather have used FS_FOpenFileRead(..., S32 filter_flag = 0)
-but that's a C++ construct ..
-*/
-#define FS_EXCLUDE_DIR 0x1
-#define FS_EXCLUDE_PK3 0x2
-S32             FS_FOpenFileRead_Filtered( StringEntry qpath, fileHandle_t* file, bool uniqueFILE, S32 filter_flag );
-
-S32             FS_FileIsInPAK( StringEntry filename, S32* pChecksum );
-
-// returns 1 if a file is in the PAK file, otherwise -1
-
-S32             FS_Delete( UTF8* filename );	// only works inside the 'save' directory (for deleting savegames/images)
-S32             FS_Write( const void* buffer, S32 len, fileHandle_t f );
-S32				FS_FPrintf( fileHandle_t f, StringEntry fmt, ... );
-S32             FS_Read2( void* buffer, S32 len, fileHandle_t f );
-S32             FS_Read( void* buffer, S32 len, fileHandle_t f );
-
-// properly handles partial reads and reads from other dlls
-
-void            FS_FCloseFile( fileHandle_t f );
-
-// note: you can't just fclose from another DLL, due to MS libc issues
-
-S64	        FS_ReadFileDir( StringEntry qpath, void* searchPath, void** buffer );
-S32             FS_ReadFile( StringEntry qpath, void** buffer );
-
-// returns the length of the file
-// a null buffer will just return the file length without loading
-// as a quick check for existance. -1 length == not present
-// A 0 U8 will always be appended at the end, so string ops are safe.
-// the buffer should be considered read-only, because it may be cached
-// for other uses.
-
-void			FS_ForceFlush( fileHandle_t f );
-// forces flush on files we're writing to.
-
-void            FS_FreeFile( void* buffer );
-
-// frees the memory returned by FS_ReadFile
-
-void            FS_WriteFile( StringEntry qpath, const void* buffer, S32 size );
-
-// writes a complete file, creating any subdirectories needed
-
-S32             FS_filelength( fileHandle_t f );
-
-// doesn't work for files that are opened from a pack file
-
-S32             FS_FTell( fileHandle_t f );
-
-// where are we?
-
-void            FS_Flush( fileHandle_t f );
-
-void       FS_Printf( fileHandle_t f, StringEntry fmt, ... ) __attribute__( ( format( printf, 2, 3 ) ) );
-
-// like fprintf
-
-S32             FS_FOpenFileByMode( StringEntry qpath, fileHandle_t* f, fsMode_t mode );
-
-// opens a file for reading, writing, or appending depending on the value of mode
-
-S32             FS_Seek( fileHandle_t f, S64 offset, S32 origin );
-
-// seek on a file (doesn't work for zip files!!!!!!!!)
-
-bool        FS_FilenameCompare( StringEntry s1, StringEntry s2 );
-
-StringEntry     FS_GamePureChecksum( void );
-
-// Returns the checksum of the pk3 from which the server loaded the qagame.qvm
-
-StringEntry     FS_LoadedPakNames( void );
-StringEntry     FS_LoadedPakChecksums( void );
-StringEntry     FS_LoadedPakPureChecksums( void );
-
-// Returns a space separated string containing the checksums of all loaded pk3 files.
-// Servers with sv_pure set will get this string and pass it to clients.
-
-StringEntry     FS_ReferencedPakNames( void );
-StringEntry     FS_ReferencedPakChecksums( void );
-StringEntry     FS_ReferencedPakPureChecksums( void );
-
-// Returns a space separated string containing the checksums of all loaded
-// AND referenced pk3 files. Servers with sv_pure set will get this string
-// back from clients for pure validation
-
-void            FS_ClearPakReferences( S32 flags );
-
-// clears referenced booleans on loaded pk3s
-
-void            FS_PureServerSetReferencedPaks( StringEntry pakSums, StringEntry pakNames );
-void            FS_PureServerSetLoadedPaks( StringEntry pakSums, StringEntry pakNames );
-
-// If the string is empty, all data sources will be allowed.
-// If not empty, only pk3 files that match one of the space
-// separated checksums will be checked for files, with the
-// sole exception of .cfg files.
-
-bool        FS_idPak( UTF8* pak, UTF8* base );
-bool        FS_VerifyOfficialPaks( void );
-bool        FS_ComparePaks( UTF8* neededpaks, S32 len, bool dlstring );
-
-void            FS_Rename( StringEntry from, StringEntry to );
-
-UTF8*           FS_BuildOSPath( StringEntry base, StringEntry game, StringEntry qpath );
-void            FS_BuildOSHomePath( UTF8* ospath, S32 size, StringEntry qpath );
-
-#if !defined( DEDICATED )
-extern S32      cl_connectedToPureServer;
-bool        FS_CL_ExtractFromPakFile( StringEntry base, StringEntry gamedir, StringEntry filename );
-#endif
-
-#if defined( DO_LIGHT_DEDICATED )
-S32             FS_RandChecksumFeed();
-#endif
-
-UTF8*           FS_ShiftedStrStr( StringEntry string, StringEntry substring, S32 shift );
-UTF8*           FS_ShiftStr( StringEntry string, S32 shift );
-
-void            FS_CopyFile( UTF8* fromOSPath, UTF8* toOSPath );
-
-UTF8*           FS_FindDll( StringEntry filename );
-
-S32             FS_CreatePath( StringEntry OSPath );
-
-bool        FS_VerifyPak( StringEntry pak );
-
-bool        FS_IsPure( void );
-
-U32    FS_ChecksumOSPath( UTF8* OSPath );
-
-// XreaL BEGIN
-void			FS_HomeRemove( StringEntry homePath );
-// XreaL END
-
-void            FS_FilenameCompletion( StringEntry dir, StringEntry ext, bool stripExt, void( *callback )( StringEntry s ) );
-
-StringEntry     FS_GetCurrentGameDir( void );
-bool        FS_Which( StringEntry filename, void* searchPath );
-
-bool        FS_SV_FileExists( StringEntry file );
-// return the current gamedir (eg. "main", "mymod"...)
-StringEntry     FS_GetGameDir();
-// remove a file from the homepath (eg. C:\users\(name)\My Documents\My Games\OpenWolf\; ~/.OpenWolf/).
-bool        FS_OW_RemoveFile( StringEntry filepath );
-
 /*
 ==============================================================
 
@@ -846,7 +514,7 @@ DOWNLOAD
 ==============================================================
 */
 
-#include "dl_public.h"
+#include <API/download_api.h>
 
 /*
 ==============================================================
@@ -973,6 +641,8 @@ extern cvar_t*  com_watchdog_cmd;
 extern cvar_t*  com_sessionid;
 #endif
 
+extern	cvar_t*	com_affinity;
+
 // both client and server must agree to pause
 extern cvar_t*  cl_paused;
 extern cvar_t*  sv_paused;
@@ -1070,7 +740,6 @@ void            Com_Shutdown( bool badProfile );
 
 void			CL_ShutdownCGame( void );
 void			CL_ShutdownUI( void );
-void			SV_ShutdownGameProgs( void );
 
 /*
 ==============================================================
@@ -1166,8 +835,6 @@ void            SV_Init( void );
 void            SV_Shutdown( UTF8* finalmsg );
 void            SV_Frame( S32 msec );
 void            SV_PacketEvent( netadr_t from, msg_t* msg );
-bool        SV_GameCommand( void );
-
 
 //
 // UI interface
@@ -1409,7 +1076,5 @@ void            Com_RandomBytes( U8* string, S32 len );
 #if !defined ( BSPC )
 void            Com_QueueEvent( S32 time, sysEventType_t type, S32 value, S32 value2, S32 ptrLength, void* ptr );
 #endif
-
-void FS_FMOD_OpenSoundFile( StringEntry name, void** buff, S32* length );
 
 #endif //!__QCOMMON_H__

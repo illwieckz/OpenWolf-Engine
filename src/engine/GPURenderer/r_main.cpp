@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: main control flow for each frame
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1058,7 +1058,7 @@ be moving and rotating.
 Returns true if it should be mirrored
 =================
 */
-bool R_GetPortalOrientations( drawSurf_t* drawSurf, S64 entityNum, orientation_t* surface, orientation_t* camera, vec3_t pvsOrigin, bool* mirror )
+bool R_GetPortalOrientations( drawSurf_t* drawSurf, S32 entityNum, orientation_t* surface, orientation_t* camera, vec3_t pvsOrigin, bool* mirror )
 {
     S32			i;
     cplane_t	originalPlane, plane;
@@ -1188,7 +1188,7 @@ bool R_GetPortalOrientations( drawSurf_t* drawSurf, S64 entityNum, orientation_t
     return false;
 }
 
-static bool IsMirror( const drawSurf_t* drawSurf, S64 entityNum )
+static bool IsMirror( const drawSurf_t* drawSurf, S32 entityNum )
 {
     S32			i;
     cplane_t	originalPlane, plane;
@@ -1254,12 +1254,12 @@ static bool IsMirror( const drawSurf_t* drawSurf, S64 entityNum )
 static bool SurfIsOffscreen( const drawSurf_t* drawSurf, vec4_t clipDest[128] )
 {
     F32 shortest = 100000000;
-    S64 entityNum;
+    S32 entityNum;
     S32 numTriangles;
     shader_t* shader;
-    S64	fogNum;
-    S64 dlighted;
-    S64 pshadowed;
+    S32		fogNum;
+    S32 dlighted;
+    S32 pshadowed;
     vec4_t clip, eye;
     S32 i;
     U32 pointOr = 0;
@@ -1269,7 +1269,7 @@ static bool SurfIsOffscreen( const drawSurf_t* drawSurf, vec4_t clipDest[128] )
     
     R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed );
     RB_BeginSurface( shader, fogNum, drawSurf->cubemapIndex );
-    rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+    rb_surfaceTable[*drawSurf->surface]( drawSurf->surface );
     
     assert( tess.numVertexes < 128 );
     
@@ -1329,7 +1329,6 @@ static bool SurfIsOffscreen( const drawSurf_t* drawSurf, vec4_t clipDest[128] )
             numTriangles--;
         }
     }
-    
     if( !numTriangles )
     {
         return true;
@@ -1357,7 +1356,7 @@ R_MirrorViewBySurface
 Returns true if another view has been rendered
 ========================
 */
-bool R_MirrorViewBySurface( drawSurf_t* drawSurf, S64 entityNum )
+bool R_MirrorViewBySurface( drawSurf_t* drawSurf, S32 entityNum )
 {
     vec4_t			clipDest[128];
     viewParms_t		newParms;
@@ -1507,21 +1506,13 @@ Radix sort with 4 byte size buckets
 */
 static void R_RadixSort( drawSurf_t* source, S32 size )
 {
-    static drawSurf_t scratch[ MAX_DRAWSURFS ];
+    static drawSurf_t scratch[MAX_DRAWSURFS];
 #ifdef Q3_LITTLE_ENDIAN
     R_Radix( 0, size, source, scratch );
     R_Radix( 1, size, scratch, source );
     R_Radix( 2, size, source, scratch );
     R_Radix( 3, size, scratch, source );
-    R_Radix( 4, size, source, scratch ); // added 4..7 for 64bit sorting
-    R_Radix( 5, size, scratch, source );
-    R_Radix( 6, size, source, scratch );
-    R_Radix( 7, size, scratch, source );
 #else
-    R_Radix( 7, size, source, scratch );
-    R_Radix( 6, size, scratch, source );
-    R_Radix( 5, size, source, scratch );
-    R_Radix( 4, size, scratch, source );
     R_Radix( 3, size, source, scratch );
     R_Radix( 2, size, scratch, source );
     R_Radix( 1, size, source, scratch );
@@ -1531,12 +1522,22 @@ static void R_RadixSort( drawSurf_t* source, S32 size )
 
 //==========================================================================================
 
+bool R_IsPostRenderEntity( S32 refEntityNum, const trRefEntity_t* refEntity )
+{
+    if( refEntityNum == REFENTITYNUM_WORLD )
+    {
+        return false;
+    }
+    
+    return ( refEntity->e.renderfx & RF_FORCE_ENT_ALPHA );
+}
+
 /*
 =================
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S64 fogIndex, S64 dlightMap, S64 pshadowMap, S64 cubemap )
+void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S32 fogIndex, S32 dlightMap, S32 pshadowMap, S32 cubemap )
 {
     S32	index;
     
@@ -1547,7 +1548,7 @@ void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S64 fogIndex, S64 
     // compared quickly during the qsorting process
     tr.refdef.drawSurfs[index].sort = ( shader->sortedIndex << QSORT_SHADERNUM_SHIFT )
                                       | tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT )
-                                      | ( ( S64 )pshadowMap << QSORT_PSHADOW_SHIFT ) | ( S64 )dlightMap;
+                                      | ( pshadowMap << QSORT_PSHADOW_SHIFT ) | dlightMap;
     tr.refdef.drawSurfs[index].cubemapIndex = cubemap;
     tr.refdef.drawSurfs[index].surface = surface;
     tr.refdef.numDrawSurfs++;
@@ -1558,10 +1559,10 @@ void R_AddDrawSurf( surfaceType_t* surface, shader_t* shader, S64 fogIndex, S64 
 R_DecomposeSort
 =================
 */
-void R_DecomposeSort( const U64 sort, S64* entityNum, shader_t** shader, S64* fogNum, S64* dlightMap, S64* pshadowMap )
+void R_DecomposeSort( U32 sort, S32* entityNum, shader_t** shader, S32* fogNum, S32* dlightMap, S32* pshadowMap )
 {
     *fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
-    *shader = tr.sortedShaders[( sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 ) ];
+    *shader = tr.sortedShaders[( sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 )];
     *entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & REFENTITYNUM_MASK;
     *pshadowMap = ( sort >> QSORT_PSHADOW_SHIFT ) & 1;
     *dlightMap = sort & 1;
@@ -1575,10 +1576,10 @@ R_SortDrawSurfs
 void R_SortDrawSurfs( drawSurf_t* drawSurfs, S32 numDrawSurfs )
 {
     shader_t*		shader;
-    S64				fogNum;
-    S64				entityNum;
-    S64				dlighted;
-    S64             pshadowed;
+    S32				fogNum;
+    S32				entityNum;
+    S32				dlighted;
+    S32             pshadowed;
     S32				i;
     
     //CL_RefPrintf(PRINT_ALL, "firstDrawSurf %d numDrawSurfs %d\n", (S32)(drawSurfs - tr.refdef.drawSurfs), numDrawSurfs);
@@ -1603,7 +1604,7 @@ void R_SortDrawSurfs( drawSurf_t* drawSurfs, S32 numDrawSurfs )
     
     // check for any pass through drawing, which
     // may cause another view to be rendered first
-    for( i = 0 ; i < numDrawSurfs ; i++ )
+    for( i = 0; i < numDrawSurfs; i++ )
     {
         R_DecomposeSort( ( drawSurfs + i )->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed );
         
@@ -1880,7 +1881,6 @@ void R_RenderView( viewParms_t* parms )
     // draw main system development information (surface outlines, etc)
     R_DebugGraphics();
 }
-
 
 void R_RenderDlightCubemaps( const refdef_t* fd )
 {
@@ -2258,7 +2258,7 @@ void R_RenderPshadowMaps( const refdef_t* fd )
                 dest->projectionMatrix[11] = 0;
                 dest->projectionMatrix[15] = 1;
                 
-                VectorScale( dest->orientation.axis[1],  1.0f, dest->frustum[0].normal );
+                VectorScale( dest->orientation.axis[1], 1.0f, dest->frustum[0].normal );
                 VectorMA( dest->orientation.origin, -shadow->viewRadius, dest->frustum[0].normal, pop );
                 dest->frustum[0].dist = DotProduct( pop, dest->frustum[0].normal );
                 
@@ -2266,7 +2266,7 @@ void R_RenderPshadowMaps( const refdef_t* fd )
                 VectorMA( dest->orientation.origin, -shadow->viewRadius, dest->frustum[1].normal, pop );
                 dest->frustum[1].dist = DotProduct( pop, dest->frustum[1].normal );
                 
-                VectorScale( dest->orientation.axis[2],  1.0f, dest->frustum[2].normal );
+                VectorScale( dest->orientation.axis[2], 1.0f, dest->frustum[2].normal );
                 VectorMA( dest->orientation.origin, -shadow->viewRadius, dest->frustum[2].normal, pop );
                 dest->frustum[2].dist = DotProduct( pop, dest->frustum[2].normal );
                 
@@ -2307,11 +2307,11 @@ static F32 CalcSplit( F32 n, F32 f, F32 i, F32 m )
 
 void R_RenderSunShadowMaps( const refdef_t* fd, S32 level )
 {
-    viewParms_t		shadowParms;
+    viewParms_t	shadowParms;
     vec4_t lightDir, lightCol;
     vec3_t lightViewAxis[3];
     vec3_t lightOrigin;
-    F32 splitZNear, splitZFar, splitBias;
+    F32 splitZNear, splitZFar;
     F32 viewZNear, viewZFar;
     vec3_t lightviewBounds[2];
     bool lightViewIndependentOfCameraView = false;
@@ -2351,7 +2351,7 @@ void R_RenderSunShadowMaps( const refdef_t* fd, S32 level )
     
     viewZNear = r_shadowCascadeZNear->value;
     viewZFar = r_shadowCascadeZFar->value;
-    splitBias = r_shadowCascadeZBias->value;
+    F32 splitBias = r_shadowCascadeZBias->value;
     
     switch( level )
     {
@@ -2633,6 +2633,12 @@ void R_RenderSunShadowMaps( const refdef_t* fd, S32 level )
             
             tr.viewCount++;
             
+            F32 ORIG_RANGE = tr.viewParms.maxEntityRange;
+            
+            tr.viewParms.flags |= VPF_SHADOWPASS;
+            tr.viewParms.maxEntityRange = splitZFar;
+            if( tr.viewParms.maxEntityRange < splitZFar + 2048 ) tr.viewParms.maxEntityRange = splitZFar + 2048;
+            
             // set viewParms.world
             R_RotateForViewer();
             
@@ -2645,6 +2651,9 @@ void R_RenderSunShadowMaps( const refdef_t* fd, S32 level )
             R_AddEntitySurfaces();
             
             R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
+            
+            tr.viewParms.flags &= ~VPF_SHADOWPASS;
+            tr.viewParms.maxEntityRange = ORIG_RANGE;
         }
         
         Mat4Multiply( tr.viewParms.projectionMatrix, tr.viewParms.world.modelMatrix, tr.refdef.sunShadowMvp[level] );

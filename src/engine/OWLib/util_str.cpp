@@ -28,18 +28,22 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   util_str.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
+#include <OWLib/q_splineshared.h>
 #include <OWLib/util_str.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdarg.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
 #ifdef _WIN32
 #pragma warning(disable : 4244) // 'conversion' conversion from 'type1' to 'type2', possible loss of data

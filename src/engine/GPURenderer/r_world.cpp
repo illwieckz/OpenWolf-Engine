@@ -21,14 +21,17 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_world.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <OWLib/precompiled.h>
+
+extern bool TR_WorldToScreen( vec3_t worldCoord, F32* x, F32* y );
+extern void TR_AxisToAngles( const vec3_t axis[3], vec3_t angles );
 
 /*
 ================
@@ -38,7 +41,7 @@ Tries to cull surfaces before they are lighted or
 added to the sorting list.
 ================
 */
-static bool	R_CullSurface( msurface_t* surf )
+static bool R_CullSurface( msurface_t* surf, S32 entityNum )
 {
     if( r_nocull->integer || surf->cullinfo.type == CULLINFO_NONE )
     {
@@ -52,6 +55,11 @@ static bool	R_CullSurface( msurface_t* surf )
     
     if( surf->cullinfo.type & CULLINFO_PLANE )
     {
+        if( tr.currentModel && tr.currentModel->type == MOD_BRUSH )
+        {
+            return false;
+        }
+        
         // Only true for SF_FACE, so treat like its own function
         F32			d;
         cullType_t ct;
@@ -72,7 +80,7 @@ static bool	R_CullSurface( msurface_t* surf )
         /*
         if ( tr.viewParms.flags & VPF_DEPTHSHADOW )
         {
-        	return false;
+            return false;
         }
         */
         
@@ -131,9 +139,9 @@ static bool	R_CullSurface( msurface_t* surf )
     
     if( surf->cullinfo.type & CULLINFO_SPHERE )
     {
-        S32 	sphereCull;
+        S32 sphereCull;
         
-        if( tr.currentEntityNum != REFENTITYNUM_WORLD )
+        if( entityNum != REFENTITYNUM_WORLD )
         {
             sphereCull = R_CullLocalPointAndRadius( surf->cullinfo.localOrigin, surf->cullinfo.radius );
         }
@@ -152,7 +160,7 @@ static bool	R_CullSurface( msurface_t* surf )
     {
         S32 boxCull;
         
-        if( tr.currentEntityNum != REFENTITYNUM_WORLD )
+        if( entityNum != REFENTITYNUM_WORLD )
         {
             boxCull = R_CullLocalBox( surf->cullinfo.bounds );
         }
@@ -169,7 +177,6 @@ static bool	R_CullSurface( msurface_t* surf )
     
     return false;
 }
-
 
 /*
 ====================
@@ -188,7 +195,7 @@ static S32 R_DlightSurface( msurface_t* surf, S32 dlightBits )
     
     if( surf->cullinfo.type & CULLINFO_PLANE )
     {
-        for( i = 0 ; i < tr.refdef.num_dlights ; i++ )
+        for( i = 0; i < tr.refdef.num_dlights; i++ )
         {
             if( !( dlightBits & ( 1 << i ) ) )
             {
@@ -206,7 +213,7 @@ static S32 R_DlightSurface( msurface_t* surf, S32 dlightBits )
     
     if( surf->cullinfo.type & CULLINFO_BOX )
     {
-        for( i = 0 ; i < tr.refdef.num_dlights ; i++ )
+        for( i = 0; i < tr.refdef.num_dlights; i++ )
         {
             if( !( dlightBits & ( 1 << i ) ) )
             {
@@ -228,7 +235,7 @@ static S32 R_DlightSurface( msurface_t* surf, S32 dlightBits )
     
     if( surf->cullinfo.type & CULLINFO_SPHERE )
     {
-        for( i = 0 ; i < tr.refdef.num_dlights ; i++ )
+        for( i = 0; i < tr.refdef.num_dlights; i++ )
         {
             if( !( dlightBits & ( 1 << i ) ) )
             {
@@ -283,7 +290,7 @@ static S32 R_PshadowSurface( msurface_t* surf, S32 pshadowBits )
     
     if( surf->cullinfo.type & CULLINFO_PLANE )
     {
-        for( i = 0 ; i < tr.refdef.num_pshadows ; i++ )
+        for( i = 0; i < tr.refdef.num_pshadows; i++ )
         {
             if( !( pshadowBits & ( 1 << i ) ) )
             {
@@ -301,7 +308,7 @@ static S32 R_PshadowSurface( msurface_t* surf, S32 pshadowBits )
     
     if( surf->cullinfo.type & CULLINFO_BOX )
     {
-        for( i = 0 ; i < tr.refdef.num_pshadows ; i++ )
+        for( i = 0; i < tr.refdef.num_pshadows; i++ )
         {
             if( !( pshadowBits & ( 1 << i ) ) )
             {
@@ -324,7 +331,7 @@ static S32 R_PshadowSurface( msurface_t* surf, S32 pshadowBits )
     
     if( surf->cullinfo.type & CULLINFO_SPHERE )
     {
-        for( i = 0 ; i < tr.refdef.num_pshadows ; i++ )
+        for( i = 0; i < tr.refdef.num_pshadows; i++ )
         {
             if( !( pshadowBits & ( 1 << i ) ) )
             {
@@ -367,31 +374,32 @@ static S32 R_PshadowSurface( msurface_t* surf, S32 pshadowBits )
 R_AddWorldSurface
 ======================
 */
-static void R_AddWorldSurface( msurface_t* surf, S32 dlightBits, S32 pshadowBits )
+static void R_AddWorldSurface( msurface_t* surf, S32 entityNum, S32 dlightBits, S32 pshadowBits, bool dontCache )
 {
     // FIXME: bmodel fog?
+    S32 cubemapIndex = 0;
     
     // try to cull before dlighting or adding
-    if( R_CullSurface( surf ) )
+    if( R_CullSurface( surf, entityNum ) )
     {
         return;
     }
     
     // check for dlighting
-    /*if ( dlightBits ) */
+    //if ( dlightBits )
     {
         dlightBits = R_DlightSurface( surf, dlightBits );
         dlightBits = ( dlightBits != 0 );
     }
     
     // check for pshadows
-    /*if ( pshadowBits ) */
+    //if ( pshadowBits )
     {
         pshadowBits = R_PshadowSurface( surf, pshadowBits );
         pshadowBits = ( pshadowBits != 0 );
     }
     
-    R_AddDrawSurf( surf->data, surf->shader, surf->fogIndex, dlightBits, pshadowBits, surf->cubemapIndex );
+    R_AddDrawSurf( surf->data, surf->shader, surf->fogIndex, dlightBits, R_IsPostRenderEntity( tr.currentEntityNum, tr.currentEntity ), surf->cubemapIndex );
 }
 
 /*
@@ -427,14 +435,14 @@ void R_AddBrushModelSurfaces( trRefEntity_t* ent )
     R_SetupEntityLighting( &tr.refdef, ent );
     R_DlightBmodel( bmodel );
     
-    for( i = 0 ; i < bmodel->numSurfaces ; i++ )
+    for( i = 0; i < bmodel->numSurfaces; i++ )
     {
         S32 surf = bmodel->firstSurface + i;
         
         if( tr.world->surfacesViewCount[surf] != tr.viewCount )
         {
             tr.world->surfacesViewCount[surf] = tr.viewCount;
-            R_AddWorldSurface( tr.world->surfaces + surf, tr.currentEntity->needDlights, 0 );
+            R_AddWorldSurface( tr.world->surfaces + surf, tr.currentEntityNum, tr.currentEntity->needDlights, 0, true );
         }
     }
 }
@@ -551,6 +559,7 @@ static void R_RecursiveWorldNode( mnode_t* node, U32 planeBits, U32 dlightBits, 
         // since we don't care about sort orders, just go positive to negative
         
         // determine which dlights are needed
+#if 0
         newDlights[0] = 0;
         newDlights[1] = 0;
         if( dlightBits )
@@ -578,6 +587,10 @@ static void R_RecursiveWorldNode( mnode_t* node, U32 planeBits, U32 dlightBits, 
                 }
             }
         }
+#else
+        newDlights[0] = 0;
+        newDlights[1] = 0;
+#endif
         
         newPShadows[0] = 0;
         newPShadows[1] = 0;
@@ -919,7 +932,7 @@ void R_AddWorldSurfaces( void )
             if( tr.world->surfacesViewCount[i] != tr.viewCount )
                 continue;
                 
-            R_AddWorldSurface( tr.world->surfaces + i, tr.world->surfacesDlightBits[i], tr.world->surfacesPshadowBits[i] );
+            R_AddWorldSurface( tr.world->surfaces + i, tr.currentEntityNum, tr.world->surfacesDlightBits[i], tr.world->surfacesPshadowBits[i], true );
             tr.refdef.dlightMask |= tr.world->surfacesDlightBits[i];
         }
         

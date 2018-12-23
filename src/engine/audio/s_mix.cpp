@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_mix.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ void S_TransferStereo16( U64* pbuf, S32 endtime )
         ls_paintedtime += ( snd_linear_count >> 1 );
         
         if( CL_VideoRecording() )
-            CL_WriteAVIAudioFrame( ( byte* ) snd_out, snd_linear_count << 1 );
+            CL_WriteAVIAudioFrame( ( U8* ) snd_out, snd_linear_count << 1 );
     }
 }
 

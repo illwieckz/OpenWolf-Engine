@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sv_snapshot.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +371,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
     
     c_fullsend = 0;
     
-    playerEnt = SV_GentityNum( frame->ps.clientNum );
+    playerEnt = serverGameSystem->GentityNum( frame->ps.clientNum );
     if( playerEnt->r.svFlags & SVF_SELF_PORTAL )
     {
         SV_AddEntitiesVisibleFromPoint( playerEnt->s.origin2, frame, eNums );
@@ -379,7 +379,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
     
     for( e = 0; e < sv.num_entities; e++ )
     {
-        ent = SV_GentityNum( e );
+        ent = serverGameSystem->GentityNum( e );
         
         // never send entities that aren't linked in
         if( !ent->r.linked )
@@ -434,7 +434,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
             }
         }
         
-        svEnt = SV_SvEntityForGentity( ent );
+        svEnt = serverGameSystem->SvEntityForGentity( ent );
         
         // don't double add an entity through portals
         if( svEnt->snapshotCounter == sv.snapshotCounter )
@@ -518,13 +518,13 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
             sharedEntity_t* ment = 0;
             
             //find master;
-            ment = SV_GentityNum( ent->s.otherEntityNum );
+            ment = serverGameSystem->GentityNum( ent->s.otherEntityNum );
             
             if( ment )
             {
                 svEntity_t* master = 0;
                 
-                master = SV_SvEntityForGentity( ment );
+                master = serverGameSystem->SvEntityForGentity( ment );
                 
                 if( master->snapshotCounter == sv.snapshotCounter || !ment->r.linked )
                 {
@@ -543,7 +543,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
             
             for( h = 0; h < sv.num_entities; h++ )
             {
-                ment = SV_GentityNum( h );
+                ment = serverGameSystem->GentityNum( h );
                 
                 if( ment == ent )
                 {
@@ -552,7 +552,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
                 
                 if( ment )
                 {
-                    master = SV_SvEntityForGentity( ment );
+                    master = serverGameSystem->SvEntityForGentity( ment );
                 }
                 else
                 {
@@ -654,7 +654,7 @@ static void SV_BuildClientSnapshot( client_t* client )
     }
     
     // grab the current playerState_t
-    ps = SV_GameClientNum( client - svs.clients );
+    ps = serverGameSystem->GameClientNum( client - svs.clients );
     frame->ps = *ps;
     
     // never send client's own entity, because it can
@@ -714,7 +714,7 @@ static void SV_BuildClientSnapshot( client_t* client )
     frame->first_entity = svs.nextSnapshotEntities;
     for( i = 0; i < entityNumbers.numSnapshotEntities; i++ )
     {
-        ent = SV_GentityNum( entityNumbers.snapshotEntities[i] );
+        ent = serverGameSystem->GentityNum( entityNumbers.snapshotEntities[i] );
         state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
         *state = ent->s;
         svs.nextSnapshotEntities++;
@@ -749,7 +749,7 @@ static S32 SV_RateMsec( client_t* client, S32 messageSize )
     // low watermark for sv_maxRate, never 0 < sv_maxRate < 1000 (0 is no limitation)
     if( sv_maxRate->integer && sv_maxRate->integer < 1000 )
     {
-        Cvar_Set( "sv_MaxRate", "1000" );
+        cvarSystem->Set( "sv_MaxRate", "1000" );
     }
     rate = client->rate;
     // work on the appropriate max rate (client or download)
@@ -768,7 +768,7 @@ static S32 SV_RateMsec( client_t* client, S32 messageSize )
             rate = maxRate;
         }
     }
-    rateMsec = ( messageSize + HEADER_RATE_BYTES ) * 1000 / rate;
+    rateMsec = ( messageSize + HEADER_RATE_BYTES ) * 1000 / ( ( int )( rate * com_timescale->value ) );
     
     return rateMsec;
 }
@@ -869,7 +869,7 @@ void SV_SendClientIdle( client_t* client )
 //  SV_WriteSnapshotToClient( client, &msg );
 
     // Add any download data if the client is downloading
-    SV_WriteDownloadToClient( client, &msg );
+    serverClientLocal.WriteDownloadToClient( client, &msg );
     
     // check for overflow
     if( msg.overflowed )
@@ -877,7 +877,7 @@ void SV_SendClientIdle( client_t* client )
         Com_Printf( "WARNING: msg overflowed for %s\n", client->name );
         MSG_Clear( &msg );
         
-        SV_DropClient( client, "Msg overflowed" );
+        serverClientLocal.DropClient( client, "Msg overflowed" );
         return;
     }
     
@@ -942,7 +942,7 @@ void SV_SendClientSnapshot( client_t* client )
     SV_WriteSnapshotToClient( client, &msg );
     
     // Add any download data if the client is downloading
-    SV_WriteDownloadToClient( client, &msg );
+    serverClientLocal.WriteDownloadToClient( client, &msg );
     
     // check for overflow
     if( msg.overflowed )
@@ -950,7 +950,7 @@ void SV_SendClientSnapshot( client_t* client )
         Com_Printf( "WARNING: msg overflowed for %s\n", client->name );
         MSG_Clear( &msg );
         
-        SV_DropClient( client, "Msg overflowed" );
+        serverClientLocal.DropClient( client, "Msg overflowed" );
         return;
     }
     
@@ -1093,7 +1093,7 @@ void SV_CheckClientUserinfoTimer( void )
             Com_sprintf( bigbuffer, sizeof( bigbuffer ), "userinfo \"%s\"", cl->userinfobuffer );
             
             Cmd_TokenizeString( bigbuffer );
-            SV_UpdateUserinfo_f( cl );
+            serverClientLocal.UpdateUserinfo_f( cl );
         }
     }
 }

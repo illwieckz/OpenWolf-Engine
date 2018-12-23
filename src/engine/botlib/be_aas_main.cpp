@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   be_aas_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: AAS
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ void AAS_Error( UTF8* fmt, ... )
     va_list arglist;
     
     va_start( arglist, fmt );
-    vsprintf( str, fmt, arglist );
+    Q_vsnprintf( str, sizeof( str ), fmt, arglist );
     va_end( arglist );
     botimport.Print( PRT_FATAL, str );
 } //end of the function AAS_Error

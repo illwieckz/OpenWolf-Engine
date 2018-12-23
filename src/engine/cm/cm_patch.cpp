@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cm_load.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -767,7 +767,7 @@ static void CM_SetBorderInward( cFacet_t* facet, cGrid_t* grid, S32 gridPlanes[M
             {
                 front++;
             }
-            if( side == SIDE_BACK )
+            else if( side == SIDE_BACK )
             {
                 back++;
             }

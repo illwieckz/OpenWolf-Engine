@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_extramath.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: extra math needed by the renderer not in qmath.c
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -329,4 +329,22 @@ F32 HalfToFloat( U16 in )
     f32.pack.sign = f16.pack.sign;
     
     return f32.f;
+}
+
+U32 ReverseBits( U32 v )
+{
+    v = ( ( v >> 1 ) & 0x55555555 ) | ( ( v & 0x55555555 ) << 1 );
+    v = ( ( v >> 2 ) & 0x33333333 ) | ( ( v & 0x33333333 ) << 2 );
+    v = ( ( v >> 4 ) & 0x0F0F0F0F ) | ( ( v & 0x0F0F0F0F ) << 4 );
+    v = ( ( v >> 8 ) & 0x00FF00FF ) | ( ( v & 0x00FF00FF ) << 8 );
+    v = ( v >> 16 ) | ( v << 16 );
+    return v;
+}
+
+F32 GSmithCorrelated( F32 roughness, F32 ndotv, F32 ndotl )
+{
+    F32 m2 = roughness * roughness;
+    F32 visV = ndotl * sqrt( ndotv * ( ndotv - ndotv * m2 ) + m2 );
+    F32 visL = ndotv * sqrt( ndotl * ( ndotl - ndotl * m2 ) + m2 );
+    return 0.5f / ( visV + visL );
 }

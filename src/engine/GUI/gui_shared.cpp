@@ -21,18 +21,18 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   gui_shared.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef CGAMEDLL
-#include <sgame/sg_precompiled.h>
+#include <cgame/cgame_precompiled.h>
 #else
 #include <OWLib/precompiled.h>
-#endif // !GAMEDLL
+#endif // !CGAMEDLL
 
 #define SCROLL_TIME_START         500
 #define SCROLL_TIME_ADJUST        150

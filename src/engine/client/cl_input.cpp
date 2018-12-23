@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_input.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: builds an intended movement command to send to the server
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1379,11 +1379,11 @@ bool CL_ReadyToSendPacket( void )
     // check for exceeding cl_maxpackets
     if( cl_maxpackets->integer < 15 )
     {
-        Cvar_Set( "cl_maxpackets", "15" );
+        cvarSystem->Set( "cl_maxpackets", "15" );
     }
     else if( cl_maxpackets->integer > 125 )
     {
-        Cvar_Set( "cl_maxpackets", "125" );
+        cvarSystem->Set( "cl_maxpackets", "125" );
     }
     oldPacketNum = ( clc.netchan.outgoingSequence - 1 ) & PACKET_MASK;
     delta = cls.realtime - cl.outPackets[oldPacketNum].p_realtime;
@@ -1467,11 +1467,11 @@ void CL_WritePacket( void )
     // all the cmds will make it to the server
     if( cl_packetdup->integer < 0 )
     {
-        Cvar_Set( "cl_packetdup", "0" );
+        cvarSystem->Set( "cl_packetdup", "0" );
     }
     else if( cl_packetdup->integer > 5 )
     {
-        Cvar_Set( "cl_packetdup", "5" );
+        cvarSystem->Set( "cl_packetdup", "5" );
     }
     oldPacketNum = ( clc.netchan.outgoingSequence - 1 - cl_packetdup->integer ) & PACKET_MASK;
     count = cl.cmdNumber - cl.outPackets[oldPacketNum].p_cmdNumber;
@@ -1709,8 +1709,8 @@ void CL_InitInput( void )
     //Cmd_AddCommand ("notebook",IN_Notebook);
     Cmd_AddCommand( "help", IN_Help );
     
-    cl_nodelta = Cvar_Get( "cl_nodelta", "0", 0 );
-    cl_debugMove = Cvar_Get( "cl_debugMove", "0", 0 );
+    cl_nodelta = cvarSystem->Get( "cl_nodelta", "0", 0 );
+    cl_debugMove = cvarSystem->Get( "cl_debugMove", "0", 0 );
 }
 
 

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sys_loadlib.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -38,13 +38,8 @@
 #ifndef __SYS_LOADLIB_H__
 #define __SYS_LOADLIB_H__
 
-#ifdef _WIN32
 #include <SDL.h>
 #include <SDL_loadso.h>
-#else
-#include <SDL/SDL.h>
-#include <SDL/SDL_loadso.h>
-#endif
 
 #define Sys_LoadLibrary(f) SDL_LoadObject(f)
 #define Sys_UnloadLibrary(h) SDL_UnloadObject(h)

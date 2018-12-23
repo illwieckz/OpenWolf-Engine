@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   common.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: misc functions used in client and server
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -95,6 +95,8 @@ cvar_t*         com_ansiColor;
 cvar_t*         com_unfocused;
 cvar_t*         com_minimized;
 
+cvar_t* com_affinity;
+
 cvar_t*         com_introPlayed;
 cvar_t*         com_logosPlaying;
 cvar_t*         cl_paused;
@@ -150,6 +152,7 @@ void            CIN_CloseAllVideos();
 
 static UTF8*    rd_buffer;
 static S32      rd_buffersize;
+static bool rd_flushing = false;
 static void ( *rd_flush )( UTF8* buffer );
 
 void Com_BeginRedirect( UTF8* buffer, S32 buffersize, void ( *flush )( UTF8* ) )
@@ -169,7 +172,9 @@ void Com_EndRedirect( void )
 {
     if( rd_flush )
     {
+        rd_flushing = true;
         rd_flush( rd_buffer );
+        rd_flushing = false;
     }
     
     rd_buffer = NULL;
@@ -189,9 +194,9 @@ A raw string should NEVER be passed as fmt, because of "%f" type crashers.
 */
 void Com_Printf( StringEntry fmt, ... )
 {
+    static bool opening_qconsole = false;
     va_list			argptr;
     UTF8			msg[MAXPRINTMSG];
-    static bool opening_qconsole = false;
     
     va_start( argptr, fmt );
     
@@ -200,11 +205,13 @@ void Com_Printf( StringEntry fmt, ... )
     
     va_end( argptr );
     
-    if( rd_buffer )
+    if( rd_buffer && !rd_flushing )
     {
         if( ( strlen( msg ) + strlen( rd_buffer ) ) > ( rd_buffersize - 1 ) )
         {
+            rd_flushing = true;
             rd_flush( rd_buffer );
+            rd_flushing = false;
             *rd_buffer = 0;
         }
         Q_strcat( rd_buffer, rd_buffersize, msg );
@@ -233,7 +240,7 @@ void Com_Printf( StringEntry fmt, ... )
     {
         // TTimo: only open the qconsole.log if the filesystem is in an initialized state
         //   also, avoid recursing in the qconsole.log opening (i.e. if fs_debug is on)
-        if( !logfile && FS_Initialized() && !opening_qconsole )
+        if( !logfile && fileSystem->Initialized() && !opening_qconsole )
         {
             struct tm*      newtime;
             time_t          aclock;
@@ -243,20 +250,20 @@ void Com_Printf( StringEntry fmt, ... )
             time( &aclock );
             newtime = localtime( &aclock );
             
-            logfile = FS_FOpenFileWrite( "owconsole.log" );
+            logfile = fileSystem->FOpenFileWrite( "owconsole.log" );
             Com_Printf( "logfile opened on %s\n", asctime( newtime ) );
             if( com_logfile->integer > 1 )
             {
                 // force it to not buffer so we get valid
                 // data even if we are crashing
-                FS_ForceFlush( logfile );
+                fileSystem->ForceFlush( logfile );
             }
             
             opening_qconsole = false;
         }
-        if( logfile && FS_Initialized() )
+        if( logfile && fileSystem->Initialized() )
         {
-            FS_Write( msg, strlen( msg ), logfile );
+            fileSystem->Write( msg, strlen( msg ), logfile );
         }
     }
     return;
@@ -268,7 +275,7 @@ void Com_FatalError( StringEntry error, ... )
     UTF8 msg[8192];
     
     va_start( argptr, error );
-    vsprintf( msg, error, argptr );
+    Q_vsnprintf( msg, sizeof( msg ), error, argptr );
     va_end( argptr );
     
     Com_Error( ERR_FATAL, msg );
@@ -280,7 +287,7 @@ void Com_DropError( StringEntry error, ... )
     UTF8 msg[8192];
     
     va_start( argptr, error );
-    vsprintf( msg, error, argptr );
+    Q_vsnprintf( msg, sizeof( msg ), error, argptr );
     va_end( argptr );
     
     Com_Error( ERR_DROP, msg );
@@ -292,7 +299,7 @@ void Com_Warning( StringEntry error, ... )
     UTF8 msg[8192];
     
     va_start( argptr, error );
-    vsprintf( msg, error, argptr );
+    Q_vsnprintf( msg, sizeof( msg ), error, argptr );
     va_end( argptr );
     
     Com_Printf( msg );
@@ -367,7 +374,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     
     com_errorEntered = true;
     
-    Cvar_Set( "com_errorCode", va( "%i", code ) );
+    cvarSystem->Set( "com_errorCode", va( "%i", code ) );
     
 #if defined(USE_HTTP)
     {
@@ -390,7 +397,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     }
     
     // make sure we can get at our local stuff
-    FS_PureServerSetLoadedPaks( "", "" );
+    fileSystem->PureServerSetLoadedPaks( "", "" );
     
     // if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
     currentTime = Sys_Milliseconds();
@@ -492,7 +499,7 @@ void Com_Quit_f( void )
 #endif
         CL_Shutdown();
         Com_Shutdown( false );
-        FS_Shutdown( true );
+        fileSystem->Shutdown( true );
     }
     Sys_Quit();
 }
@@ -608,8 +615,8 @@ void Com_StartupVariable( StringEntry match )
         s = Cmd_Argv( 1 );
         if( !match || !strcmp( s, match ) )
         {
-            Cvar_Set( s, Cmd_Argv( 2 ) );
-            cv = Cvar_Get( s, "", 0 );
+            cvarSystem->Set( s, Cmd_Argv( 2 ) );
+            cv = cvarSystem->Get( s, "", 0 );
             cv->flags |= CVAR_USER_CREATED;
 //          com_consoleLines[i] = 0;
         }
@@ -1332,13 +1339,13 @@ void Z_LogZoneHeap( memzone_t* zone, UTF8* name )
     UTF8            buf[4096];
     S32             size, allocSize, numBlocks;
     
-    if( !logfile || !FS_Initialized() )
+    if( !logfile || !fileSystem->Initialized() )
     {
         return;
     }
     size = allocSize = numBlocks = 0;
     Com_sprintf( buf, sizeof( buf ), "\r\n================\r\n%s log\r\n================\r\n", name );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     for( block = zone->blocklist.next; block->next != &zone->blocklist; block = block->next )
     {
         if( block->tag )
@@ -1360,7 +1367,7 @@ void Z_LogZoneHeap( memzone_t* zone, UTF8* name )
             dump[j] = '\0';
             Com_sprintf( buf, sizeof( buf ), "size = %8d: %s, line: %d (%s) [%s]\r\n", block->d.allocSize, block->d.file,
                          block->d.line, block->d.label, dump );
-            FS_Write( buf, strlen( buf ), logfile );
+            fileSystem->Write( buf, strlen( buf ), logfile );
             allocSize += block->d.allocSize;
 #endif
             size += block->size;
@@ -1374,9 +1381,9 @@ void Z_LogZoneHeap( memzone_t* zone, UTF8* name )
     allocSize = numBlocks * sizeof( memblock_t );	// + 32 bit alignment
 #endif
     Com_sprintf( buf, sizeof( buf ), "%d %s memory in %d blocks\r\n", size, name, numBlocks );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     Com_sprintf( buf, sizeof( buf ), "%d %s memory overhead\r\n", size - allocSize, name );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
 }
 
 /*
@@ -1771,7 +1778,7 @@ void Com_InitZoneMemory( void )
     
     // allocate the random block zone
     Com_StartupVariable( "com_zoneMegs" ); // config files and command line options haven't been taken in account yet
-    cv = Cvar_Get( "com_zoneMegs", DEF_COMZONEMEGS_S, CVAR_INIT );
+    cv = cvarSystem->Get( "com_zoneMegs", DEF_COMZONEMEGS_S, CVAR_INIT );
     
     if( cv->integer < 20 )
     {
@@ -1803,25 +1810,25 @@ void Hunk_Log( void )
     UTF8		buf[4096];
     S32 size, numBlocks;
     
-    if( !logfile || !FS_Initialized() )
+    if( !logfile || !fileSystem->Initialized() )
         return;
     size = 0;
     numBlocks = 0;
     Com_sprintf( buf, sizeof( buf ), "\r\n================\r\nHunk log\r\n================\r\n" );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     for( block = s_hunk.blocks; block; block = block->next )
     {
 #ifdef HUNK_DEBUG
         Com_sprintf( buf, sizeof( buf ), "size = %8d: %s, line: %d (%s)\r\n", block->size, block->file, block->line, block->label );
-        FS_Write( buf, strlen( buf ), logfile );
+        fileSystem->Write( buf, strlen( buf ), logfile );
 #endif
         size += block->size;
         numBlocks++;
     }
     Com_sprintf( buf, sizeof( buf ), "%d Hunk memory\r\n", size );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     Com_sprintf( buf, sizeof( buf ), "%d hunk blocks\r\n", numBlocks );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
 }
 
 /*
@@ -1835,7 +1842,7 @@ void Hunk_SmallLog( void )
     UTF8		buf[4096];
     S32 size, locsize, numBlocks;
     
-    if( !logfile || !FS_Initialized() )
+    if( !logfile || !fileSystem->Initialized() )
         return;
     for( block = s_hunk.blocks ; block; block = block->next )
     {
@@ -1844,7 +1851,7 @@ void Hunk_SmallLog( void )
     size = 0;
     numBlocks = 0;
     Com_sprintf( buf, sizeof( buf ), "\r\n================\r\nHunk Small log\r\n================\r\n" );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     for( block = s_hunk.blocks; block; block = block->next )
     {
         if( block->printed )
@@ -1868,15 +1875,15 @@ void Hunk_SmallLog( void )
         }
 #ifdef HUNK_DEBUG
         Com_sprintf( buf, sizeof( buf ), "size = %8d: %s, line: %d (%s)\r\n", locsize, block->file, block->line, block->label );
-        FS_Write( buf, strlen( buf ), logfile );
+        fileSystem->Write( buf, strlen( buf ), logfile );
 #endif
         size += block->size;
         numBlocks++;
     }
     Com_sprintf( buf, sizeof( buf ), "%d Hunk memory\r\n", size );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
     Com_sprintf( buf, sizeof( buf ), "%d hunk blocks\r\n", numBlocks );
-    FS_Write( buf, strlen( buf ), logfile );
+    fileSystem->Write( buf, strlen( buf ), logfile );
 }
 
 /*
@@ -1896,13 +1903,13 @@ void Com_InitHunkMemory( void )
     // this allows the config and product id files ( journal files too ) to be loaded
     // by the file system without redunant routines in the file system utilizing different
     // memory systems
-    if( FS_LoadStack() != 0 )
+    if( fileSystem->LoadStack() != 0 )
     {
         Com_Error( ERR_FATAL, "Hunk initialization failed. File system load stack not zero" );
     }
     
     // allocate the stack based hunk allocator
-    cv = Cvar_Get( "com_hunkMegs", DEF_COMHUNKMEGS_S, CVAR_LATCH | CVAR_ARCHIVE );
+    cv = cvarSystem->Get( "com_hunkMegs", DEF_COMHUNKMEGS_S, CVAR_LATCH | CVAR_ARCHIVE );
     
     // if we are not dedicated min allocation is 56, otherwise min is 1
     if( com_dedicated && com_dedicated->integer )
@@ -2031,7 +2038,7 @@ void Hunk_Clear( void )
     CL_ShutdownCGame();
     CL_ShutdownUI();
 #endif
-    SV_ShutdownGameProgs();
+    serverGameSystem->ShutdownGameProgs();
 #ifndef DEDICATED
     CIN_CloseAllVideos();
 #endif
@@ -2233,7 +2240,7 @@ static U8* s_frameStackEnd = 0;
 
 static void Hunk_FrameInit( void )
 {
-    S32 megs = Cvar_Get( "com_hunkFrameMegs", "1", CVAR_LATCH | CVAR_ARCHIVE )->integer;
+    S32 megs = cvarSystem->Get( "com_hunkFrameMegs", "1", CVAR_LATCH | CVAR_ARCHIVE )->integer;
     U64 cb;
     
     if( megs < 1 )
@@ -2298,14 +2305,14 @@ void Com_InitJournaling( void )
     S32 i;
     
     Com_StartupVariable( "journal" );
-    com_journal = Cvar_Get( "journal", "0", CVAR_INIT );
+    com_journal = cvarSystem->Get( "journal", "0", CVAR_INIT );
     if( !com_journal->integer )
     {
         if( com_journal->string && com_journal->string[ 0 ] == '_' )
         {
             Com_Printf( "Replaying journaled events\n" );
-            FS_FOpenFileRead( va( "journal%s.dat", com_journal->string ), &com_journalFile, true );
-            FS_FOpenFileRead( va( "journal_data%s.dat", com_journal->string ), &com_journalDataFile, true );
+            fileSystem->FOpenFileRead( va( "journal%s.dat", com_journal->string ), &com_journalFile, true );
+            fileSystem->FOpenFileRead( va( "journal_data%s.dat", com_journal->string ), &com_journalDataFile, true );
             com_journal->integer = 2;
         }
         else
@@ -2317,28 +2324,28 @@ void Com_InitJournaling( void )
         {
             UTF8 f[MAX_OSPATH];
             Com_sprintf( f, sizeof( f ), "journal_%04d.dat", i );
-            if( !FS_FileExists( f ) )
+            if( !fileSystem->FileExists( f ) )
                 break;
         }
         
         if( com_journal->integer == 1 )
         {
             Com_Printf( "Journaling events\n" );
-            com_journalFile		= FS_FOpenFileWrite( va( "journal_%04d.dat", i ) );
-            com_journalDataFile	= FS_FOpenFileWrite( va( "journal_data_%04d.dat", i ) );
+            com_journalFile		= fileSystem->FOpenFileWrite( va( "journal_%04d.dat", i ) );
+            com_journalDataFile	= fileSystem->FOpenFileWrite( va( "journal_data_%04d.dat", i ) );
         }
         else if( com_journal->integer == 2 )
         {
             i--;
             Com_Printf( "Replaying journaled events\n" );
-            FS_FOpenFileRead( va( "journal_%04d.dat", i ), &com_journalFile, true );
-            FS_FOpenFileRead( va( "journal_data_%04d.dat", i ), &com_journalDataFile, true );
+            fileSystem->FOpenFileRead( va( "journal_%04d.dat", i ), &com_journalFile, true );
+            fileSystem->FOpenFileRead( va( "journal_data_%04d.dat", i ), &com_journalDataFile, true );
         }
     }
     
     if( !com_journalFile || !com_journalDataFile )
     {
-        Cvar_Set( "journal", "0" );
+        cvarSystem->Set( "journal", "0" );
         com_journalFile = 0;
         com_journalDataFile = 0;
         Com_Printf( "Couldn't open journal files\n" );
@@ -2477,7 +2484,7 @@ sysEvent_t	Com_GetRealEvent( void )
     // either get an event from the system or the journal file
     if( com_journal->integer == 2 )
     {
-        r = FS_Read( &ev, sizeof( ev ), com_journalFile );
+        r = fileSystem->Read( &ev, sizeof( ev ), com_journalFile );
         if( r != sizeof( ev ) )
         {
             //Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2487,7 +2494,7 @@ sysEvent_t	Com_GetRealEvent( void )
         if( ev.evPtrLength )
         {
             ev.evPtr = Z_Malloc( ev.evPtrLength );
-            r = FS_Read( ev.evPtr, ev.evPtrLength, com_journalFile );
+            r = fileSystem->Read( ev.evPtr, ev.evPtrLength, com_journalFile );
             if( r != ev.evPtrLength )
             {
                 //Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2503,14 +2510,14 @@ sysEvent_t	Com_GetRealEvent( void )
         // write the journal value out if needed
         if( com_journal->integer == 1 )
         {
-            r = FS_Write( &ev, sizeof( ev ), com_journalFile );
+            r = fileSystem->Write( &ev, sizeof( ev ), com_journalFile );
             if( r != sizeof( ev ) )
             {
                 Com_Error( ERR_FATAL, "Error writing to journal file" );
             }
             if( ev.evPtrLength )
             {
-                r = FS_Write( ev.evPtr, ev.evPtrLength, com_journalFile );
+                r = fileSystem->Write( ev.evPtr, ev.evPtrLength, com_journalFile );
                 if( r != ev.evPtrLength )
                 {
                     Com_Error( ERR_FATAL, "Error writing to journal file" );
@@ -2862,21 +2869,21 @@ void Com_SetRecommended()
     bool        goodVideo;
     
     // will use this for recommended settings as well.. do i outside the lower check so it gets done even with command line stuff
-    r_highQualityVideo = Cvar_Get( "r_highQualityVideo", "1", CVAR_ARCHIVE );
-    com_recommended = Cvar_Get( "com_recommended", "-1", CVAR_ARCHIVE );
+    r_highQualityVideo = cvarSystem->Get( "r_highQualityVideo", "1", CVAR_ARCHIVE );
+    com_recommended = cvarSystem->Get( "com_recommended", "-1", CVAR_ARCHIVE );
     goodVideo = ( bool )( r_highQualityVideo && r_highQualityVideo->integer );
     
     if( goodVideo )
     {
         Com_Printf( "Found high quality video and slow CPU\n" );
         Cbuf_AddText( "exec preset_fast.cfg\n" );
-        Cvar_Set( "com_recommended", "2" );
+        cvarSystem->Set( "com_recommended", "2" );
     }
     else
     {
         Com_Printf( "Found low quality video and slow CPU\n" );
         Cbuf_AddText( "exec preset_fastest.cfg\n" );
-        Cvar_Set( "com_recommended", "3" );
+        cvarSystem->Set( "com_recommended", "3" );
     }
     
 }
@@ -2893,7 +2900,7 @@ void Com_GetGameInfo()
     
     memset( &com_gameInfo, 0, sizeof( com_gameInfo ) );
     
-    if( FS_ReadFile( "gameinfo.dat", ( void** )&f ) > 0 )
+    if( fileSystem->ReadFile( "gameinfo.dat", ( void** )&f ) > 0 )
     {
         buf = f;
         
@@ -2918,7 +2925,7 @@ void Com_GetGameInfo()
                 }
                 else
                 {
-                    FS_FreeFile( f );
+                    fileSystem->FreeFile( f );
                     Com_Error( ERR_FATAL, "Com_GetGameInfo: bad syntax." );
                 }
             }
@@ -2938,7 +2945,7 @@ void Com_GetGameInfo()
                 }
                 else
                 {
-                    FS_FreeFile( f );
+                    fileSystem->FreeFile( f );
                     Com_Error( ERR_FATAL, "Com_GetGameInfo: bad syntax." );
                 }
             }
@@ -2950,7 +2957,7 @@ void Com_GetGameInfo()
                 }
                 else
                 {
-                    FS_FreeFile( f );
+                    fileSystem->FreeFile( f );
                     Com_Error( ERR_FATAL, "Com_GetGameInfo: bad syntax." );
                 }
             }
@@ -2962,19 +2969,19 @@ void Com_GetGameInfo()
                 }
                 else
                 {
-                    FS_FreeFile( f );
+                    fileSystem->FreeFile( f );
                     Com_Error( ERR_FATAL, "Com_GetGameInfo: bad syntax." );
                 }
             }
             else
             {
-                FS_FreeFile( f );
+                fileSystem->FreeFile( f );
                 Com_Error( ERR_FATAL, "Com_GetGameInfo: bad syntax." );
             }
         }
         
         // all is good
-        FS_FreeFile( f );
+        fileSystem->FreeFile( f );
     }
 }
 
@@ -2993,18 +3000,18 @@ bool Com_CheckProfile( UTF8* profile_path )
         return true;
     }
     
-    if( FS_FOpenFileRead( profile_path, &f, true ) < 0 )
+    if( fileSystem->FOpenFileRead( profile_path, &f, true ) < 0 )
     {
         //no profile found, we're ok
         return true;
     }
     
-    if( FS_Read( &f_data, sizeof( f_data ) - 1, f ) < 0 )
+    if( fileSystem->Read( &f_data, sizeof( f_data ) - 1, f ) < 0 )
     {
         //b0rk3d!
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
         //try to delete corrupted pid file
-        FS_Delete( profile_path );
+        fileSystem->Delete( profile_path );
         return false;
     }
     
@@ -3012,12 +3019,12 @@ bool Com_CheckProfile( UTF8* profile_path )
     if( f_pid != com_pid->integer )
     {
         //pid doesn't match
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
         return false;
     }
     
     //we're all ok
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
     return true;
 }
 
@@ -3027,7 +3034,7 @@ UTF8            last_fs_gamedir[MAX_OSPATH];
 UTF8            last_profile_path[MAX_OSPATH];
 
 //bani - track profile changes, delete old profile.pid if we change fs_game(dir)
-//hackish, we fiddle with fs_gamedir to make FS_* calls work "right"
+//hackish, we fiddle with fs_gamedir to make fileSystem->* calls work "right"
 void Com_TrackProfile( UTF8* profile_path )
 {
     UTF8            temp_fs_gamedir[MAX_OSPATH];
@@ -3040,12 +3047,12 @@ void Com_TrackProfile( UTF8* profile_path )
         {
             //save current fs_gamedir
             Q_strncpyz( temp_fs_gamedir, fs_gamedir, sizeof( temp_fs_gamedir ) );
-            //set fs_gamedir temporarily to make FS_* stuff work "right"
+            //set fs_gamedir temporarily to make fileSystem->* stuff work "right"
             Q_strncpyz( fs_gamedir, last_fs_gamedir, sizeof( fs_gamedir ) );
-            if( FS_FileExists( last_profile_path ) )
+            if( fileSystem->FileExists( last_profile_path ) )
             {
                 Com_Printf( "Com_TrackProfile: Deleting old pid file [%s] [%s]\n", fs_gamedir, last_profile_path );
-                FS_Delete( last_profile_path );
+                fileSystem->Delete( last_profile_path );
             }
             //restore current fs_gamedir
             Q_strncpyz( fs_gamedir, temp_fs_gamedir, sizeof( fs_gamedir ) );
@@ -3063,21 +3070,21 @@ bool Com_WriteProfile( UTF8* profile_path )
 {
     fileHandle_t    f;
     
-    if( FS_FileExists( profile_path ) )
+    if( fileSystem->FileExists( profile_path ) )
     {
-        FS_Delete( profile_path );
+        fileSystem->Delete( profile_path );
     }
     
-    f = FS_FOpenFileWrite( profile_path );
+    f = fileSystem->FOpenFileWrite( profile_path );
     if( f < 0 )
     {
         Com_Printf( "Com_WriteProfile: Can't write %s.\n", profile_path );
         return false;
     }
     
-    FS_Printf( f, "%d", com_pid->integer );
+    fileSystem->Printf( f, "%d", com_pid->integer );
     
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
     
     //track profile changes
     Com_TrackProfile( profile_path );
@@ -3107,13 +3114,13 @@ void Com_Init( UTF8* commandLine )
     
     // Clear queues
     ::memset( &eventQueue[0], 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
-    ::memset( &sys_packetReceived[0], 0, MAX_MSGLEN * sizeof( byte ) );
+    ::memset( &sys_packetReceived[0], 0, MAX_MSGLEN * sizeof( U8 ) );
     
     // bk001129 - do this before anything else decides to push events
     Com_InitPushEvent();
     
     Com_InitSmallZoneMemory();
-    Cvar_Init();
+    cvarSystem->Init();
     
     // prepare enough of the subsystems to handle
     // cvar and command buffer management
@@ -3132,10 +3139,10 @@ void Com_Init( UTF8* commandLine )
     
     // bani: init this early
     Com_StartupVariable( "com_ignorecrash" );
-    com_ignorecrash = Cvar_Get( "com_ignorecrash", "0", 0 );
+    com_ignorecrash = cvarSystem->Get( "com_ignorecrash", "0", 0 );
     
     // ydnar: init crashed variable as early as possible
-    com_crashed = Cvar_Get( "com_crashed", "0", CVAR_TEMP );
+    com_crashed = cvarSystem->Get( "com_crashed", "0", CVAR_TEMP );
     
     // bani: init pid
 #ifdef _WIN32
@@ -3144,12 +3151,14 @@ void Com_Init( UTF8* commandLine )
     pid = getpid();
 #endif
     s = va( "%d", pid );
-    com_pid = Cvar_Get( "com_pid", s, CVAR_ROM );
+    com_pid = cvarSystem->Get( "com_pid", s, CVAR_ROM );
     
     // done early so bind command exists
     CL_InitKeyCommands();
     
-    FS_InitFilesystem();
+    fileSystem->InitFilesystem();
+    
+    Sys_SteamInit();
     
     Com_InitJournaling();
     
@@ -3162,7 +3171,7 @@ void Com_Init( UTF8* commandLine )
     // skip the q3config.cfg if "safe" is on the command line
     if( !Com_SafeMode() )
     {
-        UTF8*           cl_profileStr = Cvar_VariableString( "cl_profile" );
+        UTF8*           cl_profileStr = cvarSystem->VariableString( "cl_profile" );
         
         safeMode = false;
         if( com_gameInfo.usesProfiles )
@@ -3171,7 +3180,7 @@ void Com_Init( UTF8* commandLine )
             {
                 UTF8*           defaultProfile = NULL;
                 
-                FS_ReadFile( "profiles/defaultprofile.dat", ( void** )&defaultProfile );
+                fileSystem->ReadFile( "profiles/defaultprofile.dat", ( void** )&defaultProfile );
                 
                 if( defaultProfile )
                 {
@@ -3180,13 +3189,13 @@ void Com_Init( UTF8* commandLine )
                     
                     if( token && *token )
                     {
-                        Cvar_Set( "cl_defaultProfile", token );
-                        Cvar_Set( "cl_profile", token );
+                        cvarSystem->Set( "cl_defaultProfile", token );
+                        cvarSystem->Set( "cl_profile", token );
                     }
                     
-                    FS_FreeFile( defaultProfile );
+                    fileSystem->FreeFile( defaultProfile );
                     
-                    cl_profileStr = Cvar_VariableString( "cl_defaultProfile" );
+                    cl_profileStr = cvarSystem->VariableString( "cl_defaultProfile" );
                 }
             }
             
@@ -3232,14 +3241,14 @@ void Com_Init( UTF8* commandLine )
     Com_StartupVariable( NULL );
     
 #ifdef UPDATE_SERVER
-    com_dedicated = Cvar_Get( "dedicated", "1", CVAR_LATCH );
+    com_dedicated = cvarSystem->Get( "dedicated", "1", CVAR_LATCH );
 #elif DEDICATED
     // TTimo: default to internet dedicated, not LAN dedicated
-    com_dedicated = Cvar_Get( "dedicated", "2", CVAR_ROM );
-    Cvar_CheckRange( com_dedicated, 1, 2, true );
+    com_dedicated = cvarSystem->Get( "dedicated", "2", CVAR_ROM );
+    cvarSystem->CheckRange( com_dedicated, 1, 2, true );
 #else
-    com_dedicated = Cvar_Get( "dedicated", "0", CVAR_LATCH );
-    Cvar_CheckRange( com_dedicated, 0, 2, true );
+    com_dedicated = cvarSystem->Get( "dedicated", "0", CVAR_LATCH );
+    cvarSystem->CheckRange( com_dedicated, 0, 2, true );
 #endif
     // allocate the stack based hunk allocator
     Com_InitHunkMemory();
@@ -3252,63 +3261,64 @@ void Com_Init( UTF8* commandLine )
     // init commands and vars
     //
     // Gordon: no need to latch this in ET, our recoil is framerate independant
-    com_maxfps = Cvar_Get( "com_maxfps", "125", CVAR_ARCHIVE /*|CVAR_LATCH */ );
-//  com_blood = Cvar_Get ("com_blood", "1", CVAR_ARCHIVE); // Gordon: no longer used?
+    com_maxfps = cvarSystem->Get( "com_maxfps", "125", CVAR_ARCHIVE /*|CVAR_LATCH */ );
+//  com_blood = cvarSystem->Get ("com_blood", "1", CVAR_ARCHIVE); // Gordon: no longer used?
 
-    com_developer = Cvar_Get( "developer", "0", CVAR_TEMP );
+    com_developer = cvarSystem->Get( "developer", "0", CVAR_TEMP );
     
-    com_logfile = Cvar_Get( "logfile", "2", CVAR_TEMP );
+    com_logfile = cvarSystem->Get( "logfile", "2", CVAR_TEMP );
     
-    com_timescale = Cvar_Get( "timescale", "1", CVAR_CHEAT | CVAR_SYSTEMINFO );
-    com_fixedtime = Cvar_Get( "fixedtime", "0", CVAR_CHEAT );
-    com_showtrace = Cvar_Get( "com_showtrace", "0", CVAR_CHEAT );
-    com_dropsim = Cvar_Get( "com_dropsim", "0", CVAR_CHEAT );
-    com_viewlog = Cvar_Get( "viewlog", "0", CVAR_CHEAT );
-    com_speeds = Cvar_Get( "com_speeds", "0", 0 );
-    com_timedemo = Cvar_Get( "timedemo", "0", CVAR_CHEAT );
-    com_cameraMode = Cvar_Get( "com_cameraMode", "0", CVAR_CHEAT );
+    com_timescale = cvarSystem->Get( "timescale", "1", CVAR_CHEAT | CVAR_SYSTEMINFO );
+    com_fixedtime = cvarSystem->Get( "fixedtime", "0", CVAR_CHEAT );
+    com_showtrace = cvarSystem->Get( "com_showtrace", "0", CVAR_CHEAT );
+    com_dropsim = cvarSystem->Get( "com_dropsim", "0", CVAR_CHEAT );
+    com_viewlog = cvarSystem->Get( "viewlog", "0", CVAR_CHEAT );
+    com_speeds = cvarSystem->Get( "com_speeds", "0", 0 );
+    com_timedemo = cvarSystem->Get( "timedemo", "0", CVAR_CHEAT );
+    com_cameraMode = cvarSystem->Get( "com_cameraMode", "0", CVAR_CHEAT );
     
-    com_watchdog = Cvar_Get( "com_watchdog", "60", CVAR_ARCHIVE );
-    com_watchdog_cmd = Cvar_Get( "com_watchdog_cmd", "", CVAR_ARCHIVE );
+    com_watchdog = cvarSystem->Get( "com_watchdog", "60", CVAR_ARCHIVE );
+    com_watchdog_cmd = cvarSystem->Get( "com_watchdog_cmd", "", CVAR_ARCHIVE );
     
-    cl_paused = Cvar_Get( "cl_paused", "0", CVAR_ROM );
-    sv_paused = Cvar_Get( "sv_paused", "0", CVAR_ROM );
-    com_sv_running = Cvar_Get( "sv_running", "0", CVAR_ROM );
-    com_cl_running = Cvar_Get( "cl_running", "0", CVAR_ROM );
-    com_buildScript = Cvar_Get( "com_buildScript", "0", 0 );
+    cl_paused = cvarSystem->Get( "cl_paused", "0", CVAR_ROM );
+    sv_paused = cvarSystem->Get( "sv_paused", "0", CVAR_ROM );
+    com_sv_running = cvarSystem->Get( "sv_running", "0", CVAR_ROM );
+    com_cl_running = cvarSystem->Get( "cl_running", "0", CVAR_ROM );
+    com_buildScript = cvarSystem->Get( "com_buildScript", "0", 0 );
     
-    con_drawnotify = Cvar_Get( "con_drawnotify", "0", CVAR_CHEAT );
+    con_drawnotify = cvarSystem->Get( "con_drawnotify", "0", CVAR_CHEAT );
     
-    com_introPlayed = Cvar_Get( "com_introplayed", "0", CVAR_ARCHIVE );
-    com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE );
-    com_logosPlaying = Cvar_Get( "com_logosPlaying", "0", CVAR_ROM );
-    com_recommendedSet = Cvar_Get( "com_recommendedSet", "0", CVAR_ARCHIVE );
+    com_introPlayed = cvarSystem->Get( "com_introplayed", "0", CVAR_ARCHIVE );
+    com_ansiColor = cvarSystem->Get( "com_ansiColor", "0", CVAR_ARCHIVE );
+    com_logosPlaying = cvarSystem->Get( "com_logosPlaying", "0", CVAR_ROM );
+    com_recommendedSet = cvarSystem->Get( "com_recommendedSet", "0", CVAR_ARCHIVE );
     
-    com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
-    com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
-    com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
-    com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
-    com_abnormalExit = Cvar_Get( "com_abnormalExit", "0", CVAR_ROM );
+    com_unfocused = cvarSystem->Get( "com_unfocused", "0", CVAR_ROM );
+    com_minimized = cvarSystem->Get( "com_minimized", "0", CVAR_ROM );
+    com_affinity = cvarSystem->Get( "com_affinity", "1", CVAR_ARCHIVE );
+    com_maxfpsUnfocused = cvarSystem->Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
+    com_maxfpsMinimized = cvarSystem->Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
+    com_abnormalExit = cvarSystem->Get( "com_abnormalExit", "0", CVAR_ROM );
     
 #if defined (USE_HTTP)
-    com_webhost	= Cvar_Get( "com_webhost", "http://localhost", CVAR_INIT | CVAR_ARCHIVE | CVAR_SYSTEMINFO );
-    com_sessionid = Cvar_Get( "com_sessionid", "", CVAR_INIT );
+    com_webhost	= cvarSystem->Get( "com_webhost", "http://localhost", CVAR_INIT | CVAR_ARCHIVE | CVAR_SYSTEMINFO );
+    com_sessionid = cvarSystem->Get( "com_sessionid", "", CVAR_INIT );
 #endif
     
-    Cvar_Get( "savegame_loading", "0", CVAR_ROM );
+    cvarSystem->Get( "savegame_loading", "0", CVAR_ROM );
     
 #if defined( _WIN32 ) && defined( _DEBUG )
-    com_noErrorInterrupt = Cvar_Get( "com_noErrorInterrupt", "0", 0 );
+    com_noErrorInterrupt = cvarSystem->Get( "com_noErrorInterrupt", "0", 0 );
 #endif
     
-    com_hunkused = Cvar_Get( "com_hunkused", "0", 0 );
+    com_hunkused = cvarSystem->Get( "com_hunkused", "0", 0 );
     com_hunkusedvalue = 0;
     
     if( com_dedicated->integer )
     {
         if( !com_viewlog->integer )
         {
-            Cvar_Set( "viewlog", "1" );
+            cvarSystem->Set( "viewlog", "1" );
         }
     }
     
@@ -3322,9 +3332,9 @@ void Com_Init( UTF8* commandLine )
     Cmd_AddCommand( "changeVectors", MSG_ReportChangeVectors_f );
     Cmd_AddCommand( "writeconfig", Com_WriteConfig_f );
     
-    s = va( "%s %s %s", Q3_VERSION, ARCH_STRING, __DATE__ );
-    com_version = Cvar_Get( "version", s, CVAR_ROM | CVAR_SERVERINFO );
-    com_protocol = Cvar_Get( "protocol", va( "%i", ETPROTOCOL_VERSION ), CVAR_SERVERINFO | CVAR_ARCHIVE );
+    s = va( "%s %s %s %s", Q3_VERSION, ARCH_STRING, OS_STRING, __DATE__ );
+    com_version = cvarSystem->Get( "version", s, CVAR_ROM | CVAR_SERVERINFO );
+    com_protocol = cvarSystem->Get( "protocol", va( "%i", ETPROTOCOL_VERSION ), CVAR_SERVERINFO | CVAR_ARCHIVE );
     
     Sys_Init();
     
@@ -3337,7 +3347,7 @@ void Com_Init( UTF8* commandLine )
                               
         if( Sys_Dialog( DT_YES_NO, message, "Abnormal Exit" ) == DR_YES )
         {
-            Cvar_Set( "com_abnormalExit", "1" );
+            cvarSystem->Set( "com_abnormalExit", "1" );
         }
 #endif
     }
@@ -3380,22 +3390,22 @@ void Com_Init( UTF8* commandLine )
         Com_SetRecommended();
         Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
     }
-    Cvar_Set( "com_recommendedSet", "1" );
+    cvarSystem->Set( "com_recommendedSet", "1" );
     
     if( !com_dedicated->integer && !Com_AddStartupCommands() )
     {
 #if 0
         //Dushan turned this all off until someone create something better
-        Cvar_Set( "com_logosPlaying", "1" );
+        cvarSystem->Set( "com_logosPlaying", "1" );
         
         Cbuf_AddText( "cinematic splash.roq\n" );
         
-        Cvar_Set( "nextmap", "cinematic avlogo.roq" );
+        cvarSystem->Set( "nextmap", "cinematic avlogo.roq" );
         
         if( !com_introPlayed->integer )
         {
-            Cvar_Set( com_introPlayed->name, "1" );
-            Cvar_Set( "nextmap", "cinematic splash.roq" );
+            cvarSystem->Set( com_introPlayed->name, "1" );
+            cvarSystem->Set( "nextmap", "cinematic splash.roq" );
         }
 #endif
     }
@@ -3410,17 +3420,17 @@ void Com_WriteConfigToFile( StringEntry filename )
 {
     fileHandle_t    f;
     
-    f = FS_FOpenFileWrite( filename );
+    f = fileSystem->FOpenFileWrite( filename );
     if( !f )
     {
         Com_Printf( "Couldn't write %s.\n", filename );
         return;
     }
     
-    FS_Printf( f, "// generated by OpenWolf, do not modify\n" );
+    fileSystem->Printf( f, "// generated by OpenWolf, do not modify\n" );
     Key_WriteBindings( f );
-    Cvar_WriteVariables( f );
-    FS_FCloseFile( f );
+    cvarSystem->WriteVariables( f );
+    fileSystem->FCloseFile( f );
 }
 
 
@@ -3433,7 +3443,7 @@ Writes key bindings and archived cvars to config file if modified
 */
 void Com_WriteConfiguration( void )
 {
-    UTF8*           cl_profileStr = Cvar_VariableString( "cl_profile" );
+    UTF8*           cl_profileStr = cvarSystem->VariableString( "cl_profile" );
     
     // if we are quiting without fully initializing, make sure
     // we don't write out anything
@@ -3679,7 +3689,7 @@ void Com_Frame( void )
     if( com_dedicated->modified )
     {
         // get the latched value
-        Cvar_Get( "dedicated", "0", 0 );
+        cvarSystem->Get( "dedicated", "0", 0 );
         com_dedicated->modified = false;
         if( !com_dedicated->integer )
         {
@@ -3815,28 +3825,30 @@ Com_Shutdown
 */
 void Com_Shutdown( bool badProfile )
 {
-    UTF8* cl_profileStr = Cvar_VariableString( "cl_profile" );
+    UTF8* cl_profileStr = cvarSystem->VariableString( "cl_profile" );
     
     // delete pid file
     if( com_gameInfo.usesProfiles && cl_profileStr[0] && !badProfile )
     {
-        if( FS_FileExists( va( "profiles/%s/profile.pid", cl_profileStr ) ) )
+        if( fileSystem->FileExists( va( "profiles/%s/profile.pid", cl_profileStr ) ) )
         {
-            FS_Delete( va( "profiles/%s/profile.pid", cl_profileStr ) );
+            fileSystem->Delete( va( "profiles/%s/profile.pid", cl_profileStr ) );
         }
     }
     
     if( logfile )
     {
-        FS_FCloseFile( logfile );
+        fileSystem->FCloseFile( logfile );
         logfile = 0;
     }
     
     if( com_journalFile )
     {
-        FS_FCloseFile( com_journalFile );
+        fileSystem->FCloseFile( com_journalFile );
         com_journalFile = 0;
     }
+    
+    Sys_SteamShutdown();
     
     // Shut Down SQL
     databaseSystem->Shutdown();
@@ -3980,7 +3992,7 @@ static void PrintCvarMatches( StringEntry s )
 {
     if( !Q_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) )
     {
-        Com_Printf( "    %-32s ^7\"%s^7\"\n", s, Cvar_VariableString( s ) );
+        Com_Printf( "    %-32s ^7\"%s^7\"\n", s, cvarSystem->VariableString( s ) );
     }
 }
 
@@ -4079,10 +4091,10 @@ void Field_CompleteFilename( StringEntry dir,
     matchCount = 0;
     shortestMatch[ 0 ] = 0;
     
-    FS_FilenameCompletion( dir, ext, stripExt, FindMatches );
+    fileSystem->FilenameCompletion( dir, ext, stripExt, FindMatches );
     
     if( !Field_Complete( ) )
-        FS_FilenameCompletion( dir, ext, stripExt, PrintMatches );
+        fileSystem->FilenameCompletion( dir, ext, stripExt, PrintMatches );
 }
 
 /*
@@ -4194,7 +4206,7 @@ void Field_CompleteCommand( UTF8* cmd, bool doCommands, bool doCvars )
             Cmd_CommandCompletion( FindMatches );
             
         if( doCvars )
-            Cvar_CommandCompletion( FindMatches );
+            cvarSystem->CommandCompletion( FindMatches );
             
         if( !Field_Complete( ) )
         {
@@ -4203,7 +4215,7 @@ void Field_CompleteCommand( UTF8* cmd, bool doCommands, bool doCvars )
                 Cmd_CommandCompletion( PrintMatches );
                 
             if( doCvars )
-                Cvar_CommandCompletion( PrintCvarMatches );
+                cvarSystem->CommandCompletion( PrintCvarMatches );
         }
     }
 }
@@ -4265,14 +4277,14 @@ void Hist_Load( void )
     UTF8* buf, *end;
     UTF8 buffer[sizeof( history )];
     
-    FS_SV_FOpenFileRead( CON_HISTORY_FILE, &f );
+    fileSystem->SV_FOpenFileRead( CON_HISTORY_FILE, &f );
     if( !f )
     {
         Com_Printf( "Couldn't read %s.\n", CON_HISTORY_FILE );
         return;
     }
-    FS_Read( buffer, sizeof( buffer ), f );
-    FS_FCloseFile( f );
+    fileSystem->Read( buffer, sizeof( buffer ), f );
+    fileSystem->FCloseFile( f );
     
     buf = buffer;
     for( i = 0; i < CON_HISTORY; i++ )
@@ -4307,7 +4319,7 @@ static void Hist_Save( void )
     S32 i;
     fileHandle_t f;
     
-    f = FS_SV_FOpenFileWrite( CON_HISTORY_FILE );
+    f = fileSystem->SV_FOpenFileWrite( CON_HISTORY_FILE );
     if( !f )
     {
         Com_Printf( "Couldn't write %s.\n", CON_HISTORY_FILE );
@@ -4324,12 +4336,12 @@ static void Hist_Save( void )
             continue;
         }
         buf = va( "%s\n", history[i] );
-        FS_Write( buf, strlen( buf ), f );
+        fileSystem->Write( buf, strlen( buf ), f );
         i = ( i + 1 ) % CON_HISTORY;
     }
     while( i != ( hist_next - 1 ) % CON_HISTORY );
     
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
 }
 
 /*

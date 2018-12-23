@@ -60,7 +60,7 @@ FIND_LIBRARY(OGG_LIBRARY
   )
 
 FIND_LIBRARY(VORBIS_LIBRARY
-  NAMES vorbis
+  NAMES libvorbis vorbis
   PATHS
   /usr/pack/oggvorbis-1.0-ds/i686-debian-linux3.1/lib
   /usr/local/lib
@@ -86,7 +86,7 @@ FIND_LIBRARY(VORBIS_LIBRARY
 #  )
 
 FIND_LIBRARY(VORBISFILE_LIBRARY
-  NAMES libvorbis
+  NAMES libvorbisfile libvorbisfile vorbisfile
   PATHS
   /usr/pack/oggvorbis-1.0-ds/i686-debian-linux3.1/lib
   /usr/local/lib

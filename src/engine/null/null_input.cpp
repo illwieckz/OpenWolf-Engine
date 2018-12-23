@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   null_input.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: all other sound mixing is portable
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@
 #include <null/null_precompiled.h>
 #endif
 
-void IN_Init( void )
+void IN_Init( void* windowData )
 {
 }
 
@@ -60,7 +60,7 @@ void Sys_SendKeyEvents( void )
 }
 
 // TTimo: added for win32 dedicated
-void IN_MouseEvent( int mstate )
+void IN_MouseEvent( S32 mstate )
 {
 }
 

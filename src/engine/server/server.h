@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   server.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -47,30 +47,14 @@
 #ifndef __SG_API_H__
 #include <sgame/sg_api.h>
 #endif
-#ifndef __BG_PUBLIC_H__
+#ifndef __BG_API_H__
 #include <bgame/bg_public.h>
 #endif
 
 #define PERS_SCORE              0	// !!! MUST NOT CHANGE, SERVER AND
 // GAME BOTH REFERENCE !!!
 
-#define MAX_ENT_CLUSTERS    16
-
 #define MAX_BPS_WINDOW      20	// NERVE - SMF - net debugging
-
-typedef struct svEntity_s
-{
-    struct worldSector_s* worldSector;
-    struct svEntity_s* nextEntityInWorldSector;
-    
-    entityState_t   baseline;	// for delta compression of initial sighting
-    S32             numClusters;	// if -1, use headnode instead
-    S32             clusternums[MAX_ENT_CLUSTERS];
-    S32             lastCluster;	// if all the clusters don't fit in clusternums
-    S32             areanum, areanum2;
-    S32             snapshotCounter;	// used to prevent double adding from portal views
-    S32             originCluster;	// Gordon: calced upon linking, for origin only bmodel vis checks
-} svEntity_t;
 
 typedef enum serverState_s
 {
@@ -108,6 +92,7 @@ typedef struct server_s
     UTF8*           entityParsePoint;	// used during game VM init
     
     // the game virtual machine will update these on init and changes
+    
     sharedEntity_t* gentities;
     S32             gentitySize;
     S32             num_entities;	// current number, <= MAX_GENTITIES
@@ -448,8 +433,7 @@ extern cvar_t*  sv_hibernateTime;
 void            SV_FinalCommand( UTF8* cmd, bool disconnect );	// ydnar: added disconnect flag so map changes can use this function as well
 void       SV_SendServerCommand( client_t* cl, StringEntry fmt, ... ) __attribute__( ( format( printf, 2, 3 ) ) );
 
-
-void            SV_AddOperatorCommands( void );
+void SV_SendServerCommand( client_t* cl, StringEntry fmt, ... );
 
 
 void            SV_MasterHeartbeat( StringEntry hbname );
@@ -479,38 +463,6 @@ void            SV_CreateBaseline( void );
 void            SV_ChangeMaxClients( void );
 void            SV_SpawnServer( UTF8* server, bool killBots );
 
-
-
-//
-// sv_client.c
-//
-void            SV_GetChallenge( netadr_t from );
-
-void            SV_DirectConnect( netadr_t from );
-
-void            SV_AuthorizeIpPacket( netadr_t from );
-
-void            SV_ExecuteClientMessage( client_t* cl, msg_t* msg );
-void            SV_UserinfoChanged( client_t* cl );
-void            SV_UpdateUserinfo_f( client_t* cl );
-
-void            SV_ClientEnterWorld( client_t* client, usercmd_t* cmd );
-void            SV_FreeClient( client_t* client );
-void            SV_DropClient( client_t* drop, StringEntry reason );
-
-void            SV_ExecuteClientCommand( client_t* cl, StringEntry s, bool clientOK, bool premaprestart );
-void            SV_ClientThink( client_t* cl, usercmd_t* cmd );
-
-void            SV_WriteDownloadToClient( client_t* cl, msg_t* msg );
-
-//
-// sv_ccmds.c
-//
-void            SV_Heartbeat_f( void );
-
-bool        SV_TempBanIsBanned( netadr_t address );
-void            SV_TempBanNetAddress( netadr_t address, S32 length );
-
 //
 // sv_snapshot.c
 //
@@ -521,106 +473,8 @@ void            SV_SendMessageToClient( msg_t* msg, client_t* client );
 void            SV_SendClientMessages( void );
 void            SV_SendClientSnapshot( client_t* client );
 void            SV_CheckClientUserinfoTimer( void );
-
 //bani
 void            SV_SendClientIdle( client_t* client );
-
-//
-// sv_game.c
-//
-S32             SV_NumForGentity( sharedEntity_t* ent );
-
-//#define SV_GentityNum( num ) ((sharedEntity_t *)((U8 *)sv.gentities + sv.gentitySize*(num)))
-//#define SV_GameClientNum( num ) ((playerState_t *)((U8 *)sv.gameClients + sv.gameClientSize*(num)))
-
-sharedEntity_t* SV_GentityNum( S32 num );
-playerState_t*  SV_GameClientNum( S32 num );
-
-svEntity_t*     SV_SvEntityForGentity( sharedEntity_t* gEnt );
-sharedEntity_t* SV_GEntityForSvEntity( svEntity_t* svEnt );
-void            SV_InitGameProgs( void );
-void            SV_ShutdownGameProgs( void );
-void            SV_RestartGameProgs( void );
-bool            SV_inPVS( const vec3_t p1, const vec3_t p2 );
-bool            SV_GetTag( S32 clientNum, S32 tagFileNumber, UTF8* tagname, orientation_t* ort );
-S32             SV_LoadTag( StringEntry mod_name );
-bool            SV_GameIsSinglePlayer( void );
-bool            SV_GameIsCoop( void );
-
-//
-// sv_bot.c
-//
-void            SV_BotFrame( S32 time );
-S32             SV_BotAllocateClient( S32 clientNum );
-void            SV_BotFreeClient( S32 clientNum );
-
-void            SV_BotInitCvars( void );
-S32             SV_BotLibSetup( void );
-S32             SV_BotLibShutdown( void );
-S32             SV_BotGetSnapshotEntity( S32 client, S32 ent );
-S32             SV_BotGetConsoleMessage( S32 client, UTF8* buf, S32 size );
-
-S32             BotImport_DebugPolygonCreate( S32 color, S32 numPoints, vec3_t* points );
-void            BotImport_DebugPolygonDelete( S32 id );
-
-//============================================================
-//
-// high level object sorting to reduce interaction tests
-//
-
-void            SV_ClearWorld( void );
-
-// called after the world model has been loaded, before linking any entities
-
-void            SV_UnlinkEntity( sharedEntity_t* ent );
-
-// call before removing an entity, and before trying to move one,
-// so it doesn't clip against itself
-
-void            SV_LinkEntity( sharedEntity_t* ent );
-
-// Needs to be called any time an entity changes origin, mins, maxs,
-// or solid.  Automatically unlinks if needed.
-// sets ent->v.absmin and ent->v.absmax
-// sets ent->leafnums[] for pvs determination even if the entity
-// is not solid
-
-
-clipHandle_t    SV_ClipHandleForEntity( const sharedEntity_t* ent );
-
-
-void            SV_SectorList_f( void );
-
-
-S32             SV_AreaEntities( const vec3_t mins, const vec3_t maxs, S32* entityList, S32 maxcount );
-
-// fills in a table of entity numbers with entities that have bounding boxes
-// that intersect the given area.  It is possible for a non-axial bmodel
-// to be returned that doesn't actually intersect the area on an exact
-// test.
-// returns the number of pointers filled in
-// The world entity is never returned in this list.
-
-
-S32             SV_PointContents( const vec3_t p, S32 passEntityNum );
-
-// returns the CONTENTS_* value from the world and all entities at the given point.
-
-
-void SV_Trace( trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, S32 passEntityNum, S32 contentmask, traceType_t type );
-// mins and maxs are relative
-
-// if the entire move stays in a solid volume, trace.allsolid will be set,
-// trace.startsolid will be set, and trace.fraction will be 0
-
-// if the starting point is in a solid, it will be allowed to move out
-// to an open area
-
-// passEntityNum is explicitly excluded from clipping checks (normally ENTITYNUM_NONE)
-
-
-void SV_ClipToEntity( trace_t* trace, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, S32 entityNum, S32 contentmask, traceType_t type );
-// clip to a specific entity
 
 //
 // sv_net_chan.c
@@ -634,5 +488,8 @@ void SV_Netchan_FreeQueue( client_t* client );
 #define DLNOTIFY_REDIRECT   0x00000001	// "Redirecting client ..."
 #define DLNOTIFY_BEGIN      0x00000002	// "clientDownload: 4 : beginning ..."
 #define DLNOTIFY_ALL        ( DLNOTIFY_REDIRECT | DLNOTIFY_BEGIN )
+
+
+S32 SV_LoadTag( StringEntry mod_name );
 
 #endif //!__SERVER_H__

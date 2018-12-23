@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_cmds.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -489,23 +489,23 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
         if( glConfig.stencilBits < 4 )
         {
             CL_RefPrintf( PRINT_ALL, "Warning: not enough stencil bits to measure overdraw: %d\n", glConfig.stencilBits );
-            Cvar_Set( "r_measureOverdraw", "0" );
+            cvarSystem->Set( "r_measureOverdraw", "0" );
             r_measureOverdraw->modified = false;
         }
         else if( r_shadows->integer == 2 )
         {
             CL_RefPrintf( PRINT_ALL, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n" );
-            Cvar_Set( "r_measureOverdraw", "0" );
+            cvarSystem->Set( "r_measureOverdraw", "0" );
             r_measureOverdraw->modified = false;
         }
         else
         {
             R_IssuePendingRenderCommands();
-            glEnable( GL_STENCIL_TEST );
-            glStencilMask( ~0U );
-            glClearStencil( 0U );
-            glStencilFunc( GL_ALWAYS, 0U, ~0U );
-            glStencilOp( GL_KEEP, GL_INCR, GL_INCR );
+            qglEnable( GL_STENCIL_TEST );
+            qglStencilMask( ~0U );
+            qglClearStencil( 0U );
+            qglStencilFunc( GL_ALWAYS, 0U, ~0U );
+            qglStencilOp( GL_KEEP, GL_INCR, GL_INCR );
         }
         r_measureOverdraw->modified = false;
     }
@@ -515,7 +515,7 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
         if( r_measureOverdraw->modified )
         {
             R_IssuePendingRenderCommands();
-            glDisable( GL_STENCIL_TEST );
+            qglDisable( GL_STENCIL_TEST );
         }
         r_measureOverdraw->modified = false;
     }
@@ -547,7 +547,7 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
         S32	err;
         
         R_IssuePendingRenderCommands();
-        if( ( err = glGetError() ) != GL_NO_ERROR )
+        if( ( err = qglGetError() ) != GL_NO_ERROR )
             Com_Error( ERR_FATAL, "idRenderSystemLocal::BeginFrame() - glGetError() failed (0x%x)!", err );
     }
     
@@ -578,7 +578,7 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
             if( r_anaglyphMode->modified )
             {
                 // clear both, front and backbuffer.
-                glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+                qglColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
                 backEnd.colorMask[0] = GL_FALSE;
                 backEnd.colorMask[1] = GL_FALSE;
                 backEnd.colorMask[2] = GL_FALSE;
@@ -590,16 +590,16 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
                     if( tr.renderFbo )
                     {
                         FBO_Bind( tr.renderFbo );
-                        glClear( GL_COLOR_BUFFER_BIT );
+                        qglClear( GL_COLOR_BUFFER_BIT );
                     }
                     
                     FBO_Bind( NULL );
                 }
                 
-                glDrawBuffer( GL_FRONT );
-                glClear( GL_COLOR_BUFFER_BIT );
-                glDrawBuffer( GL_BACK );
-                glClear( GL_COLOR_BUFFER_BIT );
+                qglDrawBuffer( GL_FRONT );
+                qglClear( GL_COLOR_BUFFER_BIT );
+                qglDrawBuffer( GL_BACK );
+                qglClear( GL_COLOR_BUFFER_BIT );
                 
                 r_anaglyphMode->modified = false;
             }
@@ -645,7 +645,7 @@ void idRenderSystemLocal::BeginFrame( stereoFrame_t stereoFrame )
             
             if( r_anaglyphMode->modified )
             {
-                glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+                qglColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
                 backEnd.colorMask[0] = 0;
                 backEnd.colorMask[1] = 0;
                 backEnd.colorMask[2] = 0;

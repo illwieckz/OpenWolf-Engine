@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_types.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@
 
 #define	MAX_DLIGHTS 32 // can't be increased, because bit flags are used on surfaces
 
-#define	REFENTITYNUM_BITS 16 // can't be increased without changing drawsurf bit packing
+#define	REFENTITYNUM_BITS 10 // can't be increased without changing drawsurf bit packing
 #define	REFENTITYNUM_MASK ((1<<REFENTITYNUM_BITS) - 1)
 // the last N-bit number (2^REFENTITYNUM_BITS - 1) is reserved for the special world refentity,
 //  and this is reflected by the value of MAX_REFENTITIES (which therefore is not a power-of-2)
@@ -136,6 +136,12 @@ typedef struct
     F32 rotation;
 } refEntity_t;
 
+typedef enum
+{
+    STEREO_CENTER,
+    STEREO_LEFT,
+    STEREO_RIGHT
+} stereoFrame_t;
 
 #define	MAX_RENDER_STRINGS			8
 #define	MAX_RENDER_STRING_LENGTH	32
@@ -151,18 +157,12 @@ typedef struct
     S32 rdflags; // RDF_NOWORLDMODEL, etc
     // 1 bits will prevent the associated area from rendering at all
     U8 areamask[MAX_MAP_AREA_BYTES];
+    stereoFrame_t stereoFrame;
+    F32	 delta_yaw;
+    S32 cameraControlled;
     // text messages for deform text shaders
     UTF8 text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
 } refdef_t;
-
-
-typedef enum
-{
-    STEREO_CENTER,
-    STEREO_LEFT,
-    STEREO_RIGHT
-} stereoFrame_t;
-
 
 /*
 ** glconfig_t
@@ -211,8 +211,8 @@ typedef enum
 typedef struct
 {
     UTF8 renderer_string[MAX_STRING_CHARS];
-    UTF8 vendor_string[MAX_STRING_CHARS];
-    UTF8 version_string[MAX_STRING_CHARS];
+    UTF8 vendor_string[BIG_INFO_STRING];
+    UTF8 version_string[BIG_INFO_STRING];
     UTF8 extensions_string[BIG_INFO_STRING];
     
     S32 maxTextureSize;			// queried from GL

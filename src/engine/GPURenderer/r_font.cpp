@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_font.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +188,7 @@ void WriteTGA( UTF8* filename, U8* data, S32 width, S32 height )
     }
     Z_Free( flip );
     
-    FS_WriteFile( filename, buffer, c );
+    fileSystem->WriteFile( filename, buffer, c );
     
     //f = fopen (filename, "wb");
     //fwrite (buffer, 1, c, f);
@@ -407,10 +407,10 @@ void idRenderSystemLocal::RegisterFont( StringEntry fontName, S32 pointSize, fon
         }
     }
     
-    len = FS_ReadFile( name, NULL );
+    len = fileSystem->ReadFile( name, NULL );
     if( len == sizeof( fontInfo_t ) )
     {
-        FS_ReadFile( name, &faceData );
+        fileSystem->ReadFile( name, &faceData );
         fdOffset = 0;
         fdFile = ( U8* )faceData;
         for( i = 0; i < GLYPHS_PER_FONT; i++ )
@@ -440,7 +440,7 @@ void idRenderSystemLocal::RegisterFont( StringEntry fontName, S32 pointSize, fon
             font->glyphs[i].glyph = renderSystemLocal.RegisterShaderNoMip( font->glyphs[i].shaderName );
         }
         ::memcpy( &registeredFont[registeredFontCount++], font, sizeof( fontInfo_t ) );
-        FS_FreeFile( faceData );
+        fileSystem->FreeFile( faceData );
         return;
     }
     
@@ -453,7 +453,7 @@ void idRenderSystemLocal::RegisterFont( StringEntry fontName, S32 pointSize, fon
         return;
     }
     
-    len = FS_ReadFile( fontName, &faceData );
+    len = fileSystem->ReadFile( fontName, &faceData );
     if( len <= 0 )
     {
         CL_RefPrintf( PRINT_WARNING, "idRenderSystemLocal::RegisterFont: Unable to read font file '%s'\n", fontName );
@@ -587,12 +587,12 @@ void idRenderSystemLocal::RegisterFont( StringEntry fontName, S32 pointSize, fon
     
     if( r_saveFontData->integer )
     {
-        FS_WriteFile( va( "fonts/fontImage_%i.dat", pointSize ), font, sizeof( fontInfo_t ) );
+        fileSystem->WriteFile( va( "fonts/fontImage_%i.dat", pointSize ), font, sizeof( fontInfo_t ) );
     }
     
     Z_Free( out );
     
-    FS_FreeFile( faceData );
+    fileSystem->FreeFile( faceData );
 #endif
 }
 

@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_shader.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: this file deals with the parsing and definition of shaders
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -727,6 +727,21 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                     type = IMGTYPE_SPECULAR;
                     flags |= IMGFLAG_NOLIGHTSCALE;
                 }
+                else if( stage->type == ST_SUBSURFACEMAP )
+                {
+                    type = IMGTYPE_SUBSURFACE;
+                    flags |= IMGFLAG_NOLIGHTSCALE;
+                }
+                else if( stage->type == ST_OVERLAYMAP )
+                {
+                    type = IMGTYPE_OVERLAY;
+                    flags |= IMGFLAG_NOLIGHTSCALE;
+                }
+                else if( stage->type == ST_STEEPMAP )
+                {
+                    type = IMGTYPE_STEEPMAP;
+                    flags |= IMGFLAG_NOLIGHTSCALE;
+                }
                 else
                 {
                     if( r_genNormalMaps->integer )
@@ -915,6 +930,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             }
             
             atestBits = NameToAFunc( token );
+            shader.hasAlpha = true;
         }
         //
         // depthFunc <func>
@@ -1032,11 +1048,85 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
                 stage->type = ST_SPECULARMAP;
                 VectorSet4( stage->specularScale, 1.0f, 1.0f, 1.0f, 1.0f );
             }
+            else if( !Q_stricmp( token, "subsurfaceMap" ) )
+            {
+                stage->type = ST_SUBSURFACEMAP;
+                VectorSet4( stage->subsurfaceExtinctionCoefficient, 0.0f, 0.0f, 0.0f, 0.0f );
+            }
+            else if( !Q_stricmp( token, "overlayMap" ) )
+            {
+                stage->type = ST_OVERLAYMAP;
+            }
+            else if( !Q_stricmp( token, "steepMap" ) )
+            {
+                stage->type = ST_STEEPMAP;
+            }
             else
             {
                 CL_RefPrintf( PRINT_WARNING, "WARNING: unknown stage parameter '%s' in shader '%s'\n", token, shader.name );
                 continue;
             }
+        }
+        else if( !Q_stricmp( token, "subsurfaceRimScalar" ) )
+        {
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for subsurfaceRimScalar in shader '%s'\n", shader.name );
+                continue;
+            }
+            stage->subsurfaceRimScalar = atof( token );
+        }
+        else if( !Q_stricmp( token, "subsurfaceMaterialThickness" ) )
+        {
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for subsurfaceMaterialThickness in shader '%s'\n", shader.name );
+                continue;
+            }
+            stage->subsurfaceMaterialThickness = atof( token );
+        }
+        else if( !Q_stricmp( token, "subsurfaceSpecularPower" ) )
+        {
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for subsurfaceSpecularPower in shader '%s'\n", shader.name );
+                continue;
+            }
+            stage->subsurfaceSpecularPower = atof( token );
+        }
+        else if( !Q_stricmp( token, "subsurfaceExtinctionCoefficient" ) )
+        {
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for subsurfaceExtinctionCoefficient in shader '%s'\n", shader.name );
+                continue;
+            }
+            
+            stage->subsurfaceExtinctionCoefficient[0] = atof( token );
+            
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                CL_RefPrintf( PRINT_WARNING, "WARNING: missing parameter for specularScale in shader '%s'\n", shader.name );
+                continue;
+            }
+            
+            stage->subsurfaceExtinctionCoefficient[1] = atof( token );
+            
+            token = COM_ParseExt2( text, false );
+            if( token[0] == 0 )
+            {
+                // two values, rgb then gloss
+                stage->specularScale[3] = stage->specularScale[1];
+                stage->specularScale[1] = stage->specularScale[2] = stage->specularScale[0];
+                continue;
+            }
+            
+            stage->subsurfaceExtinctionCoefficient[2] = atof( token );
         }
         //
         // specularReflectance <value>
@@ -1500,7 +1590,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
             
             while ( 1 )
             {
-            token = COM_ParseExt( text, qfalse );
+            token = COM_ParseExt( text, false );
             if ( token[0] == 0 )
             break;
             Q_strcat( buffer, sizeof( buffer ), token );
@@ -1547,8 +1637,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
     //
     // implicitly assume that a GL_ONE GL_ZERO blend mask disables blending
     //
-    if( ( blendSrcBits == GLS_SRCBLEND_ONE ) &&
-            ( blendDstBits == GLS_DSTBLEND_ZERO ) )
+    if( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ZERO ) )
     {
         blendDstBits = blendSrcBits = 0;
         depthMaskBits = GLS_DEPTHMASK_TRUE;
@@ -1557,8 +1646,7 @@ static bool ParseStage( shaderStage_t* stage, UTF8** text )
     // decide which agens we can skip
     if( stage->alphaGen == AGEN_IDENTITY )
     {
-        if( stage->rgbGen == CGEN_IDENTITY
-                || stage->rgbGen == CGEN_LIGHTING_DIFFUSE )
+        if( stage->rgbGen == CGEN_IDENTITY || stage->rgbGen == CGEN_LIGHTING_DIFFUSE )
         {
             stage->alphaGen = AGEN_SKIP;
         }
@@ -1767,7 +1855,7 @@ static void ParseSkyParms( UTF8** text )
     {
         for( i = 0 ; i < 6 ; i++ )
         {
-            Com_sprintf( pathname, sizeof( pathname ), "%s_%s.tga"
+            Com_sprintf( pathname, sizeof( pathname ), "%s_%s"
                          , token, suf[i] );
             shader.sky.outerbox[i] = R_FindImageFile( ( UTF8* ) pathname, IMGTYPE_COLORALPHA, imgFlags | IMGFLAG_CLAMPTOEDGE );
             
@@ -1804,7 +1892,7 @@ static void ParseSkyParms( UTF8** text )
     {
         for( i = 0 ; i < 6 ; i++ )
         {
-            Com_sprintf( pathname, sizeof( pathname ), "%s_%s.tga"
+            Com_sprintf( pathname, sizeof( pathname ), "%s_%s"
                          , token, suf[i] );
             shader.sky.innerbox[i] = R_FindImageFile( ( UTF8* ) pathname, IMGTYPE_COLORALPHA, imgFlags );
             if( !shader.sky.innerbox[i] )
@@ -1975,18 +2063,19 @@ static void ParseSurfaceParm( UTF8** text )
     S32		i;
     
     token = COM_ParseExt2( text, false );
+    
     for( i = 0 ; i < numInfoParms ; i++ )
     {
         if( !Q_stricmp( token, infoParms[i].name ) )
         {
             shader.surfaceFlags |= infoParms[i].surfaceFlags;
             shader.contentFlags |= infoParms[i].contents;
-#if 0
+            
             if( infoParms[i].clearSolid )
             {
-                si->contents &= ~CONTENTS_SOLID;
+                shader.contentFlags &= ~CONTENTS_SOLID;
             }
-#endif
+            
             break;
         }
     }
@@ -2001,60 +2090,13 @@ shader.  Parse it into the global shader variable.  Later functions
 will optimize it.
 =================
 */
-static bool ParseShader( UTF8** text )
+static bool ParseShader( const char* name, UTF8** text )
 {
     UTF8* token;
     S32 s;
     
     s = 0;
     
-    if( StringContainsWord( *text, "plastic" ) || StringContainsWord( *text, "trooper" ) )
-        shader.surfaceFlags |= MATERIAL_PLASTIC;
-    else if( StringContainsWord( *text, "metal" ) || StringContainsWord( *text, "pipe" ) )
-        shader.surfaceFlags |= MATERIAL_SOLIDMETAL;
-    else if( StringContainsWord( *text, "glass" ) )
-        shader.surfaceFlags |= MATERIAL_GLASS;
-    else if( StringContainsWord( *text, "sand" ) )
-        shader.surfaceFlags |= MATERIAL_SAND;
-    else if( StringContainsWord( *text, "gravel" ) )
-        shader.surfaceFlags |= MATERIAL_GRAVEL;
-    else if( StringContainsWord( *text, "dirt" ) )
-        shader.surfaceFlags |= MATERIAL_DIRT;
-    else if( StringContainsWord( *text, "concrete" ) )
-        shader.surfaceFlags |= MATERIAL_CONCRETE;
-    else if( StringContainsWord( *text, "marble" ) )
-        shader.surfaceFlags |= MATERIAL_MARBLE;
-    else if( StringContainsWord( *text, "snow" ) )
-        shader.surfaceFlags |= MATERIAL_SNOW;
-    else if( StringContainsWord( *text, "flesh" ) || StringContainsWord( *text, "body" ) )
-        shader.surfaceFlags |= MATERIAL_FLESH;
-    else if( StringContainsWord( *text, "canvas" ) )
-        shader.surfaceFlags |= MATERIAL_CANVAS;
-    else if( StringContainsWord( *text, "rock" ) )
-        shader.surfaceFlags |= MATERIAL_ROCK;
-    else if( StringContainsWord( *text, "rubber" ) )
-        shader.surfaceFlags |= MATERIAL_RUBBER;
-    else if( StringContainsWord( *text, "carpet" ) )
-        shader.surfaceFlags |= MATERIAL_CARPET;
-    else if( StringContainsWord( *text, "plaster" ) )
-        shader.surfaceFlags |= MATERIAL_PLASTER;
-    else if( StringContainsWord( *text, "computer" ) || StringContainsWord( *text, "console" ) || StringContainsWord( *text, "button" ) )
-        shader.surfaceFlags |= MATERIAL_COMPUTER;
-    else if( StringContainsWord( *text, "armor" ) || StringContainsWord( *text, "armour" ) )
-        shader.surfaceFlags |= MATERIAL_ARMOR;
-    else if( StringContainsWord( *text, "fabric" ) )
-        shader.surfaceFlags |= MATERIAL_FABRIC;
-    else if( StringContainsWord( *text, "hood" ) || StringContainsWord( *text, "robe" ) || StringContainsWord( *text, "cloth" ) )
-        shader.surfaceFlags |= MATERIAL_FABRIC;
-    else if( StringContainsWord( *text, "tile" ) )
-        shader.surfaceFlags |= MATERIAL_TILES;
-    else if( StringContainsWord( *text, "leaf" ) || StringContainsWord( *text, "leaves" ) )
-        shader.surfaceFlags |= MATERIAL_GREENLEAVES;
-    else if( StringContainsWord( *text, "mud" ) )
-        shader.surfaceFlags |= MATERIAL_MUD;
-    else if( StringContainsWord( *text, "ice" ) )
-        shader.surfaceFlags |= MATERIAL_ICE;
-        
     token = COM_ParseExt2( text, true );
     if( token[0] != '{' )
     {
@@ -2240,6 +2282,8 @@ static bool ParseShader( UTF8** text )
         }
         else if( !Q_stricmp( token, "sunshader" ) )
         {
+            size_t tokenLen;
+            
             token = COM_ParseExt2( text, false );
             if( !token[0] )
             {
@@ -2247,7 +2291,12 @@ static bool ParseShader( UTF8** text )
                 continue;
             }
             
-            Q_strncpyz( tr.sunShaderName, token, sizeof( tr.sunShaderName ) );
+            // Don't call tr.sunShader = R_FindShader(token, SHADER_3D_STATIC, qtrue);
+            // because it breaks the computation of the current shader
+            //tokenLen = strlen(token) + 1;
+            //tr.sunShaderName[0] = (UTF8)Hunk_Alloc(sizeof(UTF8) * tokenLen, h_low);
+            //Q_strncpyz(tr.sunShaderName, token, tokenLen);
+            //Q_strncpyz( tr.sunShaderName, token, sizeof( tr.sunShaderName ) );
             continue;
         }
         // fogParms
@@ -2351,7 +2400,7 @@ static bool ParseShader( UTF8** text )
         // distancecull <opaque distance> <transparent distance> <alpha threshold>
         else if( !Q_stricmp( token, "distancecull" ) )
         {
-            int i;
+            S32 i;
             
             
             for( i = 0; i < 3; i++ )
@@ -2434,6 +2483,61 @@ static bool ParseShader( UTF8** text )
     if( s == 0 && !shader.isSky && !( shader.contentFlags & CONTENTS_FOG ) && implicitMap[0] == '\0' )
     {
         return false;
+    }
+    
+    if( StringContainsWord( *text, "plastic" ) || StringContainsWord( *text, "trooper" ) )
+        shader.surfaceFlags |= MATERIAL_PLASTIC;
+    else if( StringContainsWord( *text, "metal" ) || StringContainsWord( *text, "pipe" ) )
+        shader.surfaceFlags |= MATERIAL_SOLIDMETAL;
+    else if( StringContainsWord( *text, "glass" ) )
+        shader.surfaceFlags |= MATERIAL_GLASS;
+    else if( StringContainsWord( *text, "sand" ) )
+        shader.surfaceFlags |= MATERIAL_SAND;
+    else if( StringContainsWord( *text, "gravel" ) )
+        shader.surfaceFlags |= MATERIAL_GRAVEL;
+    else if( StringContainsWord( *text, "dirt" ) )
+        shader.surfaceFlags |= MATERIAL_DIRT;
+    else if( StringContainsWord( *text, "concrete" ) )
+        shader.surfaceFlags |= MATERIAL_CONCRETE;
+    else if( StringContainsWord( *text, "marble" ) )
+        shader.surfaceFlags |= MATERIAL_MARBLE;
+    else if( StringContainsWord( *text, "snow" ) )
+        shader.surfaceFlags |= MATERIAL_SNOW;
+    else if( StringContainsWord( *text, "flesh" ) || StringContainsWord( *text, "body" ) )
+        shader.surfaceFlags |= MATERIAL_FLESH;
+    else if( StringContainsWord( *text, "canvas" ) )
+        shader.surfaceFlags |= MATERIAL_CANVAS;
+    else if( StringContainsWord( *text, "rock" ) )
+        shader.surfaceFlags |= MATERIAL_ROCK;
+    else if( StringContainsWord( *text, "rubber" ) )
+        shader.surfaceFlags |= MATERIAL_RUBBER;
+    else if( StringContainsWord( *text, "carpet" ) )
+        shader.surfaceFlags |= MATERIAL_CARPET;
+    else if( StringContainsWord( *text, "plaster" ) )
+        shader.surfaceFlags |= MATERIAL_PLASTER;
+    else if( StringContainsWord( *text, "computer" ) || StringContainsWord( *text, "console" ) || StringContainsWord( *text, "button" ) )
+        shader.surfaceFlags |= MATERIAL_COMPUTER;
+    else if( StringContainsWord( *text, "armor" ) || StringContainsWord( *text, "armour" ) )
+        shader.surfaceFlags |= MATERIAL_ARMOR;
+    else if( StringContainsWord( *text, "fabric" ) )
+        shader.surfaceFlags |= MATERIAL_FABRIC;
+    else if( StringContainsWord( *text, "hood" ) || StringContainsWord( *text, "robe" ) || StringContainsWord( *text, "cloth" ) )
+        shader.surfaceFlags |= MATERIAL_FABRIC;
+    else if( StringContainsWord( *text, "tile" ) )
+        shader.surfaceFlags |= MATERIAL_TILES;
+    else if( StringContainsWord( *text, "leaf" ) || StringContainsWord( *text, "leaves" ) )
+        shader.surfaceFlags |= MATERIAL_GREENLEAVES;
+    else if( StringContainsWord( *text, "mud" ) )
+        shader.surfaceFlags |= MATERIAL_MUD;
+    else if( StringContainsWord( *text, "ice" ) )
+        shader.surfaceFlags |= MATERIAL_ICE;
+        
+    if( shader.hasAlpha )
+    {
+        // Always greenleaves... No parallax...
+        S32 oldmat = ( shader.surfaceFlags & MATERIAL_MASK );
+        if( oldmat ) shader.surfaceFlags &= ~oldmat;
+        shader.surfaceFlags |= MATERIAL_GREENLEAVES;
     }
     
     shader.explicitlyDefined = true;
@@ -2550,20 +2654,20 @@ static void ComputeVertexAttribs( void )
         {
             shader.vertexAttribs |= ATTR_NORMAL;
             
-            if( ( pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK ) && !( r_normalMapping->integer == 0 && r_specularMapping->integer == 0 ) )
+            //if( ( pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK ) && !( r_normalMapping->integer == 0 && r_specularMapping->integer == 0 ) )
             {
                 shader.vertexAttribs |= ATTR_TANGENT;
             }
             
-            switch( pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK )
-            {
-                case LIGHTDEF_USE_LIGHTMAP:
-                case LIGHTDEF_USE_LIGHT_VERTEX:
-                    shader.vertexAttribs |= ATTR_LIGHTDIRECTION;
-                    break;
-                default:
-                    break;
-            }
+            //switch( pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK )
+            //{
+            //    case LIGHTDEF_USE_LIGHTMAP:
+            //    case LIGHTDEF_USE_LIGHT_VERTEX:
+            //        shader.vertexAttribs |= ATTR_LIGHTDIRECTION;
+            //        break;
+            //    default:
+            //        break;
+            //}
         }
         
         for( i = 0; i < NUM_TEXTURE_BUNDLES; i++ )
@@ -2694,11 +2798,11 @@ FIXME: I think modulated add + modulated add collapses incorrectly
 */
 static bool CollapseMultitexture( void )
 {
-    int abits, bbits;
-    int i;
+    S32 abits, bbits;
+    S32 i;
     textureBundle_t tmpBundle;
     
-    if( !glActiveTextureARB )
+    if( !qglActiveTextureARB )
     {
         return false;
     }
@@ -2804,7 +2908,7 @@ static bool CollapseMultitexture( void )
 }
 
 
-void StripCrap( const char* in, char* out, int destsize )
+void StripCrap( const char* in, char* out, S32 destsize )
 {
     const char* dot = strrchr( in, '_' ), *slash;
     if( dot && ( !( slash = strrchr( in, '/' ) ) || slash < dot ) )
@@ -2818,15 +2922,22 @@ void StripCrap( const char* in, char* out, int destsize )
 
 
 static void CollapseStagesToLightall( shaderStage_t* diffuse,
-                                      shaderStage_t* normal, shaderStage_t* specular, shaderStage_t* lightmap,
+                                      shaderStage_t* normal, shaderStage_t* specular, shaderStage_t* lightmap, shaderStage_t* subsurface, shaderStage_t* overlay,
                                       bool useLightVector, bool useLightVertex, bool parallax, bool tcgen )
 {
     S32 defs = 0;
     bool hasRealNormalMap = false;
     bool hasRealSpecularMap = false;
+    bool checkNormals = true;
+    bool hasRealSubsurfaceMap = false;
+    bool hasRealOverlayMap = false;
+    bool hasRealSteepMap = false;
     
     //CL_RefPrintf(PRINT_ALL, "shader %s has diffuse %s", shader.name, diffuse->bundle[0].image[0]->imgName);
     
+    if( shader.isPortal || shader.isSky )
+        checkNormals = false;
+        
     // reuse diffuse, mark others inactive
     diffuse->type = ST_GLSL;
     
@@ -2843,6 +2954,67 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
     else if( useLightVertex )
     {
         defs |= LIGHTDEF_USE_LIGHT_VERTEX;
+    }
+    
+    else if( checkNormals )
+    {
+        // If we marked this as a material (and it's not a portal or sky), override no light with vertex light for reflection and specular...
+        switch( shader.surfaceFlags & MATERIAL_MASK )
+        {
+            case MATERIAL_WATER:			// 13			// light covering of water on a surface
+                //case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+                //case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+            case MATERIAL_TILES:			// 26			// tiled floor
+            case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            case MATERIAL_FABRIC:			// 21			// Cotton sheets
+            case MATERIAL_CANVAS:			// 22			// tent material
+            case MATERIAL_MARBLE:			// 12			// marble floors
+            case MATERIAL_SNOW:				// 14			// freshly laid snow
+            case MATERIAL_PLASTIC:			// 25			//
+            case MATERIAL_ARMOR:			// 30			// body armor
+            case MATERIAL_ICE:				// 15			// packed snow/solid ice
+            case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+                defs |= LIGHTDEF_USE_LIGHT_VERTEX; // Vertex currently most compatible...
+                useLightVertex = true;
+                //defs |= LIGHTDEF_USE_LIGHT_VECTOR;
+                //useLightVector = true;
+                break;
+            case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax...
+                //case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+            case MATERIAL_GLASS:			// 10			//
+            case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+                defs |= LIGHTDEF_USE_LIGHT_VECTOR; // These look nice using vector...
+                useLightVector = true;
+                //defs |= LIGHTDEF_USE_LIGHT_VERTEX;
+                //useLightVertex = true;
+                break;
+            case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+            case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+            case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+            case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+            case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+                //defs |= LIGHTDEF_USE_LIGHT_VECTOR;
+                //useLightVector = true;
+                defs |= LIGHTDEF_USE_LIGHT_VERTEX; // Vertex currently most compatible...
+                useLightVertex = true;
+                break;
+            case MATERIAL_SAND:				// 8			// sandy beach
+            case MATERIAL_CARPET:			// 27			// lush carpet
+            case MATERIAL_GRAVEL:			// 9			// lots of small stones
+            case MATERIAL_ROCK:				// 23			//
+            case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+            case MATERIAL_MUD:				// 17			// wet soil
+            case MATERIAL_DIRT:				// 7			// hard mud
+            case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+            case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+            case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+            case MATERIAL_PLASTER:			// 28			// drywall style plaster
+            default:
+                defs |= LIGHTDEF_USE_LIGHT_VERTEX; // Vertex currently most compatible...
+                useLightVertex = true;
+                break;
+        }
     }
     
     if( r_deluxeMapping->integer && tr.worldDeluxeMapping && lightmap && shader.lightmapIndex >= 0 )
@@ -2866,8 +3038,8 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
             
             hasRealNormalMap = true;
         }
-        else if( ( lightmap || useLightVector || useLightVertex )
-                 && ( diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0] ) )
+        else if( normal && normal->bundle[0].image[0] )
+            //else if( ( lightmap || useLightVector || useLightVertex ) && ( diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0] ) )
         {
             UTF8 normalName[MAX_QPATH];
             image_t* normalImg;
@@ -2934,6 +3106,179 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
         }
     }
     
+    if( 1 && checkNormals )
+    {
+        image_t* diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0];
+        
+        if( diffuse->bundle[TB_SUBSURFACEMAP].image[0] && diffuse->bundle[TB_SUBSURFACEMAP].image[0] != tr.whiteImage )
+        {
+            // Got one...
+            diffuse->bundle[TB_SUBSURFACEMAP] = specular->bundle[0];
+            VectorCopy4( subsurface->subsurfaceExtinctionCoefficient, diffuse->subsurfaceExtinctionCoefficient );
+            hasRealSubsurfaceMap = true;
+        }
+        else if( diffuse && !diffuse->bundle[TB_SUBSURFACEMAP].subsurfaceLoaded )
+        {
+            // Check if we can load one...
+            char specularName[MAX_QPATH];
+            char specularName2[MAX_QPATH];
+            image_t* specularImg;
+            S32 specularFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE;
+            
+            diffuse->bundle[TB_SUBSURFACEMAP].subsurfaceLoaded = true;
+            
+            COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+            StripCrap( specularName, specularName2, sizeof( specularName ) );
+            Q_strcat( specularName2, sizeof( specularName2 ), "_sub" );
+            
+            specularImg = R_FindImageFile( specularName2, IMGTYPE_SUBSURFACE, specularFlags );
+            
+            if( !specularImg )
+            {
+                COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+                StripCrap( specularName, specularName2, sizeof( specularName ) );
+                Q_strcat( specularName2, sizeof( specularName2 ), "_subsurface" );
+                
+                specularImg = R_FindImageFile( specularName2, IMGTYPE_SUBSURFACE, specularFlags );
+            }
+            
+            if( specularImg )
+            {
+                diffuse->bundle[TB_SUBSURFACEMAP] = diffuse->bundle[0];
+                diffuse->bundle[TB_SUBSURFACEMAP].numImageAnimations = 0;
+                diffuse->bundle[TB_SUBSURFACEMAP].image[0] = specularImg;
+                if( subsurface )
+                    VectorCopy4( subsurface->subsurfaceExtinctionCoefficient, diffuse->subsurfaceExtinctionCoefficient );
+                hasRealSubsurfaceMap = true;
+            }
+            else
+            {
+                VectorSet4( diffuse->subsurfaceExtinctionCoefficient, 0.0f, 0.0f, 0.0f, 0.0f );
+                hasRealSubsurfaceMap = false;
+            }
+        }
+        else
+        {
+            hasRealSubsurfaceMap = false;
+        }
+    }
+    
+    if( !hasRealNormalMap && r_parallaxMapping->integer && !( defs & LIGHTDEF_USE_PARALLAXMAP ) )
+    {
+        diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
+        diffuse->bundle[TB_NORMALMAP].numImageAnimations = 0;
+        diffuse->bundle[TB_NORMALMAP].image[0] = diffuse->bundle[TB_DIFFUSEMAP].image[0];
+        
+        VectorSet4( diffuse->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value );
+    }
+    
+    if( 1 && checkNormals )
+    {
+        image_t* diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0];
+        
+        if( diffuse->bundle[TB_OVERLAYMAP].image[0] && diffuse->bundle[TB_OVERLAYMAP].image[0] != tr.whiteImage )
+        {
+            // Got one...
+            diffuse->bundle[TB_OVERLAYMAP] = specular->bundle[0];
+            hasRealOverlayMap = true;
+        }
+        else if( !diffuse->bundle[TB_OVERLAYMAP].overlayLoaded )
+        {
+            // Check if we can load one...
+            char specularName[MAX_QPATH];
+            char specularName2[MAX_QPATH];
+            image_t* specularImg;
+            S32 specularFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) | IMGFLAG_NOLIGHTSCALE;
+            
+            COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+            StripCrap( specularName, specularName2, sizeof( specularName ) );
+            Q_strcat( specularName2, sizeof( specularName2 ), "_o" );
+            
+            specularImg = R_FindImageFile( specularName2, IMGTYPE_OVERLAY, specularFlags );
+            
+            if( !specularImg )
+            {
+                COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+                StripCrap( specularName, specularName2, sizeof( specularName ) );
+                Q_strcat( specularName2, sizeof( specularName2 ), "_overlay" );
+                
+                specularImg = R_FindImageFile( specularName2, IMGTYPE_OVERLAY, specularFlags );
+            }
+            
+            /*
+            // This is a possibility, but requires more work...
+            if (!specularImg && (StringContainsWord(specularName, "foliage/grass") || StringContainsWord(specularName, "foliages/sch")))
+            {// Testing adding extra grass textures like this...
+            specularImg = diffuseImg;
+            }
+            */
+            
+            if( specularImg )
+            {
+                diffuse->bundle[TB_OVERLAYMAP] = diffuse->bundle[0];
+                diffuse->bundle[TB_OVERLAYMAP].numImageAnimations = 0;
+                diffuse->bundle[TB_OVERLAYMAP].image[0] = specularImg;
+                hasRealOverlayMap = true;
+            }
+            else
+            {
+                hasRealOverlayMap = false;
+            }
+            
+            diffuse->bundle[TB_OVERLAYMAP].overlayLoaded = true;
+        }
+        else
+        {
+            hasRealOverlayMap = false;
+        }
+    }
+    
+    if( 1 && checkNormals )
+    {
+        image_t* diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0];
+        
+        if( diffuse->bundle[TB_STEEPMAP].image[0] && diffuse->bundle[TB_STEEPMAP].image[0] != tr.whiteImage )
+        {
+            // Got one...
+            diffuse->bundle[TB_STEEPMAP] = specular->bundle[0];
+            hasRealSteepMap = true;
+        }
+        else if( !diffuse->bundle[TB_STEEPMAP].steepMapLoaded )
+        {
+            // Check if we can load one...
+            char specularName[MAX_QPATH];
+            char specularName2[MAX_QPATH];
+            image_t* specularImg;
+            S32 specularFlags = ( diffuseImg->flags & ~( IMGFLAG_GENNORMALMAP | IMGFLAG_SRGB | IMGFLAG_CLAMPTOEDGE ) ) /*| IMGFLAG_NOLIGHTSCALE*/;
+            
+            COM_StripExtension2( diffuseImg->imgName, specularName, sizeof( specularName ) );
+            StripCrap( specularName, specularName2, sizeof( specularName ) );
+            Q_strcat( specularName2, sizeof( specularName2 ), "_steep" );
+            
+            specularImg = R_FindImageFile( specularName2, IMGTYPE_STEEPMAP, specularFlags );
+            
+            if( specularImg )
+            {
+                //ri->Printf(PRINT_WARNING, "+++++++++++++++ Loaded steep map %s [%i x %i].\n", specularName2, specularImg->width, specularImg->height);
+                diffuse->bundle[TB_STEEPMAP] = diffuse->bundle[0];
+                diffuse->bundle[TB_STEEPMAP].numImageAnimations = 0;
+                diffuse->bundle[TB_STEEPMAP].image[0] = specularImg;
+                hasRealSteepMap = true;
+            }
+            else
+            {
+                hasRealSteepMap = false;
+            }
+            
+            diffuse->bundle[TB_STEEPMAP].steepMapLoaded = true;
+        }
+        else
+        {
+            hasRealSteepMap = false;
+        }
+    }
+    
+    
     if( tcgen || diffuse->bundle[0].numTexMods )
     {
         defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
@@ -2943,14 +3288,47 @@ static void CollapseStagesToLightall( shaderStage_t* diffuse,
     
     if( hasRealNormalMap )
     {
-        diffuse->glslShaderGroup = tr.lightallShader;
+        diffuse->hasRealNormalMap = true;
+    }
+    else
+    {
+        diffuse->hasRealNormalMap = false;
     }
     
     if( hasRealSpecularMap )
     {
-        if( diffuse ) diffuse->hasSpecular = true;
-        if( normal ) normal->hasSpecular = true;
-        if( specular ) specular->hasSpecular = true;
+        diffuse->hasSpecular = true;
+    }
+    else
+    {
+        diffuse->hasSpecular = false;
+    }
+    
+    if( hasRealSubsurfaceMap )
+    {
+        diffuse->hasRealSubsurfaceMap = true;
+    }
+    else
+    {
+        diffuse->hasRealSubsurfaceMap = false;
+    }
+    
+    if( hasRealOverlayMap )
+    {
+        diffuse->hasRealOverlayMap = true;
+    }
+    else
+    {
+        diffuse->hasRealOverlayMap = false;
+    }
+    
+    if( hasRealSteepMap )
+    {
+        diffuse->hasRealSteepMap = true;
+    }
+    else
+    {
+        diffuse->hasRealSteepMap = false;
     }
     
     diffuse->glslShaderGroup = tr.lightallShader;
@@ -2964,6 +3342,9 @@ static S32 CollapseStagesToGLSL( void )
     bool skip = false;
     bool hasRealNormalMap = false;
     bool hasRealSpecularMap = false;
+    bool hasRealSubsurfaceMap = false;
+    bool hasRealOverlayMap = false;
+    bool hasRealSteepMap = false;
     
     // skip shaders with deforms
     if( shader.numDeforms != 0 )
@@ -3053,7 +3434,7 @@ static S32 CollapseStagesToGLSL( void )
         for( i = 0; i < MAX_SHADER_STAGES; i++ )
         {
             shaderStage_t* pStage = &stages[i];
-            shaderStage_t* diffuse, *normal, *specular, *lightmap;
+            shaderStage_t* diffuse, *normal, *specular, *lightmap, *subsurface, *overlay, *steep;
             bool parallax, tcgen, diffuselit, vertexlit;
             
             if( !pStage->active )
@@ -3072,6 +3453,9 @@ static S32 CollapseStagesToGLSL( void )
             parallax = false;
             specular = NULL;
             lightmap = NULL;
+            subsurface = NULL;
+            overlay = NULL;
+            steep = NULL;
             
             // we have a diffuse map, find matching normal, specular, and lightmap
             bool usedLightmap = false;
@@ -3108,10 +3492,35 @@ static S32 CollapseStagesToGLSL( void )
                         }
                         break;
                         
+                    case ST_SUBSURFACEMAP:
+                        if( !subsurface )
+                        {
+                            hasRealSubsurfaceMap = true;
+                            subsurface = pStage2;
+                        }
+                        break;
+                        
+                    case ST_OVERLAYMAP:
+                        if( !overlay )
+                        {
+                            hasRealOverlayMap = true;
+                            overlay = pStage2;
+                        }
+                        break;
+                        
+                    case ST_STEEPMAP:
+                        if( !steep )
+                        {
+                            hasRealSteepMap = true;
+                            steep = pStage2;
+                        }
+                        break;
+                        
+                        
                     case ST_COLORMAP:
                         if( pStage2->bundle[0].tcGen == TCGEN_LIGHTMAP )
                         {
-                            int blendBits = pStage->stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+                            S32 blendBits = pStage->stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
                             
                             // Only add lightmap to blendfunc filter stage if it's the first time lightmap is used
                             // otherwise it will cause the shader to be darkened by the lightmap multiple times.
@@ -3149,7 +3558,7 @@ static S32 CollapseStagesToGLSL( void )
                 vertexlit = true;
             }
             
-            CollapseStagesToLightall( diffuse, normal, specular, lightmap, diffuselit, vertexlit, parallax, tcgen );
+            CollapseStagesToLightall( diffuse, normal, specular, lightmap, subsurface, overlay, diffuselit, vertexlit, parallax, tcgen );
         }
         
         // deactivate lightmap stages
@@ -3177,18 +3586,36 @@ static S32 CollapseStagesToGLSL( void )
             
         if( pStage->type == ST_NORMALMAP )
         {
-            hasRealNormalMap = true;
+            hasRealNormalMap = false;
             pStage->active = false;
         }
         
         if( pStage->type == ST_NORMALPARALLAXMAP )
         {
+            hasRealNormalMap = false;
             pStage->active = false;
         }
         
         if( pStage->type == ST_SPECULARMAP )
         {
-            hasRealSpecularMap = true;
+            hasRealSpecularMap = false;
+            pStage->active = false;
+        }
+        
+        if( pStage->type == ST_SUBSURFACEMAP )
+        {
+            hasRealSubsurfaceMap = false;
+            pStage->active = false;
+        }
+        
+        if( pStage->type == ST_OVERLAYMAP )
+        {
+            hasRealOverlayMap = false;
+            pStage->active = false;
+        }
+        if( hasRealSteepMap )
+        {
+            pStage->hasRealSteepMap = true;
             pStage->active = false;
         }
     }
@@ -3230,7 +3657,13 @@ static S32 CollapseStagesToGLSL( void )
                 
             if( pStage->bundle[TB_DIFFUSEMAP].tcGen == TCGEN_LIGHTMAP )
             {
+                pStage->hasRealNormalMap = false;
+                
+                if( hasRealNormalMap )
+                    pStage->hasRealNormalMap = true;
+                    
                 pStage->glslShaderGroup = tr.lightallShader;
+                
                 pStage->glslShaderIndex = LIGHTDEF_USE_LIGHTMAP;
                 pStage->bundle[TB_LIGHTMAP] = pStage->bundle[TB_DIFFUSEMAP];
                 pStage->bundle[TB_DIFFUSEMAP].image[0] = tr.whiteImage;
@@ -3257,6 +3690,11 @@ static S32 CollapseStagesToGLSL( void )
             {
                 if( pStage->glslShaderGroup != tr.lightallShader )
                 {
+                    pStage->hasRealNormalMap = false;
+                    
+                    if( hasRealNormalMap )
+                        pStage->hasRealNormalMap = true;
+                        
                     pStage->glslShaderGroup = tr.lightallShader;
                     pStage->glslShaderIndex = LIGHTDEF_USE_LIGHT_VECTOR;
                 }
@@ -3282,11 +3720,30 @@ static S32 CollapseStagesToGLSL( void )
         }
         
         if( hasRealNormalMap )
+        {
             stage->glslShaderGroup = tr.lightallShader;
-            
+        }
+        
         if( hasRealSpecularMap )
+        {
             stage->hasSpecular = true;
-            
+        }
+        
+        if( hasRealSubsurfaceMap )
+        {
+            stage->hasRealSubsurfaceMap = true;
+        }
+        
+        if( hasRealOverlayMap )
+        {
+            stage->hasRealOverlayMap = true;
+        }
+        
+        if( hasRealSteepMap )
+        {
+            stage->hasRealSteepMap = true;
+        }
+        
         CL_RefPrintf( PRINT_DEVELOPER, "-> %s\n", stage->bundle[0].image[0]->imgName );
     }
     
@@ -3335,11 +3792,11 @@ static void FixRenderCommandList( S32 newShader )
                     S32 i;
                     drawSurf_t*	drawSurf;
                     shader_t*	shader;
-                    S64			fogNum;
-                    S64			entityNum;
-                    S64			dlightMap;
-                    S64         pshadowMap;
-                    S64			sortedIndex;
+                    S32			fogNum;
+                    S32			entityNum;
+                    S32			dlightMap;
+                    S32         pshadowMap;
+                    S32			sortedIndex;
                     const drawSurfsCommand_t* ds_cmd = ( const drawSurfsCommand_t* )curCmd;
                     
                     for( i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++ )
@@ -3395,9 +3852,9 @@ static void SortNewShader( void )
     newShader = tr.shaders[ tr.numShaders - 1 ];
     sort = newShader->sort;
     
-    for( i = tr.numShaders - 2 ; i >= 0 ; i-- )
+    for( i = tr.numShaders - 2; i >= 0; i-- )
     {
-        if( tr.sortedShaders[ i ]->sort <= sort )
+        if( tr.sortedShaders[i]->sort <= sort )
         {
             break;
         }
@@ -3655,6 +4112,8 @@ static void InitShader( StringEntry name, S32 lightmapIndex )
         
         // default normal/specular
         VectorSet4( stages[i].normalScale, 0.0f, 0.0f, 0.0f, 0.0f );
+        VectorSet4( stages[i].subsurfaceExtinctionCoefficient, 0.0f, 0.0f, 0.0f, 0.0f );
+        
         if( r_pbr->integer )
         {
             stages[i].specularScale[0] = r_baseGloss->value;
@@ -3804,12 +4263,92 @@ static shader_t* FinishShader( void )
         }
         
         // check for a missing texture
-        if( !pStage->bundle[0].image[0] )
+        switch( pStage->type )
         {
-            CL_RefPrintf( PRINT_WARNING, "Shader %s has a stage with no image\n", shader.name );
-            pStage->active = false;
-            stage++;
-            continue;
+                //case ST_LIGHTMAP:
+                //	// skip
+                //	break;
+                
+            case ST_COLORMAP: // + ST_DIFFUSEMAP
+            default:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a colormap/diffusemap stage with no image\n", shader.name );
+                    //pStage->active = qfalse;
+                    //stage++;
+                    //continue;
+                    pStage->bundle[0].image[0] = tr.defaultImage;
+                }
+                break;
+            }
+            
+            case ST_NORMALMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a normalmap stage with no image\n", shader.name );
+                    pStage->bundle[0].image[0] = tr.whiteImage;
+                }
+                break;
+            }
+            
+            case ST_SPECULARMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a specularmap stage with no image\n", shader.name );
+                    pStage->bundle[0].image[0] = tr.whiteImage; // should be blackImage
+                }
+                break;
+            }
+            
+            case ST_NORMALPARALLAXMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a normalparallaxmap stage with no image\n", shader.name );
+                    pStage->active = false;
+                    stage++;
+                    continue;
+                }
+                break;
+            }
+            
+            case ST_SUBSURFACEMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a subsurfacemap stage with no image\n", shader.name );
+                    pStage->active = false;
+                    stage++;
+                    continue;
+                }
+                break;
+            }
+            
+            case ST_OVERLAYMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a overlaymap stage with no image\n", shader.name );
+                    pStage->active = false;
+                    stage++;
+                    continue;
+                }
+                break;
+            }
+            case ST_STEEPMAP:
+            {
+                if( !pStage->bundle[0].image[0] )
+                {
+                    CL_RefPrintf( PRINT_WARNING, "Shader %s has a steepmap stage with no image\n", shader.name );
+                    pStage->active = false;
+                    stage++;
+                    continue;
+                }
+                break;
+            }
         }
         
         //
@@ -4114,14 +4653,58 @@ most world construction surfaces.
 
 ===============
 */
+
+char uniqueGenericPlayerShader[] = "{\n"\
+                                   "qer_editorimage	%s\n"\
+                                   "q3map_nolightmap\n"\
+                                   "{\n"\
+                                   "map %s\n"\
+                                   "rgbGen lightingDiffuse\n"\
+                                   "}\n"\
+                                   "}\n"\
+                                   "";
+
+char uniqueGenericWeaponShader[] = "{\n"\
+                                   "qer_editorimage	%s\n"\
+                                   "{\n"\
+                                   "map %s\n"\
+                                   "rgbGen entity\n"\
+                                   "}\n"\
+                                   "{\n"\
+                                   "map %s\n"\
+                                   "blendFunc GL_SRC_ALPHA GL_ONE\n"\
+                                   "rgbGen lightingDiffuse\n"\
+                                   "alphaGen lightingSpecular\n"\
+                                   "detail\n"\
+                                   "}\n"\
+                                   "}\n"\
+                                   "";
+
+char uniqueGenericShader[] = "{\n"\
+                             "qer_editorimage	%s\n"\
+                             "{\n"\
+                             "map %s\n"\
+                             "rgbGen vertex\n"\
+                             "}\n"\
+                             "{\n"\
+                             "map %s\n"\
+                             "blendFunc GL_SRC_ALPHA GL_ONE\n"\
+                             "rgbGen lightingDiffuse\n"\
+                             "alphaGen lightingSpecular\n"\
+                             "detail\n"\
+                             "}\n"\
+                             "}\n"\
+                             "";
+
 shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
 {
-    UTF8 strippedName[MAX_QPATH];
-    UTF8 fileName[MAX_QPATH];
-    S32	hash;
+    UTF8 strippedName[MAX_OSPATH];
+    UTF8 fileName[MAX_OSPATH];
+    S32	hash, len;
     UTF8* shaderText;
     image_t* image;
     shader_t* sh;
+    UTF8 myShader[512] = { 0 };
     
     if( name[0] == 0 )
     {
@@ -4154,8 +4737,7 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
         // then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
         // have to check all default shaders otherwise for every call to R_FindShader
         // with that same strippedName a new default shader is created.
-        if( ( sh->lightmapIndex == lightmapIndex || sh->defaultShader ) &&
-                !Q_stricmp( sh->name, strippedName ) )
+        if( ( sh->lightmapIndex == lightmapIndex || sh->defaultShader ) && !Q_stricmp( sh->name, strippedName ) )
         {
             // match found
             return sh;
@@ -4170,6 +4752,7 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
     implicitCullType = CT_FRONT_SIDED;
     
     // attempt to define shader from an explicit parameter file
+    //
     shaderText = FindShaderInShaderText( strippedName );
     if( shaderText )
     {
@@ -4180,17 +4763,58 @@ shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
             CL_RefPrintf( PRINT_ALL, "*SHADER* %s\n", name );
         }
         
-        if( !ParseShader( &shaderText ) )
+        //Com_Error(ERR_FATAL, "SHADER LOOKS LIKE:\n%s\n", shaderText);
+        
+        if( !ParseShader( name, &shaderText ) )
         {
             // had errors, so use default shader
             shader.defaultShader = true;
+        }
+        
+        if( !shader.defaultShader || StringContainsWord( name, "icon" )
+                || !( !strncmp( name, "textures/", 9 ) || !strncmp( name, "models/", 7 ) ) )
+        {
             sh = FinishShader();
             return sh;
         }
+    }
+    
+    if( ( !strncmp( name, "textures/", 9 ) || !strncmp( name, "models/", 7 ) ) && !StringContainsWord( name, "icon" ) )
+    {
+        shader.defaultShader = false;
         
-        // ydnar: allow implicit mappings
-        if( implicitMap[0] == '\0' )
+        // Generate the shader...
+        if( StringContainsWord( strippedName, "player" ) )
+            sprintf( myShader, uniqueGenericPlayerShader, strippedName, strippedName );
+        else if( StringContainsWord( strippedName, "weapon" ) )
+            sprintf( myShader, uniqueGenericPlayerShader/*uniqueGenericWeaponShader*/, strippedName, strippedName );
+        else
+            sprintf( myShader, uniqueGenericShader, strippedName, strippedName, strippedName );
+            
+        //
+        // attempt to define shader from an explicit parameter file
+        //
+        shaderText = myShader;
+        if( shaderText )
         {
+            // enable this when building a pak file to get a global list
+            // of all explicit shaders
+            if( r_printShaders->integer )
+            {
+                CL_RefPrintf( PRINT_ALL, "*SHADER* %s\n", name );
+            }
+            
+            //CL_RefPrintf(PRINT_ALL, "SHADER LOOKS LIKE:\n%s\n", shaderText);
+            
+            if( !ParseShader( name, &shaderText ) )
+            {
+                // had errors, so use default shader
+                shader.defaultShader = true;
+            }
+            else
+            {
+                CL_RefPrintf( PRINT_WARNING, "Advanced generic shader generated for image %s.\n", name );
+            }
             sh = FinishShader();
             return sh;
         }
@@ -4428,6 +5052,12 @@ qhandle_t RE_RegisterShaderLightMap( StringEntry name, S32 lightmapIndex )
 {
     shader_t*	sh;
     
+    if( !name )
+    {
+        Com_Printf( "NULL shader\n" );
+        return 0;
+    }
+    
     if( strlen( name ) >= MAX_QPATH )
     {
         CL_RefPrintf( PRINT_ALL, "Shader name exceeds MAX_QPATH\n" );
@@ -4664,7 +5294,7 @@ static void ScanAndLoadShaderFiles( void )
     
     S64 sum = 0, summand;
     // scan for shader files
-    shaderFiles = FS_ListFiles( "scripts", ".shader", &numShaderFiles );
+    shaderFiles = fileSystem->ListFiles( "scripts", ".shader", &numShaderFiles );
     
     if( !shaderFiles || !numShaderFiles )
     {
@@ -4691,14 +5321,14 @@ static void ScanAndLoadShaderFiles( void )
                 strcpy( ext, ".mtr" );
             }
             
-            if( FS_ReadFile( filename, NULL ) <= 0 )
+            if( fileSystem->ReadFile( filename, NULL ) <= 0 )
             {
                 Com_sprintf( filename, sizeof( filename ), "scripts/%s", shaderFiles[i] );
             }
         }
         
         CL_RefPrintf( PRINT_DEVELOPER, "...loading '%s'\n", filename );
-        summand = FS_ReadFile( filename, ( void** )&buffers[i] );
+        summand = fileSystem->ReadFile( filename, ( void** )&buffers[i] );
         
         if( !buffers[i] )
             Com_Error( ERR_DROP, "Couldn't load %s", filename );
@@ -4726,7 +5356,7 @@ static void ScanAndLoadShaderFiles( void )
                     CL_RefPrintf( PRINT_WARNING, " (found \"%s\" on line %d)", token, COM_GetCurrentParseLine() );
                 }
                 CL_RefPrintf( PRINT_WARNING, ".\n" );
-                FS_FreeFile( buffers[i] );
+                fileSystem->FreeFile( buffers[i] );
                 buffers[i] = NULL;
                 break;
             }
@@ -4735,7 +5365,7 @@ static void ScanAndLoadShaderFiles( void )
             {
                 CL_RefPrintf( PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing closing brace.\n",
                               filename, shaderName, shaderLine );
-                FS_FreeFile( buffers[i] );
+                fileSystem->FreeFile( buffers[i] );
                 buffers[i] = NULL;
                 break;
             }
@@ -4758,14 +5388,14 @@ static void ScanAndLoadShaderFiles( void )
         {
             textEnd = stradd( textEnd, buffers[i] );
             textEnd = stradd( textEnd, "\n" );
-            FS_FreeFile( buffers[i] );
+            fileSystem->FreeFile( buffers[i] );
         }
     }
     
     COM_Compress( s_shaderText );
     
     // free up memory
-    FS_FreeFileList( shaderFiles );
+    fileSystem->FreeFileList( shaderFiles );
     
     ::memset( shaderTextHashTableSizes, 0, sizeof( shaderTextHashTableSizes ) );
     size = 0;

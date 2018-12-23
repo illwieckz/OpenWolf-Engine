@@ -28,14 +28,21 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   math_matrix.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
 #include <OWLib/q_splineshared.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
 mat3_t mat3_default( idVec3( 1, 0, 0 ), idVec3( 0, 1, 0 ), idVec3( 0, 0, 1 ) );
 

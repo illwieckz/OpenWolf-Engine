@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_models.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: model loading and caching
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ qhandle_t R_RegisterMD3( StringEntry name, model_t* mod )
         else
             Com_sprintf( namebuf, sizeof( namebuf ), "%s.%s", filename, fext );
             
-        size = FS_ReadFile( namebuf, &buf.v );
+        size = fileSystem->ReadFile( namebuf, &buf.v );
         if( !buf.u )
             continue;
             
@@ -85,7 +85,7 @@ qhandle_t R_RegisterMD3( StringEntry name, model_t* mod )
         else
             CL_RefPrintf( PRINT_WARNING, "R_RegisterMD3: unknown fileid for %s\n", name );
             
-        FS_FreeFile( buf.v );
+        fileSystem->FreeFile( buf.v );
         
         if( loaded )
         {
@@ -131,7 +131,7 @@ qhandle_t R_RegisterMDR( StringEntry name, model_t* mod )
     bool loaded = false;
     S32 filesize;
     
-    filesize = FS_ReadFile( name, ( void** ) &buf.v );
+    filesize = fileSystem->ReadFile( name, ( void** ) &buf.v );
     if( !buf.u )
     {
         mod->type = MOD_BAD;
@@ -142,7 +142,7 @@ qhandle_t R_RegisterMDR( StringEntry name, model_t* mod )
     if( ident == MDR_IDENT )
         loaded = R_LoadMDR( mod, buf.u, filesize, name );
         
-    FS_FreeFile( buf.v );
+    fileSystem->FreeFile( buf.v );
     
     if( !loaded )
     {
@@ -169,7 +169,7 @@ qhandle_t R_RegisterIQM( StringEntry name, model_t* mod )
     bool loaded = false;
     S32 filesize;
     
-    filesize = FS_ReadFile( name, ( void** ) &buf.v );
+    filesize = fileSystem->ReadFile( name, ( void** ) &buf.v );
     if( !buf.u )
     {
         mod->type = MOD_BAD;
@@ -178,7 +178,7 @@ qhandle_t R_RegisterIQM( StringEntry name, model_t* mod )
     
     loaded = R_LoadIQM( mod, buf.u, filesize, name );
     
-    FS_FreeFile( buf.v );
+    fileSystem->FreeFile( buf.v );
     
     if( !loaded )
     {
@@ -1211,7 +1211,7 @@ void idRenderSystemLocal::Init( glconfig_t* glconfigOut )
     tr.worldEntity.e.nonNormalizedAxes = false;
     
     tr.registered = true;
-
+    
     DrawStretchPic( 0, 0, 0, 0, 0, 0, 1, 1, 0 );
 }
 

@@ -19,9 +19,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   db_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ idDatabaseSystemLocal::Init
 */
 void idDatabaseSystemLocal::Init( void )
 {
-    db_mysql = Cvar_Get( "db_mysql", "0", CVAR_SERVERINFO );
+    db_mysql = cvarSystem->Get( "db_mysql", "0", CVAR_SERVERINFO );
     
     //Dushan - connect to the mysql
     connection = mysql_init( NULL );
@@ -57,12 +57,12 @@ void idDatabaseSystemLocal::Init( void )
     if( !mysql_real_connect( connection, "localhost", "root", "", "dbname", 0, NULL, 0 ) )
     {
         Com_Printf( "^3WARNING:^7 MySQL loading failed: %s\n", mysql_error( connection ) );
-        Cvar_Set( "db_mysql", "0" );
+        cvarSystem->Set( "db_mysql", "0" );
     }
     
     //Dushan - write some info about the MySQL version
     Com_Printf( "MySQL loaded version: %s\n", mysql_get_client_info() );
-    Cvar_Set( "db_mysql", "1" );
+    cvarSystem->Set( "db_mysql", "1" );
 }
 
 /*
@@ -75,7 +75,7 @@ void idDatabaseSystemLocal::Shutdown( void )
     //Dushan - close MySQL connection
     mysql_close( connection );
     Com_Printf( "MySQL Closed\n" );
-    Cvar_Set( "db_mysql", "0" );
+    cvarSystem->Set( "db_mysql", "0" );
 }
 
 /*

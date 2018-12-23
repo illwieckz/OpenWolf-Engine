@@ -41,7 +41,7 @@
 #include <OWLib/precompiled.h>
 #endif
 
-#define MASK_SOLID		CONTENTS_PLAYERCLIP
+//#define MASK_SOLID		CONTENTS_PLAYERCLIP
 
 //===========================================================================
 //

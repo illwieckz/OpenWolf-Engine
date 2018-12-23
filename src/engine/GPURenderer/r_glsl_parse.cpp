@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_allocator.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text )
     
     static StringEntry shaderBlockNames[GPUSHADER_TYPE_COUNT] =
     {
-        "Vertex", "Fragment", "Geometry"
+        "Vertex", "Fragment", "Geometry", "TessControl", "TessEvaluation"
     };
     
     GPUProgramDesc theProgram = {};
@@ -164,23 +164,20 @@ for( const auto & shaderBlockName : shaderBlockNames )
     
     theProgram.shaders = ojkAllocArray<GPUShaderDesc>( allocator, theProgram.numShaders );
     
-    int shaderIndex = 0;
-    for( int shaderType = 0;
-            shaderType < theProgram.numShaders;
-            ++shaderType )
+    S32 shaderIndex = 0;
+    for( S32 shaderType = 0; shaderType < theProgram.numShaders; ++shaderType )
     {
         const Block* block = parsedBlocks[shaderType];
+        
         if( !block )
+        {
             continue;
-            
+        }
+        
         UTF8* source = ojkAllocString( allocator, block->blockTextLength );
         
-        strncpy_s(
-            source,
-            block->blockTextLength + 1,
-            block->blockText,
-            block->blockTextLength );
-            
+        strncpy_s( source, block->blockTextLength + 1, block->blockText, block->blockTextLength );
+        
         GPUShaderDesc& shaderDesc = theProgram.shaders[shaderIndex];
         shaderDesc.type = static_cast<GPUShaderType>( shaderType );
         shaderDesc.source = source;

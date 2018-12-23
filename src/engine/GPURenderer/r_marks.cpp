@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_marks.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: polygon projection on the world polygons
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,6 @@ void R_BoxSurfaces_r( mnode_t* node, vec3_t mins, vec3_t maxs, surfaceType_t** l
 /*
 =================
 R_AddMarkFragments
-
 =================
 */
 static void R_AddMarkFragments( S32 numClipPoints, vec3_t clipPoints[2][MAX_VERTS_ON_POLY], S32 numPlanes, vec3_t* normals, F32* dists, S32 maxPoints, vec3_t pointBuffer, S32 maxFragments, markFragment_t* fragmentBuffer, S32* returnedPoints, S32* returnedFragments, vec3_t mins, vec3_t maxs )

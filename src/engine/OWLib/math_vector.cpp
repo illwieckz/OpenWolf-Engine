@@ -28,22 +28,21 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   math_vector.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <OWLib/math_vector.h>
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include <ctype.h>
+#ifdef DEDICATED
+#include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <OWLib/types.h>
+#include <OWLib/splines.h>
+#else
+#include <OWLib/precompiled.h>
+#endif
 
 #define M_PI        3.14159265358979323846  // matches value in gcc v2 math.h
 

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_net_chan.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -163,8 +163,6 @@ void CL_Netchan_TransmitNextFragment( netchan_t* chan )
     Netchan_TransmitNextFragment( chan );
 }
 
-extern bool SV_GameIsSinglePlayer( void );
-
 /*
 ================
 CL_Netchan_Transmit
@@ -174,7 +172,7 @@ void CL_Netchan_Transmit( netchan_t* chan, msg_t* msg )
 {
     MSG_WriteByte( msg, clc_EOF );
     
-    if( !SV_GameIsSinglePlayer() )
+    if( !serverGameSystem->GameIsSinglePlayer() )
     {
         CL_Netchan_Encode( msg );
     }
@@ -191,17 +189,21 @@ CL_Netchan_Process
 */
 bool CL_Netchan_Process( netchan_t* chan, msg_t* msg )
 {
-    S32             ret;
+    bool ret;
     
     ret = Netchan_Process( chan, msg );
+    
     if( !ret )
     {
         return false;
     }
-    if( !SV_GameIsSinglePlayer() )
+    
+    if( !serverGameSystem->GameIsSinglePlayer() )
     {
         CL_Netchan_Decode( msg );
     }
+    
     newsize += msg->cursize;
+    
     return true;
 }

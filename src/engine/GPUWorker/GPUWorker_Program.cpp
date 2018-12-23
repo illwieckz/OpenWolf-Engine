@@ -29,9 +29,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   GPUWorker_Program.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ void owGPUWorkerProgram::LoadWorkerProgram( StringEntry qpath )
     
     // Read the worker program into memory.
     Com_Printf( "Loading GPU Worker Program: %s\n", fullPath.c_str() );
-    bufferSize = FS_ReadFile( fullPath.c_str(), ( void** )&buffer );
+    bufferSize = fileSystem->ReadFile( fullPath.c_str(), ( void** )&buffer );
     if( bufferSize <= 0 )
     {
         Com_Error( PRINT_ALL, "Failed to load GPU worker program %s\n", fullPath.c_str() );

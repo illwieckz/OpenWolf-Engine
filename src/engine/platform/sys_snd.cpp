@@ -27,20 +27,20 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   sdl_snd.cpp
-// Version:     v1.00
+// File name:   sys_snd.cpp
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <OWLib/precompiled.h>
 
+SDL_AudioDeviceID dev;
 bool snd_inited = false;
 
 cvar_t* s_sdlBits;
-cvar_t* s_sdlSpeed;
 cvar_t* s_sdlChannels;
 cvar_t* s_sdlDevSamps;
 cvar_t* s_sdlMixSamps;
@@ -127,7 +127,7 @@ static void SNDDMA_AudioCallback( void* userdata, Uint8* stream, S32 len )
 static struct
 {
     U16          enumFormat;
-    UTF8*        stringFormat;
+    StringEntry  stringFormat;
 } formatToStringTable[] =
 {
     {
@@ -147,10 +147,22 @@ static struct
     },
     {
         AUDIO_S16MSB, "AUDIO_S16MSB"
+    },
+    {
+        AUDIO_S32LSB, "AUDIO_S32LSB"
+    },
+    {
+        AUDIO_S32MSB, "AUDIO_S32MSB"
+    },
+    {
+        AUDIO_F32LSB, "AUDIO_F32LSB"
+    },
+    {
+        AUDIO_F32MSB, "AUDIO_F32MSB"
     }
 };
 
-static S32      formatToStringTableSize = sizeof( formatToStringTable ) / sizeof( formatToStringTable[0] );
+static const U64 formatToStringTableSize = sizeof( formatToStringTable ) / sizeof( formatToStringTable[0] );
 
 /*
 ===============
@@ -159,12 +171,11 @@ SNDDMA_PrintAudiospec
 */
 static void SNDDMA_PrintAudiospec( StringEntry str, const SDL_AudioSpec* spec )
 {
-    S32             i;
-    UTF8*           fmt = NULL;
+    StringEntry fmt = NULL;
     
     Com_Printf( "%s:\n", str );
     
-    for( i = 0; i < formatToStringTableSize; i++ )
+    for( U64 i = 0; i < formatToStringTableSize; i++ )
     {
         if( spec->format == formatToStringTable[i].enumFormat )
         {
@@ -178,7 +189,7 @@ static void SNDDMA_PrintAudiospec( StringEntry str, const SDL_AudioSpec* spec )
     }
     else
     {
-        Com_Printf( "  Format:   " S_COLOR_RED "UNKNOWN\n" );
+        Com_Printf( "  Format:   " S_COLOR_RED "UNKNOWN (%d)\n", ( S32 )spec->format );
     }
     
     Com_Printf( "  Freq:     %d\n", ( S32 )spec->freq );
@@ -191,30 +202,47 @@ static void SNDDMA_PrintAudiospec( StringEntry str, const SDL_AudioSpec* spec )
 SNDDMA_Init
 ===============
 */
-bool SNDDMA_Init( void )
+static S32 SNDDMA_ExpandSampleFrequencyKHzToHz( S32 khz )
 {
-    UTF8            drivername[128];
-    SDL_AudioSpec   desired;
-    SDL_AudioSpec   obtained;
-    S32             tmp;
+    switch( khz )
+    {
+        default:
+        case 44:
+            return 44100;
+        case 22:
+            return 22050;
+        case 11:
+            return 11025;
+    }
+}
+
+/*
+===============
+SNDDMA_Init
+===============
+*/
+bool SNDDMA_Init( S32 sampleFrequencyInKHz )
+{
+    SDL_AudioSpec desired;
+    SDL_AudioSpec obtained;
+    S32 tmp;
     
     if( snd_inited )
         return true;
         
     if( !s_sdlBits )
     {
-        s_sdlBits = Cvar_Get( "s_sdlBits", "16", CVAR_ARCHIVE );
-        s_sdlSpeed = Cvar_Get( "s_sdlSpeed", "44100", CVAR_ARCHIVE );
-        s_sdlChannels = Cvar_Get( "s_sdlChannels", "2", CVAR_ARCHIVE );
-        s_sdlDevSamps = Cvar_Get( "s_sdlDevSamps", "0", CVAR_ARCHIVE );
-        s_sdlMixSamps = Cvar_Get( "s_sdlMixSamps", "0", CVAR_ARCHIVE );
+        s_sdlBits = cvarSystem->Get( "s_sdlBits", "16", CVAR_ARCHIVE );
+        s_sdlChannels = cvarSystem->Get( "s_sdlChannels", "2", CVAR_ARCHIVE );
+        s_sdlDevSamps = cvarSystem->Get( "s_sdlDevSamps", "0", CVAR_ARCHIVE );
+        s_sdlMixSamps = cvarSystem->Get( "s_sdlMixSamps", "0", CVAR_ARCHIVE );
     }
     
     Com_Printf( "SDL_Init( SDL_INIT_AUDIO )... " );
     
     if( !SDL_WasInit( SDL_INIT_AUDIO ) )
     {
-        if( SDL_Init( SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE ) == -1 )
+        if( SDL_Init( SDL_INIT_AUDIO ) == -1 )
         {
             Com_Printf( "FAILED (%s)\n", SDL_GetError() );
             return false;
@@ -223,9 +251,7 @@ bool SNDDMA_Init( void )
     
     Com_Printf( "OK\n" );
     
-    if( SDL_AudioDriverName( drivername, sizeof( drivername ) ) == NULL )
-        strcpy( drivername, "(UNKNOWN)" );
-    Com_Printf( "SDL audio driver is \"%s\".\n", drivername );
+    Com_Printf( "SDL audio driver is \"%s\".\n", SDL_GetCurrentAudioDriver() );
     
     ::memset( &desired, '\0', sizeof( desired ) );
     ::memset( &obtained, '\0', sizeof( obtained ) );
@@ -234,28 +260,7 @@ bool SNDDMA_Init( void )
     if( ( tmp != 16 ) && ( tmp != 8 ) )
         tmp = 16;
         
-    desired.freq = ( S32 )s_sdlSpeed->value;
-    if( !desired.freq )
-        desired.freq = 22050;
-        
-    // dirty correction for profile values
-    if( desired.freq == 11000 )
-    {
-        desired.freq = 11025;
-    }
-    else if( desired.freq == 22000 )
-    {
-        desired.freq = 22050;
-    }
-    else if( desired.freq == 44000 )
-    {
-        desired.freq = 44100;
-    }
-    else
-    {
-        desired.freq = 22050;
-    }
-    
+    desired.freq = SNDDMA_ExpandSampleFrequencyKHzToHz( sampleFrequencyInKHz );
     desired.format = ( ( tmp == 16 ) ? AUDIO_S16SYS : AUDIO_U8 );
     
     // I dunno if this is the best idea, but I'll give it a try...
@@ -278,9 +283,10 @@ bool SNDDMA_Init( void )
     desired.channels = ( S32 )s_sdlChannels->value;
     desired.callback = SNDDMA_AudioCallback;
     
-    if( SDL_OpenAudio( &desired, &obtained ) == -1 )
+    dev = SDL_OpenAudioDevice( NULL, 0, &desired, &obtained, 0 );
+    if( !dev )
     {
-        Com_Printf( "SDL_OpenAudio() failed: %s\n", SDL_GetError() );
+        Com_Printf( "SDL_OpenAudioDevice() failed: %s\n", SDL_GetError() );
         SDL_QuitSubSystem( SDL_INIT_AUDIO );
         return false;
     }
@@ -298,10 +304,9 @@ bool SNDDMA_Init( void )
     if( !tmp )
         tmp = ( obtained.samples * obtained.channels ) * 10;
         
-    if( tmp & ( tmp - 1 ) )			// not a power of two? Seems to confuse something.
+    if( tmp & ( tmp - 1 ) ) // not a power of two? Seems to confuse something.
     {
-        S32             val = 1;
-        
+        S32 val = 1;
         while( val < tmp )
             val <<= 1;
             
@@ -309,7 +314,7 @@ bool SNDDMA_Init( void )
     }
     
     dmapos = 0;
-    dma.samplebits = obtained.format & 0xFF;	// first byte of format is bits.
+    dma.samplebits = obtained.format & 0xFF;  // first byte of format is bits.
     dma.channels = obtained.channels;
     dma.samples = tmp;
     dma.submission_chunk = 1;
@@ -325,7 +330,7 @@ bool SNDDMA_Init( void )
     }
     
     Com_Printf( "Starting SDL audio callback...\n" );
-    SDL_PauseAudio( 0 );			// start callback.
+    SDL_PauseAudioDevice( dev, 0 ); // start callback.
     
     Com_Printf( "SDL audio initialized.\n" );
     snd_inited = true;
@@ -350,8 +355,8 @@ SNDDMA_Shutdown
 void SNDDMA_Shutdown( void )
 {
     Com_Printf( "Closing SDL audio device...\n" );
-    SDL_PauseAudio( 1 );
-    SDL_CloseAudio();
+    SDL_PauseAudioDevice( dev, 1 );
+    SDL_CloseAudioDevice( dev );
     SDL_QuitSubSystem( SDL_INIT_AUDIO );
     free( dma.buffer );
     dma.buffer = NULL;
@@ -369,7 +374,7 @@ Send sound to device if buffer isn't really the dma buffer
 */
 void SNDDMA_Submit( void )
 {
-    SDL_UnlockAudio();
+    SDL_UnlockAudioDevice( dev );
 }
 
 /*
@@ -379,5 +384,5 @@ SNDDMA_BeginPainting
 */
 void SNDDMA_BeginPainting( void )
 {
-    SDL_LockAudio();
+    SDL_LockAudioDevice( dev );
 }

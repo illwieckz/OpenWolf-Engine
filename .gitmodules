@@ -1,6 +1,6 @@
 [submodule "main"]
 	path = main
 	url = https://github.com/TheDushan/nexTrem-assets
-[submodule "src/engine/gameLogic"]
-	path = src/engine/gameLogic
+[submodule "src/engine/gameLogics"]
+	path = src/engine/gameLogics
 	url = https://github.com/TheDushan/nexTrem-game-logic

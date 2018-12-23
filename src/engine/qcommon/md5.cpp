@@ -282,7 +282,7 @@ UTF8* Com_MD5File( StringEntry fn, S32 length, StringEntry prefix, S32 prefix_le
     
     Q_strncpyz( final, "", sizeof( final ) );
     
-    filelen = FS_SV_FOpenFileRead( fn, &f );
+    filelen = fileSystem->SV_FOpenFileRead( fn, &f );
     
     if( !f )
     {
@@ -290,7 +290,7 @@ UTF8* Com_MD5File( StringEntry fn, S32 length, StringEntry prefix, S32 prefix_le
     }
     if( filelen < 1 )
     {
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
         return final;
     }
     if( filelen < length || !length )
@@ -305,7 +305,7 @@ UTF8* Com_MD5File( StringEntry fn, S32 length, StringEntry prefix, S32 prefix_le
         
     for( ;; )
     {
-        r = FS_Read( buffer, sizeof( buffer ), f );
+        r = fileSystem->Read( buffer, sizeof( buffer ), f );
         if( r < 1 )
             break;
         if( r + total > length )
@@ -315,7 +315,7 @@ UTF8* Com_MD5File( StringEntry fn, S32 length, StringEntry prefix, S32 prefix_le
         if( r < sizeof( buffer ) || total >= length )
             break;
     }
-    FS_FCloseFile( f );
+    fileSystem->FCloseFile( f );
     MD5Final( &md5, digest );
     final[0] = '\0';
     for( i = 0; i < 16; i++ )
@@ -377,7 +377,7 @@ UTF8* Com_MD5FileOWCompat( StringEntry filename )
     UTF8* buffer;
     S32   len;
     
-    len = FS_ReadFile( filename, ( void** )&buffer );
+    len = fileSystem->ReadFile( filename, ( void** )&buffer );
     if( buffer )
     {
         if( len >= 28 )

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cmd.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: Quake script command processing module
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -412,15 +412,15 @@ static void Cmd_ExecFile( UTF8* f )
     
     COM_Compress( f );
     
-    Cvar_Get( "arg_all", Cmd_ArgsFrom( 2 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
-    Cvar_Set( "arg_all", Cmd_ArgsFrom( 2 ) );
-    Cvar_Get( "arg_count", va( "%i", Cmd_Argc() - 2 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
-    Cvar_Set( "arg_count", va( "%i", Cmd_Argc() - 2 ) );
+    cvarSystem->Get( "arg_all", Cmd_ArgsFrom( 2 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
+    cvarSystem->Set( "arg_all", Cmd_ArgsFrom( 2 ) );
+    cvarSystem->Get( "arg_count", va( "%i", Cmd_Argc() - 2 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
+    cvarSystem->Set( "arg_count", va( "%i", Cmd_Argc() - 2 ) );
     
     for( i = Cmd_Argc() - 2; i; i-- )
     {
-        Cvar_Get( va( "arg_%i", i ), Cmd_Argv( i + 1 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
-        Cvar_Set( va( "arg_%i", i ), Cmd_Argv( i + 1 ) );
+        cvarSystem->Get( va( "arg_%i", i ), Cmd_Argv( i + 1 ), CVAR_TEMP | CVAR_ROM | CVAR_USER_CREATED );
+        cvarSystem->Set( va( "arg_%i", i ), Cmd_Argv( i + 1 ) );
     }
     
     Cbuf_InsertText( f );
@@ -449,24 +449,24 @@ void Cmd_Exec_f( void )
     Q_strncpyz( filename, Cmd_Argv( 1 ), sizeof( filename ) );
     COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
     
-    len = FS_SV_FOpenFileRead( filename, &h );
+    len = fileSystem->SV_FOpenFileRead( filename, &h );
     if( h )
     {
         success = true;
         f.v = Hunk_AllocateTempMemory( len + 1 );
-        FS_Read( f.v, len, h );
+        fileSystem->Read( f.v, len, h );
         f.c[len] = 0;
-        FS_FCloseFile( h );
+        fileSystem->FCloseFile( h );
         Cmd_ExecFile( f.c );
         Hunk_FreeTempMemory( f.v );
     }
     
-    FS_ReadFile( filename, &f.v );
+    fileSystem->ReadFile( filename, &f.v );
     if( f.c )
     {
         success = true;
         Cmd_ExecFile( f.c );
-        FS_FreeFile( f.v );
+        fileSystem->FreeFile( f.v );
     }
     
     if( !success )
@@ -491,7 +491,7 @@ void Cmd_Vstr_f( void )
         return;
     }
     
-    v = Cvar_VariableString( Cmd_Argv( 1 ) );
+    v = cvarSystem->VariableString( Cmd_Argv( 1 ) );
     Cbuf_InsertText( va( "%s\n", v ) );
 }
 
@@ -791,11 +791,11 @@ void Cmd_Math_f( void )
         op = Cmd_Argv( 2 );
         if( !strcmp( op, "++" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) + 1 ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) + 1 ) );
         }
         else if( !strcmp( op, "--" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) - 1 ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) - 1 ) );
         }
         else
         {
@@ -810,21 +810,21 @@ void Cmd_Math_f( void )
         v1 = Cmd_Argv( 3 );
         if( !strcmp( op, "+" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) + Cvar_VariableValue( v1 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) + cvarSystem->VariableValue( v1 ) ) );
         }
         else if( !strcmp( op, "-" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) - Cvar_VariableValue( v1 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) - cvarSystem->VariableValue( v1 ) ) );
         }
         else if( !strcmp( op, "*" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) * Cvar_VariableValue( v1 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) * cvarSystem->VariableValue( v1 ) ) );
         }
         else if( !strcmp( op, "/" ) )
         {
-            if( !( Cvar_VariableValue( v1 ) == 0 ) )
+            if( !( cvarSystem->VariableValue( v1 ) == 0 ) )
             {
-                Cvar_SetValueSafe( v, ( Cvar_VariableValue( v ) / Cvar_VariableValue( v1 ) ) );
+                cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v ) / cvarSystem->VariableValue( v1 ) ) );
             }
         }
         else
@@ -841,21 +841,21 @@ void Cmd_Math_f( void )
         v2 = Cmd_Argv( 5 );
         if( !strcmp( op, "+" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v1 ) + Cvar_VariableValue( v2 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v1 ) + cvarSystem->VariableValue( v2 ) ) );
         }
         else if( !strcmp( op, "-" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v1 ) - Cvar_VariableValue( v2 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v1 ) - cvarSystem->VariableValue( v2 ) ) );
         }
         else if( !strcmp( op, "*" ) )
         {
-            Cvar_SetValueSafe( v, ( Cvar_VariableValue( v1 ) * Cvar_VariableValue( v2 ) ) );
+            cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v1 ) * cvarSystem->VariableValue( v2 ) ) );
         }
         else if( !strcmp( op, "/" ) )
         {
-            if( !( Cvar_VariableValue( v2 ) == 0 ) )
+            if( !( cvarSystem->VariableValue( v2 ) == 0 ) )
             {
-                Cvar_SetValueSafe( v, ( Cvar_VariableValue( v1 ) / Cvar_VariableValue( v2 ) ) );
+                cvarSystem->SetValueSafe( v, ( cvarSystem->VariableValue( v1 ) / cvarSystem->VariableValue( v2 ) ) );
             }
         }
         else
@@ -946,10 +946,10 @@ void Cmd_Concat_f( void )
     }
     
     v  = Cmd_Argv( 1 );
-    v1 = Cvar_VariableString( Cmd_Argv( 2 ) );
-    v2 = Cvar_VariableString( Cmd_Argv( 3 ) );
+    v1 = cvarSystem->VariableString( Cmd_Argv( 2 ) );
+    v2 = cvarSystem->VariableString( Cmd_Argv( 3 ) );
     Com_sprintf( vc, sizeof( vc ), "%s%s", v1, v2 );
-    Cvar_Set( Cmd_Argv( 1 ), vc );
+    cvarSystem->Set( Cmd_Argv( 1 ), vc );
 }
 
 /*
@@ -1167,7 +1167,7 @@ void Cmd_Random_f( void )
     {
         v1 = atoi( Cmd_Argv( 2 ) );
         v2 = atoi( Cmd_Argv( 3 ) );
-        Cvar_SetValueLatched( Cmd_Argv( 1 ), ( S32 )( rand() / ( F32 )RAND_MAX * ( MAX( v1, v2 ) - MIN( v1, v2 ) ) + MIN( v1, v2 ) ) );
+        cvarSystem->SetValueLatched( Cmd_Argv( 1 ), ( S32 )( rand() / ( F32 )RAND_MAX * ( MAX( v1, v2 ) - MIN( v1, v2 ) ) + MIN( v1, v2 ) ) );
     }
     else
     {
@@ -1225,11 +1225,11 @@ void Cmd_WriteAliases( fileHandle_t f )
 {
     UTF8 buffer[1024] = "clearaliases\n";
     cmd_alias_t* alias = cmd_aliases;
-    FS_Write( buffer, strlen( buffer ), f );
+    fileSystem->Write( buffer, strlen( buffer ), f );
     while( alias )
     {
         Com_sprintf( buffer, sizeof( buffer ), "alias %s \"%s\"\n", alias->name, Cmd_EscapeString( alias->exec ) );
-        FS_Write( buffer, strlen( buffer ), f );
+        fileSystem->Write( buffer, strlen( buffer ), f );
         alias = alias->next;
     }
 }
@@ -1714,11 +1714,11 @@ static void Cmd_TokenizeString2( StringEntry text_in, bool ignoreQuotes, bool pa
             if( *text == '\\' )
             {
                 *text = 0;
-                if( Cvar_Flags( cvarName ) != CVAR_NONEXISTENT )
+                if( cvarSystem->Flags( cvarName ) != CVAR_NONEXISTENT )
                 {
                     UTF8 cvarValue[ MAX_CVAR_VALUE_STRING ];
                     UTF8* badchar;
-                    Cvar_VariableStringBuffer( cvarName, cvarValue, sizeof( cvarValue ) );
+                    cvarSystem->VariableStringBuffer( cvarName, cvarValue, sizeof( cvarValue ) );
                     do
                     {
                         badchar = strchr( cvarValue, ';' );
@@ -2091,7 +2091,7 @@ void Cmd_ExecuteString( StringEntry text )
     }
     
     // check cvars
-    if( Cvar_Command() )
+    if( cvarSystem->Command() )
     {
         return;
     }
@@ -2103,7 +2103,7 @@ void Cmd_ExecuteString( StringEntry text )
     }
     
     // check server game commands
-    if( com_sv_running && com_sv_running->integer && SV_GameCommand() )
+    if( com_sv_running && com_sv_running->integer && serverGameSystem->GameCommand() )
     {
         return;
     }
@@ -2252,7 +2252,7 @@ void Cmd_Init( void )
     Cmd_AddCommand( "exec", Cmd_Exec_f );
     Cmd_SetCommandCompletionFunc( "exec", Cmd_CompleteCfgName );
     Cmd_AddCommand( "vstr", Cmd_Vstr_f );
-    Cmd_SetCommandCompletionFunc( "vstr", Cvar_CompleteCvarName );
+    Cmd_SetCommandCompletionFunc( "vstr", &idCVarSystemLocal::CompleteCvarName );
     Cmd_AddCommand( "echo", Cmd_Echo_f );
     Cmd_AddCommand( "wait", Cmd_Wait_f );
 #ifndef DEDICATED
@@ -2262,7 +2262,7 @@ void Cmd_Init( void )
     Cmd_SetCommandCompletionFunc( "if", Cmd_CompleteIf );
     Cmd_AddCommand( "calc", Cmd_Calc_f );
     Cmd_AddCommand( "math", Cmd_Math_f );
-    Cmd_SetCommandCompletionFunc( "math", Cvar_CompleteCvarName );
+    Cmd_SetCommandCompletionFunc( "math", &idCVarSystemLocal::CompleteCvarName );
     Cmd_AddCommand( "concat", Cmd_Concat_f );
     Cmd_SetCommandCompletionFunc( "concat", Cmd_CompleteConcat );
     Cmd_AddCommand( "strcmp", Cmd_Strcmp_f );

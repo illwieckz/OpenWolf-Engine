@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   null_client.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: all other sound mixing is portable
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -50,12 +50,12 @@ void CL_Shutdown( void )
 
 void CL_Init( void )
 {
-    cl_shownet = Cvar_Get( "cl_shownet", "0", CVAR_TEMP );
+    cl_shownet = cvarSystem->Get( "cl_shownet", "0", CVAR_TEMP );
     // TTimo: localisation, prolly not any use in dedicated / null client
-    cl_language = Cvar_Get( "cl_language", "0", CVAR_ARCHIVE );
+    cl_language = cvarSystem->Get( "cl_language", "0", CVAR_ARCHIVE );
 }
 
-void CL_MouseEvent( int dx, int dy, int time )
+void CL_MouseEvent( S32 dx, S32 dy, S32 time )
 {
 }
 
@@ -63,7 +63,7 @@ void Key_WriteBindings( fileHandle_t f )
 {
 }
 
-void CL_Frame( int msec )
+void CL_Frame( S32 msec )
 {
 }
 
@@ -71,7 +71,7 @@ void CL_PacketEvent( netadr_t from, msg_t* msg )
 {
 }
 
-void CL_CharEvent( int key )
+void CL_CharEvent( S32 key )
 {
 }
 
@@ -88,7 +88,7 @@ bool CL_GameCommand( void )
     return false;				// bk001204 - non-void
 }
 
-void CL_KeyEvent( int key, int down, U32 time )
+void CL_KeyEvent( S32 key, S32 down, U32 time )
 {
 }
 
@@ -101,11 +101,11 @@ void CL_ForwardCommandToServer( StringEntry string )
 {
 }
 
-void CL_ConsolePrint( char* txt )
+void CL_ConsolePrint( UTF8* txt )
 {
 }
 
-void CL_JoystickEvent( int axis, int value, int time )
+void CL_JoystickEvent( S32 axis, S32 value, S32 time )
 {
 }
 
@@ -142,7 +142,7 @@ void Key_ClearStates( void )
 }
 
 // Dushan
-StringEntry Con_GetText( int console )
+StringEntry Con_GetText( S32 console )
 {
     return NULL;
 }

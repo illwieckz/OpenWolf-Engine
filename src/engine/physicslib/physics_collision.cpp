@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   physics_collision.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,12 @@
 #ifdef DEDICATED
 #include <null/null_precompiled.h>
 #else
+#ifndef Q3MAP2
 #include <OWLib/precompiled.h>
+#else
+#include <physicslib/physics_local.h>
+#include <API/physics_api.h>
+#endif
 #endif
 
 /*

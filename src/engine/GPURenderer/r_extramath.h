@@ -20,9 +20,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_extrememath.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -50,10 +50,10 @@ void Mat4SimpleInverse( const mat4_t in, mat4_t out );
 #define VectorCopy2(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1])
 #define VectorSet2(v,x,y)       ((v)[0]=(x),(v)[1]=(y));
 
-#define VectorCopy4(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+//#define VectorCopy4(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 #define VectorSet4(v,x,y,z,w)	((v)[0]=(x),(v)[1]=(y),(v)[2]=(z),(v)[3]=(w))
-#define DotProduct4(a,b)        ((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
-#define VectorScale4(a,b,c)     ((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
+//#define DotProduct4(a,b)        ((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
+//#define VectorScale4(a,b,c)     ((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
 
 #define VectorCopy5(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3],(b)[4]=(a)[4])
 
@@ -105,5 +105,7 @@ void BoundingSphereOfSpheres( vec3_t origin1, F32 radius1, vec3_t origin2, F32 r
 S32 NextPowerOfTwo( S32 in );
 U16 FloatToHalf( F32 in );
 F32 HalfToFloat( U16 in );
+U32 ReverseBits( U32 v );
+F32 GSmithCorrelated( F32 roughness, F32 ndotv, F32 ndotl );
 
 #endif //!__R_EXTRAMATH_H__

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cm_traceModel.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +45,7 @@ class idTraceModel
 {
 public:
     virtual void			Init( S32 entityNum, F32 mass, idVec3 origin, idVec3 angle, idVec3& mins, idVec3& maxs ) = 0;
-    virtual void			InitFromModel( const UTF8* qpath, idVec3 origin, idVec3 angle, S32 entityNum, F32 mass ) = 0;
+    virtual void			InitFromModel( StringEntry qpath, idVec3 origin, idVec3 angle, S32 entityNum, F32 mass ) = 0;
     virtual S32				GetEntityNum() = 0;
     virtual void			SetTransform( idVec3& origin, idVec3& angle ) = 0;
     virtual void			GetTransform( idVec3& xyz, idVec3& angle ) = 0;

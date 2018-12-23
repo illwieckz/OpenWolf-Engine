@@ -19,15 +19,18 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   precompiled.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
+
+//Dushan
+//FIX ALL THIS
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,8 +46,6 @@
 #include <algorithm>
 #ifdef _WIN32
 #include <SDL_syswm.h>
-#else
-#include <SDL/SDL_syswm.h>
 #endif
 
 #include <signal.h>
@@ -76,32 +77,25 @@
 #endif
 
 #ifndef DEDICATED
-#ifdef _WIN32
-#include <GL/glew.h>
-#include <GL/wglew.h>
-#elif __LINUX__
-#include <GL/glew.h>
-#include <GL/glxew.h>
-#elif __ANDROID__
-#include <GL/glew.h>
-#include <GL/eglew.h>
-#else
-// Mac - I Have no idea
-#endif
+#include <GPURenderer/qgl.h>
 #endif
 
 #include <database/db_local.h>
 
 #ifdef _WIN32
 #include <SDL.h>
+#include <SDL_opengl.h>
+#include <SDL_opengl_glext.h>
+#include <platform/Windows/resource.h>
 #else
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_opengl_glext.h>
 #endif
 #include <curl/curl.h>
 #ifndef DEDICATED
 #include <CL/cl.h>
 #endif
-#include <platform/windows/resource.h>
 
 #include <botlib/botlib.h>
 #include <botlib/l_script.h>
@@ -130,16 +124,16 @@
 #include <botlib/be_aas_route.h>
 #include <botlib/be_aas_routealt.h>
 
-#include <API/sg_api.h>
+#include <API/sgame_api.h>
 #include <audio/s_local.h>
 #include <audio/s_codec.h>
 
-#include <bgame/bg_public.h>
-#include <bgame/bg_local.h>
+#include <API/bgame_api.h>
+#include <bgame/bgame_local.h>
 
 #include <qcommon/q_shared.h>
 #include <qcommon/qcommon.h>
-#include <qcommon/dl_public.h>
+#include <API/download_api.h>
 #include <qcommon/md4.h>
 #include <server/server.h>
 #ifndef DEDICATED
@@ -164,7 +158,7 @@
 #include <platform/sys_local.h>
 
 #include <physicslib/physics_local.h>
-#include <physicslib/physics_public.h>
+#include <API/physics_api.h>
 
 #include <GUI/gui_local.h>
 #ifndef DEDICATED
@@ -177,7 +171,7 @@
 #include <cm/cm_local.h>
 #include <cm/cm_patch.h>
 
-#include <API/cg_api.h>
+#include <API/cgame_api.h>
 #ifndef DEDICATED
 #include <client/cl_HydraManager.h>
 #ifdef _WIN32
@@ -203,10 +197,15 @@
 #endif
 
 #include <OWLib/types.h>
+#include <OWLib/math_angles.h>
+#include <OWLib/math_matrix.h>
+#include <OWLib/math_quaternion.h>
+#include <OWLib/math_vector.h>
 #include <OWLib/util_list.h>
 #include <OWLib/util_str.h>
 #include <OWLib/q_splineshared.h>
 #include <OWLib/splines.h>
+
 
 #ifdef __LINUX__
 #include <CL/cl_gl.h>
@@ -223,6 +222,20 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #endif
+
+#include <API/FileSystem_api.h>
+#include <framework/FileSystem.h>
+#include <API/CVarSystem_api.h>
+#include <framework/CVarSystem.h>
+#include <API/serverBot_api.h>
+#include <server/serverBot.h>
+#include <server/serverCcmds.h>
+#include <API/serverClient_api.h>
+#include <server/serverClient.h>
+#include <API/serverGame_api.h>
+#include <server/serverGame.h>
+#include <API/serverWorld_api.h>
+#include <server/serverWorld.h>
 
 // includes for the OGG codec
 #include <errno.h>

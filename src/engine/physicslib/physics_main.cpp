@@ -28,15 +28,18 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   physics_main.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef DEDICATED
 #include <null/null_precompiled.h>
+#elif Q3MAP2
+#include <physicslib/physics_local.h>
+#include <API/physics_api.h>
 #else
 #include <OWLib/precompiled.h>
 #endif
@@ -222,7 +225,7 @@ owPhysicsManagerLocal::WriteBulletPhysicsFile
 */
 void owPhysicsManagerLocal::WriteBulletPhysicsFile( StringEntry fullpath )
 {
-    S32 maxSerializeBufferSize = 1024 * 1024 * 10;
+    S32 maxSerializeBufferSize = 2048 * 2048 * 10;
     
     //Serialize the entire world.
     btDefaultSerializer* serializer = new btDefaultSerializer( maxSerializeBufferSize );
@@ -249,7 +252,7 @@ void owPhysicsManagerLocal::LoadBulletPhysicsFile( StringEntry fullpath )
     COM_StripExtension( fullpath, cmpath );
     Com_sprintf( cmpath, sizeof( cmpath ), "%s.bullet", cmpath );
     
-    S32 cmlen = FS_ReadFile( cmpath, &buffer );
+    S32 cmlen = fileSystem->ReadFile( cmpath, &buffer );
     if( cmlen <= 0 || buffer == NULL )
     {
         Com_Printf( "owPhysicsManagerLocal::LoadBulletPhysicsFile: Failed to load bullet - %s\n", cmpath );
@@ -259,7 +262,7 @@ void owPhysicsManagerLocal::LoadBulletPhysicsFile( StringEntry fullpath )
         Com_Printf( "owPhysicsManagerLocal::LoadBulletPhysicsFile: Loaded bullet file - %s\n", cmpath );
         //Load .bullet file
         fileLoader->loadFile( cmpath );
-        FS_FreeFile( buffer );
+        fileSystem->FreeFile( buffer );
     }
 #endif
 }

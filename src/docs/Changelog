@@ -1,3 +1,38 @@
+2018-12-22 Dusan Jocic <dusanjocic@msn.com>
+	* Master Server
+	* Map compiler
+	* updated renderer and GLSL files
+	* Misc fixes
+	* Completely fixed compiling on the Linux
+	* Removed old SDL.dll from windows folder
+	* Added binaries for Linux
+		NOTE: binaries are builded with GCC 7.3.0 and on Kubuntu 18.04 LTS 64-bit, kernel version 4.15.0-43-generic
+	* Initial Valve Steam integration
+	* Fixed sound on the Windows platform
+	* Added LARGEADDRESSAWARE for the Windows builds
+	* Updated binaries for the Windows platform
+
+2018-11-07 Dusan Jocic <dusanjocic@msn.com>
+	* Readded QGL file
+	* moved filesystem into C++ class
+
+2018-10-31 Dusan Jocic <dusanjocic@msn.com>
+	* Rewrote cgame 
+	* Added more API structures and files
+	* I don't wanta anymore GUI to be dynamic module
+	* Fixed compiling on the Windows platform
+	* Updated binaries
+	* Removed GLEW library
+	* Added SDL 2.0.8 library files
+	* Started to merge SDL code with ioQuake3
+
+2018-10-17 Dusan Jocic <dusanjocic@msn.com>
+	* Rebased game logic and engine
+	* Fixed cMake
+
+2018-10-16 Dusan Jocic <dusanjocic@msn.com>
+	* Misc updates
+
 2018-10-04 Dusan Jocic <dusanjocic@msn.com>
 	* Updated binaries
 	* Removed GLM library

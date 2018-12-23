@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_cgame.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: client system interaction with client game
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -532,7 +532,7 @@ void CL_SetExpectedHunkUsage( StringEntry mapname )
     UTF8*           token;
     S32             len;
     
-    len = FS_FOpenFileByMode( memlistfile, &handle, FS_READ );
+    len = fileSystem->FOpenFileByMode( memlistfile, &handle, FS_READ );
     if( len >= 0 )
     {
         // the file exists, so read it in, strip out the current entry for this map, and save it out, so we can append the new value
@@ -540,8 +540,8 @@ void CL_SetExpectedHunkUsage( StringEntry mapname )
         buf = ( UTF8* )Z_Malloc( len + 1 );
         memset( buf, 0, len + 1 );
         
-        FS_Read( ( void* )buf, len, handle );
-        FS_FCloseFile( handle );
+        fileSystem->Read( ( void* )buf, len, handle );
+        fileSystem->FCloseFile( handle );
         
         // now parse the file, filtering out the current map
         buftrav = buf;
@@ -588,7 +588,7 @@ void CL_CM_LoadMap( StringEntry mapname )
     {
         // TTimo
         // catch here when a local server is started to avoid outdated com_errorDiagnoseIP
-        Cvar_Set( "com_errorDiagnoseIP", "" );
+        cvarSystem->Set( "com_errorDiagnoseIP", "" );
     }
     
     collisionModelManager->LoadMap( mapname, true, &checksum );
@@ -727,12 +727,6 @@ void CL_CreateExportTable( void )
     exports.Error = Com_Error;
     exports.Milliseconds = Sys_Milliseconds;
     
-    exports.Cvar_Register = Cvar_Register;
-    exports.Cvar_Update = Cvar_Update;
-    exports.Cvar_Set = Cvar_Set;
-    exports.Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
-    exports.Cvar_LatchedVariableStringBuffer = Cvar_LatchedVariableStringBuffer;
-    
     exports.Argc = Cmd_Argc;
     exports.Argv = Cmd_ArgvBuffer;
     exports.Args = Cmd_ArgsBuffer;
@@ -740,14 +734,6 @@ void CL_CreateExportTable( void )
     
     exports.DemoState = CL_DemoState;
     exports.DemoPos = CL_DemoPos;
-    
-    exports.FS_FOpenFile = FS_FOpenFileByMode;
-    exports.FS_Read = FS_Read2;
-    exports.FS_Write = FS_Write;
-    exports.FS_FCloseFile = FS_FCloseFile;
-    exports.FS_GetFileList = FS_GetFileList;
-    exports.FS_Delete = FS_Delete;
-    exports.FS_Seek = FS_Seek;
     
     exports.SendConsoleCommand = Cbuf_AddText;
     exports.AddCommand = CL_AddCgameCommand;
@@ -812,7 +798,8 @@ void CL_CreateExportTable( void )
     exports.renderSystem = renderSystem;
     exports.collisionModelManager = collisionModelManager;
     exports.soundSystem = soundSystem;
-    
+    exports.fileSystem = fileSystem;
+    exports.cvarSystem = cvarSystem;
 }
 
 /*
@@ -838,20 +825,20 @@ void CL_UpdateLevelHunkUsage( void )
     UTF8            outstr[256];
     S32             len, memusage;
     
-    memusage = Cvar_VariableIntegerValue( "com_hunkused" ) + Cvar_VariableIntegerValue( "hunk_soundadjust" );
+    memusage = cvarSystem->VariableIntegerValue( "com_hunkused" ) + cvarSystem->VariableIntegerValue( "hunk_soundadjust" );
     
-    len = FS_FOpenFileByMode( memlistfile, &handle, FS_READ );
+    len = fileSystem->FOpenFileByMode( memlistfile, &handle, FS_READ );
     if( len >= 0 )
     {
         // the file exists, so read it in, strip out the current entry for this map, and save it out, so we can append the new value
         
         buf = ( UTF8* )Z_Malloc( len + 1 );
-        memset( buf, 0, len + 1 );
+        ::memset( buf, 0, len + 1 );
         outbuf = ( UTF8* )Z_Malloc( len + 1 );
-        memset( outbuf, 0, len + 1 );
+        ::memset( outbuf, 0, len + 1 );
         
-        FS_Read( ( void* )buf, len, handle );
-        FS_FCloseFile( handle );
+        fileSystem->Read( ( void* )buf, len, handle );
+        fileSystem->FCloseFile( handle );
         
         // now parse the file, filtering out the current map
         buftrav = buf;
@@ -892,37 +879,37 @@ void CL_UpdateLevelHunkUsage( void )
             }
         }
         
-        handle = FS_FOpenFileWrite( memlistfile );
+        handle = fileSystem->FOpenFileWrite( memlistfile );
         if( handle < 0 )
         {
             Com_Error( ERR_DROP, "cannot create %s\n", memlistfile );
         }
         // input file is parsed, now output to the new file
         len = strlen( outbuf );
-        if( FS_Write( ( void* )outbuf, len, handle ) != len )
+        if( fileSystem->Write( ( void* )outbuf, len, handle ) != len )
         {
             Com_Error( ERR_DROP, "cannot write to %s\n", memlistfile );
         }
-        FS_FCloseFile( handle );
+        fileSystem->FCloseFile( handle );
         
         Z_Free( buf );
         Z_Free( outbuf );
     }
     // now append the current map to the current file
-    FS_FOpenFileByMode( memlistfile, &handle, FS_APPEND );
+    fileSystem->FOpenFileByMode( memlistfile, &handle, FS_APPEND );
     if( handle < 0 )
     {
         Com_Error( ERR_DROP, "cannot write to hunkusage.dat, check disk full\n" );
     }
     Com_sprintf( outstr, sizeof( outstr ), "%s %i\n", cl.mapname, memusage );
-    FS_Write( outstr, strlen( outstr ), handle );
-    FS_FCloseFile( handle );
+    fileSystem->Write( outstr, strlen( outstr ), handle );
+    fileSystem->FCloseFile( handle );
     
     // now just open it and close it, so it gets copied to the pak dir
-    len = FS_FOpenFileByMode( memlistfile, &handle, FS_READ );
+    len = fileSystem->FOpenFileByMode( memlistfile, &handle, FS_READ );
     if( len >= 0 )
     {
-        FS_FCloseFile( handle );
+        fileSystem->FCloseFile( handle );
     }
 }
 
@@ -1000,7 +987,7 @@ void CL_InitCGame( void )
     CL_UpdateLevelHunkUsage();
     
 //  if( cl_autorecord->integer ) {
-//      Cvar_Set( "g_synchronousClients", "1" );
+//      cvarSystem->Set( "g_synchronousClients", "1" );
 //  }
 }
 
@@ -1183,7 +1170,7 @@ void CL_FirstSnapshot( void )
     {
         Cbuf_AddText( cl_activeAction->string );
         Cbuf_AddText( "\n" );
-        Cvar_Set( "activeAction", "" );
+        cvarSystem->Set( "activeAction", "" );
     }
 }
 
@@ -1332,7 +1319,7 @@ void CL_SetCGameTime( void )
         CL_ReadDemoMessage();
         if( cls.state != CA_ACTIVE )
         {
-            Cvar_Set( "timescale", "1" );
+            cvarSystem->Set( "timescale", "1" );
             return;				// end of demo
         }
     }

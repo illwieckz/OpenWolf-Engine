@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cl_parse.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description: parse a message received from the server
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -452,12 +452,12 @@ void CL_ParseSnapshot( msg_t* msg )
         {
             clc.demowaiting = false;	// we can start recording now
 //          if(cl_autorecord->integer) {
-//              Cvar_Set( "g_synchronousClients", "0" );
+//              cvarSystem->Set( "g_synchronousClients", "0" );
 //          }
         }
         else
         {
-            if( cl_autorecord->integer /*&& Cvar_VariableValue( "g_synchronousClients") */ )
+            if( cl_autorecord->integer /*&& cvarSystem->VariableValue( "g_synchronousClients") */ )
             {
                 UTF8            name[256];
                 UTF8            mapname[MAX_QPATH];
@@ -634,17 +634,17 @@ void CL_SystemInfoChanged( void )
     //sv_cheats = (bool)atoi(s);		//bani
     if( atoi( s ) == 0 )
     {
-        Cvar_SetCheatState();
+        cvarSystem->SetCheatState();
     }
     
     // check pure server string
     s = Info_ValueForKey( systemInfo, "sv_paks" );
     t = Info_ValueForKey( systemInfo, "sv_pakNames" );
-    FS_PureServerSetLoadedPaks( s, t );
+    fileSystem->PureServerSetLoadedPaks( s, t );
     
     s = Info_ValueForKey( systemInfo, "sv_referencedPaks" );
     t = Info_ValueForKey( systemInfo, "sv_referencedPakNames" );
-    FS_PureServerSetReferencedPaks( s, t );
+    fileSystem->PureServerSetReferencedPaks( s, t );
     
     // scan through all the variables in the systeminfo and locally set cvars to match
     s = systemInfo;
@@ -656,12 +656,12 @@ void CL_SystemInfoChanged( void )
             break;
         }
         
-        Cvar_Set( key, value );
+        cvarSystem->Set( key, value );
     }
     
     // Arnout: big hack to clear the image cache on a pure change
-    //cl_connectedToPureServer = Cvar_VariableValue( "sv_pure" );
-    if( Cvar_VariableValue( "sv_pure" ) )
+    //cl_connectedToPureServer = cvarSystem->VariableValue( "sv_pure" );
+    if( cvarSystem->VariableValue( "sv_pure" ) )
     {
         if( !cl_connectedToPureServer && cls.state <= CA_CONNECTED )
         {
@@ -762,21 +762,20 @@ void CL_ParseGamestate( msg_t* msg )
     
     // Arnout: verify if we have all official pakfiles. As we won't
     // be downloading them, we should be kicked for not having them.
-    if( cl_connectedToPureServer && !FS_VerifyOfficialPaks() )
+    if( cl_connectedToPureServer && !fileSystem->VerifyOfficialPaks() )
     {
-        Com_Error( ERR_DROP,
-                   "Couldn't load an official pak file; verify your installation and make sure it has been updated to the latest version." );
+        Com_Error( ERR_DROP, "Couldn't load an official pak file; verify your installation and make sure it has been updated to the latest version." );
     }
     
     // reinitialize the filesystem if the game directory has changed
-    FS_ConditionalRestart( clc.checksumFeed );
+    fileSystem->ConditionalRestart( clc.checksumFeed );
     
     // This used to call CL_StartHunkUsers, but now we enter the download state before loading the
     // cgame
     CL_InitDownloads();
     
     // make sure the game starts
-    Cvar_Set( "cl_paused", "0" );
+    cvarSystem->Set( "cl_paused", "0" );
 }
 
 
@@ -824,7 +823,7 @@ void CL_ParseDownload( msg_t* msg )
                 clc.bWWWDlAborting = true;
                 return;
             }
-            Cvar_SetValue( "cl_downloadSize", clc.downloadSize );
+            cvarSystem->SetValue( "cl_downloadSize", clc.downloadSize );
             Com_DPrintf( "Server redirected download: %s\n", cls.downloadName );
             clc.bWWWDl = true;	// activate wwwdl client loop
             CL_AddReliableCommand( "wwwdl ack" );
@@ -837,7 +836,7 @@ void CL_ParseDownload( msg_t* msg )
                 return;
             }
             // make downloadTempName an OS path
-            Q_strncpyz( cls.downloadTempName, FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), cls.downloadTempName, "" ),
+            Q_strncpyz( cls.downloadTempName, fileSystem->BuildOSPath( cvarSystem->VariableString( "fs_homepath" ), cls.downloadTempName, "" ),
                         sizeof( cls.downloadTempName ) );
             cls.downloadTempName[strlen( cls.downloadTempName ) - 1] = '\0';
             if( !DL_BeginDownload( cls.downloadTempName, cls.downloadName, com_developer->integer ) )
@@ -875,7 +874,7 @@ void CL_ParseDownload( msg_t* msg )
         // block zero is special, contains file size
         clc.downloadSize = MSG_ReadLong( msg );
         
-        Cvar_SetValue( "cl_downloadSize", clc.downloadSize );
+        cvarSystem->SetValue( "cl_downloadSize", clc.downloadSize );
         
         if( clc.downloadSize < 0 )
         {
@@ -902,7 +901,7 @@ void CL_ParseDownload( msg_t* msg )
     // open the file if not opened yet
     if( !clc.download )
     {
-        clc.download = FS_SV_FOpenFileWrite( cls.downloadTempName );
+        clc.download = fileSystem->SV_FOpenFileWrite( cls.downloadTempName );
         
         if( !clc.download )
         {
@@ -915,7 +914,7 @@ void CL_ParseDownload( msg_t* msg )
     
     if( size )
     {
-        FS_Write( data, size, clc.download );
+        fileSystem->Write( data, size, clc.download );
     }
     
     CL_AddReliableCommand( va( "nextdl %d", clc.downloadBlock ) );
@@ -924,21 +923,21 @@ void CL_ParseDownload( msg_t* msg )
     clc.downloadCount += size;
     
     // So UI gets access to it
-    Cvar_SetValue( "cl_downloadCount", clc.downloadCount );
+    cvarSystem->SetValue( "cl_downloadCount", clc.downloadCount );
     
     if( !size )
     {
         // A zero length block means EOF
         if( clc.download )
         {
-            FS_FCloseFile( clc.download );
+            fileSystem->FCloseFile( clc.download );
             clc.download = 0;
             
             // rename the file
-            FS_SV_Rename( cls.downloadTempName, cls.downloadName );
+            fileSystem->SV_Rename( cls.downloadTempName, cls.downloadName );
         }
         *cls.downloadTempName = *cls.downloadName = 0;
-        Cvar_Set( "cl_downloadName", "" );
+        cvarSystem->Set( "cl_downloadName", "" );
         
         // send intentions now
         // We need this because without it, we would hold the last nextdl and then start

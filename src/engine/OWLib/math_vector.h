@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   math_vector.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -45,17 +45,20 @@
 #include <math.h>
 #include <assert.h>
 
-//#define DotProduct(a,b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
-//#define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1],(c)[2]=(a)[2]-(b)[2])
-//#define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1],(c)[2]=(a)[2]+(b)[2])
-//#define VectorCopy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
+#ifdef Q3MAP2
+#define DotProduct(a,b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
+#define VectorCopy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
 //#define VectorCopy(a,b)			((b).x=(a).x,(b).y=(a).y,(b).z=(a).z])
+#define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1],(c)[2]=(a)[2]+(b)[2])
+#endif
+
+//#define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1],(c)[2]=(a)[2]-(b)[2])
 
 //#define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
 #define __VectorMA( v, s, b, o )  ( ( o )[0] = ( v )[0] + ( b )[0] * ( s ),( o )[1] = ( v )[1] + ( b )[1] * ( s ),( o )[2] = ( v )[2] + ( b )[2] * ( s ) )
 //#define CrossProduct(a,b,c)		((c)[0]=(a)[1]*(b)[2]-(a)[2]*(b)[1],(c)[1]=(a)[2]*(b)[0]-(a)[0]*(b)[2],(c)[2]=(a)[0]*(b)[1]-(a)[1]*(b)[0])
 
-#define DotProduct4( x,y )        ( ( x )[0] * ( y )[0] + ( x )[1] * ( y )[1] + ( x )[2] * ( y )[2] + ( x )[3] * ( y )[3] )
+//#define DotProduct4( x,y )        ( ( x )[0] * ( y )[0] + ( x )[1] * ( y )[1] + ( x )[2] * ( y )[2] + ( x )[3] * ( y )[3] )
 #define VectorSubtract4( a,b,c )  ( ( c )[0] = ( a )[0] - ( b )[0],( c )[1] = ( a )[1] - ( b )[1],( c )[2] = ( a )[2] - ( b )[2],( c )[3] = ( a )[3] - ( b )[3] )
 #define VectorAdd4( a,b,c )       ( ( c )[0] = ( a )[0] + ( b )[0],( c )[1] = ( a )[1] + ( b )[1],( c )[2] = ( a )[2] + ( b )[2],( c )[3] = ( a )[3] + ( b )[3] )
 #define VectorCopy4( a,b )        ( ( b )[0] = ( a )[0],( b )[1] = ( a )[1],( b )[2] = ( a )[2],( b )[3] = ( a )[3] )
@@ -68,7 +71,7 @@
 //#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
 #define Vector4Copy( a,b )        ( ( b )[0] = ( a )[0],( b )[1] = ( a )[1],( b )[2] = ( a )[2],( b )[3] = ( a )[3] )
 
-#define SnapVector( v ) {v[0] = (int)v[0]; v[1] = (int)v[1]; v[2] = (int)v[2];}
+//#define SnapVector( v ) {v[0] = (int)v[0]; v[1] = (int)v[1]; v[2] = (int)v[2];}
 
 //#include "util_heap.h"
 
@@ -76,7 +79,7 @@
 #define EQUAL_EPSILON   0.001
 #endif
 
-float Q_fabs( float f );
+float OWfabs( float f );
 
 #ifndef ID_INLINE
 #ifdef _WIN32
@@ -314,17 +317,17 @@ ID_INLINE idVec3& idVec3::operator*=( const float a )
 
 ID_INLINE int idVec3::operator==( const idVec3& a ) const
 {
-    if( Q_fabs( x - a.x ) > EQUAL_EPSILON )
+    if( OWfabs( x - a.x ) > EQUAL_EPSILON )
     {
         return false;
     }
     
-    if( Q_fabs( y - a.y ) > EQUAL_EPSILON )
+    if( OWfabs( y - a.y ) > EQUAL_EPSILON )
     {
         return false;
     }
     
-    if( Q_fabs( z - a.z ) > EQUAL_EPSILON )
+    if( OWfabs( z - a.z ) > EQUAL_EPSILON )
     {
         return false;
     }
@@ -334,17 +337,17 @@ ID_INLINE int idVec3::operator==( const idVec3& a ) const
 
 ID_INLINE int idVec3::operator!=( const idVec3& a ) const
 {
-    if( Q_fabs( x - a.x ) > EQUAL_EPSILON )
+    if( OWfabs( x - a.x ) > EQUAL_EPSILON )
     {
         return true;
     }
     
-    if( Q_fabs( y - a.y ) > EQUAL_EPSILON )
+    if( OWfabs( y - a.y ) > EQUAL_EPSILON )
     {
         return true;
     }
     
-    if( Q_fabs( z - a.z ) > EQUAL_EPSILON )
+    if( OWfabs( z - a.z ) > EQUAL_EPSILON )
     {
         return true;
     }

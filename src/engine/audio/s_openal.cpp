@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   s_openal.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -605,7 +605,7 @@ static void S_AL_ScaleGain( src_t* chksrc, vec3_t origin )
             
         scaleFactor *= chksrc->curGain;
         
-        if( chksrc->scaleGain != scaleFactor );
+        if( chksrc->scaleGain != scaleFactor )
         {
             chksrc->scaleGain = scaleFactor;
             S_AL_Gain( chksrc->alSource, chksrc->scaleGain );
@@ -2227,19 +2227,19 @@ bool S_AL_Init( soundInterface_t* si )
     }
     
     // New console variables
-    s_alPrecache = Cvar_Get( "s_alPrecache", "1", CVAR_ARCHIVE );
-    s_alGain = Cvar_Get( "s_alGain", "1.0", CVAR_ARCHIVE );
-    s_alSources = Cvar_Get( "s_alSources", "96", CVAR_ARCHIVE );
-    s_alDopplerFactor = Cvar_Get( "s_alDopplerFactor", "1.0", CVAR_ARCHIVE );
-    s_alDopplerSpeed = Cvar_Get( "s_alDopplerSpeed", "2200", CVAR_ARCHIVE );
-    s_alMinDistance = Cvar_Get( "s_alMinDistance", "120", CVAR_CHEAT );
-    s_alMaxDistance = Cvar_Get( "s_alMaxDistance", "1024", CVAR_CHEAT );
-    s_alRolloff = Cvar_Get( "s_alRolloff", "2", CVAR_CHEAT );
-    s_alGraceDistance = Cvar_Get( "s_alGraceDistance", "512", CVAR_CHEAT );
+    s_alPrecache = cvarSystem->Get( "s_alPrecache", "1", CVAR_ARCHIVE );
+    s_alGain = cvarSystem->Get( "s_alGain", "1.0", CVAR_ARCHIVE );
+    s_alSources = cvarSystem->Get( "s_alSources", "96", CVAR_ARCHIVE );
+    s_alDopplerFactor = cvarSystem->Get( "s_alDopplerFactor", "1.0", CVAR_ARCHIVE );
+    s_alDopplerSpeed = cvarSystem->Get( "s_alDopplerSpeed", "2200", CVAR_ARCHIVE );
+    s_alMinDistance = cvarSystem->Get( "s_alMinDistance", "120", CVAR_CHEAT );
+    s_alMaxDistance = cvarSystem->Get( "s_alMaxDistance", "1024", CVAR_CHEAT );
+    s_alRolloff = cvarSystem->Get( "s_alRolloff", "2", CVAR_CHEAT );
+    s_alGraceDistance = cvarSystem->Get( "s_alGraceDistance", "512", CVAR_CHEAT );
     
-    s_alDriver = Cvar_Get( "s_alDriver", ALDRIVER_DEFAULT, CVAR_ARCHIVE | CVAR_LATCH );
+    s_alDriver = cvarSystem->Get( "s_alDriver", ALDRIVER_DEFAULT, CVAR_ARCHIVE | CVAR_LATCH );
     
-    s_alDevice = Cvar_Get( "s_alDevice", "", CVAR_ARCHIVE | CVAR_LATCH );
+    s_alDevice = cvarSystem->Get( "s_alDevice", "", CVAR_ARCHIVE | CVAR_LATCH );
     
     // Load QAL
     if( !QAL_Init( s_alDriver->string ) )
@@ -2282,7 +2282,7 @@ bool S_AL_Init( soundInterface_t* si )
             devicelist += curlen + 1;
         }
         
-        s_alAvailableDevices = Cvar_Get( "s_alAvailableDevices", devicenames, CVAR_ROM | CVAR_NORESTART );
+        s_alAvailableDevices = cvarSystem->Get( "s_alAvailableDevices", devicenames, CVAR_ROM | CVAR_NORESTART );
     }
     
     alDevice = alcOpenDevice( device );

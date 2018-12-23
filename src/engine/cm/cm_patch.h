@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   cm_patch.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -120,6 +120,7 @@ typedef struct
 #define MAX_FACETS          1024
 #define MAX_PATCH_PLANES    2048
 
+#undef MAX_GRID_SIZE
 #define MAX_GRID_SIZE   129
 
 typedef struct

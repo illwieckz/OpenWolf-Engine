@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_scene.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -35,7 +35,7 @@ S32			r_firstSceneDrawSurf;
 S32			r_numdlights;
 S32			r_firstSceneDlight;
 
-S64			r_numentities;
+S32			r_numentities;
 S32			r_firstSceneEntity;
 
 S32			r_numpolys;
@@ -275,10 +275,6 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
     {
         return;
     }
-    if( intensity <= 0 )
-    {
-        return;
-    }
     
     dl = &backEndData->dlights[r_numdlights++];
     VectorCopy( org, dl->origin );
@@ -296,7 +292,10 @@ idRenderSystemLocal::AddLightToScene
 */
 void idRenderSystemLocal::AddLightToScene( const vec3_t org, F32 intensity, F32 r, F32 g, F32 b )
 {
-    RE_AddDynamicLightToScene( org, intensity, r, g, b, false );
+    if( intensity < 0.0 ) // volumetric
+        RE_AddDynamicLightToScene( org, 0.0 - intensity, r, g, b, false );
+    else
+        RE_AddDynamicLightToScene( org, intensity, r, g, b, false );
 }
 
 /*
@@ -309,6 +308,7 @@ void idRenderSystemLocal::AddAdditiveLightToScene( const vec3_t org, F32 intensi
     RE_AddDynamicLightToScene( org, intensity, r, g, b, true );
 }
 
+extern void RB_UpdateCloseLights();
 
 void RE_BeginScene( const refdef_t* fd )
 {
@@ -334,8 +334,7 @@ void RE_BeginScene( const refdef_t* fd )
     tr.refdef.areamaskModified = false;
     if( !( tr.refdef.rdflags & RDF_NOWORLDMODEL ) )
     {
-        S32		areaDiff;
-        S32		i;
+        S32 areaDiff, i;
         
         // compare the area bits
         areaDiff = 0;
@@ -356,33 +355,56 @@ void RE_BeginScene( const refdef_t* fd )
     tr.refdef.sunCol[3] = 1.0f;
     tr.refdef.sunAmbCol[3] = 1.0f;
     
+    VectorNormalize( tr.sunDirection );
+    
     VectorCopy( tr.sunDirection, tr.refdef.sunDir );
     if( ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) || !( r_depthPrepass->value ) )
     {
+        tr.refdef.colorScale = 1.0f;
         VectorSet( tr.refdef.sunCol, 0, 0, 0 );
         VectorSet( tr.refdef.sunAmbCol, 0, 0, 0 );
     }
     else
     {
-        float scale = ( 1 << r_mapOverBrightBits->integer ) / 255.0f;
+        F32 colorScale = 1.0;
         
         if( r_forceSun->integer )
-            VectorScale( tr.sunLight, scale * r_forceSunLightScale->value, tr.refdef.sunCol );
-        else
-            VectorScale( tr.sunLight, scale, tr.refdef.sunCol );
+            colorScale = ( r_forceSun->integer ) ? r_forceSunLightScale->value : tr.sunShadowScale;
+        else if( r_sunlightMode->integer >= 2 )
+            colorScale = 0.75;
             
-        if( r_sunlightMode->integer == 1 )
+        tr.refdef.colorScale = colorScale;
+        
+        if( r_sunlightMode->integer >= 1 )
         {
+            F32 ambCol = 1.0;
+            
+            if( r_forceSun->integer )
+                ambCol = ( r_forceSun->integer ) ? r_forceSunAmbientScale->value : tr.sunShadowScale;
+            else if( r_sunlightMode->integer >= 2 )
+                ambCol = 0.75;
+                
+            tr.refdef.sunCol[0] =
+                tr.refdef.sunCol[1] =
+                    tr.refdef.sunCol[2] = 1.0f;
+                    
             tr.refdef.sunAmbCol[0] =
                 tr.refdef.sunAmbCol[1] =
-                    tr.refdef.sunAmbCol[2] = r_forceSun->integer ? r_forceSunAmbientScale->value : tr.sunShadowScale;
+                    tr.refdef.sunAmbCol[2] = ambCol;
         }
         else
         {
-            if( r_forceSun->integer )
+            F32 scale = pow( 2.0f, r_mapOverBrightBits->integer - tr.overbrightBits - 8 );
+            if( r_sunlightMode->integer/*r_forceSun->integer || r_dlightShadows->integer*/ )
+            {
+                VectorScale( tr.sunLight, scale * r_forceSunLightScale->value, tr.refdef.sunCol );
                 VectorScale( tr.sunLight, scale * r_forceSunAmbientScale->value, tr.refdef.sunAmbCol );
+            }
             else
+            {
+                VectorScale( tr.sunLight, scale, tr.refdef.sunCol );
                 VectorScale( tr.sunLight, scale * tr.sunShadowScale, tr.refdef.sunAmbCol );
+            }
         }
     }
     
@@ -442,6 +464,8 @@ void RE_BeginScene( const refdef_t* fd )
     tr.refdef.num_dlights = r_numdlights - r_firstSceneDlight;
     tr.refdef.dlights = &backEndData->dlights[r_firstSceneDlight];
     
+    RB_UpdateCloseLights();
+    
     tr.refdef.numPolys = r_numpolys - r_firstScenePoly;
     tr.refdef.polys = &backEndData->polys[r_firstScenePoly];
     
@@ -450,7 +474,7 @@ void RE_BeginScene( const refdef_t* fd )
     
     // turn off dynamic lighting globally by clearing all the
     // dlights if it needs to be disabled or if vertex lighting is enabled
-    if( r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 )
+    if( r_volumelight->integer == 0 || r_vertexLight->integer == 1 )
     {
         tr.refdef.num_dlights = 0;
     }
@@ -465,7 +489,7 @@ void RE_BeginScene( const refdef_t* fd )
 }
 
 
-void RE_EndScene()
+void RE_EndScene( void )
 {
     // the next scene rendered in this frame will tack on after this one
     r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
@@ -485,10 +509,14 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 =====================
 */
+
+S32 NEXT_SHADOWMAP_UPDATE[3] = { 0 };
 void idRenderSystemLocal::RenderScene( const refdef_t* fd )
 {
-    viewParms_t		parms;
-    S32				startTime;
+    viewParms_t	parms;
+    S32	startTime;
+    
+    RB_AdvanceOverlaySway();
     
     if( !tr.registered )
     {
@@ -511,6 +539,7 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
     RE_BeginScene( fd );
     
     // SmileTheory: playing with shadow mapping
+#if 0
     if( !( fd->rdflags & RDF_NOWORLDMODEL ) && tr.refdef.num_dlights && r_dlightMode->integer >= 2 )
     {
         R_RenderDlightCubemaps( fd );
@@ -521,33 +550,42 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
     {
         R_RenderPshadowMaps( fd );
     }
+#endif
     
     // playing with even more shadows
-    if( glRefConfig.framebufferObject && r_sunlightMode->integer && !( fd->rdflags & RDF_NOWORLDMODEL ) && ( r_forceSun->integer || tr.sunShadows ) )
+    if( !( fd->rdflags & RDF_NOWORLDMODEL )
+            && ( r_sunlightMode->integer >= 2 || r_forceSun->integer || tr.sunShadows )
+            && !backEnd.depthFill )
     {
-        if( r_shadowCascadeZFar->integer != 0 )
+        if( r_sunlightMode->integer < 3 )
+        {
+            // Update distance shadows on timers...
+            S32 nowTime = CL_ScaledMilliseconds();
+            
+            if( nowTime >= NEXT_SHADOWMAP_UPDATE[0] )
+            {
+                // Close shadows - fast updates...
+                NEXT_SHADOWMAP_UPDATE[0] = nowTime + 50;
+                R_RenderSunShadowMaps( fd, 0 );
+            }
+            else if( nowTime >= NEXT_SHADOWMAP_UPDATE[1] )
+            {
+                // Distant shadows - slower updates...
+                NEXT_SHADOWMAP_UPDATE[1] = nowTime + 1500;
+                R_RenderSunShadowMaps( fd, 1 );
+            }
+            else if( nowTime >= NEXT_SHADOWMAP_UPDATE[2] )
+            {
+                // Really distant shadows - slower updates...
+                NEXT_SHADOWMAP_UPDATE[2] = nowTime + 3000;
+                R_RenderSunShadowMaps( fd, 2 );
+            }
+        }
+        else
         {
             R_RenderSunShadowMaps( fd, 0 );
             R_RenderSunShadowMaps( fd, 1 );
             R_RenderSunShadowMaps( fd, 2 );
-        }
-        else
-        {
-            Mat4Zero( tr.refdef.sunShadowMvp[0] );
-            Mat4Zero( tr.refdef.sunShadowMvp[1] );
-            Mat4Zero( tr.refdef.sunShadowMvp[2] );
-        }
-        
-        // only rerender last cascade if sun has changed position
-        if( r_forceSun->integer == 2 || !VectorCompare( tr.refdef.sunDir, tr.lastCascadeSunDirection ) )
-        {
-            VectorCopy( tr.refdef.sunDir, tr.lastCascadeSunDirection );
-            R_RenderSunShadowMaps( fd, 3 );
-            Mat4Copy( tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp );
-        }
-        else
-        {
-            Mat4Copy( tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3] );
         }
     }
     
@@ -591,7 +629,7 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
     
     VectorCopy( fd->vieworg, parms.pvsOrigin );
     
-    if( !( fd->rdflags & RDF_NOWORLDMODEL ) && r_depthPrepass->value && ( ( r_forceSun->integer ) || tr.sunShadows ) )
+    if( !( fd->rdflags & RDF_NOWORLDMODEL ) && r_depthPrepass->value && ( r_sunlightMode->integer >= 2 || r_forceSun->integer || tr.sunShadows ) )
     {
         parms.flags = VPF_USESUNLIGHT;
     }

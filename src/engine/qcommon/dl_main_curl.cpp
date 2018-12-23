@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   dl_main_curl.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ static int DL_cb_Progress( void* clientp, F64 dltotal, F64 dlnow, F64 ultotal, F
     /* cl_downloadSize and cl_downloadTime are set by the Q3 protocol...
        and it would probably be expensive to verify them here.   -zinx */
     
-    Cvar_SetValue( "cl_downloadCount", ( F32 )dlnow );
+    cvarSystem->SetValue( "cl_downloadCount", ( F32 )dlnow );
     return 0;
 }
 
@@ -137,7 +137,7 @@ int DL_BeginDownload( StringEntry localName, StringEntry remoteName, int debug )
         return 0;
     }
     
-    FS_CreatePath( localName );
+    fileSystem->CreatePath( localName );
     dl_file = fopen( localName, "wb+" );
     if( !dl_file )
     {
@@ -149,7 +149,7 @@ int DL_BeginDownload( StringEntry localName, StringEntry remoteName, int debug )
     
     /* ET://ip:port */
     strcpy( referer, "ET://" );
-    Q_strncpyz( referer + 5, Cvar_VariableString( "cl_currentServerIP" ), MAX_STRING_CHARS );
+    Q_strncpyz( referer + 5, cvarSystem->VariableString( "cl_currentServerIP" ), MAX_STRING_CHARS );
     
     dl_request = curl_easy_init();
     curl_easy_setopt( dl_request, CURLOPT_USERAGENT, va( "%s %s", APP_NAME "/" APP_VERSION, curl_version() ) );
@@ -163,7 +163,7 @@ int DL_BeginDownload( StringEntry localName, StringEntry remoteName, int debug )
     
     curl_multi_add_handle( dl_multi, dl_request );
     
-    Cvar_Set( "cl_downloadName", remoteName );
+    cvarSystem->Set( "cl_downloadName", remoteName );
     
     return 1;
 }
@@ -216,7 +216,7 @@ dlStatus_t DL_DownloadLoop()
     
     dl_request = NULL;
     
-    Cvar_Set( "ui_dl_running", "0" );
+    cvarSystem->Set( "ui_dl_running", "0" );
     
     if( err )
     {

@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sv_init.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -53,8 +53,7 @@ static void SV_SendConfigstring( client_t* client, S32 index )
 {
     S32 maxChunkSize = MAX_STRING_CHARS - 24, len;
     
-    if( sv.configstrings[index].restricted && Com_ClientListContains(
-                &sv.configstrings[index].clientList, client - svs.clients ) )
+    if( sv.configstrings[index].restricted && Com_ClientListContains( &sv.configstrings[index].clientList, client - svs.clients ) )
     {
         // Send a blank config string for this client if it's listed
         SV_SendServerCommand( client, "cs %i \"\"\n", index );
@@ -93,8 +92,7 @@ static void SV_SendConfigstring( client_t* client, S32 index )
     else
     {
         // standard cs, just send it
-        SV_SendServerCommand( client, "cs %i \"%s\"\n", index,
-                              sv.configstrings[index].s );
+        SV_SendServerCommand( client, "cs %i \"%s\"\n", index, sv.configstrings[index].s );
     }
 }
 
@@ -138,7 +136,7 @@ void SV_UpdateConfigStrings( void )
                 // RF, re-enabled
                 // Arnout: removed hardcoded gametype
                 // Arnout: added coop
-                if( ( SV_GameIsSinglePlayer() || SV_GameIsCoop() ) && client->gentity && ( client->gentity->r.svFlags & SVF_BOT ) )
+                if( ( serverGameSystem->GameIsSinglePlayer() || serverGameSystem->GameIsCoop() ) && client->gentity && ( client->gentity->r.svFlags & SVF_BOT ) )
                 {
                     continue;
                 }
@@ -186,7 +184,7 @@ void SV_UpdateConfigStrings( void )
 SV_SetConfigstringNoUpdate
 ===============
 */
-void SV_SetConfigstringNoUpdate( S32 index, const UTF8* val )
+void SV_SetConfigstringNoUpdate( S32 index, StringEntry val )
 {
     if( index < 0 || index >= MAX_CONFIGSTRINGS )
     {
@@ -214,7 +212,7 @@ void SV_SetConfigstringNoUpdate( S32 index, const UTF8* val )
 SV_SetConfigstring
 ===============
 */
-void SV_SetConfigstring( S32 index, const UTF8* val )
+void SV_SetConfigstring( S32 index, StringEntry val )
 {
     S32			i;
     client_t*	client;
@@ -319,7 +317,7 @@ void SV_SetConfigstringRestrictions( S32 index, const clientList_t* clientList )
 SV_SetUserinfo
 ===============
 */
-void SV_SetUserinfo( S32 index, const UTF8* val )
+void SV_SetUserinfo( S32 index, StringEntry val )
 {
     if( index < 0 || index >= sv_maxclients->integer )
     {
@@ -370,7 +368,7 @@ void SV_CreateBaseline( void )
     
     for( entnum = 1; entnum < sv.num_entities; entnum++ )
     {
-        svent = SV_GentityNum( entnum );
+        svent = serverGameSystem->GentityNum( entnum );
         if( !svent->r.linked )
         {
             continue;
@@ -392,7 +390,7 @@ SV_BoundMaxClients
 void SV_BoundMaxClients( S32 minimum )
 {
     // get the current maxclients value
-    Cvar_Get( "sv_maxclients", "20", 0 );
+    cvarSystem->Get( "sv_maxclients", "20", 0 );
     
     // START    xkan, 10/03/2002
     // allow many bots in single player. note that this pretty much means all previous
@@ -402,9 +400,9 @@ void SV_BoundMaxClients( S32 minimum )
     // set here, which may be wrong - we can certainly just set it to a sensible number
     // when it is not in single player mode in the else part of the if statement when
     // necessary
-    if( SV_GameIsSinglePlayer() || SV_GameIsCoop() )
+    if( serverGameSystem->GameIsSinglePlayer() || serverGameSystem->GameIsCoop() )
     {
-        Cvar_Set( "sv_maxclients", "64" );
+        cvarSystem->Set( "sv_maxclients", "64" );
     }
     // END      xkan, 10/03/2002
     
@@ -412,11 +410,11 @@ void SV_BoundMaxClients( S32 minimum )
     
     if( sv_maxclients->integer < minimum )
     {
-        Cvar_Set( "sv_maxclients", va( "%i", minimum ) );
+        cvarSystem->Set( "sv_maxclients", va( "%i", minimum ) );
     }
     else if( sv_maxclients->integer > MAX_CLIENTS )
     {
-        Cvar_Set( "sv_maxclients", va( "%i", MAX_CLIENTS ) );
+        cvarSystem->Set( "sv_maxclients", va( "%i", MAX_CLIENTS ) );
     }
 }
 
@@ -457,7 +455,7 @@ void SV_Startup( void )
     }
     svs.initialized = true;
     
-    Cvar_Set( "sv_running", "1" );
+    cvarSystem->Set( "sv_running", "1" );
     
     // Join the ipv6 multicast group now that a map is running so clients can scan for us on the local network.
     NET_JoinMulticast6();
@@ -561,14 +559,14 @@ void SV_SetExpectedHunkUsage( UTF8* mapname )
     S32             handle, len;
     UTF8*           memlistfile = "hunkusage.dat", *buf, *buftrav, *token;
     
-    len = FS_FOpenFileByMode( memlistfile, &handle, FS_READ );
+    len = fileSystem->FOpenFileByMode( memlistfile, &handle, FS_READ );
     if( len >= 0 ) // the file exists, so read it in, strip out the current entry for this map, and save it out, so we can append the new value
     {
         buf = ( UTF8* )Z_Malloc( len + 1 );
         memset( buf, 0, len + 1 );
         
-        FS_Read( ( void* )buf, len, handle );
-        FS_FCloseFile( handle );
+        fileSystem->Read( ( void* )buf, len, handle );
+        fileSystem->FCloseFile( handle );
         
         // now parse the file, filtering out the current map
         buftrav = buf;
@@ -625,10 +623,10 @@ void SV_TouchCGame( void )
 {
     fileHandle_t f;
     
-    FS_FOpenFileRead( "vm/cgame.qvm", &f, false );
+    fileSystem->FOpenFileRead( "vm/cgame.qvm", &f, false );
     if( f )
     {
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
     }
 }
 
@@ -644,10 +642,10 @@ void SV_TouchCGameDLL( void )
     UTF8*           filename;
     
     filename = Sys_GetDLLName( "cgame" );
-    FS_FOpenFileRead_Filtered( filename, &f, false, FS_EXCLUDE_DIR );
+    fileSystem->FOpenFileRead_Filtered( filename, &f, false, FS_EXCLUDE_DIR );
     if( f )
     {
-        FS_FCloseFile( f );
+        fileSystem->FCloseFile( f );
     }
     else if( sv_pure->integer )   // ydnar: so we can work the damn game
     {
@@ -668,7 +666,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
 {
     S32             i, checksum;
     bool        isBot;
-    const UTF8*     p;
+    StringEntry     p;
     
     svs.queryDone = 0;
     
@@ -680,7 +678,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
 #if 0 //defined(USE_HTTP)
     // Dushan - Do not allow users who are not logged in
-    if( Cvar_VariableIntegerValue( "ui_logged_in" ) != 1 )
+    if( cvarSystem->VariableIntegerValue( "ui_logged_in" ) != 1 )
     {
         Com_Error( ERR_DROP, "You are not logged in\n" );
         return;
@@ -688,7 +686,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
 #endif
     
     // shut down the existing game if it is running
-    SV_ShutdownGameProgs();
+    serverGameSystem->ShutdownGameProgs();
     svs.gameStarted = false;
     
     Com_Printf( "------ Server Initialization ------\n" );
@@ -725,7 +723,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     }
     
     // init client structures and svs.numSnapshotEntities
-    if( !Cvar_VariableValue( "sv_running" ) )
+    if( !cvarSystem->VariableValue( "sv_running" ) )
     {
         SV_Startup();
     }
@@ -739,7 +737,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     }
     
     // clear pak references
-    FS_ClearPakReferences( 0 );
+    fileSystem->ClearPakReferences( 0 );
     
     // allocate the snapshot entities on the hunk
     svs.snapshotEntities = ( entityState_t* )Hunk_Alloc( sizeof( entityState_t ) * svs.numSnapshotEntities, h_high );
@@ -751,26 +749,25 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
     // set nextmap to the same map, but it may be overriden
     // by the game startup or another console command
-    Cvar_Set( "nextmap", "map_restart 0" );
-//  Cvar_Set( "nextmap", va("map %s", server) );
+    cvarSystem->Set( "nextmap", "map_restart 0" );
+//  cvarSystem->Set( "nextmap", va("map %s", server) );
 
     // Ridah
     // DHM - Nerve :: We want to use the completion bar in multiplayer as well
     // Arnout: just always use it
-    if( !SV_GameIsSinglePlayer() )
+    if( !serverGameSystem->GameIsSinglePlayer() )
     {
         SV_SetExpectedHunkUsage( va( "maps/%s.world", server ) );
     }
     else
     {
         // just set it to a negative number,so the cgame knows not to draw the percent bar
-        Cvar_Set( "com_expectedhunkusage", "-1" );
+        cvarSystem->Set( "com_expectedhunkusage", "-1" );
     }
     
     // make sure we are not paused
-    Cvar_Set( "cl_paused", "0" );
+    cvarSystem->Set( "cl_paused", "0" );
     
-#if !defined( DO_LIGHT_DEDICATED )
     // get a new checksum feed and restart the file system
     srand( Sys_Milliseconds() );
     sv.checksumFeed = ( ( ( S32 )rand() << 16 ) ^ rand() ) ^ Sys_Milliseconds();
@@ -779,42 +776,35 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // only comment out when you need a new pure checksum string and it's associated random feed
     //Com_DPrintf("SV_SpawnServer checksum feed: %p\n", sv.checksumFeed);
     
-#else							// DO_LIGHT_DEDICATED implementation below
-    // we are not able to randomize the checksum feed since the feed is used as key for pure_checksum computations
-    // files.c 1776 : pack->pure_checksum = Com_BlockChecksumKey( fs_headerLongs, 4 * fs_numHeaderLongs, LittleLong(fs_checksumFeed) );
-    // we request a fake randomized feed, files.c knows the answer
-    srand( Sys_Milliseconds() );
-    sv.checksumFeed = FS_RandChecksumFeed();
-#endif
-    FS_Restart( sv.checksumFeed );
+    fileSystem->Restart( sv.checksumFeed );
     
     collisionModelManager->LoadMap( va( "maps/%s.world", server ), false, &checksum );
     
     // set serverinfo visible name
-    Cvar_Set( "mapname", server );
+    cvarSystem->Set( "mapname", server );
     
-    Cvar_Set( "sv_mapChecksum", va( "%i", checksum ) );
+    cvarSystem->Set( "sv_mapChecksum", va( "%i", checksum ) );
     
-    sv_newGameShlib = Cvar_Get( "sv_newGameShlib", "", CVAR_TEMP );
+    sv_newGameShlib = cvarSystem->Get( "sv_newGameShlib", "", CVAR_TEMP );
     
     // serverid should be different each time
     sv.serverId = com_frameTime;
     sv.restartedServerId = sv.serverId;
     sv.checksumFeedServerId = sv.serverId;
-    Cvar_Set( "sv_serverid", va( "%i", sv.serverId ) );
+    cvarSystem->Set( "sv_serverid", va( "%i", sv.serverId ) );
     
     // clear physics interaction links
-    SV_ClearWorld();
+    serverWorldSystemLocal.ClearWorld();
     
     // media configstring setting should be done during
     // the loading stage, so connected clients don't have
     // to load during actual gameplay
     sv.state = SS_LOADING;
     
-    Cvar_Set( "sv_serverRestarting", "1" );
+    cvarSystem->Set( "sv_serverRestarting", "1" );
     
     // load and spawn all other entities
-    SV_InitGameProgs();
+    serverGameSystem->InitGameProgs();
     
     // don't allow a map_restart if game is modified
     // Arnout: there isn't any check done against this, obsolete
@@ -824,7 +814,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     for( i = 0; i < GAME_INIT_FRAMES; i++ )
     {
         game->RunFrame( svs.time );
-        SV_BotFrame( svs.time );
+        serverBotSystem->BotFrame( svs.time );
         svs.time += FRAMETIME;
     }
     
@@ -840,9 +830,9 @@ void SV_SpawnServer( UTF8* server, bool killBots )
             
             if( svs.clients[i].netchan.remoteAddress.type == NA_BOT )
             {
-                if( killBots || SV_GameIsSinglePlayer() || SV_GameIsCoop() )
+                if( killBots || serverGameSystem->GameIsSinglePlayer() || serverGameSystem->GameIsCoop() )
                 {
-                    SV_DropClient( &svs.clients[i], "" );
+                    serverClientLocal.DropClient( &svs.clients[i], "" );
                     continue;
                 }
                 isBot = true;
@@ -853,12 +843,12 @@ void SV_SpawnServer( UTF8* server, bool killBots )
             }
             
             // connect the client again
-            denied = ( UTF8* )game->ClientConnect( i, false, isBot ); // firstTime = qfalse
+            denied = ( UTF8* )game->ClientConnect( i, false, isBot ); // firstTime = false
             if( denied )
             {
                 // this generally shouldn't happen, because the client
                 // was connected before the level change
-                SV_DropClient( &svs.clients[i], denied );
+                serverClientLocal.DropClient( &svs.clients[i], denied );
             }
             else
             {
@@ -875,7 +865,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
                     
                     client = &svs.clients[i];
                     client->state = CS_ACTIVE;
-                    ent = SV_GentityNum( i );
+                    ent = serverGameSystem->GentityNum( i );
                     ent->s.number = i;
                     client->gentity = ent;
                     
@@ -890,21 +880,21 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
     // run another frame to allow things to look at all the players
     game->RunFrame( svs.time );
-    SV_BotFrame( svs.time );
+    serverBotSystem->BotFrame( svs.time );
     svs.time += FRAMETIME;
     
     if( sv_pure->integer )
     {
         // the server sends these to the clients so they will only
         // load pk3s also loaded at the server
-        p = FS_LoadedPakChecksums();
-        Cvar_Set( "sv_paks", p );
+        p = fileSystem->LoadedPakChecksums();
+        cvarSystem->Set( "sv_paks", p );
         if( strlen( p ) == 0 )
         {
             Com_Printf( "WARNING: sv_pure set but no PK3 files loaded\n" );
         }
-        p = FS_LoadedPakNames();
-        Cvar_Set( "sv_pakNames", p );
+        p = fileSystem->LoadedPakNames();
+        cvarSystem->Set( "sv_pakNames", p );
         
         // if a dedicated pure server we need to touch the cgame because it could be in a
         // seperate pk3 file and the client will need to load the latest cgame.qvm
@@ -915,8 +905,8 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     }
     else
     {
-        Cvar_Set( "sv_paks", "" );
-        Cvar_Set( "sv_pakNames", "" );
+        cvarSystem->Set( "sv_paks", "" );
+        cvarSystem->Set( "sv_pakNames", "" );
     }
     // the server sends these to the clients so they can figure
     // out which pk3s should be auto-downloaded
@@ -925,23 +915,21 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // we want the server to reference the mp_bin pk3 that the client is expected to load from
     SV_TouchCGameDLL();
     
-    p = FS_ReferencedPakChecksums();
-    Cvar_Set( "sv_referencedPaks", p );
-    p = FS_ReferencedPakNames();
-    Cvar_Set( "sv_referencedPakNames", p );
+    p = fileSystem->ReferencedPakChecksums();
+    cvarSystem->Set( "sv_referencedPaks", p );
+    p = fileSystem->ReferencedPakNames();
+    cvarSystem->Set( "sv_referencedPakNames", p );
     
     // save systeminfo and serverinfo strings
     cvar_modifiedFlags &= ~CVAR_SYSTEMINFO;
-    SV_SetConfigstring( CS_SYSTEMINFO, Cvar_InfoString_Big( CVAR_SYSTEMINFO ) );
+    SV_SetConfigstring( CS_SYSTEMINFO, cvarSystem->InfoString_Big( CVAR_SYSTEMINFO ) );
     
-    SV_SetConfigstring( CS_SERVERINFO, Cvar_InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+    SV_SetConfigstring( CS_SERVERINFO, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
     cvar_modifiedFlags &= ~CVAR_SERVERINFO;
     
     // NERVE - SMF
-#if 0
-    SV_SetConfigstring( CS_WOLFINFO, Cvar_InfoString( CVAR_WOLFINFO ) );
+    SV_SetConfigstring( CS_WOLFINFO, cvarSystem->InfoString( CVAR_WOLFINFO ) );
     cvar_modifiedFlags &= ~CVAR_WOLFINFO;
-#endif
     
     // any media configstring setting now should issue a warning
     // and any configstring changes should be reliably transmitted
@@ -949,13 +937,13 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     sv.state = SS_GAME;
     
     // send a heartbeat now so the master will get up to date info
-    SV_Heartbeat_f();
+    serverCcmdsLocal.Heartbeat_f();
     
     Hunk_SetMark();
     
     SV_UpdateConfigStrings();
     
-    Cvar_Set( "sv_serverRestarting", "0" );
+    cvarSystem->Set( "sv_serverRestarting", "0" );
     
     Com_Printf( "-----------------------------------\n" );
 }
@@ -974,15 +962,15 @@ void SV_ParseVersionMapping( void )
     S32 handle, len;
     UTF8* filename = "versionmap.cfg", *buf, *buftrav, *token;
     
-    len = FS_SV_FOpenFileRead( filename, &handle );
+    len = fileSystem->SV_FOpenFileRead( filename, &handle );
     if( len >= 0 )    // the file exists
     {
     
         buf = ( UTF8* )Z_Malloc( len + 1 );
         memset( buf, 0, len + 1 );
         
-        FS_Read( ( void* )buf, len, handle );
-        FS_FCloseFile( handle );
+        fileSystem->Read( ( void* )buf, len, handle );
+        fileSystem->FCloseFile( handle );
         
         // now parse the file, setting the version table info
         buftrav = buf;
@@ -1056,142 +1044,140 @@ SV_Init
 Only called at main exe startup, not for each game
 ===============
 */
-void            SV_BotInitBotLib( void );
-
 void SV_Init( void )
 {
-    SV_AddOperatorCommands();
+    serverCcmdsLocal.AddOperatorCommands();
     
     // serverinfo vars
-    Cvar_Get( "dmflags", "0", /*CVAR_SERVERINFO */ 0 );
-    Cvar_Get( "fraglimit", "0", /*CVAR_SERVERINFO */ 0 );
-    Cvar_Get( "timelimit", "0", CVAR_SERVERINFO );
+    cvarSystem->Get( "dmflags", "0", /*CVAR_SERVERINFO */ 0 );
+    cvarSystem->Get( "fraglimit", "0", /*CVAR_SERVERINFO */ 0 );
+    cvarSystem->Get( "timelimit", "0", CVAR_SERVERINFO );
     
     // Rafael gameskill
-//  sv_gameskill = Cvar_Get ("g_gameskill", "3", CVAR_SERVERINFO | CVAR_LATCH );
+//  sv_gameskill = cvarSystem->Get ("g_gameskill", "3", CVAR_SERVERINFO | CVAR_LATCH );
     // done
     
-    Cvar_Get( "sv_keywords", "", CVAR_SERVERINFO );
-    Cvar_Get( "protocol", va( "%i", ETPROTOCOL_VERSION ), CVAR_SERVERINFO | CVAR_ARCHIVE );
-    sv_mapname = Cvar_Get( "mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM );
-    sv_privateClients = Cvar_Get( "sv_privateClients", "0", CVAR_SERVERINFO );
-    sv_hostname = Cvar_Get( "sv_hostname", "OpenWolf Host", CVAR_SERVERINFO | CVAR_ARCHIVE );
+    cvarSystem->Get( "sv_keywords", "", CVAR_SERVERINFO );
+    cvarSystem->Get( "protocol", va( "%i", ETPROTOCOL_VERSION ), CVAR_SERVERINFO | CVAR_ARCHIVE );
+    sv_mapname = cvarSystem->Get( "mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM );
+    sv_privateClients = cvarSystem->Get( "sv_privateClients", "0", CVAR_SERVERINFO );
+    sv_hostname = cvarSystem->Get( "sv_hostname", "OpenWolf Host", CVAR_SERVERINFO | CVAR_ARCHIVE );
     //
 #ifdef __MACOS__
-    sv_maxclients = Cvar_Get( "sv_maxclients", "16", CVAR_SERVERINFO | CVAR_LATCH );	//DAJ HOG
+    sv_maxclients = cvarSystem->Get( "sv_maxclients", "16", CVAR_SERVERINFO | CVAR_LATCH );	//DAJ HOG
 #else
-    sv_maxclients = Cvar_Get( "sv_maxclients", "20", CVAR_SERVERINFO | CVAR_LATCH );	// NERVE - SMF - changed to 20 from 8
+    sv_maxclients = cvarSystem->Get( "sv_maxclients", "20", CVAR_SERVERINFO | CVAR_LATCH );	// NERVE - SMF - changed to 20 from 8
 #endif
     
-    sv_maxRate = Cvar_Get( "sv_maxRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
-    sv_minPing = Cvar_Get( "sv_minPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
-    sv_maxPing = Cvar_Get( "sv_maxPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
-    sv_floodProtect = Cvar_Get( "sv_floodProtect", "1", CVAR_ARCHIVE | CVAR_SERVERINFO );
-    sv_allowAnonymous = Cvar_Get( "sv_allowAnonymous", "0", CVAR_SERVERINFO );
-    sv_friendlyFire = Cvar_Get( "g_friendlyFire", "1", CVAR_SERVERINFO | CVAR_ARCHIVE );	// NERVE - SMF
-    sv_maxlives = Cvar_Get( "g_maxlives", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO );	// NERVE - SMF
-    sv_needpass = Cvar_Get( "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM );
+    sv_maxRate = cvarSystem->Get( "sv_maxRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
+    sv_minPing = cvarSystem->Get( "sv_minPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
+    sv_maxPing = cvarSystem->Get( "sv_maxPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
+    sv_floodProtect = cvarSystem->Get( "sv_floodProtect", "1", CVAR_ARCHIVE | CVAR_SERVERINFO );
+    sv_allowAnonymous = cvarSystem->Get( "sv_allowAnonymous", "0", CVAR_SERVERINFO );
+    sv_friendlyFire = cvarSystem->Get( "g_friendlyFire", "1", CVAR_SERVERINFO | CVAR_ARCHIVE );	// NERVE - SMF
+    sv_maxlives = cvarSystem->Get( "g_maxlives", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO );	// NERVE - SMF
+    sv_needpass = cvarSystem->Get( "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM );
     
     // systeminfo
     //bani - added cvar_t for sv_cheats so server engine can reference it
-    sv_cheats = Cvar_Get( "sv_cheats", "1", CVAR_SYSTEMINFO | CVAR_ROM );
-    sv_serverid = Cvar_Get( "sv_serverid", "0", CVAR_SYSTEMINFO | CVAR_ROM );
-    sv_pure = Cvar_Get( "sv_pure", "0", CVAR_SYSTEMINFO );
+    sv_cheats = cvarSystem->Get( "sv_cheats", "1", CVAR_SYSTEMINFO | CVAR_ROM );
+    sv_serverid = cvarSystem->Get( "sv_serverid", "0", CVAR_SYSTEMINFO | CVAR_ROM );
+    sv_pure = cvarSystem->Get( "sv_pure", "0", CVAR_SYSTEMINFO );
     
-    Cvar_Get( "sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM );
-    Cvar_Get( "sv_pakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );
-    Cvar_Get( "sv_referencedPaks", "", CVAR_SYSTEMINFO | CVAR_ROM );
-    Cvar_Get( "sv_referencedPakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );
+    cvarSystem->Get( "sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM );
+    cvarSystem->Get( "sv_pakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );
+    cvarSystem->Get( "sv_referencedPaks", "", CVAR_SYSTEMINFO | CVAR_ROM );
+    cvarSystem->Get( "sv_referencedPakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );
     
     // server vars
-    sv_rconPassword = Cvar_Get( "rconPassword", "", CVAR_TEMP );
-    sv_privatePassword = Cvar_Get( "sv_privatePassword", "", CVAR_TEMP );
-    sv_fps = Cvar_Get( "sv_fps", "60", CVAR_TEMP );
-    sv_timeout = Cvar_Get( "sv_timeout", "240", CVAR_TEMP );
-    sv_zombietime = Cvar_Get( "sv_zombietime", "2", CVAR_TEMP );
-    Cvar_Get( "nextmap", "", CVAR_TEMP );
+    sv_rconPassword = cvarSystem->Get( "rconPassword", "", CVAR_TEMP );
+    sv_privatePassword = cvarSystem->Get( "sv_privatePassword", "", CVAR_TEMP );
+    sv_fps = cvarSystem->Get( "sv_fps", "60", CVAR_TEMP );
+    sv_timeout = cvarSystem->Get( "sv_timeout", "240", CVAR_TEMP );
+    sv_zombietime = cvarSystem->Get( "sv_zombietime", "2", CVAR_TEMP );
+    cvarSystem->Get( "nextmap", "", CVAR_TEMP );
     
-    sv_allowDownload = Cvar_Get( "sv_allowDownload", "1", CVAR_ARCHIVE );
-    sv_master[0] = Cvar_Get( "sv_master1", MASTER_SERVER_NAME, 0 );
-    sv_master[1] = Cvar_Get( "sv_master2", "", CVAR_ARCHIVE );
-    sv_master[2] = Cvar_Get( "sv_master3", "", CVAR_ARCHIVE );
-    sv_master[3] = Cvar_Get( "sv_master4", "", CVAR_ARCHIVE );
-    sv_master[4] = Cvar_Get( "sv_master5", "", CVAR_ARCHIVE );
-    sv_reconnectlimit = Cvar_Get( "sv_reconnectlimit", "3", 0 );
+    sv_allowDownload = cvarSystem->Get( "sv_allowDownload", "1", CVAR_ARCHIVE );
+    sv_master[0] = cvarSystem->Get( "sv_master1", MASTER_SERVER_NAME, 0 );
+    sv_master[1] = cvarSystem->Get( "sv_master2", "", CVAR_ARCHIVE );
+    sv_master[2] = cvarSystem->Get( "sv_master3", "", CVAR_ARCHIVE );
+    sv_master[3] = cvarSystem->Get( "sv_master4", "", CVAR_ARCHIVE );
+    sv_master[4] = cvarSystem->Get( "sv_master5", "", CVAR_ARCHIVE );
+    sv_reconnectlimit = cvarSystem->Get( "sv_reconnectlimit", "3", 0 );
     sv_tempbanmessage =
-        Cvar_Get( "sv_tempbanmessage", "You have been kicked and are temporarily banned from joining this server.", 0 );
-    sv_showloss = Cvar_Get( "sv_showloss", "0", 0 );
-    sv_padPackets = Cvar_Get( "sv_padPackets", "0", 0 );
-    sv_killserver = Cvar_Get( "sv_killserver", "0", 0 );
-    sv_mapChecksum = Cvar_Get( "sv_mapChecksum", "", CVAR_ROM );
+        cvarSystem->Get( "sv_tempbanmessage", "You have been kicked and are temporarily banned from joining this server.", 0 );
+    sv_showloss = cvarSystem->Get( "sv_showloss", "0", 0 );
+    sv_padPackets = cvarSystem->Get( "sv_padPackets", "0", 0 );
+    sv_killserver = cvarSystem->Get( "sv_killserver", "0", 0 );
+    sv_mapChecksum = cvarSystem->Get( "sv_mapChecksum", "", CVAR_ROM );
     
-    sv_reloading = Cvar_Get( "g_reloading", "0", CVAR_ROM );
+    sv_reloading = cvarSystem->Get( "g_reloading", "0", CVAR_ROM );
     
-    sv_lanForceRate = Cvar_Get( "sv_lanForceRate", "1", CVAR_ARCHIVE );
+    sv_lanForceRate = cvarSystem->Get( "sv_lanForceRate", "1", CVAR_ARCHIVE );
     
-    sv_onlyVisibleClients = Cvar_Get( "sv_onlyVisibleClients", "0", 0 );	// DHM - Nerve
+    sv_onlyVisibleClients = cvarSystem->Get( "sv_onlyVisibleClients", "0", 0 );	// DHM - Nerve
     
-    sv_showAverageBPS = Cvar_Get( "sv_showAverageBPS", "0", 0 );	// NERVE - SMF - net debugging
+    sv_showAverageBPS = cvarSystem->Get( "sv_showAverageBPS", "0", 0 );	// NERVE - SMF - net debugging
     
     // NERVE - SMF - create user set cvars
-    Cvar_Get( "g_userTimeLimit", "0", 0 );
-    Cvar_Get( "g_userAlliedRespawnTime", "0", 0 );
-    Cvar_Get( "g_userAxisRespawnTime", "0", 0 );
-    Cvar_Get( "g_maxlives", "0", 0 );
-    Cvar_Get( "g_altStopwatchMode", "0", CVAR_ARCHIVE );
-    Cvar_Get( "g_minGameClients", "8", CVAR_SERVERINFO );
-    Cvar_Get( "g_complaintlimit", "6", CVAR_ARCHIVE );
-    Cvar_Get( "gamestate", "-1", CVAR_WOLFINFO | CVAR_ROM );
-    Cvar_Get( "g_currentRound", "0", CVAR_WOLFINFO );
-    Cvar_Get( "g_nextTimeLimit", "0", CVAR_WOLFINFO );
+    cvarSystem->Get( "g_userTimeLimit", "0", 0 );
+    cvarSystem->Get( "g_userAlliedRespawnTime", "0", 0 );
+    cvarSystem->Get( "g_userAxisRespawnTime", "0", 0 );
+    cvarSystem->Get( "g_maxlives", "0", 0 );
+    cvarSystem->Get( "g_altStopwatchMode", "0", CVAR_ARCHIVE );
+    cvarSystem->Get( "g_minGameClients", "8", CVAR_SERVERINFO );
+    cvarSystem->Get( "g_complaintlimit", "6", CVAR_ARCHIVE );
+    cvarSystem->Get( "gamestate", "-1", CVAR_WOLFINFO | CVAR_ROM );
+    cvarSystem->Get( "g_currentRound", "0", CVAR_WOLFINFO );
+    cvarSystem->Get( "g_nextTimeLimit", "0", CVAR_WOLFINFO );
     // -NERVE - SMF
     
     // TTimo - some UI additions
     // NOTE: sucks to have this hardcoded really, I suppose this should be in UI
-    Cvar_Get( "g_axismaxlives", "0", 0 );
-    Cvar_Get( "g_alliedmaxlives", "0", 0 );
-    Cvar_Get( "g_fastres", "0", CVAR_ARCHIVE );
-    Cvar_Get( "g_fastResMsec", "1000", CVAR_ARCHIVE );
+    cvarSystem->Get( "g_axismaxlives", "0", 0 );
+    cvarSystem->Get( "g_alliedmaxlives", "0", 0 );
+    cvarSystem->Get( "g_fastres", "0", CVAR_ARCHIVE );
+    cvarSystem->Get( "g_fastResMsec", "1000", CVAR_ARCHIVE );
     
     // ATVI Tracker Wolfenstein Misc #273
-    Cvar_Get( "g_voteFlags", "0", CVAR_ROM | CVAR_SERVERINFO );
+    cvarSystem->Get( "g_voteFlags", "0", CVAR_ROM | CVAR_SERVERINFO );
     
     // ATVI Tracker Wolfenstein Misc #263
-    Cvar_Get( "g_antilag", "1", CVAR_ARCHIVE | CVAR_SERVERINFO );
+    cvarSystem->Get( "g_antilag", "1", CVAR_ARCHIVE | CVAR_SERVERINFO );
     
-    Cvar_Get( "g_needpass", "0", CVAR_SERVERINFO );
+    cvarSystem->Get( "g_needpass", "0", CVAR_SERVERINFO );
     
-    g_gameType = Cvar_Get( "g_gametype", va( "%i", com_gameInfo.defaultGameType ), CVAR_SERVERINFO | CVAR_LATCH );
+    g_gameType = cvarSystem->Get( "g_gametype", va( "%i", com_gameInfo.defaultGameType ), CVAR_SERVERINFO | CVAR_LATCH );
     
 #if !defined (UPDATE_SERVER)
     // the download netcode tops at 18/20 kb/s, no need to make you think you can go above
-    sv_dl_maxRate = Cvar_Get( "sv_dl_maxRate", "42000", CVAR_ARCHIVE );
+    sv_dl_maxRate = cvarSystem->Get( "sv_dl_maxRate", "42000", CVAR_ARCHIVE );
 #else
     // the update server is on steroids, sv_fps 60 and no snapshotMsec limitation, it can go up to 30 kb/s
-    sv_dl_maxRate = Cvar_Get( "sv_dl_maxRate", "60000", CVAR_ARCHIVE );
+    sv_dl_maxRate = cvarSystem->Get( "sv_dl_maxRate", "60000", CVAR_ARCHIVE );
 #endif
     
-    sv_wwwDownload = Cvar_Get( "sv_wwwDownload", "0", CVAR_ARCHIVE );
-    sv_wwwBaseURL = Cvar_Get( "sv_wwwBaseURL", "", CVAR_ARCHIVE );
-    sv_wwwDlDisconnected = Cvar_Get( "sv_wwwDlDisconnected", "0", CVAR_ARCHIVE );
-    sv_wwwFallbackURL = Cvar_Get( "sv_wwwFallbackURL", "", CVAR_ARCHIVE );
+    sv_wwwDownload = cvarSystem->Get( "sv_wwwDownload", "0", CVAR_ARCHIVE );
+    sv_wwwBaseURL = cvarSystem->Get( "sv_wwwBaseURL", "", CVAR_ARCHIVE );
+    sv_wwwDlDisconnected = cvarSystem->Get( "sv_wwwDlDisconnected", "0", CVAR_ARCHIVE );
+    sv_wwwFallbackURL = cvarSystem->Get( "sv_wwwFallbackURL", "", CVAR_ARCHIVE );
     
     //bani
-    sv_packetloss = Cvar_Get( "sv_packetloss", "0", CVAR_CHEAT );
-    sv_packetdelay = Cvar_Get( "sv_packetdelay", "0", CVAR_CHEAT );
+    sv_packetloss = cvarSystem->Get( "sv_packetloss", "0", CVAR_CHEAT );
+    sv_packetdelay = cvarSystem->Get( "sv_packetdelay", "0", CVAR_CHEAT );
     
     // fretn - note: redirecting of clients to other servers relies on this,
     // ET://someserver.com
-    sv_fullmsg = Cvar_Get( "sv_fullmsg", "Server is full.", CVAR_ARCHIVE );
+    sv_fullmsg = cvarSystem->Get( "sv_fullmsg", "Server is full.", CVAR_ARCHIVE );
     
-    sv_hibernateTime = Cvar_Get( "sv_hibernateTime", "0", CVAR_ARCHIVE );
+    sv_hibernateTime = cvarSystem->Get( "sv_hibernateTime", "0", CVAR_ARCHIVE );
     svs.hibernation.sv_fps = sv_fps->value;
     
     // initialize bot cvars so they arelisted and can be set before loading the botlib
-    SV_BotInitCvars();
+    serverBotSystem->BotInitCvars();
     
     // init the botlib here because we need the pre-compiler in the UI
-    SV_BotInitBotLib();
+    serverBotSystem->BotInitBotLib();
     
     svs.serverLoad = -1;
     
@@ -1203,8 +1189,8 @@ void SV_Init( void )
     sv.serverId = com_frameTime + 100;
     sv.restartedServerId = sv.serverId; // I suppose the init here is just to be safe
     sv.checksumFeedServerId = sv.serverId;
-    Cvar_Set( "sv_serverid", va( "%i", sv.serverId ) );
-    Cvar_Set( "mapname", "Update" );
+    cvarSystem->Set( "sv_serverid", va( "%i", sv.serverId ) );
+    cvarSystem->Set( "mapname", "Update" );
     
     // allocate empty config strings
     {
@@ -1287,7 +1273,7 @@ void SV_Shutdown( UTF8* finalmsg )
     }
     
     SV_MasterShutdown();
-    SV_ShutdownGameProgs();
+    serverGameSystem->ShutdownGameProgs();
     svs.gameStarted = false;
     
     // free current level
@@ -1302,7 +1288,7 @@ void SV_Shutdown( UTF8* finalmsg )
         
         for( index = 0; index < sv_maxclients->integer; index++ )
         {
-            SV_FreeClient( &svs.clients[index] );
+            serverClientLocal.FreeClient( &svs.clients[index] );
         }
         
         //Z_Free( svs.clients );
@@ -1311,7 +1297,7 @@ void SV_Shutdown( UTF8* finalmsg )
     memset( &svs, 0, sizeof( svs ) );
     svs.serverLoad = -1;
     
-    Cvar_Set( "sv_running", "0" );
+    cvarSystem->Set( "sv_running", "0" );
     
     Com_Printf( "---------------------------\n" );
     

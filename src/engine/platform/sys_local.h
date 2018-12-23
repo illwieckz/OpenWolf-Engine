@@ -28,9 +28,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sys_loadlib.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -43,12 +43,12 @@
 #endif
 
 // Require a minimum version of SDL
-#define MINSDL_MAJOR 1
-#define MINSDL_MINOR 2
-#define MINSDL_PATCH 10
+#define MINSDL_MAJOR 2
+#define MINSDL_MINOR 0
+#define MINSDL_PATCH 8
 
 // Input subsystem
-void IN_Init( void );
+void IN_Init( void* windowData );
 void IN_Frame( void );
 void IN_Shutdown( void );
 void IN_Restart( void );
@@ -78,3 +78,6 @@ void Sys_AnsiColorPrint( StringEntry msg );
 S32 Sys_PID( void );
 bool Sys_PIDIsRunning( S32 pid );
 
+// Steam integration
+void Sys_SteamInit( void );
+void Sys_SteamShutdown( void );

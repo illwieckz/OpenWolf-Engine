@@ -21,9 +21,9 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   r_shade.cpp
-// Version:     v1.00
+// Version:     v1.01
 // Created:
-// Compilers:   Visual Studio 2015
+// Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -41,19 +41,27 @@
   This file deals with applying shaders to surface data in the tess struct.
 */
 
-
 /*
 ==================
 R_DrawElements
-
 ==================
 */
 
-void R_DrawElements( S32 numIndexes, U32 firstIndex )
+void R_DrawElements( S32 numIndexes, U32 firstIndex, bool tesselation )
 {
-    glDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, BUFFER_OFFSET( firstIndex * sizeof( U32 ) ) );
+    if( r_tesselation->integer && tesselation )
+    {
+        S32 MaxPatchVertices = 0;
+        qglGetIntegerv( GL_MAX_PATCH_VERTICES, &MaxPatchVertices );
+        //CL_RefPrintf( PRINT_ALL, "Max supported patch vertices %d\n", MaxPatchVertices);
+        qglPatchParameteri( GL_PATCH_VERTICES, 3 );
+        qglDrawElements( GL_PATCHES, numIndexes, GL_INDEX_TYPE, BUFFER_OFFSET( firstIndex * sizeof( U32 ) ) );
+    }
+    else
+    {
+        qglDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, BUFFER_OFFSET( firstIndex * sizeof( U32 ) ) );
+    }
 }
-
 
 /*
 =============================================================
@@ -131,7 +139,7 @@ static void DrawTris( shaderCommands_t* input )
         GLSL_SetUniformVec4( sp, UNIFORM_COLOR, color );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
         
-        R_DrawElements( input->numIndexes, input->firstIndex );
+        R_DrawElements( input->numIndexes, input->firstIndex, false );
     }
     
     glDepthRange( 0, 1 );
@@ -161,7 +169,6 @@ to overflow.
 */
 void RB_BeginSurface( shader_t* shader, S32 fogNum, S32 cubemapIndex )
 {
-
     shader_t* state = ( shader->remappedShader ) ? shader->remappedShader : shader;
     
     tess.numIndexes = 0;
@@ -346,180 +353,6 @@ static void ComputeDeformValues( S32* deformGen, vec5_t deformParams )
     }
 }
 
-float DLIGHT_SIZE_MULTIPLIER = 2.5;
-
-static void ProjectDlightTexture( void )
-{
-    S32		l;
-    vec5_t deformParams;
-    S32 deformGen;
-    
-    if( !backEnd.refdef.num_dlights )
-    {
-        return;
-    }
-    
-#define MAX_SHADER_DLIGHTS 2
-    
-    ComputeDeformValues( &deformGen, deformParams );
-    
-    {
-        bool SHOULD_MERGE[256];
-        bool COMPLETED_MERGE[256];
-        dlight_t MERGED_DLIGHTS[256];
-        S32	MERGED_DLIGHT_COUNT[256];
-        S32	NUM_MERGED_DLIGHTS = 0;
-        S32	j = 0;
-        
-        ::memset( &SHOULD_MERGE, false, sizeof( bool ) * 256 );
-        ::memset( &COMPLETED_MERGE, false, sizeof( bool ) * 256 );
-        ::memset( &MERGED_DLIGHT_COUNT, 0, sizeof( S32 ) * 256 );
-        
-        for( l = 0; l < backEnd.refdef.num_dlights; l++ )
-        {
-            dlight_t* dl = &backEnd.refdef.dlights[l];
-            
-            // Start search for mergeable lights at the next light from this one...
-            for( j = l + 1; j < backEnd.refdef.num_dlights; j++ )
-            {
-                dlight_t* dl2 = &backEnd.refdef.dlights[j];
-                
-                if( Distance( dl2->origin, dl->origin ) <= dl->radius * 2.0 )
-                {
-                    SHOULD_MERGE[j] = true;
-                }
-            }
-        }
-        
-        // Add all lights that should not be merged with another...
-        for( l = 0; l < backEnd.refdef.num_dlights; l++ )
-        {
-            if( !SHOULD_MERGE[l] )
-            {
-                dlight_t*	dl;
-                
-                // Copy this dlight to our list...
-                ::memcpy( &MERGED_DLIGHTS[NUM_MERGED_DLIGHTS], &backEnd.refdef.dlights[l], sizeof( dlight_t ) );
-                MERGED_DLIGHT_COUNT[NUM_MERGED_DLIGHTS]++;
-                
-                dl = &MERGED_DLIGHTS[NUM_MERGED_DLIGHTS];
-                
-                // And merge any lights close enough with this one...
-                for( j = l; j < backEnd.refdef.num_dlights; j++ )
-                {
-                    dlight_t* dl2 = &backEnd.refdef.dlights[j];
-                    
-                    if( !SHOULD_MERGE[j] || COMPLETED_MERGE[j] )
-                    {
-                        continue;
-                    }
-                    
-                    if( Distance( dl2->origin, dl->origin ) <= dl->radius )
-                    {
-                        // Merge these two...
-                        dl->color[0] += dl2->color[0];
-                        dl->color[1] += dl2->color[1];
-                        dl->color[2] += dl2->color[2];
-                        
-                        // TODO: Move the light origin...
-                        
-                        // mark this light as merged...
-                        COMPLETED_MERGE[j] = true;
-                        // increase counter of how many lights have been added for this merged light...
-                        MERGED_DLIGHT_COUNT[NUM_MERGED_DLIGHTS]++;
-                    }
-                }
-                
-                NUM_MERGED_DLIGHTS++;
-            }
-        }
-        
-        // Finish up by adjusting merged lights color and radius...
-        for( l = 0; l < NUM_MERGED_DLIGHTS; l++ )
-        {
-            dlight_t*	dl = &MERGED_DLIGHTS[l];
-            
-            // Average out the colors...
-            dl->color[0] /= MERGED_DLIGHT_COUNT[l];
-            dl->color[1] /= MERGED_DLIGHT_COUNT[l];
-            dl->color[2] /= MERGED_DLIGHT_COUNT[l];
-            
-            // Increase the radius...
-            dl->radius *= ( MERGED_DLIGHT_COUNT[l] );
-        }
-        
-        //CL_RefPrintf( PRINT_ALL, "%i dlights were merged into %i dlights.\n", backEnd.refdef.num_dlights, NUM_MERGED_DLIGHTS );
-        
-        // Now display the merged lights...
-        for( l = 0; l < NUM_MERGED_DLIGHTS; l++ )
-        {
-            vec3_t origin;
-            F32 scale;
-            F32 radius;
-            shaderProgram_t* sp;
-            vec4_t vector;
-            dlight_t*	dl = &MERGED_DLIGHTS[l];
-            
-            VectorCopy( dl->transformed, origin );
-            radius = dl->radius * DLIGHT_SIZE_MULTIPLIER;
-            scale = 1.0f / radius;
-            
-            sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
-            
-            backEnd.pc.c_dlightDraws++;
-            
-            GLSL_BindProgram( sp );
-            
-            GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
-            
-            GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
-            
-            GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
-            
-            if( deformGen != DGEN_NONE )
-            {
-                GLSL_SetUniformFloat5( sp, UNIFORM_DEFORMPARAMS, deformParams );
-                GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
-            }
-            
-            vector[0] = ( dl->color[0] );
-            vector[1] = ( dl->color[1] );
-            vector[2] = ( dl->color[2] );
-            vector[3] = 0.2f;
-            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTCOLOR, vector );
-            
-            vector[0] = origin[0];
-            vector[1] = origin[1];
-            vector[2] = origin[2];
-            vector[3] = scale;
-            GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN, vector );
-            
-            GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, dl->radius );
-            
-            GL_BindToTMU( tr.dlightImage, TB_COLORMAP );
-            
-            // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-            // where they aren't rendered
-            if( dl->additive )
-            {
-                GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-            }
-            else
-            {
-                GL_State( GLS_ATEST_GT_0 | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-            }
-            
-            GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
-            
-            R_DrawElements( tess.numIndexes, tess.firstIndex );
-            
-            backEnd.pc.c_totalIndexes += tess.numIndexes;
-            backEnd.pc.c_dlightIndexes += tess.numIndexes;
-            backEnd.pc.c_dlightVertexes += tess.numVertexes;
-        }
-    }
-}
-
 static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t vertColor, S32 blend )
 {
     bool isBlend = ( ( blend & GLS_SRCBLEND_BITS ) == GLS_SRCBLEND_DST_COLOR )
@@ -677,7 +510,7 @@ static void ComputeShaderColors( shaderStage_t* pStage, vec4_t baseColor, vec4_t
             baseColor[3] = pStage->constantColor[3] / 255.0f;
             if( backEnd.currentEntity && backEnd.currentEntity->e.hModel )
             {
-                baseColor[3] *= ( ( unsigned char* )backEnd.currentEntity->e.shaderRGBA )[3] / 255.0f;
+                baseColor[3] *= ( ( U8* )backEnd.currentEntity->e.shaderRGBA )[3] / 255.0f;
             }
             vertColor[3] = 0.0f;
             break;
@@ -771,276 +604,6 @@ static void ComputeFogColorMask( shaderStage_t* pStage, vec4_t fogColorMask )
     }
 }
 
-static void ForwardDlight( void )
-{
-    int		l;
-    //vec3_t	origin;
-    //float	scale;
-    float	radius;
-    
-    int deformGen;
-    vec5_t deformParams;
-    
-    vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-    float eyeT = 0;
-    
-    shaderCommands_t* input = &tess;
-    shaderStage_t* pStage = tess.xstages[0];
-    
-    if( !pStage )
-    {
-        return;
-    }
-    
-    if( !backEnd.refdef.num_dlights )
-    {
-        return;
-    }
-    
-    ComputeDeformValues( &deformGen, deformParams );
-    
-    ComputeFogValues( fogDistanceVector, fogDepthVector, &eyeT );
-    
-    for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
-    {
-        dlight_t*	dl;
-        shaderProgram_t* sp;
-        vec4_t vector;
-        vec4_t texMatrix;
-        vec4_t texOffTurb;
-        
-        if( !( tess.dlightBits & ( 1 << l ) ) )
-        {
-            continue;	// this surface definately doesn't have any of this light
-        }
-        
-        dl = &backEnd.refdef.dlights[l];
-        //VectorCopy( dl->transformed, origin );
-        radius = dl->radius;
-        //scale = 1.0f / radius;
-        
-        //if (pStage->glslShaderGroup == tr.lightallShader)
-        {
-            int index = pStage->glslShaderIndex;
-            
-            index &= ~LIGHTDEF_LIGHTTYPE_MASK;
-            index |= LIGHTDEF_USE_LIGHT_VECTOR;
-            
-            sp = &tr.lightallShader[index];
-        }
-        
-        backEnd.pc.c_lightallDraws++;
-        
-        GLSL_BindProgram( sp );
-        
-        GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
-        GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, backEnd.viewParms.orientation.origin );
-        GLSL_SetUniformVec3( sp, UNIFORM_LOCALVIEWORIGIN, backEnd.orientation.viewOrigin );
-        
-        GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
-        
-        GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
-        if( deformGen != DGEN_NONE )
-        {
-            GLSL_SetUniformFloat5( sp, UNIFORM_DEFORMPARAMS, deformParams );
-            GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
-        }
-        
-        if( input->fogNum )
-        {
-            vec4_t fogColorMask;
-            
-            GLSL_SetUniformVec4( sp, UNIFORM_FOGDISTANCE, fogDistanceVector );
-            GLSL_SetUniformVec4( sp, UNIFORM_FOGDEPTH, fogDepthVector );
-            GLSL_SetUniformFloat( sp, UNIFORM_FOGEYET, eyeT );
-            
-            ComputeFogColorMask( pStage, fogColorMask );
-            
-            GLSL_SetUniformVec4( sp, UNIFORM_FOGCOLORMASK, fogColorMask );
-        }
-        
-        {
-            vec4_t baseColor;
-            vec4_t vertColor;
-            
-            ComputeShaderColors( pStage, baseColor, vertColor, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-            
-            GLSL_SetUniformVec4( sp, UNIFORM_BASECOLOR, baseColor );
-            GLSL_SetUniformVec4( sp, UNIFORM_VERTCOLOR, vertColor );
-        }
-        
-        if( pStage->alphaGen == AGEN_PORTAL )
-        {
-            GLSL_SetUniformFloat( sp, UNIFORM_PORTALRANGE, tess.shader->portalRange );
-        }
-        else if( pStage->alphaGen == AGEN_NORMALZFADE )
-        {
-            F32 lowest, highest;
-            
-            lowest = pStage->zFadeBounds[0];
-            if( lowest == -1000 )     // use entity alpha
-            {
-                lowest = backEnd.currentEntity->e.shaderTime;
-            }
-            highest = pStage->zFadeBounds[1];
-            if( highest == -1000 )    // use entity alpha
-            {
-                highest = backEnd.currentEntity->e.shaderTime;
-            }
-            
-            GLSL_SetUniformFloat( sp, UNIFORM_ZFADELOWEST, lowest );
-            GLSL_SetUniformFloat( sp, UNIFORM_ZFADEHIGHEST, highest );
-        }
-        
-        GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, pStage->rgbGen );
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, pStage->alphaGen );
-        
-        GLSL_SetUniformVec3( sp, UNIFORM_DIRECTEDLIGHT, dl->color );
-        
-        VectorSet( vector, 0, 0, 0 );
-        GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, vector );
-        
-        VectorCopy( dl->origin, vector );
-        vector[3] = 1.0f;
-        GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN, vector );
-        
-        GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, radius );
-        
-        GLSL_SetUniformVec4( sp, UNIFORM_NORMALSCALE, pStage->normalScale );
-        GLSL_SetUniformVec4( sp, UNIFORM_SPECULARSCALE, pStage->specularScale );
-        
-        // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-        // where they aren't rendered
-        GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
-        
-        GLSL_SetUniformMat4( sp, UNIFORM_MODELMATRIX, backEnd.orientation.transformMatrix );
-        
-        if( pStage->bundle[TB_DIFFUSEMAP].image[0] )
-            R_BindAnimatedImageToTMU( &pStage->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
-            
-        // bind textures that are sampled and used in the glsl shader, and
-        // bind whiteImage to textures that are sampled but zeroed in the glsl shader
-        //
-        // alternatives:
-        //  - use the last bound texture
-        //     -> costs more to sample a higher res texture then throw out the result
-        //  - disable texture sampling in glsl shader with #ifdefs, as before
-        //     -> increases the number of shaders that must be compiled
-        //
-        
-        if( pStage->bundle[TB_NORMALMAP].image[0] )
-            R_BindAnimatedImageToTMU( &pStage->bundle[TB_NORMALMAP], TB_NORMALMAP );
-        else if( r_normalMapping->integer )
-            GL_BindToTMU( tr.whiteImage, TB_NORMALMAP );
-            
-        if( pStage->bundle[TB_SPECULARMAP].image[0] )
-            R_BindAnimatedImageToTMU( &pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP );
-        else if( r_specularMapping->integer )
-            GL_BindToTMU( tr.whiteImage, TB_SPECULARMAP );
-            
-        {
-            vec4_t enableTextures;
-            
-            VectorSet4( enableTextures, 0.0f, 0.0f, 0.0f, 0.0f );
-            GLSL_SetUniformVec4( sp, UNIFORM_ENABLETEXTURES, enableTextures );
-        }
-        
-        if( r_dlightMode->integer >= 2 )
-        {
-            GL_BindToTMU( tr.shadowCubemaps[l], TB_SHADOWMAP );
-        }
-        
-        ComputeTexMods( pStage, TB_DIFFUSEMAP, texMatrix, texOffTurb );
-        GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, texMatrix );
-        GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, texOffTurb );
-        
-        GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, pStage->bundle[0].tcGen );
-        
-        // draw
-        R_DrawElements( input->numIndexes, input->firstIndex );
-        
-        backEnd.pc.c_totalIndexes += tess.numIndexes;
-        backEnd.pc.c_dlightIndexes += tess.numIndexes;
-        backEnd.pc.c_dlightVertexes += tess.numVertexes;
-    }
-}
-
-
-static void ProjectPshadowVBOGLSL( void )
-{
-    S32		l;
-    vec3_t	origin;
-    F32	radius;
-    
-    S32 deformGen;
-    vec5_t deformParams;
-    
-    shaderCommands_t* input = &tess;
-    
-    if( !backEnd.refdef.num_pshadows )
-    {
-        return;
-    }
-    
-    ComputeDeformValues( &deformGen, deformParams );
-    
-    for( l = 0 ; l < backEnd.refdef.num_pshadows ; l++ )
-    {
-        pshadow_t*	ps;
-        shaderProgram_t* sp;
-        vec4_t vector;
-        
-        if( !( tess.pshadowBits & ( 1 << l ) ) )
-        {
-            continue;	// this surface definately doesn't have any of this shadow
-        }
-        
-        ps = &backEnd.refdef.pshadows[l];
-        VectorCopy( ps->lightOrigin, origin );
-        radius = ps->lightRadius;
-        
-        sp = &tr.pshadowShader;
-        
-        GLSL_BindProgram( sp );
-        
-        GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
-        
-        VectorCopy( origin, vector );
-        vector[3] = 1.0f;
-        GLSL_SetUniformVec4( sp, UNIFORM_LIGHTORIGIN, vector );
-        
-        VectorScale( ps->lightViewAxis[0], 1.0f / ps->viewRadius, vector );
-        GLSL_SetUniformVec3( sp, UNIFORM_LIGHTFORWARD, vector );
-        
-        VectorScale( ps->lightViewAxis[1], 1.0f / ps->viewRadius, vector );
-        GLSL_SetUniformVec3( sp, UNIFORM_LIGHTRIGHT, vector );
-        
-        VectorScale( ps->lightViewAxis[2], 1.0f / ps->viewRadius, vector );
-        GLSL_SetUniformVec3( sp, UNIFORM_LIGHTUP, vector );
-        
-        GLSL_SetUniformFloat( sp, UNIFORM_LIGHTRADIUS, radius );
-        
-        // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-        // where they aren't rendered
-        GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
-        
-        GL_BindToTMU( tr.pshadowMaps[l], TB_DIFFUSEMAP );
-        
-        //
-        // draw
-        //
-        
-        R_DrawElements( input->numIndexes, input->firstIndex );
-        
-        backEnd.pc.c_totalIndexes += tess.numIndexes;
-        //backEnd.pc.c_dlightIndexes += tess.numIndexes;
-    }
-}
-
-
-
 /*
 ===================
 RB_FogPass
@@ -1112,7 +675,7 @@ static void RB_FogPass( void )
     }
     GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
     
-    R_DrawElements( tess.numIndexes, tess.firstIndex );
+    R_DrawElements( tess.numIndexes, tess.firstIndex, false );
 }
 
 static U32 RB_CalcShaderVertexAttribs( shaderCommands_t* input )
@@ -1132,122 +695,883 @@ static U32 RB_CalcShaderVertexAttribs( shaderCommands_t* input )
     return vertexAttribs;
 }
 
-void RB_SetParallaxScale( shaderProgram_t* sp, F32 scale, shaderStage_t* pStage )
+S32 overlaySwayTime = 0;
+bool overlaySwayDown = false;
+F32 overlaySway = 0.0;
+
+void RB_AdvanceOverlaySway( void )
 {
-    vec4_t local1;
-    F32 specularScale = 1.0;
-    
-    switch( tess.shader->surfaceFlags & MATERIAL_MASK )
+    if( overlaySwayTime > CL_ScaledMilliseconds() )
+        return;
+        
+    if( overlaySwayDown )
     {
-        case MATERIAL_WATER:			// 13			// light covering of water on a surface
-            specularScale = 1.5;
-            break;
-        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
-            specularScale = 0.5;
-            break;
-        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
-            specularScale = 0.5;
-            break;
-        case MATERIAL_SAND:				// 8			// sandy beach
-            specularScale = 0.4;
-            break;
-        case MATERIAL_CARPET:			// 27			// lush carpet
-            specularScale = 0.4;
-            break;
-        case MATERIAL_GRAVEL:			// 9			// lots of small stones
-            specularScale = 0.5;
-            break;
-        case MATERIAL_ROCK:				// 23			//
-            specularScale = 0.5;
-            break;
-        case MATERIAL_TILES:			// 26			// tiled floor
-            specularScale = 0.7;
-            break;
-        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
-            specularScale = 0.2;
-            break;
-        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
-            specularScale = 0.2;
-            break;
-        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
-            specularScale = 1.0;
-            break;
-        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines
-            specularScale = 1.0;
-            break;
-        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
-            specularScale = 0.3;
-            break;
-        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
-            specularScale = 0.5;
-            break;
-        case MATERIAL_FABRIC:			// 21			// Cotton sheets
-            specularScale = 0.3;
-            break;
-        case MATERIAL_CANVAS:			// 22			// tent material
-            specularScale = 0.3;
-            break;
-        case MATERIAL_MARBLE:			// 12			// marble floors
-            specularScale = 0.9;
-            break;
-        case MATERIAL_SNOW:				// 14			// freshly laid snow
-            specularScale = 0.7;
-            break;
-        case MATERIAL_MUD:				// 17			// wet soil
-            specularScale = 0.6;
-            break;
-        case MATERIAL_DIRT:				// 7			// hard mud
-            specularScale = 0.5;
-            break;
-        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
-            specularScale = 0.4;
-            break;
-        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
-            specularScale = 0.4;
-            break;
-        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
-            specularScale = 0.2;
-            break;
-        case MATERIAL_PLASTIC:			// 25			//
-            specularScale = 1.0;
-            break;
-        case MATERIAL_PLASTER:			// 28			// drywall style plaster
-            specularScale = 0.5;
-            break;
-        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
-            specularScale = 1.0;
-            break;
-        case MATERIAL_ARMOR:			// 30			// body armor
-            specularScale = 0.9;
-            break;
-        case MATERIAL_ICE:				// 15			// packed snow/solid ice
-            specularScale = 1.0;
-            break;
-        case MATERIAL_GLASS:			// 10			//
-            specularScale = 1.0;
-            break;
-        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
-            specularScale = 1.0;
-            break;
-        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
-            specularScale = 0.7;
-            break;
-        default:
-            specularScale = 0.4;
-            break;
+        overlaySway -= 0.00016;
+        
+        if( overlaySway < 0.0 )
+        {
+            overlaySway += 0.00032;
+            overlaySwayDown = false;
+        }
+    }
+    else
+    {
+        overlaySway += 0.00016;
+        
+        if( overlaySway > 0.0016 )
+        {
+            overlaySway -= 0.00032;
+            overlaySwayDown = true;
+        }
     }
     
-    VectorSet4( local1, scale, ( float )pStage->hasSpecular, specularScale, 0.0 );
+    overlaySwayTime = CL_ScaledMilliseconds() + 50;
+}
+
+void RB_SetMaterialBasedProperties( shaderProgram_t* sp, shaderStage_t* pStage )
+{
+    vec4_t	local1, local3, local4, local5;
+    F32	specularScale = 1.0;
+    F32	materialType = 0.0;
+    F32   parallaxScale = 1.0;
+    F32	cubemapScale = 0.0;
+    F32	isMetalic = 0.0;
+    F32	useSteepParallax = 0.0;
+    F32	hasOverlay = 0.0;
+    F32	doSway = 0.0;
+    F32	hasSteepMap = 0.0;
+    
+    if( pStage->bundle[TB_OVERLAYMAP].overlayLoaded
+            && pStage->hasRealOverlayMap
+            && pStage->bundle[TB_OVERLAYMAP].image[0] != tr.whiteImage )
+    {
+        hasOverlay = 1.0;
+    }
+    
+    if( pStage->bundle[TB_STEEPMAP].steepMapLoaded
+            && pStage->hasRealSteepMap
+            && pStage->bundle[TB_STEEPMAP].image[0] != tr.blackImage )
+    {
+        hasSteepMap = 1.0;
+    }
+    
+    if( pStage->isWater )
+    {
+        specularScale = 1.5;
+        materialType = ( F32 )MATERIAL_WATER;
+        parallaxScale = 2.0;
+    }
+    else
+    {
+        switch( tess.shader->surfaceFlags & MATERIAL_MASK )
+        {
+            case MATERIAL_WATER:			// 13			// light covering of water on a surface
+                specularScale = 1.0;
+                cubemapScale = 1.5;
+                materialType = ( F32 )MATERIAL_WATER;
+                parallaxScale = 2.0;
+                break;
+            case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+                specularScale = 0.53;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_SHORTGRASS;
+                parallaxScale = 2.5;
+                break;
+            case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+                specularScale = 0.5;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_LONGGRASS;
+                parallaxScale = 3.0;
+                break;
+            case MATERIAL_SAND:				// 8			// sandy beach
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_SAND;
+                parallaxScale = 2.5;
+                break;
+            case MATERIAL_CARPET:			// 27			// lush carpet
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_CARPET;
+                parallaxScale = 2.5;
+                break;
+            case MATERIAL_GRAVEL:			// 9			// lots of small stones
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_GRAVEL;
+                parallaxScale = 3.0;
+                break;
+            case MATERIAL_ROCK:				// 23			//
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_ROCK;
+                parallaxScale = 3.0;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_TILES:			// 26			// tiled floor
+                specularScale = 0.86;
+                cubemapScale = 0.9;
+                materialType = ( F32 )MATERIAL_TILES;
+                parallaxScale = 2.5;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_SOLIDWOOD;
+                parallaxScale = 2.5;
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_HOLLOWWOOD;
+                parallaxScale = 2.5;
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+                specularScale = 0.92;
+                cubemapScale = 0.92;
+                materialType = ( F32 )MATERIAL_SOLIDMETAL;
+                parallaxScale = 0.005;
+                isMetalic = 1.0;
+                break;
+            case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax...
+                specularScale = 0.92;
+                cubemapScale = 0.92;
+                materialType = ( F32 )MATERIAL_HOLLOWMETAL;
+                parallaxScale = 2.0;
+                isMetalic = 1.0;
+                break;
+            case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_DRYLEAVES;
+                parallaxScale = 0.0;
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+                specularScale = 0.75;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_GREENLEAVES;
+                parallaxScale = 0.0; // GreenLeaves should NEVER be parallaxed.. It's used for surfaces with an alpha channel and parallax screws it up...
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_FABRIC:			// 21			// Cotton sheets
+                specularScale = 0.48;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_FABRIC;
+                parallaxScale = 2.5;
+                break;
+            case MATERIAL_CANVAS:			// 22			// tent material
+                specularScale = 0.45;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_CANVAS;
+                parallaxScale = 2.5;
+                break;
+            case MATERIAL_MARBLE:			// 12			// marble floors
+                specularScale = 0.86;
+                cubemapScale = 1.0;
+                materialType = ( F32 )MATERIAL_MARBLE;
+                parallaxScale = 2.0;
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_SNOW:				// 14			// freshly laid snow
+                specularScale = 0.65;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_SNOW;
+                parallaxScale = 3.0;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_MUD:				// 17			// wet soil
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_MUD;
+                parallaxScale = 3.0;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_DIRT:				// 7			// hard mud
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_DIRT;
+                parallaxScale = 3.0;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+                specularScale = 0.3;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_CONCRETE;
+                parallaxScale = 3.0;
+                //useSteepParallax = 1.0;
+                break;
+            case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+                specularScale = 0.2;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_FLESH;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_RUBBER;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_PLASTIC:			// 25			//
+                specularScale = 0.88;
+                cubemapScale = 0.5;
+                materialType = ( F32 )MATERIAL_PLASTIC;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_PLASTER:			// 28			// drywall style plaster
+                specularScale = 0.4;
+                cubemapScale = 0.0;
+                materialType = ( F32 )MATERIAL_PLASTER;
+                parallaxScale = 2.0;
+                break;
+            case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+                specularScale = 0.88;
+                cubemapScale = 1.0;
+                materialType = ( F32 )MATERIAL_SHATTERGLASS;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_ARMOR:			// 30			// body armor
+                specularScale = 0.4;
+                cubemapScale = 2.0;
+                materialType = ( F32 )MATERIAL_ARMOR;
+                parallaxScale = 2.0;
+                isMetalic = 1.0;
+                break;
+            case MATERIAL_ICE:				// 15			// packed snow/solid ice
+                specularScale = 0.9;
+                cubemapScale = 0.8;
+                parallaxScale = 2.0;
+                materialType = ( F32 )MATERIAL_ICE;
+                useSteepParallax = 1.0;
+                break;
+            case MATERIAL_GLASS:			// 10			//
+                specularScale = 0.95;
+                cubemapScale = 1.0;
+                materialType = ( F32 )MATERIAL_GLASS;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+                specularScale = 0.93;
+                cubemapScale = 0.93;
+                materialType = ( F32 )MATERIAL_BPGLASS;
+                parallaxScale = 1.0;
+                break;
+            case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+                specularScale = 0.92;
+                cubemapScale = 0.92;
+                materialType = ( F32 )MATERIAL_COMPUTER;
+                parallaxScale = 2.0;
+                break;
+            default:
+                specularScale = 0.0;
+                cubemapScale = 0.0;
+                materialType = ( F32 )0.0;
+                parallaxScale = 1.0;
+                break;
+        }
+    }
+    
+    // Shader overrides material...
+    if( pStage->cubeMapScale > 0.0 )
+    {
+        cubemapScale = pStage->cubeMapScale;
+    }
+    
+    bool realNormalMap = false;
+    
+    if( pStage->bundle[TB_NORMALMAP].image[0] )
+    {
+        realNormalMap = true;
+    }
+    
+    if( pStage->bundle[TB_DIFFUSEMAP].image[0] )
+    {
+        doSway = 0.7;
+    }
+    
+    VectorSet4( local1, parallaxScale, ( F32 )pStage->hasSpecular, specularScale, materialType );
     GLSL_SetUniformVec4( sp, UNIFORM_LOCAL1, local1 );
+    GLSL_SetUniformVec4( sp, UNIFORM_LOCAL2, pStage->subsurfaceExtinctionCoefficient );
+    VectorSet4( local3, pStage->subsurfaceRimScalar, pStage->subsurfaceMaterialThickness, pStage->subsurfaceSpecularPower, cubemapScale );
+    GLSL_SetUniformVec4( sp, UNIFORM_LOCAL3, local3 );
+    VectorSet4( local4, ( F32 )realNormalMap, isMetalic, 0.0/*(F32)pStage->hasRealSubsurfaceMap*/, doSway );
+    GLSL_SetUniformVec4( sp, UNIFORM_LOCAL4, local4 );
+    VectorSet4( local5, hasOverlay, overlaySway, r_blinnPhong->value, hasSteepMap );
+    GLSL_SetUniformVec4( sp, UNIFORM_LOCAL5, local5 );
+    
+    if( backEnd.viewParms.targetFbo == tr.renderCubeFbo )
+    {
+        VectorSet4( local5, 0.0, 0.0, 0.0, 0.0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL5, local5 );
+    }
+    else
+    {
+        VectorSet4( local5, r_imageBasedLighting->value, 0.0, 0.0, 0.0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL5, local5 );
+    }
+    
+    if( r_sunlightSpecular->integer )
+    {
+        vec4_t local6;
+        VectorSet4( local6, 1.0, 0.0, 0.0, 0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL6, local6 );
+    }
+    else
+    {
+        vec4_t local6;
+        VectorSet4( local6, 0.0, 0.0, 0.0, 0 );
+        GLSL_SetUniformVec4( sp, UNIFORM_LOCAL6, local6 );
+    }
+    
+    //GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
+    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
 }
 
 void RB_SetStageImageDimensions( shaderProgram_t* sp, shaderStage_t* pStage )
 {
     vec2_t dimensions;
+    
+    if( !pStage->bundle[0].image[0] )
+    {
+        pStage->bundle[0].image[0] = tr.whiteImage; // argh!
+    }
+    
     dimensions[0] = pStage->bundle[0].image[0]->width;
     dimensions[1] = pStage->bundle[0].image[0]->height;
     
+    if( pStage->bundle[TB_DIFFUSEMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_DIFFUSEMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_DIFFUSEMAP].image[0]->height;
+    }
+    else if( pStage->bundle[TB_NORMALMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_NORMALMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_NORMALMAP].image[0]->height;
+    }
+    else if( pStage->bundle[TB_SPECULARMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_SPECULARMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_SPECULARMAP].image[0]->height;
+    }
+    else if( pStage->bundle[TB_SUBSURFACEMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_SUBSURFACEMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_SUBSURFACEMAP].image[0]->height;
+    }
+    else if( pStage->bundle[TB_OVERLAYMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_OVERLAYMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_OVERLAYMAP].image[0]->height;
+    }
+    else if( pStage->bundle[TB_STEEPMAP].image[0] )
+    {
+        dimensions[0] = pStage->bundle[TB_STEEPMAP].image[0]->width;
+        dimensions[1] = pStage->bundle[TB_STEEPMAP].image[0]->height;
+    }
+    
     GLSL_SetUniformVec2( sp, UNIFORM_DIMENSIONS, dimensions );
+}
+
+bool RB_ShouldUseTesselation( S32 materialType )
+{
+    /*if ( materialType == MATERIAL_SHORTGRASS
+    	|| materialType == MATERIAL_LONGGRASS
+    	|| materialType == MATERIAL_SAND
+    	|| materialType == MATERIAL_ROCK
+    	|| materialType == MATERIAL_ICE)*/
+    return true;
+    
+    return false;
+}
+
+F32 RB_GetTesselationAlphaLevel( S32 materialType )
+{
+    F32 tessAlphaLevel = r_tesselationAlpha->value;
+    
+    switch( materialType )
+    {
+        case MATERIAL_WATER:			// 13			// light covering of water on a surface
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_SAND:				// 8			// sandy beach
+            tessAlphaLevel = r_tesselationAlpha->value * 0.1;
+            break;
+        case MATERIAL_CARPET:			// 27			// lush carpet
+            tessAlphaLevel = r_tesselationAlpha->value * 0.3;
+            break;
+        case MATERIAL_GRAVEL:			// 9			// lots of small stones
+            tessAlphaLevel = r_tesselationAlpha->value * 0.5;
+            break;
+        case MATERIAL_ROCK:				// 23			//
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_TILES:			// 26			// tiled floor
+            tessAlphaLevel = r_tesselationAlpha->value * 0.3;
+            break;
+        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            tessAlphaLevel = r_tesselationAlpha->value * 0.3;
+            break;
+        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax and high reflection...
+            tessAlphaLevel = r_tesselationAlpha->value * 0.2;
+            break;
+        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_FABRIC:			// 21			// Cotton sheets
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_CANVAS:			// 22			// tent material
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_MARBLE:			// 12			// marble floors
+            tessAlphaLevel = r_tesselationAlpha->value * 0.5;
+            break;
+        case MATERIAL_SNOW:				// 14			// freshly laid snow
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_MUD:				// 17			// wet soil
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_DIRT:				// 7			// hard mud
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+            tessAlphaLevel = r_tesselationAlpha->value * 0.3;
+            break;
+        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_PLASTIC:			// 25			//
+            tessAlphaLevel = r_tesselationAlpha->value * 0.5;
+            break;
+        case MATERIAL_PLASTER:			// 28			// drywall style plaster
+            tessAlphaLevel = r_tesselationAlpha->value * 0.3;
+            break;
+        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+            tessAlphaLevel = r_tesselationAlpha->value * 0.1;
+            break;
+        case MATERIAL_ARMOR:			// 30			// body armor
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_ICE:				// 15			// packed snow/solid ice
+            tessAlphaLevel = r_tesselationAlpha->value;
+            break;
+        case MATERIAL_GLASS:			// 10			//
+            tessAlphaLevel = r_tesselationAlpha->value * 0.1;
+            break;
+        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+            tessAlphaLevel = r_tesselationAlpha->value * 0.1;
+            break;
+        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+            tessAlphaLevel = r_tesselationAlpha->value * 0.1;
+            break;
+        default:
+            break;
+    }
+    
+    return tessAlphaLevel;
+}
+
+F32 RB_GetTesselationInnerLevel( S32 materialType )
+{
+    F32 tessInnerLevel = 1.0;
+    
+    switch( materialType )
+    {
+        case MATERIAL_WATER:			// 13			// light covering of water on a surface
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_SAND:				// 8			// sandy beach
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.1, 1.0, 2.25 );
+            break;
+        case MATERIAL_CARPET:			// 27			// lush carpet
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.3, 1.0, 2.25 );
+            break;
+        case MATERIAL_GRAVEL:			// 9			// lots of small stones
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_ROCK:				// 23			//
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_TILES:			// 26			// tiled floor
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.3, 1.0, 2.25 );
+            break;
+        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.5, 1.0, 2.25 );
+            break;
+        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax and high reflection...
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.3, 1.0, 2.25 );
+            break;
+        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_FABRIC:			// 21			// Cotton sheets
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_CANVAS:			// 22			// tent material
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_MARBLE:			// 12			// marble floors
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.5, 1.0, 2.25 );
+            break;
+        case MATERIAL_SNOW:				// 14			// freshly laid snow
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_MUD:				// 17			// wet soil
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_DIRT:				// 7			// hard mud
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.3, 1.0, 2.25 );
+            break;
+        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+            tessInnerLevel = CLAMP( r_tesselationLevel->value, 1.0, 2.25 );
+            break;
+        case MATERIAL_PLASTIC:			// 25			//
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.5, 1.0, 2.25 );
+            break;
+        case MATERIAL_PLASTER:			// 28			// drywall style plaster
+            tessInnerLevel = CLAMP( r_tesselationLevel->value * 0.3, 1.0, 2.25 );
+            break;
+        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+            tessInnerLevel = 1.0;
+            break;
+        case MATERIAL_ARMOR:			// 30			// body armor
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_ICE:				// 15			// packed snow/solid ice
+            tessInnerLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_GLASS:			// 10			//
+            tessInnerLevel = 1.0;
+            break;
+        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+            tessInnerLevel = 1.0;
+            break;
+        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+            tessInnerLevel = 1.0;
+            break;
+        default:
+            break;
+    }
+    
+    if( tessInnerLevel < 1.0 ) tessInnerLevel = 1.0;
+    
+    return tessInnerLevel;
+}
+
+F32 RB_GetTesselationOuterLevel( S32 materialType )
+{
+    F32 tessOuterLevel = 1.0;
+    
+    switch( materialType )
+    {
+        case MATERIAL_WATER:			// 13			// light covering of water on a surface
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_LONGGRASS:		// 6			// long jungle grass
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_SAND:				// 8			// sandy beach
+            tessOuterLevel = r_tesselationLevel->value * 0.1;
+            break;
+        case MATERIAL_CARPET:			// 27			// lush carpet
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_GRAVEL:			// 9			// lots of small stones
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_ROCK:				// 23			//
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_TILES:			// 26			// tiled floor
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_SOLIDMETAL:		// 3			// solid girders
+            tessOuterLevel = r_tesselationLevel->value * 0.5;
+            break;
+        case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines -- Used for weapons to force lower parallax and high reflection...
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_FABRIC:			// 21			// Cotton sheets
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_CANVAS:			// 22			// tent material
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_MARBLE:			// 12			// marble floors
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_SNOW:				// 14			// freshly laid snow
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_MUD:				// 17			// wet soil
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_DIRT:				// 7			// hard mud
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_RUBBER:			// 24			// hard tire like rubber
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_PLASTIC:			// 25			//
+            tessOuterLevel = r_tesselationLevel->value * 0.5;
+            break;
+        case MATERIAL_PLASTER:			// 28			// drywall style plaster
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_ARMOR:			// 30			// body armor
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_ICE:				// 15			// packed snow/solid ice
+            tessOuterLevel = r_tesselationLevel->value;
+            break;
+        case MATERIAL_GLASS:			// 10			//
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_BPGLASS:			// 18			// bulletproof glass
+            tessOuterLevel = 1.0;
+            break;
+        case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
+            tessOuterLevel = 1.0;
+            break;
+        default:
+            break;
+    }
+    
+    if( tessOuterLevel < 1.0 ) tessOuterLevel = 1.0;
+    
+    return tessOuterLevel;
+}
+bool MATRIX_UPDATE = true;
+bool CLOSE_LIGHTS_UPDATE = true;
+
+matrix_t MATRIX_TRANS, MATRIX_MODEL, MATRIX_MVP, MATRIX_INVTRANS, MATRIX_NORMAL, MATRIX_VP, MATRIX_INVMV;
+
+void RB_UpdateMatrixes( void )
+{
+    if( !MATRIX_UPDATE ) return;
+    
+    // Calculate some matrixes that rend2 doesn't seem to have (or have correct)...
+    Mat4Translation( backEnd.viewParms.orientation.origin, MATRIX_TRANS );
+    Mat4Multiply( backEnd.viewParms.world.modelMatrix, MATRIX_TRANS, MATRIX_MODEL );
+    Mat4Multiply( backEnd.viewParms.projectionMatrix, MATRIX_MODEL, MATRIX_MVP );
+    Mat4Multiply( backEnd.viewParms.projectionMatrix, backEnd.viewParms.world.modelMatrix, MATRIX_VP );
+    
+    Mat4SimpleInverse( MATRIX_TRANS, MATRIX_INVTRANS );
+    Mat4SimpleInverse( backEnd.viewParms.projectionMatrix, MATRIX_NORMAL );
+    
+    
+    //GLSL_SetUniformMatrix16(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+    //GLSL_SetUniformMatrix16(sp, UNIFORM_INVEYEPROJECTIONMATRIX, glState.invEyeProjection);
+    Mat4SimpleInverse( glState.modelviewProjection, glState.invEyeProjection );
+    Mat4SimpleInverse( MATRIX_MODEL, MATRIX_INVMV );
+    
+    MATRIX_UPDATE = false;
+}
+
+S32			NUM_CLOSE_LIGHTS = 0;
+S32			CLOSEST_LIGHTS[MAX_DEFERRED_LIGHTS] = { 0 };
+vec3_t		CLOSEST_LIGHTS_POSITIONS[MAX_DEFERRED_LIGHTS] = { 0 };
+vec2_t		CLOSEST_LIGHTS_SCREEN_POSITIONS[MAX_DEFERRED_LIGHTS];
+F32		CLOSEST_LIGHTS_DISTANCES[MAX_DEFERRED_LIGHTS] = { 0 };
+F32		CLOSEST_LIGHTS_HEIGHTSCALES[MAX_DEFERRED_LIGHTS] = { 0 };
+vec3_t		CLOSEST_LIGHTS_COLORS[MAX_DEFERRED_LIGHTS] = { 0 };
+
+extern void WorldCoordToScreenCoord( vec3_t origin, F32* x, F32* y );
+extern bool Volumetric_Visible( vec3_t from, vec3_t to, bool isSun );
+
+void RB_UpdateCloseLights( void )
+{
+    if( !CLOSE_LIGHTS_UPDATE ) return; // Already done for this frame...
+    
+    NUM_CLOSE_LIGHTS = 0;
+    
+    for( S32 l = 0; l < backEnd.refdef.num_dlights; l++ )
+    {
+        dlight_t* dl = &backEnd.refdef.dlights[l];
+        
+        if( dl->color[0] < 0.0 && dl->color[1] < 0.0 && dl->color[2] < 0.0 )
+        {
+            // Surface glow light... But has no color assigned...
+            continue;
+        }
+        
+        F32 distance = Distance( tr.refdef.vieworg, dl->origin );
+        /*bool skip = qfalse;
+        
+        for (S32 i = 0; i < NUM_CLOSE_LIGHTS; i++)
+        {// Find the most distance light in our current list to replace, if this new option is closer...
+        dlight_t *thisLight = &backEnd.refdef.dlights[CLOSEST_LIGHTS[i]];
+        F32 dist = Distance(thisLight->origin, dl->origin);
+        if (dist < 128.0)
+        {
+        skip = qtrue;
+        break;
+        }
+        }
+        
+        if (skip)
+        {
+        continue;
+        }*/
+        
+        vec3_t from;
+        VectorCopy( tr.refdef.vieworg, from );
+        from[2] += 48.0;
+        if( !Volumetric_Visible( tr.refdef.vieworg, dl->origin, false ) )
+        {
+            continue;
+        }
+        
+        if( NUM_CLOSE_LIGHTS < MAX_LIGHTALL_DLIGHTS )
+        {
+            // Have free light slots for a new light...
+            F32 x, y;
+            WorldCoordToScreenCoord( dl->origin, &x, &y );
+            
+            if( x < 0.0 || y < 0.0 || x > 1.0 || y > 1.0 )
+                continue;
+                
+            CLOSEST_LIGHTS[NUM_CLOSE_LIGHTS] = l;
+            VectorCopy( dl->origin, CLOSEST_LIGHTS_POSITIONS[NUM_CLOSE_LIGHTS] );
+            CLOSEST_LIGHTS_DISTANCES[NUM_CLOSE_LIGHTS] = dl->radius;
+            CLOSEST_LIGHTS_HEIGHTSCALES[NUM_CLOSE_LIGHTS] = dl->heightScale;
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][0] = dl->color[0];
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][1] = dl->color[1];
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][2] = dl->color[2];
+            CLOSEST_LIGHTS_SCREEN_POSITIONS[NUM_CLOSE_LIGHTS][0] = x;
+            CLOSEST_LIGHTS_SCREEN_POSITIONS[NUM_CLOSE_LIGHTS][1] = y;
+            NUM_CLOSE_LIGHTS++;
+            continue;
+        }
+        else
+        {
+            // See if this is closer then one of our other lights...
+            S32 farthest_light = 0;
+            F32 farthest_distance = 0.0;
+            
+            for( S32 i = 0; i < NUM_CLOSE_LIGHTS; i++ )
+            {
+                // Find the most distance light in our current list to replace, if this new option is closer...
+                dlight_t*	thisLight = &backEnd.refdef.dlights[CLOSEST_LIGHTS[i]];
+                F32 dist = Distance( thisLight->origin, tr.refdef.vieworg );
+                
+                if( dist > farthest_distance )
+                {
+                    // This one is further!
+                    farthest_light = i;
+                    farthest_distance = dist;
+                    break;
+                }
+            }
+            
+            if( Distance( dl->origin, tr.refdef.vieworg ) < farthest_distance )
+            {
+                // This light is closer. Replace this one in our array of closest lights...
+                F32 x, y;
+                WorldCoordToScreenCoord( dl->origin, &x, &y );
+                
+                if( x < 0.0 || y < 0.0 || x > 1.0 || y > 1.0 )
+                {
+                    continue;
+                }
+                
+                CLOSEST_LIGHTS[farthest_light] = l;
+                VectorCopy( dl->origin, CLOSEST_LIGHTS_POSITIONS[farthest_light] );
+                CLOSEST_LIGHTS_DISTANCES[farthest_light] = dl->radius;
+                CLOSEST_LIGHTS_HEIGHTSCALES[farthest_light] = dl->heightScale;
+                CLOSEST_LIGHTS_COLORS[farthest_light][0] = dl->color[0];
+                CLOSEST_LIGHTS_COLORS[farthest_light][1] = dl->color[1];
+                CLOSEST_LIGHTS_COLORS[farthest_light][2] = dl->color[2];
+                CLOSEST_LIGHTS_SCREEN_POSITIONS[farthest_light][0] = x;
+                CLOSEST_LIGHTS_SCREEN_POSITIONS[farthest_light][1] = y;
+            }
+        }
+    }
+    
+    for( S32 i = 0; i < NUM_CLOSE_LIGHTS; i++ )
+    {
+        if( CLOSEST_LIGHTS_DISTANCES[i] < 0.0 )
+        {
+            // Remove volume light markers...
+            CLOSEST_LIGHTS_DISTANCES[i] = -CLOSEST_LIGHTS_DISTANCES[i];
+        }
+        
+        // Double the range on all lights...
+        CLOSEST_LIGHTS_DISTANCES[i] *= 2.0;
+    }
+    
+    //CL_RefPrintf(PRINT_ALL, "Found %i close lights this frame.\n", NUM_CLOSE_LIGHTS);
+    
+    CLOSE_LIGHTS_UPDATE = false;
 }
 
 static void RB_IterateStagesGeneric( shaderCommands_t* input )
@@ -1263,6 +1587,86 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
     ComputeDeformValues( &deformGen, deformParams );
     
     ComputeFogValues( fogDistanceVector, fogDepthVector, &eyeT );
+    
+    S32 NUM_CLOSE_LIGHTS = 0;
+    S32 CLOSEST_LIGHTS[MAX_LIGHTALL_DLIGHTS] = { 0 };
+    vec3_t CLOSEST_LIGHTS_POSITIONS[MAX_LIGHTALL_DLIGHTS] = { 0 };
+    F32 CLOSEST_LIGHTS_DISTANCES[MAX_LIGHTALL_DLIGHTS] = { 0 };
+    vec3_t CLOSEST_LIGHTS_COLORS[MAX_LIGHTALL_DLIGHTS] = { 0 };
+    
+    for( S32 l = 0; l < backEnd.refdef.num_dlights; l++ )
+    {
+        dlight_t*	dl = &backEnd.refdef.dlights[l];
+        
+        F32 distance = Distance( backEnd.refdef.vieworg, dl->origin );
+        
+        if( NUM_CLOSE_LIGHTS < MAX_LIGHTALL_DLIGHTS )
+        {
+            // Have free light slots for a new light...
+            CLOSEST_LIGHTS[NUM_CLOSE_LIGHTS] = l;
+            VectorCopy( dl->origin, CLOSEST_LIGHTS_POSITIONS[NUM_CLOSE_LIGHTS] );
+            CLOSEST_LIGHTS_DISTANCES[NUM_CLOSE_LIGHTS] = dl->radius;
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][0] = dl->color[0];
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][1] = dl->color[1];
+            CLOSEST_LIGHTS_COLORS[NUM_CLOSE_LIGHTS][2] = dl->color[2];
+            NUM_CLOSE_LIGHTS++;
+            continue;
+        }
+        else
+        {
+            // See if this is closer then one of our other lights...
+            S32 farthest_light = 0;
+            F32	farthest_distance = 0.0;
+            
+            for( S32 i = 0; i < NUM_CLOSE_LIGHTS; i++ )
+            {
+                // Find the most distance light in our current list to replace, if this new option is closer...
+                dlight_t* thisLight = &backEnd.refdef.dlights[CLOSEST_LIGHTS[i]];
+                F32	 dist = Distance( thisLight->origin, backEnd.refdef.vieworg );
+                
+                if( dist > farthest_distance )
+                {
+                    // This one is further!
+                    farthest_light = i;
+                    farthest_distance = dist;
+                    break;
+                }
+            }
+            
+            if( Distance( dl->origin, backEnd.refdef.vieworg ) < farthest_distance )
+            {
+                // This light is closer. Replace this one in our array of closest lights...
+                CLOSEST_LIGHTS[farthest_light] = l;
+                VectorCopy( dl->origin, CLOSEST_LIGHTS_POSITIONS[farthest_light] );
+                CLOSEST_LIGHTS_DISTANCES[farthest_light] = dl->radius;
+                CLOSEST_LIGHTS_COLORS[farthest_light][0] = dl->color[0];
+                CLOSEST_LIGHTS_COLORS[farthest_light][1] = dl->color[1];
+                CLOSEST_LIGHTS_COLORS[farthest_light][2] = dl->color[2];
+            }
+        }
+    }
+    
+    for( S32 i = 0; i < NUM_CLOSE_LIGHTS; i++ )
+    {
+        if( CLOSEST_LIGHTS_DISTANCES[i] < 0.0 )
+        {
+            // Remove volume light markers...
+            CLOSEST_LIGHTS_DISTANCES[i] = -CLOSEST_LIGHTS_DISTANCES[i];
+        }
+        
+        // Double the range on all lights...
+        CLOSEST_LIGHTS_DISTANCES[i] *= 2.0;
+    }
+    
+    // Calculate some matrixes that rend2 doesn't seem to have (or have correct)...
+    matrix_t trans, model, mvp, invTrans, normalMatrix;
+    
+    Mat4Translation( backEnd.viewParms.orientation.origin, trans );
+    Mat4Multiply( backEnd.viewParms.world.modelMatrix, trans, model );
+    Mat4Multiply( backEnd.viewParms.projectionMatrix, model, mvp );
+    
+    Mat4SimpleInverse( trans, invTrans );
+    Mat4SimpleInverse( backEnd.viewParms.projectionMatrix, normalMatrix );
     
     for( stage = 0; stage < MAX_SHADER_STAGES; stage++ )
     {
@@ -1319,7 +1723,24 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             {
                 index |= LIGHTDEF_ENTITY;
             }
-            if( r_sunlightMode->integer && ( backEnd.viewParms.flags & VPF_USESUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) )
+            
+            if( r_sunlightMode->integer >= 2
+                    && ( backEnd.viewParms.flags & VPF_USESUNLIGHT )
+                    && ( ( tess.shader->surfaceFlags & MATERIAL_MASK ) == MATERIAL_GREENLEAVES
+                         || ( tess.shader->surfaceFlags & MATERIAL_MASK ) == MATERIAL_SHORTGRASS
+                         || ( tess.shader->surfaceFlags & MATERIAL_MASK ) == MATERIAL_LONGGRASS ) )
+            {
+                index |= LIGHTDEF_LIGHTTYPE_MASK;
+                index |= LIGHTDEF_USE_SHADOWMAP;
+            }
+            else if( r_sunlightMode->integer >= 2
+                     && ( backEnd.viewParms.flags & VPF_USESUNLIGHT )
+                     && ( tess.shader->surfaceFlags & MATERIAL_MASK ) == MATERIAL_DRYLEAVES )
+            {
+                // No shadows on dryleaves (billboards)...
+                
+            }
+            else if( r_sunlightMode->integer >= 2 && tr.refdef.num_dlights && ( backEnd.viewParms.flags & VPF_USESUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) )
             {
                 index |= LIGHTDEF_USE_SHADOWMAP;
             }
@@ -1344,135 +1765,82 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
         
         if( pStage->isWater )
         {
+            if( stage > 0 )
+            {
+                break;
+            }
+            
             sp = &tr.waterShader;
             pStage->glslShaderGroup = &tr.waterShader;
             GLSL_BindProgram( sp );
             GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
-            // RB_SetParallaxScale(sp, 3.0); // unused
+            vec4_t loc0;
+            
+            VectorSet4( loc0, ( F32 )2.0, 0, 0, 0 ); // force it to use the old water fx...
+            
+            GLSL_SetUniformVec4( sp, UNIFORM_LOCAL0, loc0 );
+            RB_SetMaterialBasedProperties( sp, pStage );
+            
+            GLSL_SetUniformInt( sp, UNIFORM_RANDOMMAP, TB_RANDOMMAP );
+            GL_BindToTMU( tr.randomImage, TB_RANDOMMAP );
+            GLSL_SetUniformInt( sp, UNIFORM_SCREENDEPTHMAP, TB_LEVELSMAP );
+            GL_BindToTMU( tr.renderDepthImage, TB_LEVELSMAP );
         }
         else
         {
-            //check for foot-steppable surface flag
-            switch( tess.shader->surfaceFlags & MATERIAL_MASK )
+            if( !sp || !sp->program )
             {
-                case MATERIAL_WATER:			// 13			// light covering of water on a surface
-                    sp = &tr.waterShader;
-                    pStage->glslShaderGroup = &tr.waterShader;
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
-                    break;
-                case MATERIAL_SHORTGRASS:		// 5			// manicured lawn
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0, pStage );
-                    break;
-                case MATERIAL_LONGGRASS:		// 6			// long jungle grass
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 5.0, pStage );
-                    break;
-                case MATERIAL_SAND:				// 8			// sandy beach
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0, pStage );
-                    break;
-                case MATERIAL_CARPET:			// 27			// lush carpet
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0, pStage );
-                    break;
-                case MATERIAL_GRAVEL:			// 9			// lots of small stones
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0, pStage );
-                    break;
-                case MATERIAL_ROCK:				// 23			//
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0, pStage );
-                    break;
-                case MATERIAL_TILES:			// 26			// tiled floor
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0, pStage );
-                    break;
-                case MATERIAL_SOLIDWOOD:		// 1			// freshly cut timber
-                case MATERIAL_HOLLOWWOOD:		// 2			// termite infested creaky wood
-                case MATERIAL_SOLIDMETAL:		// 3			// solid girders
-                case MATERIAL_HOLLOWMETAL:		// 4			// hollow metal machines
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0, pStage );
-                    break;
-                case MATERIAL_DRYLEAVES:		// 19			// dried up leaves on the floor
-                case MATERIAL_GREENLEAVES:		// 20			// fresh leaves still on a tree
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 5.0, pStage );
-                    break;
-                case MATERIAL_FABRIC:			// 21			// Cotton sheets
-                case MATERIAL_CANVAS:			// 22			// tent material
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 3.0, pStage );
-                    break;
-                case MATERIAL_MARBLE:			// 12			// marble floors
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 2.0, pStage );
-                    break;
-                case MATERIAL_SNOW:				// 14			// freshly laid snow
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 5.0, pStage );
-                    break;
-                case MATERIAL_MUD:				// 17			// wet soil
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 4.0, pStage );
-                    break;
-                case MATERIAL_FLESH:			// 16			// hung meat, corpses in the world
-                case MATERIAL_RUBBER:			// 24			// hard tire like rubber
-                case MATERIAL_PLASTIC:			// 25			//
-                case MATERIAL_SHATTERGLASS:		// 29			// glass with the Crisis Zone style shattering
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 1.0, pStage );
-                    break;
-                case MATERIAL_ARMOR:			// 30			// body armor
-                case MATERIAL_ICE:				// 15			// packed snow/solid ice
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 2.0, pStage );
-                    break;
-                case MATERIAL_GLASS:			// 10			//
-                case MATERIAL_BPGLASS:			// 18			// bulletproof glass
-                case MATERIAL_COMPUTER:			// 31			// computers/electronic equipment
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 1.0, pStage );
-                    break;
-                case MATERIAL_DIRT:				// 7			// hard mud
-                case MATERIAL_CONCRETE:			// 11			// hardened concrete pavement
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 5.0, pStage );
-                    break;
-                case MATERIAL_PLASTER:			// 28			// drywall style plaster
-                default:
-                    GLSL_BindProgram( sp );
-                    GLSL_SetUniformFloat( sp, UNIFORM_TIME, backEnd.refdef.floatTime );
-                    RB_SetParallaxScale( sp, 2.0, pStage );
-                    break;
+                pStage->glslShaderGroup = tr.lightallShader;
+                sp = &pStage->glslShaderGroup[0];
             }
+            
+            GLSL_BindProgram( sp );
         }
         
+        if( r_proceduralSun->integer && tess.shader == tr.sunShader )
+        {
+            // Special case for procedural sun...
+            sp = &tr.sunPassShader;
+            GLSL_BindProgram( sp );
+            GLSL_SetUniformFloat( sp, UNIFORM_TIME, tess.shaderTime );
+        }
+        
+        RB_SetMaterialBasedProperties( sp, pStage );
         
         RB_SetStageImageDimensions( sp, pStage );
         
+        GLSL_SetUniformMat4( sp, UNIFORM_VIEWPROJECTIONMATRIX, backEnd.viewParms.projectionMatrix );
+        GLSL_SetUniformMat4( sp, UNIFORM_MODELMATRIX, backEnd.orientation.transformMatrix );
         GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
+        GLSL_SetUniformMat4( sp, UNIFORM_INVEYEPROJECTIONMATRIX, glState.invEyeProjection );
+        
+        {
+            matrix_t trans, model, mvp, invTrans, normalMatrix, vp;
+            
+            Mat4Translation( backEnd.viewParms.orientation.origin, trans );
+            Mat4Multiply( backEnd.viewParms.world.modelMatrix, trans, model );
+            Mat4Multiply( backEnd.viewParms.projectionMatrix, model, mvp );
+            //Mat4Multiply(backEnd.viewParms.projectionMatrix, trans, vp);
+            Mat4Multiply( backEnd.viewParms.projectionMatrix, backEnd.viewParms.world.modelMatrix, vp );
+            
+            GLSL_SetUniformMat4( sp, UNIFORM_PROJECTIONMATRIX, glState.projection/*backEnd.viewParms.projectionMatrix*/ );
+            GLSL_SetUniformMat4( sp, UNIFORM_MODELVIEWMATRIX, model ); //backEnd.viewParms.world.modelMatrix);
+            GLSL_SetUniformMat4( sp, UNIFORM_VIEWMATRIX, trans );
+        }
+        
         GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, backEnd.viewParms.orientation.origin );
         GLSL_SetUniformVec3( sp, UNIFORM_LOCALVIEWORIGIN, backEnd.orientation.viewOrigin );
+        
+        if( pStage->normalScale[0] == 0 && pStage->normalScale[1] == 0 && pStage->normalScale[2] == 0 )
+        {
+            vec4_t normalScale;
+            VectorSet4( normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value );
+            GLSL_SetUniformVec4( sp, UNIFORM_NORMALSCALE, normalScale );
+        }
+        else
+        {
+            GLSL_SetUniformVec4( sp, UNIFORM_NORMALSCALE, pStage->normalScale );
+        }
         
         GLSL_SetUniformFloat( sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation );
         
@@ -1618,7 +1986,60 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             GLSL_SetUniformVec4( sp, UNIFORM_SPECULARSCALE, specularScale );
         }
         
-        //GLSL_SetUniformFloat(sp, UNIFORM_MAPLIGHTSCALE, backEnd.refdef.mapLightScale);
+        if( pStage->bundle[TB_STEEPMAP].image[0] )
+        {
+            //ri->Printf(PRINT_WARNING, "Image bound to steep map %i x %i.\n", pStage->bundle[TB_STEEPMAP].image[0]->width, pStage->bundle[TB_STEEPMAP].image[0]->height);
+            R_BindAnimatedImageToTMU( &pStage->bundle[TB_STEEPMAP], TB_STEEPMAP );
+        }
+        else
+        {
+            GL_BindToTMU( tr.whiteImage, TB_STEEPMAP );
+        }
+        
+        if( pStage->bundle[TB_SUBSURFACEMAP].image[0] )
+        {
+            R_BindAnimatedImageToTMU( &pStage->bundle[TB_SUBSURFACEMAP], TB_SUBSURFACEMAP );
+        }
+        else
+        {
+            GL_BindToTMU( tr.whiteImage, TB_SUBSURFACEMAP );
+        }
+        
+        if( pStage->bundle[TB_OVERLAYMAP].image[0] )
+        {
+            R_BindAnimatedImageToTMU( &pStage->bundle[TB_OVERLAYMAP], TB_OVERLAYMAP );
+        }
+        else
+        {
+            GL_BindToTMU( tr.blackImage, TB_OVERLAYMAP );
+        }
+        
+        if( !backEnd.depthFill )
+        {
+            if( r_sunlightMode->integer && ( r_sunlightSpecular->integer || ( backEnd.viewParms.flags & VPF_USESUNLIGHT ) ) )
+            {
+                if( backEnd.viewParms.flags & VPF_USESUNLIGHT )
+                {
+                    GL_BindToTMU( tr.screenShadowImage, TB_SHADOWMAP );
+                }
+                else
+                {
+                    GL_BindToTMU( tr.whiteImage, TB_SHADOWMAP );
+                }
+                
+                GLSL_SetUniformVec3( sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol );
+                GLSL_SetUniformVec3( sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol );
+                GLSL_SetUniformVec4( sp, UNIFORM_PRIMARYLIGHTORIGIN, backEnd.refdef.sunDir );
+                
+                
+                GLSL_SetUniformInt( sp, UNIFORM_LIGHTCOUNT, NUM_CLOSE_LIGHTS );
+                GLSL_SetUniformVec3x16( sp, UNIFORM_LIGHTPOSITIONS2, CLOSEST_LIGHTS_POSITIONS, MAX_LIGHTALL_DLIGHTS );
+                GLSL_SetUniformVec3x16( sp, UNIFORM_LIGHTCOLORS, CLOSEST_LIGHTS_COLORS, MAX_LIGHTALL_DLIGHTS );
+                GLSL_SetUniformFloatx16( sp, UNIFORM_LIGHTDISTANCES, CLOSEST_LIGHTS_DISTANCES, MAX_LIGHTALL_DLIGHTS );
+            }
+        }
+        
+        GL_BindToTMU( tr.whiteImage, TB_NORMALMAP );
         
         //
         // do multitexture
@@ -1698,7 +2119,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                 //  - disable texture sampling in glsl shader with #ifdefs, as before
                 //     -> increases the number of shaders that must be compiled
                 //
-                if( light && !fastLight )
+                if( ( light || ( pStage->isWater ) || pStage->hasRealNormalMap || pStage->hasSpecular || pStage->hasRealSubsurfaceMap || pStage->hasRealOverlayMap || pStage->hasRealSteepMap ) && !fastLight )
                 {
                     if( pStage->bundle[TB_NORMALMAP].image[0] )
                     {
@@ -1706,31 +2127,40 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
                         enableTextures[0] = 1.0f;
                     }
                     else if( r_normalMapping->integer )
+                    {
                         GL_BindToTMU( tr.whiteImage, TB_NORMALMAP );
-                        
+                    }
+                    
                     if( pStage->bundle[TB_DELUXEMAP].image[0] )
                     {
                         R_BindAnimatedImageToTMU( &pStage->bundle[TB_DELUXEMAP], TB_DELUXEMAP );
                         enableTextures[1] = 1.0f;
                     }
                     else if( r_deluxeMapping->integer )
+                    {
                         GL_BindToTMU( tr.whiteImage, TB_DELUXEMAP );
-                        
+                    }
+                    
                     if( pStage->bundle[TB_SPECULARMAP].image[0] )
                     {
                         R_BindAnimatedImageToTMU( &pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP );
                         enableTextures[2] = 1.0f;
                     }
                     else if( r_specularMapping->integer )
+                    {
                         GL_BindToTMU( tr.whiteImage, TB_SPECULARMAP );
+                    }
                 }
                 
-                enableTextures[3] = ( r_cubeMapping->integer && !( tr.viewParms.flags & VPF_NOCUBEMAPS ) && input->cubemapIndex ) ? 1.0f : 0.0f;
+                if( input->cubemapIndex )
+                    enableTextures[3] = ( r_cubeMapping->integer && !( tr.viewParms.flags & VPF_NOCUBEMAPS ) && input->cubemapIndex ) ? 1.0f : 0.0f;
+                else
+                    enableTextures[3] = 0.0f;
             }
             
             GLSL_SetUniformVec4( sp, UNIFORM_ENABLETEXTURES, enableTextures );
         }
-        else if( pStage->bundle[1].image[0] != 0 )
+        else if( pStage->bundle[TB_LIGHTMAP].image[0] != 0 )
         {
             R_BindAnimatedImageToTMU( &pStage->bundle[0], 0 );
             R_BindAnimatedImageToTMU( &pStage->bundle[1], 1 );
@@ -1758,15 +2188,59 @@ static void RB_IterateStagesGeneric( shaderCommands_t* input )
             VectorSubtract( cubemap->origin, backEnd.viewParms.orientation.origin, vec );
             vec[3] = 1.0f;
             
+            F32 dist = Distance( tr.refdef.vieworg, cubemap->origin );
+            F32 mult = r_cubemapCullFalloffMult->value - ( r_cubemapCullFalloffMult->value * 0.04 );
+            
+            if( dist < r_cubemapCullRange->value )
+            {
+                // In range for full effect...
+                GLSL_SetUniformFloat( sp, UNIFORM_CUBEMAPSTRENGTH, 1.0 );
+            }
+            else if( dist >= r_cubemapCullRange->value && dist < r_cubemapCullRange->value * mult )
+            {
+                // Further scale the strength of the cubemap by the fade-out distance...
+                F32 extraDist =		dist - r_cubemapCullRange->value;
+                F32 falloffDist =	( r_cubemapCullRange->value * mult ) - r_cubemapCullRange->value;
+                F32 strength =	( falloffDist - extraDist ) / falloffDist;
+                
+                strength = CLAMP( strength, 0.0, 1.0 );
+                GLSL_SetUniformFloat( sp, UNIFORM_CUBEMAPSTRENGTH, strength );
+            }
+            else
+            {
+                // Out of range completely...
+                GLSL_SetUniformFloat( sp, UNIFORM_CUBEMAPSTRENGTH, 0.0 );
+            }
+            
             VectorScale4( vec, 1.0f / cubemap->parallaxRadius, vec );
             
             GLSL_SetUniformVec4( sp, UNIFORM_CUBEMAPINFO, vec );
         }
         
+        bool tesselation = false;
+        
+        if( r_tesselation->integer && sp->tesselation )
+        {
+            tesselation = true;
+            
+            F32 tessInner = RB_GetTesselationInnerLevel( tess.shader->surfaceFlags & MATERIAL_MASK );
+            F32 tessOuter = tessInner;//RB_GetTesselationOuterLevel(tess.shader->surfaceFlags & MATERIAL_MASK);
+            F32 tessAlpha = RB_GetTesselationAlphaLevel( tess.shader->surfaceFlags & MATERIAL_MASK );
+            
+            if( tessInner <= 1.0 )
+            {
+                tessAlpha = 0.1;
+            }
+            
+            vec4_t l10;
+            VectorSet4( l10, tessAlpha, tessInner, tessOuter, 0.0 );
+            GLSL_SetUniformVec4( sp, UNIFORM_LOCAL1, l10 );
+        }
+        
         //
         // draw
         //
-        R_DrawElements( input->numIndexes, input->firstIndex );
+        R_DrawElements( input->numIndexes, input->firstIndex, tesselation );
         
         // allow skipping out to show just lightmaps during development
         if( r_lightmap->integer && ( pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap ) )
@@ -1823,7 +2297,7 @@ static void RB_RenderShadowmap( shaderCommands_t* input )
             // draw
             //
             
-            R_DrawElements( input->numIndexes, input->firstIndex );
+            R_DrawElements( input->numIndexes, input->firstIndex, false );
         }
     }
 }
@@ -1920,6 +2394,32 @@ void RB_StageIteratorGeneric( void )
     //
     if( backEnd.depthFill )
     {
+        /*if (tr.currentEntity && tr.currentEntity != &tr.worldEntity)
+        {
+        if (backEnd.currentEntity->e.ignoreCull)
+        {
+        //model_t	*model = R_GetModelByHandle(backEnd.currentEntity->e.hModel);
+        //if (model)
+        //	CL_RefPrintf(PRINT_WARNING, "Cull ignored on model type: %i. name: %s.\n", model->type, model->name);
+        //else
+        //	CL_RefPrintf(PRINT_WARNING, "Cull ignored on unknown.\n");
+        if (input->shader->polygonOffset)
+        {
+        qglDisable(GL_POLYGON_OFFSET_FILL);
+        }
+        
+        //if (model->type == MOD_BRUSH || model->data.bmodel || !tr.currentModel)
+        return;
+        }
+        else if (tr.currentEntity->e.reType == RT_MODEL)
+        {
+        model_t	*model = R_GetModelByHandle(backEnd.currentEntity->e.hModel);
+        
+        if (model->type == MOD_BRUSH || model->data.bmodel || !tr.currentModel)
+        return;
+        }
+        }*/
+        
         RB_IterateStagesGeneric( input );
         
         //
@@ -1942,6 +2442,7 @@ void RB_StageIteratorGeneric( void )
         {
             RB_RenderShadowmap( input );
         }
+        
         //
         // reset polygon offset
         //
@@ -1958,40 +2459,6 @@ void RB_StageIteratorGeneric( void )
     // call shader function
     //
     RB_IterateStagesGeneric( input );
-    
-    // now do any dynamic lighting needed. UQ1: A generic method to rule them all... A SANE real world style lighting with a blacklist - not a whitelist!
-    if( !( tess.shader->surfaceFlags & ( /*SURF_NODLIGHT |*/ SURF_SKY ) && tess.dlightBits && tess.shader->sort <= SS_OPAQUE ) )
-    {
-        switch( int( tess.shader->sort ) )
-        {
-            case SS_PORTAL:
-            case SS_ENVIRONMENT: // is this really always a skybox???
-            case SS_SEE_THROUGH:
-                //case SS_FOG: // hmm... these??? i sorta like the idea of lighting up fog particles myself...
-            case SS_BLEND0:
-            case SS_BLEND1:
-            case SS_BLEND2:
-            case SS_BLEND3:
-            case SS_BLEND6:
-                break;
-            default:
-                if( r_dlightMode->integer >= 2 )
-                {
-                    ForwardDlight();
-                }
-                else
-                {
-                    ProjectDlightTexture();
-                }
-                
-                //
-                // pshadows!
-                //
-                if( r_shadows->integer == 4 /*&& tess.pshadowBits*/ && !( tess.shader->surfaceFlags & ( /*SURF_NODLIGHT |*/ SURF_SKY ) ) )
-                    ProjectPshadowVBOGLSL();
-                break;
-        }
-    }
     
     //
     // now do fog

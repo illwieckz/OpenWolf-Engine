@@ -172,7 +172,7 @@ void idServerGameSystemLocal::GameSendServerCommand( S32 clientNum, StringEntry 
 {
     if( clientNum == -1 )
     {
-        SV_SendServerCommand( NULL, "%s", text );
+        serverMainSystem->SendServerCommand( NULL, "%s", text );
     }
     else
     {
@@ -180,7 +180,7 @@ void idServerGameSystemLocal::GameSendServerCommand( S32 clientNum, StringEntry 
         {
             return;
         }
-        SV_SendServerCommand( svs.clients + clientNum, "%s", text );
+        serverMainSystem->SendServerCommand( svs.clients + clientNum, "%s", text );
     }
 }
 
@@ -199,7 +199,7 @@ void idServerGameSystemLocal::GameDropClient( S32 clientNum, StringEntry reason,
         return;
     }
     
-    serverClientLocal.DropClient( svs.clients + clientNum, reason );
+    serverClientSystem->DropClient( svs.clients + clientNum, reason );
     
     if( length )
     {
@@ -478,7 +478,7 @@ idServerGameSystemLocal::BotGetUserCommand
 */
 void idServerGameSystemLocal::BotGetUserCommand( S32 clientNum, usercmd_t* ucmd )
 {
-    serverClientLocal.ClientThink( &svs.clients[clientNum], ucmd );
+    serverClientSystem->ClientThink( &svs.clients[clientNum], ucmd );
 }
 
 /*
@@ -494,16 +494,10 @@ void idServerGameSystemLocal::InitExportTable( void )
     exports.Argc = Cmd_Argc;
     exports.Argv = Cmd_ArgvBuffer;
     exports.SendConsoleCommand = Cbuf_ExecuteText;
-    exports.SetConfigstring = SV_SetConfigstring;
-    exports.GetConfigstring = SV_GetConfigstring;
-    exports.SetConfigstringRestrictions = SV_SetConfigstringRestrictions;
-    exports.SetUserinfo = SV_SetUserinfo;
-    exports.GetUserinfo = SV_GetUserinfo;
     exports.RealTime = Com_RealTime;
     exports.Sys_SnapVector = Sys_SnapVector;
     exports.AddCommand = Cmd_AddCommand;
     exports.RemoveCommand = Cmd_RemoveCommand;
-    exports.LoadTag = SV_LoadTag;
     
     exports.botlib = botlib_export;
     exports.collisionModelManager = collisionModelManager;
@@ -514,6 +508,8 @@ void idServerGameSystemLocal::InitExportTable( void )
     exports.serverBotSystem = serverBotSystem;
     exports.serverGameSystem = serverGameSystem;
     exports.serverWorldSystem = serverWorldSystem;
+    exports.serverInitSystem = serverInitSystem;
+    exports.serverMainSystem = serverMainSystem;
     exports.databaseSystem = databaseSystem;
     exports.fileSystem = fileSystem;
     exports.cvarSystem = cvarSystem;

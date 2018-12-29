@@ -27,9 +27,9 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   sv_init.cpp
-// Version:     v1.01
-// Created:
+// File name:   serverInit.cpp
+// Version:     v1.00
+// Created:     12/27/2018
 // Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
@@ -41,22 +41,43 @@
 #include <OWLib/precompiled.h>
 #endif
 
+idServerInitSystemLocal serverInitSystemLocal;
+idServerInitSystem* serverInitSystem = &serverInitSystemLocal;
+
 /*
 ===============
-SV_SendConfigstring
+idServerInitSystemLocal::idServerInitSystemLocal
+===============
+*/
+idServerInitSystemLocal::idServerInitSystemLocal( void )
+{
+}
+
+/*
+===============
+idServerBotSystemLocal::~idServerBotSystemLocal
+===============
+*/
+idServerInitSystemLocal::~idServerInitSystemLocal( void )
+{
+}
+
+/*
+===============
+idServerInitSystemLocal::SendConfigstring
 
 Creates and sends the server command necessary to update the CS index for the
 given client
 ===============
 */
-static void SV_SendConfigstring( client_t* client, S32 index )
+void idServerInitSystemLocal::SendConfigstring( client_t* client, S32 index )
 {
     S32 maxChunkSize = MAX_STRING_CHARS - 24, len;
     
     if( sv.configstrings[index].restricted && Com_ClientListContains( &sv.configstrings[index].clientList, client - svs.clients ) )
     {
         // Send a blank config string for this client if it's listed
-        SV_SendServerCommand( client, "cs %i \"\"\n", index );
+        serverMainSystem->SendServerCommand( client, "cs %i \"\"\n", index );
         return;
     }
     
@@ -64,8 +85,8 @@ static void SV_SendConfigstring( client_t* client, S32 index )
     
     if( len >= maxChunkSize )
     {
-        S32		sent = 0, remaining = len;
-        UTF8*	cmd, buf[MAX_STRING_CHARS];
+        S32	sent = 0, remaining = len;
+        UTF8* cmd, buf[MAX_STRING_CHARS];
         
         while( remaining > 0 )
         {
@@ -81,9 +102,10 @@ static void SV_SendConfigstring( client_t* client, S32 index )
             {
                 cmd = "bcs1";
             }
+            
             Q_strncpyz( buf, &sv.configstrings[index].s[sent], maxChunkSize );
             
-            SV_SendServerCommand( client, "%s %i \"%s\"\n", cmd, index, buf );
+            serverMainSystem->SendServerCommand( client, "%s %i \"%s\"\n", cmd, index, buf );
             
             sent += ( maxChunkSize - 1 );
             remaining -= ( maxChunkSize - 1 );
@@ -92,19 +114,19 @@ static void SV_SendConfigstring( client_t* client, S32 index )
     else
     {
         // standard cs, just send it
-        SV_SendServerCommand( client, "cs %i \"%s\"\n", index, sv.configstrings[index].s );
+        serverMainSystem->SendServerCommand( client, "cs %i \"%s\"\n", index, sv.configstrings[index].s );
     }
 }
 
 /*
 ===============
-SV_UpdateConfigStrings
+idServerInitSystemLocal::UpdateConfigStrings
 ===============
 */
-void SV_UpdateConfigStrings( void )
+void idServerInitSystemLocal::UpdateConfigStrings( void )
 {
-    S32             len, i, index, maxChunkSize = MAX_STRING_CHARS - 24;
-    client_t*       client;
+    S32 len, i, index, maxChunkSize = MAX_STRING_CHARS - 24;
+    client_t* client;
     
     for( index = 0; index < MAX_CONFIGSTRINGS; index++ )
     {
@@ -112,6 +134,7 @@ void SV_UpdateConfigStrings( void )
         {
             continue;
         }
+        
         sv.configstringsmodified[index] = false;
         
         // send it to all the clients if we aren't
@@ -125,6 +148,7 @@ void SV_UpdateConfigStrings( void )
                 {
                     continue;
                 }
+                
                 // do not always send server info to all clients
                 if( index == CS_SERVERINFO && client->gentity && ( client->gentity->r.svFlags & SVF_NOSERVERINFO ) )
                 {
@@ -142,6 +166,7 @@ void SV_UpdateConfigStrings( void )
                 }
                 
                 len = strlen( sv.configstrings[index].s );
+                
                 if( len >= maxChunkSize )
                 {
                     S32             sent = 0, remaining = len;
@@ -161,9 +186,10 @@ void SV_UpdateConfigStrings( void )
                         {
                             cmd = "bcs1";
                         }
+                        
                         Q_strncpyz( buf, &sv.configstrings[index].s[sent], maxChunkSize );
                         
-                        SV_SendServerCommand( client, "%s %i \"%s\"\n", cmd, index, buf );
+                        serverMainSystem->SendServerCommand( client, "%s %i \"%s\"\n", cmd, index, buf );
                         
                         sent += ( maxChunkSize - 1 );
                         remaining -= ( maxChunkSize - 1 );
@@ -172,7 +198,7 @@ void SV_UpdateConfigStrings( void )
                 else
                 {
                     // standard cs, just send it
-                    SV_SendServerCommand( client, "cs %i \"%s\"\n", index, sv.configstrings[index] );
+                    serverMainSystem->SendServerCommand( client, "cs %i \"%s\"\n", index, sv.configstrings[index] );
                 }
             }
         }
@@ -181,14 +207,14 @@ void SV_UpdateConfigStrings( void )
 
 /*
 ===============
-SV_SetConfigstringNoUpdate
+idServerInitSystemLocal::SetConfigstringNoUpdate
 ===============
 */
-void SV_SetConfigstringNoUpdate( S32 index, StringEntry val )
+void idServerInitSystemLocal::SetConfigstringNoUpdate( S32 index, StringEntry val )
 {
     if( index < 0 || index >= MAX_CONFIGSTRINGS )
     {
-        Com_Error( ERR_DROP, "SV_SetConfigstring: bad index %i\n", index );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::SetConfigstring: bad index %i\n", index );
     }
     
     if( !val )
@@ -209,17 +235,17 @@ void SV_SetConfigstringNoUpdate( S32 index, StringEntry val )
 
 /*
 ===============
-SV_SetConfigstring
+idServerInitSystemLocal::SetConfigstring
 ===============
 */
-void SV_SetConfigstring( S32 index, StringEntry val )
+void idServerInitSystemLocal::SetConfigstring( S32 index, StringEntry val )
 {
-    S32			i;
-    client_t*	client;
+    S32 i;
+    client_t* client;
     
     if( index < 0 || index >= MAX_CONFIGSTRINGS )
     {
-        Com_Error( ERR_DROP, "SV_SetConfigstring: bad index %i\n", index );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::SetConfigstring: bad index %i\n", index );
     }
     
     if( !val )
@@ -250,32 +276,35 @@ void SV_SetConfigstring( S32 index, StringEntry val )
                     client->csUpdated[ index ] = true;
                 continue;
             }
+            
             // do not always send server info to all clients
             if( index == CS_SERVERINFO && client->gentity && ( client->gentity->r.svFlags & SVF_NOSERVERINFO ) )
             {
                 continue;
             }
             
-            SV_SendConfigstring( client, index );
+            SendConfigstring( client, index );
         }
     }
 }
 
 /*
 ===============
-SV_GetConfigstring
+idServerInitSystemLocal::GetConfigstring
 ===============
 */
-void SV_GetConfigstring( S32 index, UTF8* buffer, S32 bufferSize )
+void idServerInitSystemLocal::GetConfigstring( S32 index, UTF8* buffer, S32 bufferSize )
 {
     if( bufferSize < 1 )
     {
-        Com_Error( ERR_DROP, "SV_GetConfigstring: bufferSize == %i", bufferSize );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::GetConfigstring: bufferSize == %i", bufferSize );
     }
+    
     if( index < 0 || index >= MAX_CONFIGSTRINGS )
     {
-        Com_Error( ERR_DROP, "SV_GetConfigstring: bad index %i\n", index );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::GetConfigstring: bad index %i\n", index );
     }
+    
     if( !sv.configstrings[index].s )
     {
         buffer[0] = 0;
@@ -287,13 +316,13 @@ void SV_GetConfigstring( S32 index, UTF8* buffer, S32 bufferSize )
 
 /*
 ===============
-SV_SetConfigstringRestrictions
+idServerInitSystemLocal::SetConfigstringRestrictions
 ===============
 */
-void SV_SetConfigstringRestrictions( S32 index, const clientList_t* clientList )
+void idServerInitSystemLocal::SetConfigstringRestrictions( S32 index, const clientList_t* clientList )
 {
-    S32				i;
-    clientList_t	oldClientList = sv.configstrings[index].clientList;
+    S32	i;
+    clientList_t oldClientList = sv.configstrings[index].clientList;
     
     sv.configstrings[index].clientList = *clientList;
     sv.configstrings[index].restricted = true;
@@ -302,11 +331,10 @@ void SV_SetConfigstringRestrictions( S32 index, const clientList_t* clientList )
     {
         if( svs.clients[i].state >= CS_CONNECTED )
         {
-            if( Com_ClientListContains( &oldClientList, i ) !=
-                    Com_ClientListContains( clientList, i ) )
+            if( Com_ClientListContains( &oldClientList, i ) != Com_ClientListContains( clientList, i ) )
             {
                 // A client has left or joined the restricted list, so update
-                SV_SendConfigstring( &svs.clients[i], index );
+                SendConfigstring( &svs.clients[i], index );
             }
         }
     }
@@ -314,14 +342,14 @@ void SV_SetConfigstringRestrictions( S32 index, const clientList_t* clientList )
 
 /*
 ===============
-SV_SetUserinfo
+idServerInitSystemLocal::SetUserinfo
 ===============
 */
-void SV_SetUserinfo( S32 index, StringEntry val )
+void idServerInitSystemLocal::SetUserinfo( S32 index, StringEntry val )
 {
     if( index < 0 || index >= sv_maxclients->integer )
     {
-        Com_Error( ERR_DROP, "SV_SetUserinfo: bad index %i\n", index );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::SetUserinfo: bad index %i\n", index );
     }
     
     if( !val )
@@ -335,59 +363,60 @@ void SV_SetUserinfo( S32 index, StringEntry val )
 
 /*
 ===============
-SV_GetUserinfo
+idServerInitSystemLocal::GetUserinfo
 ===============
 */
-void SV_GetUserinfo( S32 index, UTF8* buffer, S32 bufferSize )
+void idServerInitSystemLocal::GetUserinfo( S32 index, UTF8* buffer, S32 bufferSize )
 {
     if( bufferSize < 1 )
     {
-        Com_Error( ERR_DROP, "SV_GetUserinfo: bufferSize == %i", bufferSize );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::GetUserinfo: bufferSize == %i", bufferSize );
     }
+    
     if( index < 0 || index >= sv_maxclients->integer )
     {
-        Com_Error( ERR_DROP, "SV_GetUserinfo: bad index %i\n", index );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::GetUserinfo: bad index %i\n", index );
     }
+    
     Q_strncpyz( buffer, svs.clients[index].userinfo, bufferSize );
 }
 
-
 /*
 ================
-SV_CreateBaseline
+idServerInitSystemLocal::CreateBaseline
 
 Entity baselines are used to compress non-delta messages
 to the clients -- only the fields that differ from the
 baseline will be transmitted
 ================
 */
-void SV_CreateBaseline( void )
+void idServerInitSystemLocal::CreateBaseline( void )
 {
+    S32 entnum;
     sharedEntity_t* svent;
-    S32             entnum;
     
     for( entnum = 1; entnum < sv.num_entities; entnum++ )
     {
         svent = serverGameSystem->GentityNum( entnum );
+        
         if( !svent->r.linked )
         {
             continue;
         }
+        
         svent->s.number = entnum;
         
-        //
         // take current state as baseline
-        //
         sv.svEntities[entnum].baseline = svent->s;
     }
 }
 
 /*
 ===============
-SV_BoundMaxClients
+idServerInitSystemLocal::BoundMaxClients
 ===============
 */
-void SV_BoundMaxClients( S32 minimum )
+void idServerInitSystemLocal::BoundMaxClients( S32 minimum )
 {
     // get the current maxclients value
     cvarSystem->Get( "sv_maxclients", "20", 0 );
@@ -404,7 +433,7 @@ void SV_BoundMaxClients( S32 minimum )
     {
         cvarSystem->Set( "sv_maxclients", "64" );
     }
-    // END      xkan, 10/03/2002
+    // END xkan, 10/03/2002
     
     sv_maxclients->modified = false;
     
@@ -418,10 +447,9 @@ void SV_BoundMaxClients( S32 minimum )
     }
 }
 
-
 /*
 ===============
-SV_Startup
+idServerInitSystemLocal::Startup
 
 Called when a host starts a map when it wasn't running
 one before.  Successive map or map_restart commands will
@@ -429,19 +457,20 @@ NOT cause this to be called, unless the game is exited to
 the menu system first.
 ===============
 */
-void SV_Startup( void )
+void idServerInitSystemLocal::Startup( void )
 {
     if( svs.initialized )
     {
-        Com_Error( ERR_FATAL, "SV_Startup: svs.initialized" );
+        Com_Error( ERR_FATAL, "idServerInitSystemLocal::Startup: svs.initialized" );
     }
-    SV_BoundMaxClients( 1 );
+    
+    BoundMaxClients( 1 );
     
     // RF, avoid trying to allocate large chunk on a fragmented zone
     svs.clients = ( client_t* )calloc( sizeof( client_t ) * sv_maxclients->integer, 1 );
     if( !svs.clients )
     {
-        Com_Error( ERR_FATAL, "SV_Startup: unable to allocate svs.clients" );
+        Com_Error( ERR_FATAL, "idServerInitSystemLocal::Startup: unable to allocate svs.clients" );
     }
     
     if( com_dedicated->integer )
@@ -463,16 +492,17 @@ void SV_Startup( void )
 
 /*
 ==================
-SV_ChangeMaxClients
+idServerInitSystemLocal::ChangeMaxClients
 ==================
 */
-void SV_ChangeMaxClients( void )
+void idServerInitSystemLocal::ChangeMaxClients( void )
 {
-    S32             oldMaxClients, i, count;
-    client_t*       oldClients;
+    S32 oldMaxClients, i, count;
+    client_t* oldClients;
     
     // get the highest client number in use
     count = 0;
+    
     for( i = 0; i < sv_maxclients->integer; i++ )
     {
         if( svs.clients[i].state >= CS_CONNECTED )
@@ -486,8 +516,10 @@ void SV_ChangeMaxClients( void )
     count++;
     
     oldMaxClients = sv_maxclients->integer;
+    
     // never go below the highest client number in use
-    SV_BoundMaxClients( count );
+    BoundMaxClients( count );
+    
     // if still the same
     if( sv_maxclients->integer == oldMaxClients )
     {
@@ -495,6 +527,7 @@ void SV_ChangeMaxClients( void )
     }
     
     oldClients = ( client_t* )Hunk_AllocateTempMemory( count * sizeof( client_t ) );
+    
     // copy the clients to hunk memory
     for( i = 0; i < count; i++ )
     {
@@ -510,14 +543,14 @@ void SV_ChangeMaxClients( void )
     
     // free old clients arrays
     //Z_Free( svs.clients );
-    free( svs.clients );			// RF, avoid trying to allocate large chunk on a fragmented zone
+    free( svs.clients ); // RF, avoid trying to allocate large chunk on a fragmented zone
     
     // allocate new clients
     // RF, avoid trying to allocate large chunk on a fragmented zone
     svs.clients = ( client_t* )calloc( sizeof( client_t ) * sv_maxclients->integer, 1 );
     if( !svs.clients )
     {
-        Com_Error( ERR_FATAL, "SV_Startup: unable to allocate svs.clients" );
+        Com_Error( ERR_FATAL, "idServerInitSystemLocal::Startup: unable to allocate svs.clients" );
     }
     
     ::memset( svs.clients, 0, sv_maxclients->integer * sizeof( client_t ) );
@@ -546,24 +579,23 @@ void SV_ChangeMaxClients( void )
     }
 }
 
-
 /*
 ====================
 SV_SetExpectedHunkUsage
 
-  Sets com_expectedhunkusage, so the client knows how to draw the percentage bar
+Sets com_expectedhunkusage, so the client knows how to draw the percentage bar
 ====================
 */
-void SV_SetExpectedHunkUsage( UTF8* mapname )
+void idServerInitSystemLocal::SetExpectedHunkUsage( UTF8* mapname )
 {
-    S32             handle, len;
-    UTF8*           memlistfile = "hunkusage.dat", *buf, *buftrav, *token;
+    S32 handle, len;
+    UTF8* memlistfile = "hunkusage.dat", *buf, *buftrav, *token;
     
     len = fileSystem->FOpenFileByMode( memlistfile, &handle, FS_READ );
     if( len >= 0 ) // the file exists, so read it in, strip out the current entry for this map, and save it out, so we can append the new value
     {
         buf = ( UTF8* )Z_Malloc( len + 1 );
-        memset( buf, 0, len + 1 );
+        ::memset( buf, 0, len + 1 );
         
         fileSystem->Read( ( void* )buf, len, handle );
         fileSystem->FCloseFile( handle );
@@ -576,6 +608,7 @@ void SV_SetExpectedHunkUsage( UTF8* mapname )
             {
                 // found a match
                 token = COM_Parse( &buftrav );	// read the size
+                
                 if( token && token[0] )
                 {
                     // this is the usage
@@ -595,10 +628,10 @@ void SV_SetExpectedHunkUsage( UTF8* mapname )
 
 /*
 ================
-SV_ClearServer
+idServerInitSystemLocal::ClearServer
 ================
 */
-void SV_ClearServer( void )
+void idServerInitSystemLocal::ClearServer( void )
 {
     S32 i;
     
@@ -609,71 +642,56 @@ void SV_ClearServer( void )
             Z_Free( sv.configstrings[i].s );
         }
     }
+    
     ::memset( &sv, 0, sizeof( sv ) );
 }
 
 /*
 ================
-SV_TouchCGame
+idServerInitSystemLocal::TouchCGameDLL
 
-touch cgame so that a pure client can load it if it's in a seperate pk3
+touch the cgame DLL so that a pure client (with DLL sv_pure support) can load do the correct checks
 ================
 */
-void SV_TouchCGame( void )
+void idServerInitSystemLocal::TouchCGameDLL( void )
 {
     fileHandle_t f;
-    
-    fileSystem->FOpenFileRead( "vm/cgame.qvm", &f, false );
-    if( f )
-    {
-        fileSystem->FCloseFile( f );
-    }
-}
-
-/*
-================
-SV_TouchCGameDLL
-  touch the cgame DLL so that a pure client (with DLL sv_pure support) can load do the correct checks
-================
-*/
-void SV_TouchCGameDLL( void )
-{
-    fileHandle_t    f;
-    UTF8*           filename;
+    UTF8* filename;
     
     filename = Sys_GetDLLName( "cgame" );
     fileSystem->FOpenFileRead_Filtered( filename, &f, false, FS_EXCLUDE_DIR );
+    
     if( f )
     {
         fileSystem->FCloseFile( f );
     }
-    else if( sv_pure->integer )   // ydnar: so we can work the damn game
+    else if( sv_pure->integer ) // ydnar: so we can work the damn game
     {
-        Com_Error( ERR_DROP, "Failed to locate cgame DLL for pure server mode" );
+        Com_Error( ERR_DROP, "idServerInitSystemLocal::TouchCGameDLL - Failed to locate cgame DLL for pure server mode" );
     }
 }
 
 /*
 ================
-SV_SpawnServer
+idServerInitSystemLocal::SpawnServer
 
 Change the server to a new map, taking all connected
 clients along with it.
 This is NOT called for map_restart
 ================
 */
-void SV_SpawnServer( UTF8* server, bool killBots )
+void idServerInitSystemLocal::SpawnServer( UTF8* server, bool killBots )
 {
-    S32             i, checksum;
-    bool        isBot;
-    StringEntry     p;
+    S32 i, checksum;
+    StringEntry p;
+    bool isBot;
     
     svs.queryDone = 0;
     
     // ydnar: broadcast a level change to all connected clients
     if( svs.clients && !com_errorEntered )
     {
-        SV_FinalCommand( "spawnserver", false );
+        FinalCommand( "spawnserver", false );
     }
     
 #if 0 //defined(USE_HTTP)
@@ -707,7 +725,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     collisionModelManager->FreeMap();
     
     // wipe the entire per-level structure
-    SV_ClearServer();
+    ClearServer();
     
     // MrE: main zone should be pretty much emtpy at this point
     // except for file system data and cached renderer data
@@ -725,14 +743,14 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // init client structures and svs.numSnapshotEntities
     if( !cvarSystem->VariableValue( "sv_running" ) )
     {
-        SV_Startup();
+        Startup();
     }
     else
     {
         // check for maxclients change
         if( sv_maxclients->modified )
         {
-            SV_ChangeMaxClients();
+            ChangeMaxClients();
         }
     }
     
@@ -757,7 +775,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // Arnout: just always use it
     if( !serverGameSystem->GameIsSinglePlayer() )
     {
-        SV_SetExpectedHunkUsage( va( "maps/%s.world", server ) );
+        SetExpectedHunkUsage( va( "maps/%s.world", server ) );
     }
     else
     {
@@ -819,7 +837,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     }
     
     // create a baseline for more efficient communications
-    SV_CreateBaseline();
+    CreateBaseline();
     
     for( i = 0; i < sv_maxclients->integer; i++ )
     {
@@ -832,7 +850,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
             {
                 if( killBots || serverGameSystem->GameIsSinglePlayer() || serverGameSystem->GameIsCoop() )
                 {
-                    serverClientLocal.DropClient( &svs.clients[i], "" );
+                    serverClientSystem->DropClient( &svs.clients[i], "" );
                     continue;
                 }
                 isBot = true;
@@ -843,12 +861,12 @@ void SV_SpawnServer( UTF8* server, bool killBots )
             }
             
             // connect the client again
-            denied = ( UTF8* )game->ClientConnect( i, false, isBot ); // firstTime = false
+            denied = static_cast<UTF8*>( game->ClientConnect( i, false, isBot ) ); // firstTime = false
             if( denied )
             {
                 // this generally shouldn't happen, because the client
                 // was connected before the level change
-                serverClientLocal.DropClient( &svs.clients[i], denied );
+                serverClientSystem->DropClient( &svs.clients[i], denied );
             }
             else
             {
@@ -860,7 +878,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
                 }
                 else
                 {
-                    client_t*       client;
+                    client_t* client;
                     sharedEntity_t* ent;
                     
                     client = &svs.clients[i];
@@ -895,13 +913,6 @@ void SV_SpawnServer( UTF8* server, bool killBots )
         }
         p = fileSystem->LoadedPakNames();
         cvarSystem->Set( "sv_pakNames", p );
-        
-        // if a dedicated pure server we need to touch the cgame because it could be in a
-        // seperate pk3 file and the client will need to load the latest cgame.qvm
-        if( com_dedicated->integer )
-        {
-            SV_TouchCGame();
-        }
     }
     else
     {
@@ -913,7 +924,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     // NOTE: we consider the referencedPaks as 'required for operation'
     
     // we want the server to reference the mp_bin pk3 that the client is expected to load from
-    SV_TouchCGameDLL();
+    TouchCGameDLL();
     
     p = fileSystem->ReferencedPakChecksums();
     cvarSystem->Set( "sv_referencedPaks", p );
@@ -922,13 +933,13 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
     // save systeminfo and serverinfo strings
     cvar_modifiedFlags &= ~CVAR_SYSTEMINFO;
-    SV_SetConfigstring( CS_SYSTEMINFO, cvarSystem->InfoString_Big( CVAR_SYSTEMINFO ) );
+    SetConfigstring( CS_SYSTEMINFO, cvarSystem->InfoString_Big( CVAR_SYSTEMINFO ) );
     
-    SV_SetConfigstring( CS_SERVERINFO, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
+    SetConfigstring( CS_SERVERINFO, cvarSystem->InfoString( CVAR_SERVERINFO | CVAR_SERVERINFO_NOUPDATE ) );
     cvar_modifiedFlags &= ~CVAR_SERVERINFO;
     
     // NERVE - SMF
-    SV_SetConfigstring( CS_WOLFINFO, cvarSystem->InfoString( CVAR_WOLFINFO ) );
+    SetConfigstring( CS_WOLFINFO, cvarSystem->InfoString( CVAR_WOLFINFO ) );
     cvar_modifiedFlags &= ~CVAR_WOLFINFO;
     
     // any media configstring setting now should issue a warning
@@ -941,7 +952,7 @@ void SV_SpawnServer( UTF8* server, bool killBots )
     
     Hunk_SetMark();
     
-    SV_UpdateConfigStrings();
+    UpdateConfigStrings();
     
     cvarSystem->Set( "sv_serverRestarting", "0" );
     
@@ -957,7 +968,7 @@ SV_ParseVersionMapping
   Reads versionmap.cfg which sets up a mapping of client version to installer to download
 ====================
 */
-void SV_ParseVersionMapping( void )
+void idServerInitSystemLocal::ParseVersionMapping( void )
 {
     S32 handle, len;
     UTF8* filename = "versionmap.cfg", *buf, *buftrav, *token;
@@ -1039,12 +1050,12 @@ void SV_ParseVersionMapping( void )
 
 /*
 ===============
-SV_Init
+idServerInitSystemLocal::Init
 
 Only called at main exe startup, not for each game
 ===============
 */
-void SV_Init( void )
+void idServerInitSystemLocal::Init( void )
 {
     serverCcmdsLocal.AddOperatorCommands();
     
@@ -1104,8 +1115,7 @@ void SV_Init( void )
     sv_master[3] = cvarSystem->Get( "sv_master4", "", CVAR_ARCHIVE );
     sv_master[4] = cvarSystem->Get( "sv_master5", "", CVAR_ARCHIVE );
     sv_reconnectlimit = cvarSystem->Get( "sv_reconnectlimit", "3", 0 );
-    sv_tempbanmessage =
-        cvarSystem->Get( "sv_tempbanmessage", "You have been kicked and are temporarily banned from joining this server.", 0 );
+    sv_tempbanmessage = cvarSystem->Get( "sv_tempbanmessage", "You have been kicked and are temporarily banned from joining this server.", 0 );
     sv_showloss = cvarSystem->Get( "sv_showloss", "0", 0 );
     sv_padPackets = cvarSystem->Get( "sv_padPackets", "0", 0 );
     sv_killserver = cvarSystem->Get( "sv_killserver", "0", 0 );
@@ -1182,8 +1192,8 @@ void SV_Init( void )
     svs.serverLoad = -1;
     
 #if defined(UPDATE_SERVER)
-    SV_Startup();
-    SV_ParseVersionMapping();
+    Startup();
+    ParseVersionMapping();
     
     // serverid should be different each time
     sv.serverId = com_frameTime + 100;
@@ -1207,18 +1217,18 @@ void SV_Init( void )
 
 /*
 ==================
-SV_FinalCommand
+idServerInitSystemLocal::FinalCommand
 
-Used by SV_Shutdown to send a final message to all
+Used by idServerInitSystemLocal::Shutdown to send a final message to all
 connected clients before the server goes down.  The messages are sent immediately,
 not just stuck on the outgoing message list, because the server is going
 to totally exit after returning from this function.
 ==================
 */
-void SV_FinalCommand( UTF8* cmd, bool disconnect )
+void idServerInitSystemLocal::FinalCommand( UTF8* cmd, bool disconnect )
 {
-    S32             i, j;
-    client_t*       cl;
+    S32 i, j;
+    client_t* cl;
     
     // send it twice, ignoring rate
     for( j = 0; j < 2; j++ )
@@ -1230,33 +1240,33 @@ void SV_FinalCommand( UTF8* cmd, bool disconnect )
                 // don't send a disconnect to a local client
                 if( cl->netchan.remoteAddress.type != NA_LOOPBACK )
                 {
-                    //% SV_SendServerCommand( cl, "print \"%s\"", message );
-                    SV_SendServerCommand( cl, "%s", cmd );
+                    //serverMainSystem->SendServerCommand( cl, "print \"%s\"", message );
+                    serverMainSystem->SendServerCommand( cl, "%s", cmd );
                     
                     // ydnar: added this so map changes can use this functionality
                     if( disconnect )
                     {
-                        SV_SendServerCommand( cl, "disconnect" );
+                        serverMainSystem->SendServerCommand( cl, "disconnect" );
                     }
                 }
+                
                 // force a snapshot to be sent
                 cl->nextSnapshotTime = -1;
-                SV_SendClientSnapshot( cl );
+                serverSnapshotSystemLocal.SendClientSnapshot( cl );
             }
         }
     }
 }
 
-
 /*
 ================
-SV_Shutdown
+idServerInitSystemLocal::Shutdown
 
 Called when each game quits,
 before Sys_Quit or Sys_Error
 ================
 */
-void SV_Shutdown( UTF8* finalmsg )
+void idServerInitSystemLocal::Shutdown( UTF8* finalmsg )
 {
     if( !com_sv_running || !com_sv_running->integer )
     {
@@ -1269,15 +1279,15 @@ void SV_Shutdown( UTF8* finalmsg )
     
     if( svs.clients && !com_errorEntered )
     {
-        SV_FinalCommand( va( "print \"%s\"", finalmsg ), true );
+        FinalCommand( va( "print \"%s\"", finalmsg ), true );
     }
     
-    SV_MasterShutdown();
+    serverMainSystem->MasterShutdown();
     serverGameSystem->ShutdownGameProgs();
     svs.gameStarted = false;
     
     // free current level
-    SV_ClearServer();
+    ClearServer();
     
     collisionModelManager->FreeMap();
     
@@ -1288,13 +1298,14 @@ void SV_Shutdown( UTF8* finalmsg )
         
         for( index = 0; index < sv_maxclients->integer; index++ )
         {
-            serverClientLocal.FreeClient( &svs.clients[index] );
+            serverClientSystem->FreeClient( &svs.clients[index] );
         }
         
         //Z_Free( svs.clients );
-        free( svs.clients );		// RF, avoid trying to allocate large chunk on a fragmented zone
+        free( svs.clients ); // RF, avoid trying to allocate large chunk on a fragmented zone
     }
-    memset( &svs, 0, sizeof( svs ) );
+    
+    ::memset( &svs, 0, sizeof( svs ) );
     svs.serverLoad = -1;
     
     cvarSystem->Set( "sv_running", "0" );

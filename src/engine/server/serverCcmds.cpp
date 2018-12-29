@@ -307,7 +307,7 @@ void idServerCcmdsSystemLocal::Map_f( void )
     Q_strncpyz( mapname, map, sizeof( mapname ) );
     
     // start up the map
-    SV_SpawnServer( mapname, killBots );
+    serverInitSystem->SpawnServer( mapname, killBots );
     
     // set the cheat value
     // if the level was started with "map <levelname>", then
@@ -446,7 +446,7 @@ void idServerCcmdsSystemLocal::MapRestart_f( void )
     if( delay )
     {
         sv.restartTime = svs.time + delay * 1000;
-        SV_SetConfigstring( CS_WARMUP, va( "%i", sv.restartTime ) );
+        serverInitSystem->SetConfigstring( CS_WARMUP, va( "%i", sv.restartTime ) );
         return;
     }
     
@@ -484,7 +484,7 @@ void idServerCcmdsSystemLocal::MapRestart_f( void )
         // restart the map the slow way
         Q_strncpyz( mapname, cvarSystem->VariableString( "mapname" ), sizeof( mapname ) );
         
-        SV_SpawnServer( mapname, false );
+        serverInitSystem->SpawnServer( mapname, false );
         return;
     }
     
@@ -585,25 +585,27 @@ void idServerCcmdsSystemLocal::MapRestart_f( void )
         }
         
         // add the map_restart command
-        SV_AddServerCommand( client, "map_restart\n" );
+        serverMainSystem->AddServerCommand( client, "map_restart\n" );
         
         // connect the client again, without the firstTime flag
-        denied = ( UTF8* )game->ClientConnect( i, false, isBot );
+        denied = static_cast< UTF8* >( game->ClientConnect( i, false, isBot ) );
         if( denied )
         {
             // this generally shouldn't happen, because the client
             // was connected before the level change
-            serverClientLocal.DropClient( client, denied );
+            serverClientSystem->DropClient( client, denied );
+            
             if( ( !serverGameSystem->GameIsSinglePlayer() ) || ( !isBot ) )
             {
-                Com_Printf( "idServerClientSystemLocal::MapRestart_f(%d): dropped client %i - denied!\n", delay, i );	// bk010125
+                Com_Printf( "idServerBotSystemLocal::MapRestart_f(%d): dropped client %i - denied!\n", delay, i );	// bk010125
             }
+            
             continue;
         }
         
         client->state = CS_ACTIVE;
         
-        serverClientLocal.ClientEnterWorld( client, &client->lastUsercmd );
+        serverClientSystem->ClientEnterWorld( client, &client->lastUsercmd );
     }
     
     // run another frame to allow things to look at all the players
@@ -900,7 +902,7 @@ void idServerCcmdsSystemLocal::ConSay_f( void )
     
     strcat( text, p );
     
-    SV_SendServerCommand( NULL, "chat \"%s\"", text );
+    serverMainSystem->SendServerCommand( NULL, "chat \"%s\"", text );
 }
 
 
@@ -908,7 +910,7 @@ void idServerCcmdsSystemLocal::ConSay_f( void )
 ==================
 idServerCcmdsSystemLocal::Heartbeat_f
 
-Also called by SV_DropClient, SV_DirectConnect, and SV_SpawnServer
+Also called by idServerClientSystemLocal::DropClient, idServerClientSystemLocal::DirectConnect, and idServerInitSystemLocal::SpawnServer
 ==================
 */
 void idServerCcmdsSystemLocal::Heartbeat_f( void )
@@ -994,7 +996,7 @@ idServerCcmdsSystemLocal::KillServer
 */
 void idServerCcmdsSystemLocal::KillServer_f( void )
 {
-    SV_Shutdown( "killserver" );
+    serverInitSystem->Shutdown( "killserver" );
 }
 
 /*
@@ -1006,7 +1008,7 @@ NERVE - SMF
 */
 void idServerCcmdsSystemLocal::GameCompleteStatus_f( void )
 {
-    SV_MasterGameCompleteStatus();
+    serverMainSystem->MasterGameCompleteStatus();
 }
 
 //===========================================================

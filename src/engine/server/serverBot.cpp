@@ -135,7 +135,7 @@ void idServerBotSystemLocal::BotFreeClient( S32 clientNum )
     
     if( clientNum < 0 || clientNum >= sv_maxclients->integer )
     {
-        Com_Error( ERR_DROP, "idServerClientSystemLocal::BotFreeClient: bad clientNum: %i", clientNum );
+        Com_Error( ERR_DROP, "idServerBotSystemLocal::BotFreeClient: bad clientNum: %i", clientNum );
     }
     
     cl = &svs.clients[clientNum];
@@ -444,7 +444,7 @@ void* BotImport_HunkAlloc( S32 size )
 {
     if( Hunk_CheckMark() )
     {
-        Com_Error( ERR_DROP, "idServerClientSystemLocal::Bot_HunkAlloc: Alloc with marks already set\n" );
+        Com_Error( ERR_DROP, "idServerBotSystemLocal::Bot_HunkAlloc: Alloc with marks already set\n" );
     }
     return Hunk_Alloc( size, h_high );
 }
@@ -496,7 +496,7 @@ idServerBotSystemLocal::BotClientCommand
 */
 void idServerBotSystemLocal::BotClientCommand( S32 client, UTF8* command )
 {
-    serverClientLocal.ExecuteClientCommand( &svs.clients[client], command, true, false );
+    serverClientSystem->ExecuteClientCommand( &svs.clients[client], command, true, false );
 }
 
 /*

@@ -42,6 +42,7 @@
 #endif
 
 idServerClientSystemLocal serverClientLocal;
+idServerClientSystem* serverClientSystem = &serverClientLocal;
 
 /*
 ===============
@@ -387,7 +388,7 @@ void idServerClientSystemLocal::DirectConnect( netadr_t from )
             // if they're all bots
             if( count >= sv_maxclients->integer - startIndex )
             {
-                serverClientLocal.DropClient( &svs.clients[sv_maxclients->integer - 1], "only bots on server" );
+                DropClient( &svs.clients[sv_maxclients->integer - 1], "only bots on server" );
                 newcl = &svs.clients[sv_maxclients->integer - 1];
             }
             else
@@ -440,7 +441,7 @@ gotnewcl:
     svs.hibernation.enabled = false;
     Com_Printf( "Server restored from hibernation\n" );
     
-    serverClientLocal.UserinfoChanged( newcl );
+    UserinfoChanged( newcl );
     
     // DHM - Nerve :: Clear out firstPing now that client is connected
     svs.challenges[i].firstPing = 0;
@@ -487,8 +488,8 @@ Destructor for data allocated in a client structure
 */
 void idServerClientSystemLocal::FreeClient( client_t* client )
 {
-    SV_Netchan_FreeQueue( client );
-    serverClientLocal.CloseDownload( client );
+    serverNetChanSystem->NetchanFreeQueue( client );
+    CloseDownload( client );
 }
 
 /*
@@ -497,7 +498,7 @@ idServerClientSystemLocal::DropClient
 
 Called when the player is totally leaving the server, either willingly
 or unwillingly.  This is NOT called if the entire server is quiting
-or crashing -- SV_FinalCommand() will handle that
+or crashing -- idServerInitSystemLocal::FinalCommand() will handle that
 =====================
 */
 void idServerClientSystemLocal::DropClient( client_t* drop, StringEntry reason )
@@ -539,18 +540,18 @@ void idServerClientSystemLocal::DropClient( client_t* drop, StringEntry reason )
         }
         
         // Kill any download
-        serverClientLocal.CloseDownload( drop );
+        CloseDownload( drop );
     }
     
     // Free all allocated data on the client structure
-    serverClientLocal.FreeClient( drop );
+    FreeClient( drop );
     
     if( ( !serverGameSystem->GameIsSinglePlayer() ) || ( !isBot ) )
     {
         // tell everyone why they got dropped
         // Gordon: we want this displayed elsewhere now
-        //SV_SendServerCommand(NULL, "cpm \"%s" S_COLOR_WHITE " %s\n\"", drop->name, reason);
-        //SV_SendServerCommand( NULL, "print \"[lof]%s" S_COLOR_WHITE " [lon]%s\n\"", drop->name, reason );
+        //serverMainSystem->SendServerCommand(NULL, "cpm \"%s" S_COLOR_WHITE " %s\n\"", drop->name, reason);
+        //serverMainSystem->SendServerCommand( NULL, "print \"[lof]%s" S_COLOR_WHITE " [lon]%s\n\"", drop->name, reason );
     }
     
     Com_DPrintf( "Going to CS_ZOMBIE for %s\n", drop->name );
@@ -567,7 +568,7 @@ void idServerClientSystemLocal::DropClient( client_t* drop, StringEntry reason )
     game->ClientDisconnect( drop - svs.clients );
     
     // add the disconnect command
-    SV_SendServerCommand( drop, "disconnect \"%s\"\n", reason );
+    serverMainSystem->SendServerCommand( drop, "disconnect \"%s\"\n", reason );
     
     if( drop->netchan.remoteAddress.type == NA_BOT )
     {
@@ -575,7 +576,7 @@ void idServerClientSystemLocal::DropClient( client_t* drop, StringEntry reason )
     }
     
     // nuke user info
-    SV_SetUserinfo( drop - svs.clients, "" );
+    serverInitSystem->SetUserinfo( drop - svs.clients, "" );
     
     // if this was the last client on the server, send a heartbeat
     // to the master so it is known the server is empty
@@ -651,7 +652,7 @@ void idServerClientSystemLocal::SendClientGameState( client_t* client )
     // we have to do this cause we send the client->reliableSequence
     // with a gamestate and it sets the clc.serverCommandSequence at
     // the client side
-    SV_UpdateServerCommandsToClient( client, &msg );
+    serverSnapshotSystem->UpdateServerCommandsToClient( client, &msg );
     
     // send the gamestate
     MSG_WriteByte( &msg, svc_gamestate );
@@ -692,7 +693,7 @@ void idServerClientSystemLocal::SendClientGameState( client_t* client )
     Com_DPrintf( "Sending %i bytes in gamestate to client: %li\n", msg.cursize, ( S64 )( client - svs.clients ) );
     
     // deliver this to the client
-    SV_SendMessageToClient( &msg, client );
+    serverSnapshotSystem->SendMessageToClient( &msg, client );
 }
 
 /*
@@ -773,7 +774,7 @@ void idServerClientSystemLocal::StopDownload_f( client_t* cl )
         Com_DPrintf( "clientDownload: %d : file \"%s\" aborted\n", ( S32 )( cl - svs.clients ), cl->downloadName );
     }
     
-    CloseDownload( cl );
+    serverClientLocal.CloseDownload( cl );
 }
 
 /*
@@ -816,7 +817,7 @@ void idServerClientSystemLocal::NextDownload_f( client_t* cl )
         if( cl->downloadBlockSize[cl->downloadClientBlock % MAX_DOWNLOAD_WINDOW] == 0 )
         {
             Com_Printf( "clientDownload: %d : file \"%s\" completed\n", ( S32 )( cl - svs.clients ), cl->downloadName );
-            CloseDownload( cl );
+            serverClientLocal.CloseDownload( cl );
             return;
         }
         
@@ -840,7 +841,7 @@ idServerClientSystemLocal::BeginDownload_f
 void idServerClientSystemLocal::BeginDownload_f( client_t* cl )
 {
     // Kill any existing download
-    CloseDownload( cl );
+    serverClientLocal.CloseDownload( cl );
     
     //bani - stop us from printing dupe messages
     if( strcmp( cl->downloadName, Cmd_Argv( 1 ) ) )
@@ -1007,7 +1008,7 @@ void idServerClientSystemLocal::WriteDownloadToClient( client_t* cl, msg_t* msg 
     if( !fileSystem->VerifyPak( cl->downloadName ) )
     {
         // will drop the client and leave it hanging on the other side. good for him
-        serverClientLocal.DropClient( cl, "illegal download request" );
+        DropClient( cl, "illegal download request" );
         return;
     }
     
@@ -1320,7 +1321,7 @@ The client is going to disconnect, so remove the connection immediately  FIXME: 
 */
 void idServerClientSystemLocal::Disconnect_f( client_t* cl )
 {
-    DropClient( cl, "disconnected" );
+    serverClientLocal.DropClient( cl, "disconnected" );
 }
 
 /*
@@ -1510,9 +1511,9 @@ void idServerClientSystemLocal::VerifyPaks_f( client_t* cl )
             cl->nextSnapshotTime = -1;
             cl->state = CS_ACTIVE;
             
-            SV_SendClientSnapshot( cl );
-            SV_SendServerCommand( cl, "disconnect \"%s\"", "This is a pure server. This is caused by corrupted or missing files. Try turning on AutoDownload." );
-            SV_SendServerCommand( cl, "Unpure client detected. Invalid .PK3 files referenced!" );
+            serverSnapshotSystemLocal.SendClientSnapshot( cl );
+            serverMainSystem->SendServerCommand( cl, "disconnect \"%s\"", "This is a pure server. This is caused by corrupted or missing files. Try turning on AutoDownload." );
+            serverMainSystem->SendServerCommand( cl, "Unpure client detected. Invalid .PK3 files referenced!" );
         }
     }
 }
@@ -1680,7 +1681,7 @@ void idServerClientSystemLocal::UpdateUserinfo_f( client_t* cl )
     if( ( sv_floodProtect->integer ) && ( cl->state >= CS_ACTIVE ) && ( svs.time < cl->nextReliableUserTime ) )
     {
         Q_strncpyz( cl->userinfobuffer, Cmd_Argv( 1 ), sizeof( cl->userinfobuffer ) );
-        SV_SendServerCommand( cl, "print \"^7Command ^1delayed^7 due to sv_floodprotect.\"" );
+        serverMainSystem->SendServerCommand( cl, "print \"^7Command ^1delayed^7 due to sv_floodprotect.\"" );
         return;
     }
     cl->userinfobuffer[0] = 0;
@@ -1688,7 +1689,7 @@ void idServerClientSystemLocal::UpdateUserinfo_f( client_t* cl )
     
     Q_strncpyz( cl->userinfo, Cmd_Argv( 1 ), sizeof( cl->userinfo ) );
     
-    UserinfoChanged( cl );
+    serverClientLocal.UserinfoChanged( cl );
     
     // call prog code to allow overrides
     game->ClientUserinfoChanged( cl - svs.clients );
@@ -1825,7 +1826,7 @@ void idServerClientSystemLocal::ExecuteClientCommand( client_t* cl, StringEntry 
                 if( exploitDetected )
                 {
                     Com_Printf( "Buffer overflow exploit radio/say, possible attempt from %s\n", NET_AdrToString( cl->netchan.remoteAddress ) );
-                    SV_SendServerCommand( cl, "print \"Chat dropped due to message length constraints.\n\"" );
+                    serverMainSystem->SendServerCommand( cl, "print \"Chat dropped due to message length constraints.\n\"" );
                     return;
                 }
             }
@@ -1869,7 +1870,7 @@ bool idServerClientSystemLocal::ClientCommand( client_t* cl, msg_t* msg, bool pr
     if( seq > cl->lastClientCommand + 1 )
     {
         Com_Printf( "Client %s lost %i clientCommands\n", cl->name, seq - cl->lastClientCommand + 1 );
-        DropClient( cl, "Lost reliable commands" );
+        serverClientLocal.DropClient( cl, "Lost reliable commands" );
         return false;
     }
     
@@ -1921,7 +1922,7 @@ bool idServerClientSystemLocal::ClientCommand( client_t* cl, msg_t* msg, bool pr
         cl->nextReliableTime = svs.time + 800;
     }
     
-    ExecuteClientCommand( cl, s, clientOk, premaprestart );
+    serverClientLocal.ExecuteClientCommand( cl, s, clientOk, premaprestart );
     
     cl->lastClientCommand = seq;
     Com_sprintf( cl->lastClientCommandString, sizeof( cl->lastClientCommandString ), "%s", s );
@@ -2031,14 +2032,14 @@ void idServerClientSystemLocal::UserMove( client_t* cl, msg_t* msg, bool delta )
     // this gamestate, put the client into the world
     if( cl->state == CS_PRIMED )
     {
-        ClientEnterWorld( cl, &cmds[0] );
+        serverClientLocal.ClientEnterWorld( cl, &cmds[0] );
         // the moves can be processed normaly
     }
     
     // a bad cp command was sent, drop the client
     if( sv_pure->integer != 0 && cl->pureAuthentic == 0 )
     {
-        DropClient( cl, "Cannot validate pure client!" );
+        serverClientLocal.DropClient( cl, "Cannot validate pure client!" );
         return;
     }
     
@@ -2076,7 +2077,7 @@ void idServerClientSystemLocal::UserMove( client_t* cl, msg_t* msg, bool delta )
                 continue;
             }
         }
-        ClientThink( cl, &cmds[i] );
+        serverClientLocal.ClientThink( cl, &cmds[i] );
     }
 }
 
@@ -2115,7 +2116,7 @@ void idServerClientSystemLocal::ExecuteClientMessage( client_t* cl, msg_t* msg )
     
     // NOTE: when the client message is fux0red the acknowledgement numbers
     // can be out of range, this could cause the server to send thousands of server
-    // commands which the server thinks are not yet acknowledged in SV_UpdateServerCommandsToClient
+    // commands which the server thinks are not yet acknowledged in serverSnapshotSystemLocal::UpdateServerCommandsToClient
     if( cl->reliableAcknowledge < cl->reliableSequence - MAX_RELIABLE_COMMANDS )
     {
         // usually only hackers create messages like this
@@ -2159,10 +2160,12 @@ void idServerClientSystemLocal::ExecuteClientMessage( client_t* cl, msg_t* msg )
         do
         {
             c = MSG_ReadByte( msg );
+            
             if( c == clc_EOF )
             {
                 break;
             }
+            
             if( c != clc_clientCommand )
             {
                 break;
@@ -2225,7 +2228,7 @@ void idServerClientSystemLocal::ExecuteClientMessage( client_t* cl, msg_t* msg )
     }
     else if( c != clc_EOF )
     {
-        Com_Printf( "WARNING: bad command U8z for client %i\n", ( S32 )( cl - svs.clients ) );
+        Com_Printf( "WARNING: bad command U8 for client %i\n", ( S32 )( cl - svs.clients ) );
     }
     
     //if ( msg->readcount != msg->cursize )

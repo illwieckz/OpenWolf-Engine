@@ -45,10 +45,10 @@
 #include <qcommon/qcommon.h>
 #endif
 #ifndef __SG_API_H__
-#include <sgame/sg_api.h>
+#include <API/sgame_api.h>
 #endif
 #ifndef __BG_API_H__
-#include <bgame/bg_public.h>
+#include <API/bgame_api.h>
 #endif
 
 #define PERS_SCORE              0	// !!! MUST NOT CHANGE, SERVER AND
@@ -425,71 +425,9 @@ extern cvar_t*  sv_IPmaxGetstatusPerSecond;
 
 extern cvar_t*  sv_hibernateTime;
 
-//===========================================================
-
-//
-// sv_main.c
-//
-void            SV_FinalCommand( UTF8* cmd, bool disconnect );	// ydnar: added disconnect flag so map changes can use this function as well
-void       SV_SendServerCommand( client_t* cl, StringEntry fmt, ... ) __attribute__( ( format( printf, 2, 3 ) ) );
-
-void SV_SendServerCommand( client_t* cl, StringEntry fmt, ... );
-
-
-void            SV_MasterHeartbeat( StringEntry hbname );
-void            SV_MasterShutdown( void );
-void			SV_MasterGameStat( StringEntry data );
-
-void            SV_MasterGameCompleteStatus();	// NERVE - SMF
-
-//bani - bugtraq 12534
-bool        SV_VerifyChallenge( UTF8* challenge );
-
-//
-// sv_init.c
-//
-void            SV_SetConfigstringNoUpdate( S32 index, StringEntry val );
-void            SV_UpdateConfigStrings( void );
-void            SV_SetConfigstring( S32 index, StringEntry val );
-void            SV_UpdateConfigstrings( void );
-void            SV_GetConfigstring( S32 index, UTF8* buffer, S32 bufferSize );
-void			SV_SetConfigstringRestrictions( S32 index, const clientList_t* clientList );
-
-void            SV_SetUserinfo( S32 index, StringEntry val );
-void            SV_GetUserinfo( S32 index, UTF8* buffer, S32 bufferSize );
-
-void            SV_CreateBaseline( void );
-
-void            SV_ChangeMaxClients( void );
-void            SV_SpawnServer( UTF8* server, bool killBots );
-
-//
-// sv_snapshot.c
-//
-void            SV_AddServerCommand( client_t* client, StringEntry cmd );
-void            SV_UpdateServerCommandsToClient( client_t* client, msg_t* msg );
-void            SV_WriteFrameToClient( client_t* client, msg_t* msg );
-void            SV_SendMessageToClient( msg_t* msg, client_t* client );
-void            SV_SendClientMessages( void );
-void            SV_SendClientSnapshot( client_t* client );
-void            SV_CheckClientUserinfoTimer( void );
-//bani
-void            SV_SendClientIdle( client_t* client );
-
-//
-// sv_net_chan.c
-//
-void SV_Netchan_Transmit( client_t* client, msg_t* msg );
-void SV_Netchan_TransmitNextFragment( client_t* client );
-bool SV_Netchan_Process( client_t* client, msg_t* msg );
-void SV_Netchan_FreeQueue( client_t* client );
-
 //bani - cl->downloadnotify
 #define DLNOTIFY_REDIRECT   0x00000001	// "Redirecting client ..."
 #define DLNOTIFY_BEGIN      0x00000002	// "clientDownload: 4 : beginning ..."
 #define DLNOTIFY_ALL        ( DLNOTIFY_REDIRECT | DLNOTIFY_BEGIN )
-
-
-S32 SV_LoadTag( StringEntry mod_name );
 
 #endif //!__SERVER_H__

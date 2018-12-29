@@ -436,7 +436,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     else if( code == ERR_DROP || code == ERR_DISCONNECT )
     {
         Com_Printf( "********************\nERROR: %s\n********************\n", com_errorMessage );
-        SV_Shutdown( va( "Server crashed: %s\n", com_errorMessage ) );
+        serverInitSystem->Shutdown( va( "Server crashed: %s\n", com_errorMessage ) );
         CL_Disconnect( true );
         CL_FlushMemory();
         com_errorEntered = false;
@@ -461,7 +461,7 @@ void Com_Error( S32 code, StringEntry fmt, ... )
     else
     {
         CL_Shutdown();
-        SV_Shutdown( va( "Server fatal crashed: %s\n", com_errorMessage ) );
+        serverInitSystem->Shutdown( va( "Server fatal crashed: %s\n", com_errorMessage ) );
     }
     
     Com_Shutdown( code == ERR_VID_FATAL ? true : false );
@@ -492,7 +492,7 @@ void Com_Quit_f( void )
         // which would trigger an unload of active VM error.
         // Sys_Quit will kill this process anyways, so
         // a corrupt call stack makes no difference
-        SV_Shutdown( "Server quit\n" );
+        serverInitSystem->Shutdown( "Server quit\n" );
 //bani
 #ifndef DEDICATED
         CL_ShutdownCGame();
@@ -2616,7 +2616,7 @@ void Com_RunAndTimeServerPacket( netadr_t* evFrom, msg_t* buf )
         t1 = Sys_Milliseconds();
     }
     
-    SV_PacketEvent( *evFrom, buf );
+    serverMainSystem->PacketEvent( *evFrom, buf );
     
     if( com_speeds->integer )
     {
@@ -2624,7 +2624,7 @@ void Com_RunAndTimeServerPacket( netadr_t* evFrom, msg_t* buf )
         msec = t2 - t1;
         if( com_speeds->integer == 3 )
         {
-            Com_Printf( "SV_PacketEvent time: %i\n", msec );
+            Com_Printf( "idServerMainSystemLocal::PacketEvent time: %i\n", msec );
         }
     }
 }
@@ -3353,7 +3353,7 @@ void Com_Init( UTF8* commandLine )
     }
     
     Netchan_Init( Com_Milliseconds() & 0xffff );	// pick a port value that should be nice and random
-    SV_Init();
+    serverInitSystem->Init();
     Hist_Load();
     
     // Dushan
@@ -3680,7 +3680,7 @@ void Com_Frame( void )
         timeBeforeServer = Sys_Milliseconds();
     }
     
-    SV_Frame( msec );
+    serverMainSystem->Frame( msec );
     
     // if "dedicated" has been modified, start up
     // or shut down the client system.
@@ -3693,7 +3693,7 @@ void Com_Frame( void )
         com_dedicated->modified = false;
         if( !com_dedicated->integer )
         {
-            SV_Shutdown( "dedicated set to 0" );
+            serverInitSystem->Shutdown( "dedicated set to 0" );
             CL_FlushMemory();
         }
     }

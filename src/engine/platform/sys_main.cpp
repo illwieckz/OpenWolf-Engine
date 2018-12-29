@@ -648,7 +648,7 @@ void Sys_SigHandler( S32 signal )
 #ifndef DEDICATED
         CL_Shutdown( );
 #endif
-        SV_Shutdown( va( "Received signal %d", signal ) );
+        serverInitSystem->Shutdown( va( "Received signal %d", signal ) );
     }
     
     if( signal == SIGTERM || signal == SIGINT )

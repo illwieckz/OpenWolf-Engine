@@ -19,35 +19,30 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   serverGame_api.h
-// Version:     v1.01
-// Created:     11/24/2018
+// Version:     v1.00
+// Created:     12/25/2018
 // Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __SERVERCLIENT_API_H__
-#define __SERVERCLIENT_API_H__
+#ifndef __SERVERSNAPSHOT_API_H__
+#define __SERVERSNAPSHOT_API_H__
 
 //
-// idServerClientSystem
+// idServerSnapshotSystem
 //
-class idServerClientSystem
+class idServerSnapshotSystem
 {
 public:
-    virtual void DropClient( client_t* drop, StringEntry reason ) = 0;
-    virtual void ExecuteClientCommand( client_t* cl, StringEntry s, bool clientOK, bool premaprestart ) = 0;
-    virtual void ClientEnterWorld( client_t* client, usercmd_t* cmd ) = 0;
-    virtual void CloseDownload( client_t* cl ) = 0;
-    virtual void UserinfoChanged( client_t* cl ) = 0;
-    virtual void FreeClient( client_t* client ) = 0;
-    virtual void ClientThink( client_t* cl, usercmd_t* cmd ) = 0;
-    virtual void WriteDownloadToClient( client_t* cl, msg_t* msg ) = 0;
-    virtual void GetChallenge( netadr_t from ) = 0;
-    virtual void DirectConnect( netadr_t from ) = 0;
-    virtual void ExecuteClientMessage( client_t* cl, msg_t* msg ) = 0;
+    virtual void SendMessageToClient( msg_t* msg, client_t* client ) = 0;
+    virtual void SendClientIdle( client_t* client ) = 0;
+    virtual void SendClientSnapshot( client_t* client ) = 0;
+    virtual void SendClientMessages( void ) = 0;
+    virtual void CheckClientUserinfoTimer( void ) = 0;
+    virtual void UpdateServerCommandsToClient( client_t* client, msg_t* msg ) = 0;
 };
 
-extern idServerClientSystem* serverClientSystem;
+extern idServerSnapshotSystem* serverSnapshotSystem;
 
-#endif //!__SERVERCLIENT_API_H__
+#endif //!__SERVERSNAPSHOT_API_H__

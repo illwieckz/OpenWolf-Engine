@@ -27,9 +27,9 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   sv_snapshot.h
-// Version:     v1.01
-// Created:
+// File name:   serverSnapshot.cpp
+// Version:     v1.00
+// Created:     12/25/2018
 // Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
@@ -41,9 +41,29 @@
 #include <OWLib/precompiled.h>
 #endif
 
+idServerSnapshotSystemLocal serverSnapshotSystemLocal;
+idServerSnapshotSystem* serverSnapshotSystem = &serverSnapshotSystemLocal;
+
+/*
+===============
+idServerSnapshotSystemLocal::idServerSnapshotSystemLocal
+===============
+*/
+idServerSnapshotSystemLocal::idServerSnapshotSystemLocal( void )
+{
+}
+
+/*
+===============
+idServerWorldSystemLocal::~idServerWorldSystemLocal
+===============
+*/
+idServerSnapshotSystemLocal::~idServerSnapshotSystemLocal( void )
+{
+}
+
 /*
 =============================================================================
-
 Delta encode a client frame onto the network channel
 
 A normal server packet will look like:
@@ -65,15 +85,15 @@ A normal server packet will look like:
 
 /*
 =============
-SV_EmitPacketEntities
+idServerSnapshotSystemLocal::EmitPacketEntities
 
 Writes a delta update of an entityState_t list to the message.
 =============
 */
-static void SV_EmitPacketEntities( clientSnapshot_t* from, clientSnapshot_t* to, msg_t* msg )
+void idServerSnapshotSystemLocal::EmitPacketEntities( clientSnapshot_t* from, clientSnapshot_t* to, msg_t* msg )
 {
-    entityState_t*  oldent, *newent;
-    S32             oldindex, newindex, oldnum, newnum, from_num_entities;
+    S32 oldindex, newindex, oldnum, newnum, from_num_entities;
+    entityState_t* oldent, *newent;
     
     // generate the delta update
     if( !from )
@@ -89,6 +109,7 @@ static void SV_EmitPacketEntities( clientSnapshot_t* from, clientSnapshot_t* to,
     oldent = NULL;
     newindex = 0;
     oldindex = 0;
+    
     while( newindex < to->num_entities || oldindex < from_num_entities )
     {
         if( newindex >= to->num_entities )
@@ -139,18 +160,18 @@ static void SV_EmitPacketEntities( clientSnapshot_t* from, clientSnapshot_t* to,
         }
     }
     
-    MSG_WriteBits( msg, ( MAX_GENTITIES - 1 ), GENTITYNUM_BITS );	// end of packetentities
+    MSG_WriteBits( msg, ( MAX_GENTITIES - 1 ), GENTITYNUM_BITS ); // end of packetentities
 }
 
 /*
 ==================
-SV_WriteSnapshotToClient
+idServerSnapshotSystemLocal::WriteSnapshotToClient
 ==================
 */
-static void SV_WriteSnapshotToClient( client_t* client, msg_t* msg )
+void idServerSnapshotSystemLocal::WriteSnapshotToClient( client_t* client, msg_t* msg )
 {
-    clientSnapshot_t*	frame, *oldframe;
-    S32					lastframe, i, snapFlags;
+    S32 lastframe, i, snapFlags;
+    clientSnapshot_t* frame, *oldframe;
     
     // this is the snapshot we are creating
     frame = &client->frames[client->netchan.outgoingSequence & PACKET_MASK];
@@ -198,6 +219,7 @@ static void SV_WriteSnapshotToClient( client_t* client, msg_t* msg )
     MSG_WriteByte( msg, lastframe );
     
     snapFlags = svs.snapFlagServerBit;
+    
     if( client->rateDelayed )
     {
         snapFlags |= SNAPFLAG_RATE_DELAYED;
@@ -214,9 +236,9 @@ static void SV_WriteSnapshotToClient( client_t* client, msg_t* msg )
     MSG_WriteData( msg, frame->areabits, frame->areabytes );
     
     {
-//      S32 sz = msg->cursize;
-//      S32 usz = msg->uncompsize;
-
+        //S32 sz = msg->cursize;
+        //S32 usz = msg->uncompsize;
+        
         // delta encode the playerstate
         if( oldframe )
         {
@@ -231,7 +253,7 @@ static void SV_WriteSnapshotToClient( client_t* client, msg_t* msg )
     }
     
     // delta encode the entities
-    SV_EmitPacketEntities( oldframe, frame, msg );
+    EmitPacketEntities( oldframe, frame, msg );
     
     // padding for rate debugging
     if( sv_padPackets->integer )
@@ -246,12 +268,12 @@ static void SV_WriteSnapshotToClient( client_t* client, msg_t* msg )
 
 /*
 ==================
-SV_UpdateServerCommandsToClient
+idServerSnapshotSystemLocal::UpdateServerCommandsToClient
 
 (re)send all server commands the client hasn't acknowledged yet
 ==================
 */
-void SV_UpdateServerCommandsToClient( client_t* client, msg_t* msg )
+void idServerSnapshotSystemLocal::UpdateServerCommandsToClient( client_t* client, msg_t* msg )
 {
     S32 i;
     
@@ -262,32 +284,22 @@ void SV_UpdateServerCommandsToClient( client_t* client, msg_t* msg )
         MSG_WriteLong( msg, i );
         MSG_WriteString( msg, client->reliableCommands[i & ( MAX_RELIABLE_COMMANDS - 1 )] );
     }
+    
     client->reliableSent = client->reliableSequence;
 }
 
 /*
 =============================================================================
-
 Build a client snapshot structure
-
 =============================================================================
 */
 
-//#define   MAX_SNAPSHOT_ENTITIES   1024
-#define MAX_SNAPSHOT_ENTITIES   2048
-
-typedef struct
-{
-    S32             numSnapshotEntities;
-    S32             snapshotEntities[MAX_SNAPSHOT_ENTITIES];
-} snapshotEntityNumbers_t;
-
 /*
 =======================
-SV_QsortEntityNumbers
+idServerSnapshotSystemLocal::QsortEntityNumbers
 =======================
 */
-static S32 SV_QsortEntityNumbers( const void* a, const void* b )
+S32 idServerSnapshotSystemLocal::QsortEntityNumbers( const void* a, const void* b )
 {
     S32* ea, *eb;
     
@@ -296,7 +308,7 @@ static S32 SV_QsortEntityNumbers( const void* a, const void* b )
     
     if( *ea == *eb )
     {
-        Com_Error( ERR_DROP, "SV_QsortEntityStates: duplicated entity" );
+        Com_Error( ERR_DROP, "idServerSnapshotSystemLocal::QsortEntityStates: duplicated entity" );
     }
     
     if( *ea < *eb )
@@ -307,13 +319,12 @@ static S32 SV_QsortEntityNumbers( const void* a, const void* b )
     return 1;
 }
 
-
 /*
 ===============
-SV_AddEntToSnapshot
+idServerSnapshotSystemLocal::AddEntToSnapshot
 ===============
 */
-static void SV_AddEntToSnapshot( sharedEntity_t* clientEnt, svEntity_t* svEnt, sharedEntity_t* gEnt, snapshotEntityNumbers_t* eNums )
+void idServerSnapshotSystemLocal::AddEntToSnapshot( sharedEntity_t* clientEnt, svEntity_t* svEnt, sharedEntity_t* gEnt, snapshotEntityNumbers_t* eNums )
 {
     // if we have already added this entity to this snapshot, don't add again
     if( svEnt->snapshotCounter == sv.snapshotCounter )
@@ -342,15 +353,15 @@ static void SV_AddEntToSnapshot( sharedEntity_t* clientEnt, svEntity_t* svEnt, s
 
 /*
 ===============
-SV_AddEntitiesVisibleFromPoint
+idServerSnapshotSystemLocal::AddEntitiesVisibleFromPoint
 ===============
 */
-static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* frame, snapshotEntityNumbers_t* eNums )
+void idServerSnapshotSystemLocal::AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* frame, snapshotEntityNumbers_t* eNums )
 {
-    S32             e, i, l, clientarea, clientcluster, leafnum, c_fullsend;
+    U8* clientpvs, *bitvector;
+    S32 e, i, l, clientarea, clientcluster, leafnum, c_fullsend;
     sharedEntity_t* ent, *playerEnt;
-    svEntity_t*     svEnt;
-    U8*           clientpvs, *bitvector;
+    svEntity_t* svEnt;
     
     // during an error shutdown message we may need to transmit
     // the shutdown message after the server has shutdown, so
@@ -374,7 +385,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
     playerEnt = serverGameSystem->GentityNum( frame->ps.clientNum );
     if( playerEnt->r.svFlags & SVF_SELF_PORTAL )
     {
-        SV_AddEntitiesVisibleFromPoint( playerEnt->s.origin2, frame, eNums );
+        AddEntitiesVisibleFromPoint( playerEnt->s.origin2, frame, eNums );
     }
     
     for( e = 0; e < sv.num_entities; e++ )
@@ -445,7 +456,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
         // broadcast entities are always sent
         if( ent->r.svFlags & SVF_BROADCAST )
         {
-            SV_AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
+            AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
             continue;
         }
         
@@ -456,7 +467,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
         {
             if( bitvector[svEnt->originCluster >> 3] & ( 1 << ( svEnt->originCluster & 7 ) ) )
             {
-                SV_AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
+                AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
             }
             continue;
         }
@@ -478,7 +489,9 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
         {
             continue;
         }
+        
         l = 0;
+        
         for( i = 0; i < svEnt->numClusters; i++ )
         {
             l = svEnt->clusternums[i];
@@ -501,6 +514,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
                         break;
                     }
                 }
+                
                 if( l == svEnt->lastCluster )
                 {
                     continue;
@@ -531,15 +545,16 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
                     continue;
                 }
                 
-                SV_AddEntToSnapshot( playerEnt, master, ment, eNums );
+                AddEntToSnapshot( playerEnt, master, ment, eNums );
             }
-            continue;			// master needs to be added, but not this dummy ent
+            // master needs to be added, but not this dummy ent
+            continue;
         }
         else if( ent->r.svFlags & SVF_VISDUMMY_MULTIPLE )
         {
-            S32             h;
+            S32 h;
             sharedEntity_t* ment = 0;
-            svEntity_t*     master = 0;
+            svEntity_t* master = 0;
             
             for( h = 0; h < sv.num_entities; h++ )
             {
@@ -582,14 +597,14 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
                 
                 if( ment->s.otherEntityNum == ent->s.number )
                 {
-                    SV_AddEntToSnapshot( playerEnt, master, ment, eNums );
+                    AddEntToSnapshot( playerEnt, master, ment, eNums );
                 }
             }
             continue;
         }
         
         // add it
-        SV_AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
+        AddEntToSnapshot( playerEnt, svEnt, ent, eNums );
         
         // if its a portal entity, add everything visible from its camera position
         if( ent->r.svFlags & SVF_PORTAL )
@@ -597,13 +612,15 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
             if( ent->s.generic1 )
             {
                 vec3_t dir;
+                
                 VectorSubtract( ent->s.origin, origin, dir );
                 if( VectorLengthSquared( dir ) > ( F32 ) ent->s.generic1 * ent->s.generic1 )
                 {
                     continue;
                 }
             }
-            SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums );
+            
+            AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums );
         }
         
         continue;
@@ -612,7 +629,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t* fra
 
 /*
 =============
-SV_BuildClientSnapshot
+idServerSnapshotSystemLocalBuildClientSnapshot
 
 Decides which entities are going to be visible to the client, and
 copies off the playerstate and areabits.
@@ -623,16 +640,16 @@ currently doesn't.
 For viewing through other player's eyes, clent can be something other than client->gentity
 =============
 */
-static void SV_BuildClientSnapshot( client_t* client )
+void idServerSnapshotSystemLocal::BuildClientSnapshot( client_t* client )
 {
-    vec3_t					org;
-    clientSnapshot_t*		frame;
+    S32 i, clientNum;
+    vec3_t org;
+    clientSnapshot_t* frame;
     snapshotEntityNumbers_t entityNumbers;
-    S32						i, clientNum;
-    sharedEntity_t*			ent, *clent;
-    entityState_t*			state;
-    svEntity_t*				svEnt;
-    playerState_t*			ps;
+    sharedEntity_t* ent, *clent;
+    entityState_t* state;
+    svEntity_t* svEnt;
+    playerState_t* ps;
     
     // bump the counter used to prevent double adding
     sv.snapshotCounter++;
@@ -648,6 +665,7 @@ static void SV_BuildClientSnapshot( client_t* client )
     frame->num_entities = 0;
     
     clent = client->gentity;
+    
     if( !clent || client->state == CS_ZOMBIE )
     {
         return;
@@ -660,10 +678,12 @@ static void SV_BuildClientSnapshot( client_t* client )
     // never send client's own entity, because it can
     // be regenerated from the playerstate
     clientNum = frame->ps.clientNum;
+    
     if( clientNum < 0 || clientNum >= MAX_GENTITIES )
     {
         Com_Error( ERR_DROP, "SV_SvEntityForGentity: bad gEnt" );
     }
+    
     svEnt = &sv.svEntities[clientNum];
     
     svEnt->snapshotCounter = sv.snapshotCounter;
@@ -677,6 +697,7 @@ static void SV_BuildClientSnapshot( client_t* client )
     {
         VectorCopy( ps->origin, org );
     }
+    
     org[2] += ps->viewheight;
     
 //----(SA)  added for 'lean'
@@ -694,13 +715,13 @@ static void SV_BuildClientSnapshot( client_t* client )
 
     // add all the entities directly visible to the eye, which
     // may include portal entities that merge other viewpoints
-    SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers /*, false, client->netchan.remoteAddress.type == NA_LOOPBACK */ );
+    AddEntitiesVisibleFromPoint( org, frame, &entityNumbers /*, false, client->netchan.remoteAddress.type == NA_LOOPBACK */ );
     
     // if there were portals visible, there may be out of order entities
     // in the list which will need to be resorted for the delta compression
     // to work correctly.  This also catches the error condition
     // of an entity being included twice.
-    qsort( entityNumbers.snapshotEntities, entityNumbers.numSnapshotEntities, sizeof( entityNumbers.snapshotEntities[0] ), SV_QsortEntityNumbers );
+    qsort( entityNumbers.snapshotEntities, entityNumbers.numSnapshotEntities, sizeof( entityNumbers.snapshotEntities[0] ), QsortEntityNumbers );
     
     // now that all viewpoint's areabits have been OR'd together, invert
     // all of them to make it a mask vector, which is what the renderer wants
@@ -712,32 +733,34 @@ static void SV_BuildClientSnapshot( client_t* client )
     // copy the entity states out
     frame->num_entities = 0;
     frame->first_entity = svs.nextSnapshotEntities;
+    
     for( i = 0; i < entityNumbers.numSnapshotEntities; i++ )
     {
         ent = serverGameSystem->GentityNum( entityNumbers.snapshotEntities[i] );
         state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
         *state = ent->s;
         svs.nextSnapshotEntities++;
-        // this should never hit, map should always be restarted first in SV_Frame
+        
+        // this should never hit, map should always be restarted first in idServerMainSystemLocal::Frame
         if( svs.nextSnapshotEntities >= 0x7FFFFFFE )
         {
-            Com_Error( ERR_FATAL, "svs.nextSnapshotEntities wrapped" );
+            Com_Error( ERR_FATAL, "idServerSnapshotSystemLocal::BuildClientSnapshot: svs.nextSnapshotEntities wrapped" );
         }
+        
         frame->num_entities++;
     }
 }
 
 /*
 ====================
-SV_RateMsec
+idServerSnapshotSystemLocal::RateMsec
 
 Return the number of msec a given size message is supposed
 to take to clear, based on the current rate
 TTimo - use sv_maxRate or sv_dl_maxRate depending on regular or downloading client
 ====================
 */
-#define HEADER_RATE_BYTES   48	// include our header, IP header, and some overhead
-static S32 SV_RateMsec( client_t* client, S32 messageSize )
+S32 idServerSnapshotSystemLocal::RateMsec( client_t* client, S32 messageSize )
 {
     S32 rate, rateMsec, maxRate;
     
@@ -746,12 +769,15 @@ static S32 SV_RateMsec( client_t* client, S32 messageSize )
     {
         messageSize = 1500;
     }
+    
     // low watermark for sv_maxRate, never 0 < sv_maxRate < 1000 (0 is no limitation)
     if( sv_maxRate->integer && sv_maxRate->integer < 1000 )
     {
         cvarSystem->Set( "sv_MaxRate", "1000" );
     }
+    
     rate = client->rate;
+    
     // work on the appropriate max rate (client or download)
     if( !*client->downloadName )
     {
@@ -761,6 +787,7 @@ static S32 SV_RateMsec( client_t* client, S32 messageSize )
     {
         maxRate = sv_dl_maxRate->integer;
     }
+    
     if( maxRate )
     {
         if( maxRate < rate )
@@ -775,12 +802,12 @@ static S32 SV_RateMsec( client_t* client, S32 messageSize )
 
 /*
 =======================
-SV_SendMessageToClient
+idServerSnapshotSystemLocal::SendMessageToClient
 
-Called by SV_SendClientSnapshot and SV_SendClientGameState
+Called by idServerSnapshotSystemLocal::SendClientSnapshot and idServerSnapshotSystemLocal::SendClientGameState
 =======================
 */
-void SV_SendMessageToClient( msg_t* msg, client_t* client )
+void idServerSnapshotSystemLocal::SendMessageToClient( msg_t* msg, client_t* client )
 {
     S32 rateMsec;
     
@@ -790,7 +817,7 @@ void SV_SendMessageToClient( msg_t* msg, client_t* client )
     client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageAcked = -1;
     
     // send the datagram
-    SV_Netchan_Transmit( client, msg );
+    serverNetChanSystem->NetchanTransmit( client, msg );
     
     // set nextSnapshotTime based on rate and requested number of updates
     
@@ -805,7 +832,7 @@ void SV_SendMessageToClient( msg_t* msg, client_t* client )
     }
     
     // normal rate / snapshotMsec calculation
-    rateMsec = SV_RateMsec( client, msg->cursize );
+    rateMsec = RateMsec( client, msg->cursize );
     
     // TTimo - during a download, ignore the snapshotMsec
     // the update server on steroids, with this disabled and sv_fps 60, the download can reach 30 kb/s
@@ -838,21 +865,19 @@ void SV_SendMessageToClient( msg_t* msg, client_t* client )
     }
 }
 
-
 //bani
 /*
 =======================
-SV_SendClientIdle
+idServerSnapshotSystemLocal::SendClientIdle
 
 There is no need to send full snapshots to clients who are loading a map.
 So we send them "idle" packets with the bare minimum required to keep them on the server.
-
 =======================
 */
-void SV_SendClientIdle( client_t* client )
+void idServerSnapshotSystemLocal::SendClientIdle( client_t* client )
 {
-    U8            msg_buf[MAX_MSGLEN];
-    msg_t           msg;
+    U8 msg_buf[MAX_MSGLEN];
+    msg_t msg;
     
     MSG_Init( &msg, msg_buf, sizeof( msg_buf ) );
     msg.allowoverflow = true;
@@ -862,26 +887,26 @@ void SV_SendClientIdle( client_t* client )
     MSG_WriteLong( &msg, client->lastClientCommand );
     
     // (re)send any reliable server commands
-    SV_UpdateServerCommandsToClient( client, &msg );
+    UpdateServerCommandsToClient( client, &msg );
     
     // send over all the relevant entityState_t
     // and the playerState_t
-//  SV_WriteSnapshotToClient( client, &msg );
-
+    //WriteSnapshotToClient( client, &msg );
+    
     // Add any download data if the client is downloading
-    serverClientLocal.WriteDownloadToClient( client, &msg );
+    serverClientSystem->WriteDownloadToClient( client, &msg );
     
     // check for overflow
     if( msg.overflowed )
     {
-        Com_Printf( "WARNING: msg overflowed for %s\n", client->name );
+        Com_Printf( "idServerSnapshotSystemLocal::SendClientIdle - WARNING: msg overflowed for %s\n", client->name );
         MSG_Clear( &msg );
         
-        serverClientLocal.DropClient( client, "Msg overflowed" );
+        serverClientSystem->DropClient( client, "idServerSnapshotSystemLocal::SendClientIdle - Msg overflowed" );
         return;
     }
     
-    SV_SendMessageToClient( &msg, client );
+    SendMessageToClient( &msg, client );
     
     sv.bpsTotalBytes += msg.cursize;			// NERVE - SMF - net debugging
     sv.ubpsTotalBytes += msg.uncompsize / 8;	// NERVE - SMF - net debugging
@@ -889,15 +914,15 @@ void SV_SendClientIdle( client_t* client )
 
 /*
 =======================
-SV_SendClientSnapshot
+idServerSnapshotSystemLocal::SendClientSnapshot
 
-Also called by SV_FinalCommand
+Also called by idServerInitSystemLocal::FinalCommand
 =======================
 */
-void SV_SendClientSnapshot( client_t* client )
+void idServerSnapshotSystemLocal::SendClientSnapshot( client_t* client )
 {
-    U8    msg_buf[MAX_MSGLEN];
-    msg_t   msg;
+    U8 msg_buf[MAX_MSGLEN];
+    msg_t msg;
     
     //bots dont need snapshots
     if( client->gentity && client->gentity->r.svFlags & SVF_BOT )
@@ -912,13 +937,13 @@ void SV_SendClientSnapshot( client_t* client )
         // (eg so they can pick up the disconnect reason)
         if( client->state != CS_ZOMBIE )
         {
-            SV_SendClientIdle( client );
+            SendClientIdle( client );
             return;
         }
     }
     
     // build the snapshot
-    SV_BuildClientSnapshot( client );
+    BuildClientSnapshot( client );
     
     // bots need to have their snapshots build, but
     // the query them directly without needing to be sent
@@ -935,47 +960,46 @@ void SV_SendClientSnapshot( client_t* client )
     MSG_WriteLong( &msg, client->lastClientCommand );
     
     // (re)send any reliable server commands
-    SV_UpdateServerCommandsToClient( client, &msg );
+    UpdateServerCommandsToClient( client, &msg );
     
     // send over all the relevant entityState_t
     // and the playerState_t
-    SV_WriteSnapshotToClient( client, &msg );
+    WriteSnapshotToClient( client, &msg );
     
     // Add any download data if the client is downloading
-    serverClientLocal.WriteDownloadToClient( client, &msg );
+    serverClientSystem->WriteDownloadToClient( client, &msg );
     
     // check for overflow
     if( msg.overflowed )
     {
-        Com_Printf( "WARNING: msg overflowed for %s\n", client->name );
+        Com_Printf( "idServerSnapshotSystemLocal::SendClientSnapshot : WARNING: msg overflowed for %s\n", client->name );
         MSG_Clear( &msg );
         
-        serverClientLocal.DropClient( client, "Msg overflowed" );
+        serverClientSystem->DropClient( client, "idServerSnapshotSystemLocal::SendClientSnapshot : Msg overflowed" );
         return;
     }
     
-    SV_SendMessageToClient( &msg, client );
+    SendMessageToClient( &msg, client );
     
     sv.bpsTotalBytes += msg.cursize;			// NERVE - SMF - net debugging
     sv.ubpsTotalBytes += msg.uncompsize / 8;	// NERVE - SMF - net debugging
 }
 
-
 /*
 =======================
-SV_SendClientMessages
+idServerSnapshotSystemLocal::SendClientMessages
 =======================
 */
-void SV_SendClientMessages( void )
+void idServerSnapshotSystemLocal::SendClientMessages( void )
 {
-    S32             i, numclients = 0;	// NERVE - SMF - net debugging
-    client_t*       c;
+    S32 i, numclients = 0;	// NERVE - SMF - net debugging
+    client_t* c;
     
-    sv.bpsTotalBytes = 0;		// NERVE - SMF - net debugging
-    sv.ubpsTotalBytes = 0;		// NERVE - SMF - net debugging
+    sv.bpsTotalBytes = 0; // NERVE - SMF - net debugging
+    sv.ubpsTotalBytes = 0; // NERVE - SMF - net debugging
     
     // Gordon: update any changed configstrings from this frame
-    SV_UpdateConfigStrings();
+    serverInitSystem->UpdateConfigStrings();
     
     // send a message to each connected client
     for( i = 0; i < sv_maxclients->integer; i++ )
@@ -986,7 +1010,8 @@ void SV_SendClientMessages( void )
         // disconnect reason is properly sent in the network stream
         if( c->state < CS_ZOMBIE )
         {
-            continue;			// not connected
+            // not connected
+            continue;
         }
         
         // RF, needed to insert this otherwise bots would cause error drops in sv_net_chan.c:
@@ -998,22 +1023,24 @@ void SV_SendClientMessages( void )
         
         if( svs.time < c->nextSnapshotTime )
         {
-            continue;			// not time yet
+            // not time yet
+            continue;
         }
         
-        numclients++;			// NERVE - SMF - net debugging
+        // NERVE - SMF - net debugging
+        numclients++;
         
         // send additional message fragments if the last message
         // was too large to send at once
         if( c->netchan.unsentFragments )
         {
-            c->nextSnapshotTime = svs.time + SV_RateMsec( c, c->netchan.unsentLength - c->netchan.unsentFragmentStart );
-            SV_Netchan_TransmitNextFragment( c );
+            c->nextSnapshotTime = svs.time + RateMsec( c, c->netchan.unsentLength - c->netchan.unsentFragmentStart );
+            serverNetChanSystem->NetchanTransmitNextFragment( c );
             continue;
         }
         
         // generate and send a new message
-        SV_SendClientSnapshot( c );
+        SendClientSnapshot( c );
     }
     
     // NERVE - SMF - net debugging
@@ -1071,21 +1098,23 @@ void SV_SendClientMessages( void )
 
 /*
 =======================
-SV_CheckClientUserinfoTimer
+idServerSnapshotSystemLocal::CheckClientUserinfoTimer
 =======================
 */
-void SV_CheckClientUserinfoTimer( void )
+void idServerSnapshotSystemLocal::CheckClientUserinfoTimer( void )
 {
-    S32			i;
-    client_t*	cl;
-    UTF8		bigbuffer[ MAX_INFO_STRING * 2];
+    S32 i;
+    UTF8 bigbuffer[ MAX_INFO_STRING * 2];
+    client_t* cl;
     
     for( i = 0, cl = svs.clients ; i < sv_maxclients->integer ; i++, cl++ )
     {
         if( !cl->state )
         {
-            continue; // not connected
+            // not connected
+            continue;
         }
+        
         if( ( sv_floodProtect->integer ) && ( svs.time >= cl->nextReliableUserTime ) && ( cl->state >= CS_ACTIVE ) && ( cl->userinfobuffer[0] != 0 ) )
         {
             //We have something in the buffer

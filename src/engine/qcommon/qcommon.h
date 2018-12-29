@@ -829,14 +829,6 @@ void            SCR_DebugGraph( F32 value, S32 color );	// FIXME: move logging t
 
 
 //
-// server interface
-//
-void            SV_Init( void );
-void            SV_Shutdown( UTF8* finalmsg );
-void            SV_Frame( S32 msec );
-void            SV_PacketEvent( netadr_t from, msg_t* msg );
-
-//
 // UI interface
 //
 bool        UI_GameCommand( void );

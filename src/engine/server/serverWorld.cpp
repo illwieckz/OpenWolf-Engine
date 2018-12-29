@@ -167,8 +167,8 @@ idServerWorldSystemLocal::ClearWorld
 */
 void idServerWorldSystemLocal::ClearWorld( void )
 {
-    clipHandle_t    h;
-    vec3_t          mins, maxs;
+    vec3_t mins, maxs;
+    clipHandle_t h;
     
     memset( sv_worldSectors, 0, sizeof( sv_worldSectors ) );
     sv_numworldSectors = 0;
@@ -187,8 +187,8 @@ SV_UnlinkEntity
 */
 void idServerWorldSystemLocal::UnlinkEntity( sharedEntity_t* gEnt )
 {
-    svEntity_t*     ent, *scan;
-    worldSector_t*  ws;
+    svEntity_t* ent, *scan;
+    worldSector_t* ws;
     
     ent = serverGameSystem->SvEntityForGentity( gEnt );
     
@@ -199,6 +199,7 @@ void idServerWorldSystemLocal::UnlinkEntity( sharedEntity_t* gEnt )
     {
         return; // not linked in anywhere
     }
+    
     ent->worldSector = NULL;
     
     if( ws->entities == ent )
@@ -436,9 +437,9 @@ idServerWorldSystemLocal::AreaEntities_r
 */
 void idServerWorldSystemLocal::AreaEntities_r( worldSector_t* node, areaParms_t* ap )
 {
-    svEntity_t*     check, *next;
+    S32 count;
+    svEntity_t* check, *next;
     sharedEntity_t* gcheck;
-    S32             count;
     
     count = 0;
     
@@ -518,7 +519,7 @@ void idServerWorldSystemLocal::ClipToEntity( trace_t* trace, const vec3_t start,
     
     touch = serverGameSystem->GentityNum( entityNum );
     
-    memset( trace, 0, sizeof( trace_t ) );
+    ::memset( trace, 0, sizeof( trace_t ) );
     
     // if it doesn't have any brushes of a type we
     // are looking for, ignore it
@@ -539,8 +540,9 @@ void idServerWorldSystemLocal::ClipToEntity( trace_t* trace, const vec3_t start,
         angles = vec3_origin;	// boxes don't rotate
     }
     
-    collisionModelManager->TransformedBoxTrace( trace, ( F32* )start, ( F32* )end, ( F32* )mins, ( F32* )maxs, clipHandle, contentmask, origin, angles, type );
-    
+    collisionModelManager->TransformedBoxTrace( trace, const_cast<F32*>( start ), const_cast<F32*>( end ), const_cast<F32*>( mins ),
+            const_cast<F32*>( maxs ), clipHandle, contentmask, origin, angles, type );
+            
     if( trace->fraction < 1 )
     {
         trace->entityNum = touch->s.number;

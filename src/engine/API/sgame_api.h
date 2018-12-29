@@ -19,7 +19,7 @@
 //
 // -------------------------------------------------------------------------------------
 // File name:   sgame_api.h
-// Version:     v1.00
+// Version:     v1.01
 // Created:
 // Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
@@ -32,8 +32,14 @@
 #ifndef __Q_SHARED_H__
 #include <qcommon/q_shared.h>
 #endif
+#ifndef GAMEDLL
+#include <API/serverMain_api.h>
+#endif
 #ifndef __BOTLIB_H__
 #include <botlib/botlib.h>
+#endif
+#ifndef __SERVERMAIN_API_H__
+#include <API/serverMain_api.h>
 #endif
 
 typedef void ( *xcommand_t )( void );
@@ -82,20 +88,11 @@ struct gameImports_t
     
     void( *SendConsoleCommand )( S32 exec_when, StringEntry text );
     
-    
-    void( *SetConfigstring )( S32 num, StringEntry string );
-    void( *GetConfigstring )( S32 num, UTF8* buffer, S32 bufferSize );
-    void( *GetUserinfo )( S32 num, UTF8* buffer, S32 bufferSize );
-    void( *SetUserinfo )( S32 num, StringEntry buffer );
-    
     S32( *RealTime )( qtime_t* qtime );
     
-    void( *SetConfigstringRestrictions )( S32 index, const clientList_t* clientList );
     void ( *AddCommand )( StringEntry cmd_name, xcommand_t function );
     void ( *RemoveCommand )( StringEntry cmd_name );
     
-    S32( *LoadTag )( StringEntry mod_name );
-    void( *MasterGameStat )( StringEntry data );
     void( *Sys_SnapVector )( F32* v );
     
     botlib_export_t* botlib;
@@ -107,6 +104,8 @@ struct gameImports_t
     idServerBotSystem* serverBotSystem;
     idServerGameSystem* serverGameSystem;
     idServerWorldSystem* serverWorldSystem;
+    idServerInitSystem* serverInitSystem;
+    idServerMainSystem* serverMainSystem;
 };
 
 void trap_Print( StringEntry fmt );
@@ -146,7 +145,6 @@ bool trap_InPVS( const vec3_t p1, const vec3_t p2 );
 bool trap_InPVSIgnorePortals( const vec3_t p1, const vec3_t p2 );
 void trap_SetConfigstringRestrictions( S32 num, const clientList_t* clientList );
 void trap_GetConfigstring( S32 num, UTF8* buffer, S32 bufferSize );
-void trap_SetConfigstringRestrictions( S32 num, const clientList_t* clientList );
 void trap_SetUserinfo( S32 num, StringEntry buffer );
 void trap_GetUserinfo( S32 num, UTF8* buffer, S32 bufferSize );
 void trap_GetServerinfo( UTF8* buffer, S32 bufferSize );

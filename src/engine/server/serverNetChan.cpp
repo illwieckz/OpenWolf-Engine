@@ -27,9 +27,9 @@
 // Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------------------
-// File name:   sv_net_chan.cpp
-// Version:     v1.01
-// Created:
+// File name:   serverNetChan.cpp
+// Version:     v1.00
+// Created:     12/25/2018
 // Compilers:   Visual Studio 2017, gcc 7.3.0
 // Description:
 // -------------------------------------------------------------------------------------
@@ -41,20 +41,41 @@
 #include <OWLib/precompiled.h>
 #endif
 
+idServerNetChanSystemLocal serverNetChanSystemLocal;
+idServerNetChanSystem* serverNetChanSystem = &serverNetChanSystemLocal;
+
+/*
+===============
+idServerNetChanSystemLocal::idServerNetChanSystemLocal
+===============
+*/
+idServerNetChanSystemLocal::idServerNetChanSystemLocal( void )
+{
+}
+
+/*
+===============
+idServerBotSystemLocal::~idServerBotSystemLocal
+===============
+*/
+idServerNetChanSystemLocal::~idServerNetChanSystemLocal( void )
+{
+}
+
 /*
 ==============
-SV_Netchan_Encode
+idServerNetChanSystemLocal::Netchan_Encode
 
 // first four bytes of the data are always:
 S64 reliableAcknowledge;
 ==============
 */
-static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString )
+void idServerNetChanSystemLocal::NetchanEncode( client_t* client, msg_t* msg, UTF8* commandString )
 {
-    S64    reliableAcknowledge, i, index;
-    U8    key, *string;
-    S32     srdc, sbit;
-    bool    soob;
+    U8 key, *string;
+    S32 srdc, sbit;
+    S64 reliableAcknowledge, i, index;
+    bool soob;
     
     if( msg->cursize < SV_ENCODE_START )
     {
@@ -78,8 +99,10 @@ static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString
     
     string = ( U8* ) client->lastClientCommandString;
     index = 0;
+    
     // xor the client challenge with the netchan sequence number
     key = client->challenge ^ client->netchan.outgoingSequence;
+    
     for( i = SV_ENCODE_START; i < msg->cursize; i++ )
     {
         // modify the key with the last received and with this message acknowledged client command
@@ -87,6 +110,7 @@ static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString
         {
             index = 0;
         }
+        
         if( string[index] > 127 || string[index] == '%' )
         {
             key ^= '.' << ( i & 1 );
@@ -95,7 +119,9 @@ static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString
         {
             key ^= string[index] << ( i & 1 );
         }
+        
         index++;
+        
         // encode the data with this key
         *( msg->data + i ) = *( msg->data + i ) ^ key;
     }
@@ -103,7 +129,7 @@ static void SV_Netchan_Encode( client_t* client, msg_t* msg, UTF8* commandString
 
 /*
 ==============
-SV_Netchan_Decode
+idServerNetChanSystemLocal::Netchan_Decode
 
 // first 12 bytes of the data are always:
 S64 serverId;
@@ -111,11 +137,11 @@ S64 messageAcknowledge;
 S64 reliableAcknowledge;
 ==============
 */
-static void SV_Netchan_Decode( client_t* client, msg_t* msg )
+void idServerNetChanSystemLocal::NetchanDecode( client_t* client, msg_t* msg )
 {
-    S32     serverId, messageAcknowledge, reliableAcknowledge, i, index, srdc, sbit;
-    bool    soob;
-    U8    key, *string;
+    U8 key, *string;
+    S32 serverId, messageAcknowledge, reliableAcknowledge, i, index, srdc, sbit;
+    bool soob;
     
     srdc = msg->readcount;
     sbit = msg->bit;
@@ -131,10 +157,12 @@ static void SV_Netchan_Decode( client_t* client, msg_t* msg )
     msg->bit = sbit;
     msg->readcount = srdc;
     
-    string = ( U8* ) client->reliableCommands[reliableAcknowledge & ( MAX_RELIABLE_COMMANDS - 1 )];
+    string = reinterpret_cast<U8*>( client->reliableCommands[reliableAcknowledge & ( MAX_RELIABLE_COMMANDS - 1 )] );
     index = 0;
+    
     //
     key = client->challenge ^ serverId ^ messageAcknowledge;
+    
     for( i = msg->readcount + SV_DECODE_START; i < msg->cursize; i++ )
     {
         // modify the key with the last sent and acknowledged server command
@@ -142,6 +170,7 @@ static void SV_Netchan_Decode( client_t* client, msg_t* msg )
         {
             index = 0;
         }
+        
         if( string[index] > 127 || string[index] == '%' )
         {
             key ^= '.' << ( i & 1 );
@@ -150,7 +179,9 @@ static void SV_Netchan_Decode( client_t* client, msg_t* msg )
         {
             key ^= string[index] << ( i & 1 );
         }
+        
         index++;
+        
         // decode the data with this key
         *( msg->data + i ) = *( msg->data + i ) ^ key;
     }
@@ -158,10 +189,10 @@ static void SV_Netchan_Decode( client_t* client, msg_t* msg )
 
 /*
 =================
-SV_Netchan_FreeQueue
+idServerNetChanSystemLocal::NetchanFreeQueue
 =================
 */
-void SV_Netchan_FreeQueue( client_t* client )
+void idServerNetChanSystemLocal::NetchanFreeQueue( client_t* client )
 {
     netchan_buffer_t* netbuf, *next;
     
@@ -177,12 +208,13 @@ void SV_Netchan_FreeQueue( client_t* client )
 
 /*
 =================
-SV_Netchan_TransmitNextFragment
+idServerNetChanSystemLocal::NetchanTransmitNextFragment
 =================
 */
-void SV_Netchan_TransmitNextFragment( client_t* client )
+void idServerNetChanSystemLocal::NetchanTransmitNextFragment( client_t* client )
 {
     Netchan_TransmitNextFragment( &client->netchan );
+    
     while( !client->netchan.unsentFragments && client->netchan_start_queue )
     {
         // make sure the netchan queue has been properly initialized (you never know)
@@ -201,8 +233,9 @@ void SV_Netchan_TransmitNextFragment( client_t* client )
         
         if( !serverGameSystem->GameIsSinglePlayer() )
         {
-            SV_Netchan_Encode( client, &netbuf->msg, netbuf->lastClientCommandString );
+            NetchanEncode( client, &netbuf->msg, netbuf->lastClientCommandString );
         }
+        
         Netchan_Transmit( &client->netchan, netbuf->msg.cursize, netbuf->msg.data );
         
         Z_Free( netbuf );
@@ -211,7 +244,7 @@ void SV_Netchan_TransmitNextFragment( client_t* client )
 
 /*
 ===============
-SV_Netchan_Transmit
+idServerNetChanSystemLocal::Netchan_Transmit
 
 TTimo
 show_bug.cgi?id=462
@@ -220,7 +253,7 @@ and the gamestate are fragmenting, and collide on send for instance)
 then buffer them and make sure they get sent in correct order
 ================
 */
-void SV_Netchan_Transmit( client_t* client, msg_t* msg )
+void idServerNetChanSystemLocal::NetchanTransmit( client_t* client, msg_t* msg )
 {
     MSG_WriteByte( msg, svc_EOF );
     
@@ -229,7 +262,8 @@ void SV_Netchan_Transmit( client_t* client, msg_t* msg )
         netchan_buffer_t* netbuf;
         
         //Com_DPrintf("SV_Netchan_Transmit: there are unsent fragments remaining\n");
-        netbuf = ( netchan_buffer_t* ) Z_Malloc( sizeof( netchan_buffer_t ) );
+        //netbuf = ( netchan_buffer_t* ) Z_Malloc( sizeof( netchan_buffer_t ) );
+        netbuf = static_cast<netchan_buffer_t*>( Z_Malloc( sizeof( netchan_buffer_t ) ) );
         
         // store the msg, we can't store it encoded, as the encoding depends on stuff we still have to finish sending
         MSG_Copy( &netbuf->msg, netbuf->msgBuffer, sizeof( netbuf->msgBuffer ), msg );
@@ -237,12 +271,13 @@ void SV_Netchan_Transmit( client_t* client, msg_t* msg )
         // copy the command, since the command number used for encryption is
         // already compressed in the buffer, and receiving a new command would
         // otherwise lose the proper encryption key
-        strcpy( netbuf->lastClientCommandString, client->lastClientCommandString );
+        ::strcpy( netbuf->lastClientCommandString, client->lastClientCommandString );
         
         // insert it in the queue, the message will be encoded and sent later
         //% *client->netchan_end_queue = netbuf;
         //% client->netchan_end_queue = &(*client->netchan_end_queue)->next;
         netbuf->next = NULL;
+        
         if( !client->netchan_start_queue )
         {
             client->netchan_start_queue = netbuf;
@@ -251,6 +286,7 @@ void SV_Netchan_Transmit( client_t* client, msg_t* msg )
         {
             client->netchan_end_queue->next = netbuf;
         }
+        
         client->netchan_end_queue = netbuf;
         
         // emit the next fragment of the current message for now
@@ -260,7 +296,7 @@ void SV_Netchan_Transmit( client_t* client, msg_t* msg )
     {
         if( !serverGameSystem->GameIsSinglePlayer() )
         {
-            SV_Netchan_Encode( client, msg, client->lastClientCommandString );
+            NetchanEncode( client, msg, client->lastClientCommandString );
         }
         Netchan_Transmit( &client->netchan, msg->cursize, msg->data );
     }
@@ -268,10 +304,10 @@ void SV_Netchan_Transmit( client_t* client, msg_t* msg )
 
 /*
 =================
-Netchan_SV_Process
+idServerNetChanSystemLocal::NetchanProcess
 =================
 */
-bool SV_Netchan_Process( client_t* client, msg_t* msg )
+bool idServerNetChanSystemLocal::NetchanProcess( client_t* client, msg_t* msg )
 {
     bool ret;
     
@@ -284,7 +320,7 @@ bool SV_Netchan_Process( client_t* client, msg_t* msg )
     
     if( !serverGameSystem->GameIsSinglePlayer() )
     {
-        SV_Netchan_Decode( client, msg );
+        NetchanDecode( client, msg );
     }
     
     return true;

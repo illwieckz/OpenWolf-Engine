@@ -1298,50 +1298,6 @@ void CL_ForwardCommandToServer( StringEntry string )
 
 /*
 ===================
-CL_Highscore_response
-
-gets highscores results from the website
-===================
-*/
-static S32 CL_Highscore_response( httpInfo_e code, v buffer, S32 length, void* notifyData )
-{
-    if( code == HTTP_WRITE )
-    {
-        cvarSystem->Set( "st_postresults", buffer );
-        uiManager->ReportHighScoreRespons();
-    }
-    return 1;
-}
-
-/*
-===================
-CL_Highscore_f
-
-asks for highscores from the website
-===================
-*/
-static void CL_Highscore_f( void )
-{
-
-    if( Cmd_Argc() != 7 )
-    {
-        Com_Printf( "Usage: highscore <score> <skill> <kills> <time> <game> <real time>\n" );
-        return;
-    }
-    
-    HTTP_PostUrl(	va( "http://%s/user/report_score", AUTHORIZE_SERVER_NAME ), CL_Highscore_response, 0,
-                    "c[slot]=%d&h[score]=%d&h[skill]=%d&h[kills]=%d&h[time]=%d&h[game_id]=%d&h[real_time]=%d",
-                    cvarSystem->VariableIntegerValue( "slot" ),
-                    atoi( Cmd_Argv( 1 ) ),
-                    atoi( Cmd_Argv( 2 ) ),
-                    atoi( Cmd_Argv( 3 ) ),
-                    atoi( Cmd_Argv( 4 ) ),
-                    atoi( Cmd_Argv( 5 ) ),
-                    atoi( Cmd_Argv( 6 ) ) );
-}
-
-/*
-===================
 CL_Login_response
 
 website's response to a users attempt to login
@@ -1406,77 +1362,6 @@ void CL_ForgotPassword_f( void )
 
 /*
 ==================
-CL_CreateCharacter_response
-==================
-*/
-static S32 CL_CreateCharacter_response( httpInfo_e code, StringEntry buffer, S32 length, void* notifyData )
-{
-    if( code == HTTP_WRITE )
-    {
-        cvarSystem->Set( "cl_servermessage", buffer );
-        uiManager->UIAuthorized( AUTHORIZE_CREATECHARACTER );
-    }
-    
-    return 1;
-}
-
-
-/*
-==================
-CL_CreateCharacter_f
-==================
-*/
-void CL_CreateCharacter_f( void )
-{
-    if( Cmd_Argc() != 4 )
-    {
-        Com_Printf( "usage: createcharacter <slot> <name> <model>\n" );
-        return;
-    }
-    
-    HTTP_PostUrl( va( "http://%s/user/create_character", AUTHORIZE_SERVER_NAME ), CL_CreateCharacter_response, 0, "char[slot]=%s&char[name]=%s&char[model]=%s", Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
-}
-
-/*
-==================
-CL_DeleteCharacter_response
-==================
-*/
-static S32 CL_DeleteCharacter_response( httpInfo_e code, StringEntry buffer, S32 length, void* notifyData )
-{
-    if( code == HTTP_WRITE )
-    {
-        if( buffer && buffer[0] == '1' )
-        {
-            uiManager->UIAuthorized( AUTHORIZE_DELETECHARACTER );
-        }
-        else
-        {
-            uiManager->UIAuthorized( AUTHORIZE_BAD );
-        }
-    }
-    
-    return 1;
-}
-
-/*
-==================
-CL_DeleteCharacter_f
-==================
-*/
-void CL_DeleteCharacter_f( void )
-{
-    if( Cmd_Argc() != 2 )
-    {
-        Com_Printf( "usage: deletecharacter <slot>\n" );
-        return;
-    }
-    
-    HTTP_PostUrl( va( "http://%s/user/delete_character", AUTHORIZE_SERVER_NAME ), CL_DeleteCharacter_response, 0, "slot=%s", Cmd_Argv( 1 ) );
-}
-
-/*
-==================
 CL_GetAccount_response
 ==================
 */
@@ -1505,28 +1390,6 @@ void CL_GetAccount_f( void )
     }
     
     HTTP_PostUrl( va( "http://%s/user/characters", AUTHORIZE_SERVER_NAME ), CL_GetAccount_response, 0, 0 );
-}
-
-/*
-==================
-CL_GlobalHighScores_f
-==================
-*/
-void CL_GlobalHighScores_f( void )
-{
-    if( Cmd_Argc() != 3 )
-    {
-        Com_Printf( "usage: globalhighscores [version] [char slot]\n" );
-        return;
-    }
-    
-    HTTP_PostUrl( va( "http://%s/user/scores/version/%d/slot/%d",
-                      AUTHORIZE_SERVER_NAME,
-                      atoi( Cmd_Argv( 1 ) ),
-                      atoi( Cmd_Argv( 2 ) ) ),
-                  0,
-                  0,
-                  0 );
 }
 
 #endif
@@ -1828,12 +1691,12 @@ void CL_Connect_f( void )
     if( com_sv_running->integer && !strcmp( server, "localhost" ) )
     {
         // if running a local server, kill it
-        SV_Shutdown( "Server quit\n" );
+        serverInitSystem->Shutdown( "Server quit\n" );
     }
     
     // make sure a local server is killed
     cvarSystem->Set( "sv_killserver", "1" );
-    SV_Frame( 0 );
+    serverMainSystem->Frame( 0 );
     
     CL_Disconnect( true );
     Con_Close();
@@ -3904,12 +3767,12 @@ void CL_GetAutoUpdate( void )
     if( com_sv_running->integer )
     {
         // if running a local server, kill it
-        SV_Shutdown( "Server quit\n" );
+        serverInitSystem->Shutdown( "Server quit\n" );
     }
     
     // make sure a local server is killed
     cvarSystem->Set( "sv_killserver", "1" );
-    SV_Frame( 0 );
+    serverMainSystem->Frame( 0 );
     
     CL_Disconnect( true );
     Con_Close();
@@ -4343,12 +4206,8 @@ void CL_Init( void )
     Cmd_AddCommand( "globalservers", CL_GlobalServers_f );
 #if defined (USE_HTTP)
     Cmd_AddCommand( "login", CL_Login_f );
-    Cmd_AddCommand( "highscore", CL_Highscore_f );
     Cmd_AddCommand( "forgotpassword", CL_ForgotPassword_f );
-    Cmd_AddCommand( "createcharacter", CL_CreateCharacter_f );
-    Cmd_AddCommand( "deletecharacter", CL_DeleteCharacter_f );
     Cmd_AddCommand( "getaccount", CL_GetAccount_f );
-    Cmd_AddCommand( "globalhighscores", CL_GlobalHighScores_f );
 #endif
     Cmd_AddCommand( "openurl", CL_OpenUrl_f );
     Cmd_AddCommand( "rcon", CL_Rcon_f );

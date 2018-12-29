@@ -1794,5 +1794,7 @@ bool StringContainsWord( StringEntry haystack, StringEntry needle );
 
 #include <API/serverGame_api.h>
 #include <API/serverWorld_api.h>
+#include <API/serverInit_api.h>
+//#include <API/serverMain_api.h>
 
 #endif //!__Q_SHARED_H__

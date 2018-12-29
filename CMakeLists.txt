@@ -203,11 +203,19 @@ set( SERVERLIST_HEADERS
   ${MOUNT_DIR}/server/serverClient.h
   ${MOUNT_DIR}/server/serverGame.h
   ${MOUNT_DIR}/server/serverWorld.h
+  ${MOUNT_DIR}/server/serverSnapshot.h
+  ${MOUNT_DIR}/server/serverNetChan.h
+  ${MOUNT_DIR}/server/serverInit.h
+  ${MOUNT_DIR}/server/serverMain.h
   ${MOUNT_DIR}/API/sgame_api.h
   ${MOUNT_DIR}/API/serverBot_api.h
   ${MOUNT_DIR}/API/serverClient_api.h
   ${MOUNT_DIR}/API/serverGame_api.h
   ${MOUNT_DIR}/API/serverWorld_api.h
+  ${MOUNT_DIR}/API/serverSnapshot_api.h
+  ${MOUNT_DIR}/API/serverNetChan_api.h
+  ${MOUNT_DIR}/API/serverInit_api.h
+  ${MOUNT_DIR}/API/serverMain_api.h
 )
 
 set( SERVERLIST_SOURCES
@@ -216,10 +224,10 @@ set( SERVERLIST_SOURCES
   ${MOUNT_DIR}/server/serverClient.cpp
   ${MOUNT_DIR}/server/serverGame.cpp
   ${MOUNT_DIR}/server/serverWorld.cpp
-  ${MOUNT_DIR}/server/sv_init.cpp
-  ${MOUNT_DIR}/server/sv_main.cpp
-  ${MOUNT_DIR}/server/sv_net_chan.cpp
-  ${MOUNT_DIR}/server/sv_snapshot.cpp
+  ${MOUNT_DIR}/server/serverSnapshot.cpp
+  ${MOUNT_DIR}/server/serverNetChan.cpp
+  ${MOUNT_DIR}/server/serverInit.cpp
+  ${MOUNT_DIR}/server/serverMain.cpp
 )
 
 set( COLLISIONMODEL_HEADERS

@@ -37,48 +37,30 @@
 #ifndef __SERVERCLIENT_H__
 #define __SERVERCLIENT_H__
 
-// The value below is how many extra characters we reserve for every instance of '$' in a
-// ut_radio, say, or similar client command.  Some jump maps have very long $location's.
-// On these maps, it may be possible to crash the server if a carefully-crafted
-// client command is sent.  The constant below may require further tweaking.  For example,
-// a text of "$location" would have a total computed length of 25, because "$location" has
-// 9 characters, and we increment that by 16 for the '$'.
-#define STRLEN_INCREMENT_PER_DOLLAR_VAR 16
-
-// Don't allow more than this many dollared-strings (e.g. $location) in a client command
-// such as ut_radio and say.  Keep this value low for safety, in case some things like
-// $location expand to very large strings in some maps.  There is really no reason to have
-// more than 6 dollar vars (such as $weapon or $location) in things you tell other people.
-#define MAX_DOLLAR_VARS 6
-
-// When a radio text (as in "ut_radio 1 1 text") is sent, weird things start to happen
-// when the text gets to be greater than 118 in length.  When the text is really large the
-// server will crash.  There is an in-between gray zone above 118, but I don't really want
-// to go there.  This is the maximum length of radio text that can be sent, taking into
-// account increments due to presence of '$'.
-#define MAX_RADIO_STRLEN 118
-
-// Don't allow more than this text length in a command such as say.  I pulled this
-// value out of my ass because I don't really know exactly when problems start to happen.
-// This value takes into account increments due to the presence of '$'.
-#define MAX_SAY_STRLEN 256
-
 //
 // idServerClientSystemLocal
 //
-class idServerClientSystemLocal
+class idServerClientSystemLocal : public idServerClientSystem
 {
 public:
     idServerClientSystemLocal();
     ~idServerClientSystemLocal();
     
-    static void GetChallenge( netadr_t from );
-    static void DirectConnect( netadr_t from );
-    static void FreeClient( client_t* client );
-    static void DropClient( client_t* drop, StringEntry reason );
+    virtual void DropClient( client_t* drop, StringEntry reason );
+    virtual void ExecuteClientCommand( client_t* cl, StringEntry s, bool clientOK, bool premaprestart );
+    virtual void ClientEnterWorld( client_t* client, usercmd_t* cmd );
+    virtual void CloseDownload( client_t* cl );
+    virtual void UserinfoChanged( client_t* cl );
+    virtual void FreeClient( client_t* client );
+    virtual void ClientThink( client_t* cl, usercmd_t* cmd );
+    virtual void WriteDownloadToClient( client_t* cl, msg_t* msg );
+    virtual void GetChallenge( netadr_t from );
+    virtual void DirectConnect( netadr_t from );
+    virtual void ExecuteClientMessage( client_t* cl, msg_t* msg );
+    
+public:
+    static void UpdateUserinfo_f( client_t* cl );
     static void SendClientGameState( client_t* client );
-    static void ClientEnterWorld( client_t* client, usercmd_t* cmd );
-    static void CloseDownload( client_t* cl );
     static void StopDownload_f( client_t* cl );
     static void DoneDownload_f( client_t* cl );
     static void NextDownload_f( client_t* cl );
@@ -86,17 +68,38 @@ public:
     static void WWWDownload_f( client_t* cl );
     static void BadDownload( client_t* cl, msg_t* msg );
     static bool CheckFallbackURL( client_t* cl, msg_t* msg );
-    static void WriteDownloadToClient( client_t* cl, msg_t* msg );
     static void Disconnect_f( client_t* cl );
     static void VerifyPaks_f( client_t* cl );
     static void ResetPureClient_f( client_t* cl );
-    static void UserinfoChanged( client_t* cl );
-    static void UpdateUserinfo_f( client_t* cl );
-    static void ExecuteClientCommand( client_t* cl, StringEntry s, bool clientOK, bool premaprestart );
     static bool ClientCommand( client_t* cl, msg_t* msg, bool premaprestart );
-    static void ClientThink( client_t* cl, usercmd_t* cmd );
     static void UserMove( client_t* cl, msg_t* msg, bool delta );
-    static void ExecuteClientMessage( client_t* cl, msg_t* msg );
+    
+private:
+    // The value below is how many extra characters we reserve for every instance of '$' in a
+    // ut_radio, say, or similar client command.  Some jump maps have very long $location's.
+    // On these maps, it may be possible to crash the server if a carefully-crafted
+    // client command is sent.  The constant below may require further tweaking.  For example,
+    // a text of "$location" would have a total computed length of 25, because "$location" has
+    // 9 characters, and we increment that by 16 for the '$'.
+    static const S32 STRLEN_INCREMENT_PER_DOLLAR_VAR = 16;
+    
+    // Don't allow more than this many dollared-strings (e.g. $location) in a client command
+    // such as ut_radio and say.  Keep this value low for safety, in case some things like
+    // $location expand to very large strings in some maps.  There is really no reason to have
+    // more than 6 dollar vars (such as $weapon or $location) in things you tell other people.
+    static const S32 MAX_DOLLAR_VARS = 6;
+    
+    // When a radio text (as in "ut_radio 1 1 text") is sent, weird things start to happen
+    // when the text gets to be greater than 118 in length.  When the text is really large the
+    // server will crash.  There is an in-between gray zone above 118, but I don't really want
+    // to go there.  This is the maximum length of radio text that can be sent, taking into
+    // account increments due to presence of '$'.
+    static const S32 MAX_RADIO_STRLEN = 118;
+    
+    // Don't allow more than this text length in a command such as say.  I pulled this
+    // value out of my ass because I don't really know exactly when problems start to happen.
+    // This value takes into account increments due to the presence of '$'.
+    static const S32 MAX_SAY_STRLEN = 256;
 };
 
 extern idServerClientSystemLocal serverClientLocal;

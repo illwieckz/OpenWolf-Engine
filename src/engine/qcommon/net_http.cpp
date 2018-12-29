@@ -119,8 +119,8 @@ S32 Net_HTTP_Init()
         return 0;
     }
     
-    http_usernameandpassword = Cvar_Get( "usernameandpassword", "username:password", CVAR_ARCHIVE );
-    http_bugauth = Cvar_Get( "http_bugauth", "username:password", CVAR_ARCHIVE );
+    http_usernameandpassword = cvarSystem->Get( "usernameandpassword", "username:password", CVAR_ARCHIVE );
+    http_bugauth = cvarSystem->Get( "http_bugauth", "username:password", CVAR_ARCHIVE );
     
     http.headers = curl_slist_append( http.headers, "Accept: application/openwolf" );
     return -1;
@@ -178,7 +178,7 @@ void Net_HTTP_EscapeField( UTF8* out_url, StringEntry in_url, S32 len )
 Net_HTTP_ParseHeader
 ==================
 */
-U64 Net_HTTP_ParseHeader( StringEntry ptr, U64 size, U64 nmemb, void* stream )
+U64 Net_HTTP_ParseHeader( UTF8* ptr, U64 size, U64 nmemb, void* stream )
 {
 
     httpTaskInfo_t* task = ( httpTaskInfo_t* )stream;
@@ -208,7 +208,7 @@ U64 Net_HTTP_ParseHeader( StringEntry ptr, U64 size, U64 nmemb, void* stream )
         
             if( task->code < 300 )
             {
-                UTF8* title = COM_Parse( &ptr );
+                UTF8* title = COM_Parse2( &ptr );
                 if( !Q_stricmp( title, "Content-Length:" ) )
                 {
                     UTF8* value = COM_Parse( &ptr );
@@ -232,7 +232,7 @@ U64 Net_HTTP_ParseHeader( StringEntry ptr, U64 size, U64 nmemb, void* stream )
                             break;
                     }
                     
-                    Cvar_Set( "com_sessionid", tmp );
+                    cvarSystem->Set( "com_sessionid", tmp );
                 }
             }
         }
@@ -341,7 +341,6 @@ HTTP_GetUrl
 */
 void HTTP_GetUrl( StringEntry url, HTTP_response response, void* notifyData, S32 resume_from )
 {
-
     CURL* handle	= curl_easy_init();
     httpTaskInfo_t* task = new_task();
     if( !task )
@@ -386,8 +385,7 @@ HTTP_PostUrl
 */
 void HTTP_PostUrl( StringEntry url, HTTP_response response, void* notifyData, StringEntry fmt, ... )
 {
-
-    CURL* handle	= curl_easy_init();
+    CURL* handle = curl_easy_init();
     httpTaskInfo_t* task = new_task();
     if( !task )
         return;
@@ -402,9 +400,9 @@ void HTTP_PostUrl( StringEntry url, HTTP_response response, void* notifyData, St
     else
         task->postfields[ 0 ] = '\0';
         
-    task->handle		= handle;
-    task->notifyData	= notifyData;
-    task->response		= response;
+    task->handle = handle;
+    task->notifyData = notifyData;
+    task->response = response;
     
     curl_easy_setopt( handle, CURLOPT_URL,				url );
     curl_easy_setopt( handle, CURLOPT_HEADERFUNCTION,	Net_HTTP_ParseHeader );
@@ -437,164 +435,5 @@ void HTTP_PostUrl( StringEntry url, HTTP_response response, void* notifyData, St
     //spin here so when we pump later on it's ready
     while( CURLM_CALL_MULTI_PERFORM == curl_multi_perform( http.multi_handle, &http.still_running ) );
 }
-
-#ifndef DEDICATED
-extern StringEntry Con_GetText( S32 console );
-
-void HTTP_PostBug( StringEntry fileName )
-{
-
-    cvar_t* map		= Cvar_Get( "mapname", "", 0 );
-    cvar_t* bugreport	= Cvar_Get( "r_bugreport", "", 0 );
-    cvar_t* challenge	= Cvar_Get( "gamename", "", 0 );
-    cvar_t* username	= Cvar_Get( "ui_username", "", 0 );
-    
-    UTF8 comment[ 512 ];
-    StringEntry condump;
-    
-    CURL* handle	= curl_easy_init();
-    httpTaskInfo_t* task = new_task();
-    if( !task )
-        return;
-        
-    Q_strncpyz( comment, "[ ", sizeof( comment ) );
-    if( username->string[0] )
-        Q_strcat( comment, sizeof( comment ), va( "{%s} ", username->string ) );
-        
-    if( challenge->string[ 0 ] )
-        Q_strcat( comment, sizeof( comment ), va( "< %s > : ", challenge->string ) );
-        
-    Q_strcat( comment, sizeof( comment ), ( map->string[0] ) ? map->string : "frontend" );
-    Q_strcat( comment, sizeof( comment ), va( " ] %s", bugreport->string ) );
-    
-    condump = Con_GetText( 0 );
-    
-    task->handle		= handle;
-    task->notifyData	= NULL;
-    task->response		= NULL;
-    task->firstitem		= NULL;
-    task->lastitem		= NULL;
-    task->headerlist	= NULL;
-    
-    curl_formadd( &task->firstitem, &task->lastitem,
-                  CURLFORM_COPYNAME,		"project_id",
-                  CURLFORM_COPYCONTENTS,	"7",
-                  CURLFORM_END );
-                  
-    curl_formadd( &task->firstitem, &task->lastitem,
-                  CURLFORM_COPYNAME,		"summary",
-                  CURLFORM_COPYCONTENTS,	comment,
-                  CURLFORM_END );
-                  
-    curl_formadd( &task->firstitem, &task->lastitem,
-                  CURLFORM_COPYNAME,		"description",
-                  CURLFORM_COPYCONTENTS,	bugreport->string,
-                  CURLFORM_END );
-                  
-    curl_formadd( &task->firstitem, &task->lastitem,
-                  CURLFORM_COPYNAME,		"steps_to_reproduce",
-                  CURLFORM_COPYCONTENTS,	condump,
-                  CURLFORM_END );
-                  
-    if( fileName )
-    {
-    
-        UTF8 ospath[MAX_OSPATH];
-        FS_BuildOSHomePath( ospath, sizeof( ospath ), fileName );
-        curl_formadd( &task->firstitem, &task->lastitem,
-                      CURLFORM_COPYNAME,		"file",
-                      CURLFORM_FILE,	ospath,
-                      CURLFORM_CONTENTTYPE, "image/png",
-                      CURLFORM_END );
-    }
-    
-    curl_easy_setopt( handle, CURLOPT_URL,				"http://example.com/mantis/bug_report.php" );
-    curl_easy_setopt( handle, CURLOPT_HTTPHEADER,		task->headerlist );
-    curl_easy_setopt( handle, CURLOPT_HTTPPOST,			task->firstitem );
-    
-    //turn on http auth since we have the website password protected
-    curl_easy_setopt( handle, CURLOPT_HTTPAUTH,			CURLAUTH_BASIC );
-    curl_easy_setopt( handle, CURLOPT_USERPWD,			"username:password" );
-    curl_easy_setopt( handle, CURLOPT_FOLLOWLOCATION,	1 );
-    
-    
-    curl_multi_add_handle( http.multi_handle, handle );
-    
-    //make sure CURL is ready for this handle
-    //spin here so when we pump later on it's ready
-    while( CURLM_CALL_MULTI_PERFORM == curl_multi_perform( http.multi_handle, &http.still_running ) );
-}
-
-void HTTP_PostErrorNotice( StringEntry type, StringEntry msg )
-{
-    cvar_t* map		= Cvar_Get( "mapname", "", 0 );
-    cvar_t* challenge	= Cvar_Get( "gamename", "", 0 );
-    cvar_t* username	= Cvar_Get( "ui_username", "", 0 );
-    
-    UTF8 comment[ 512 ];
-    StringEntry condump;
-    
-    CURL* handle;
-    struct curl_httppost* first, *last;
-    
-    if( curl_global_init( CURL_GLOBAL_ALL ) != CURLE_OK )
-        return;
-        
-    handle = curl_easy_init();
-    if( !handle )
-        return;
-        
-    Q_strncpyz( comment, type, sizeof( comment ) );
-    Q_strncpyz( comment, " [ ", sizeof( comment ) );
-    if( username->string[0] )
-        Q_strcat( comment, sizeof( comment ), va( "{%s} ", username->string ) );
-        
-    if( challenge->string[ 0 ] )
-        Q_strcat( comment, sizeof( comment ), va( "< %s > : ", challenge->string ) );
-        
-    Q_strcat( comment, sizeof( comment ), ( map->string[0] ) ? map->string : "frontend" );
-    Q_strcat( comment, sizeof( comment ), va( " ] %s", msg ) );
-    
-    condump = Con_GetText( 0 );
-    
-    first = NULL;
-    last = NULL;
-    
-    curl_formadd( &first, &last,
-                  CURLFORM_COPYNAME,		"project_id",
-                  CURLFORM_COPYCONTENTS,	"7",
-                  CURLFORM_END );
-                  
-    curl_formadd( &first, &last,
-                  CURLFORM_COPYNAME,		"summary",
-                  CURLFORM_COPYCONTENTS,	comment,
-                  CURLFORM_END );
-                  
-    curl_formadd( &first, &last,
-                  CURLFORM_COPYNAME,		"description",
-                  CURLFORM_COPYCONTENTS,	msg,
-                  CURLFORM_END );
-                  
-    curl_formadd( &first, &last,
-                  CURLFORM_COPYNAME,		"steps_to_reproduce",
-                  CURLFORM_COPYCONTENTS,	condump,
-                  CURLFORM_END );
-                  
-    curl_easy_setopt( handle, CURLOPT_URL,				"http://example.com/mantis/bug_report.php" );
-    //curl_easy_setopt( handle, CURLOPT_HTTPHEADER,		NULL );
-    curl_easy_setopt( handle, CURLOPT_HTTPPOST,			first );
-    
-    //turn on http auth since we have the website password protected
-    curl_easy_setopt( handle, CURLOPT_HTTPAUTH,			CURLAUTH_BASIC );
-    curl_easy_setopt( handle, CURLOPT_USERPWD,			http_bugauth->string );
-    curl_easy_setopt( handle, CURLOPT_FOLLOWLOCATION,	1 );
-    
-    
-    curl_easy_perform( handle );
-    curl_easy_cleanup( handle );
-    curl_formfree( first );
-}
-
-#endif //DEDICATED
 
 #endif // USE_HTTP

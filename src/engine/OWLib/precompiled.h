@@ -135,7 +135,6 @@
 #include <qcommon/qcommon.h>
 #include <API/download_api.h>
 #include <qcommon/md4.h>
-#include <server/server.h>
 #ifndef DEDICATED
 #include <GPURenderer/r_local.h>
 #include <GPURenderer/r_fbo.h>
@@ -236,6 +235,15 @@
 #include <server/serverGame.h>
 #include <API/serverWorld_api.h>
 #include <server/serverWorld.h>
+#include <API/serverSnapshot_api.h>
+#include <server/serverSnapshot.h>
+#include <API/serverNetChan_api.h>
+#include <server/serverNetChan.h>
+#include <API/serverInit_api.h>
+#include <server/serverInit.h>
+#include <server/server.h>
+#include <API/serverMain_api.h>
+#include <server/serverMain.h>
 
 // includes for the OGG codec
 #include <errno.h>

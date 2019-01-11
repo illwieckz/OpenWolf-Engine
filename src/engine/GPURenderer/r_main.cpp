@@ -49,6 +49,9 @@ static F32 s_flipMatrix[16] =
 // point at this for their sorting surface
 surfaceType_t	entitySurface = SF_ENTITY;
 
+bool SKIP_CULL_FRAME = false;
+bool SKIP_CULL_FRAME_DONE = false;
+
 /*
 ================
 R_CompareVert
@@ -271,7 +274,7 @@ S32 R_CullLocalBox( vec3_t localBounds[2] )
     vec3_t          v;
     vec3_t          worldBounds[2];
     
-    if( r_nocull->integer )
+    if( r_nocull->integer || SKIP_CULL_FRAME )
     {
         return CULL_CLIP;
     }
@@ -2039,7 +2042,7 @@ void R_RenderPshadowMaps( const refdef_t* fd )
             if( DotProduct( diff, fd->viewaxis[0] ) < -r_pshadowDist->value )
                 continue;
                 
-            memset( &shadow, 0, sizeof( shadow ) );
+            ::memset( &shadow, 0, sizeof( shadow ) );
             
             shadow.numEntities = 1;
             shadow.entityNums[0] = i;

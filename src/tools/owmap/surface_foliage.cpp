@@ -339,10 +339,10 @@ void Foliage( mapDrawSurface_t* src )
                 
                 for( k = 0; k < MAX_LIGHTMAPS; k++ )
                 {
-                    fi->lightColor[k][0] = 255;
-                    fi->lightColor[k][1] = 255;
-                    fi->lightColor[k][2] = 255;
-                    fi->lightColor[k][3] = 255;
+                    fi->lightColor[k][0] = 1.0f;
+                    fi->lightColor[k][1] = 1.0f;
+                    fi->lightColor[k][2] = 1.0f;
+                    fi->lightColor[k][3] = 1.0f;
                 }
             }
             

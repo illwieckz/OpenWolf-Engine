@@ -1127,12 +1127,12 @@ mapDrawSurface_t* DrawSurfaceForSide( entity_t* e, brush_t* b, side_t* s, windin
         
         for( k = 0; k < MAX_LIGHTMAPS; k++ )
         {
-            dv->lightColor[k][0] = 255;
-            dv->lightColor[k][1] = 255;
-            dv->lightColor[k][2] = 255;
+            dv->lightColor[k][0] = 1.0f;
+            dv->lightColor[k][1] = 1.0f;
+            dv->lightColor[k][2] = 1.0f;
             
             /* ydnar: gs mods: handle indexed shader blending */
-            dv->lightColor[k][3] = ( indexed ? shaderIndexes[j] : 255 );
+            dv->lightColor[k][3] = ( indexed ? shaderIndexes[j] : 1 );
         }
     }
     
@@ -1346,12 +1346,12 @@ mapDrawSurface_t* DrawSurfaceForMesh( entity_t* e, parseMesh_t* p, mesh_t* mesh 
         
         for( k = 0; k < MAX_LIGHTMAPS; k++ )
         {
-            dv->lightColor[k][0] = 255;
-            dv->lightColor[k][1] = 255;
-            dv->lightColor[k][2] = 255;
+            dv->lightColor[k][0] = 1;
+            dv->lightColor[k][1] = 1;
+            dv->lightColor[k][2] = 1;
             
             /* ydnar: gs mods: handle indexed shader blending */
-            dv->lightColor[k][3] = ( indexed ? shaderIndexes[i] : 255 );
+            dv->lightColor[k][3] = ( indexed ? shaderIndexes[i] : 1 );
         }
         
         /* ydnar: offset */
@@ -2676,6 +2676,8 @@ void EmitDrawVerts( mapDrawSurface_t* ds, bspDrawSurface_t* out )
         /* debug color? */
         if( debugSurfaces )
         {
+            VectorCopy( debugColors[( ds - mapDrawSurfs ) % 12], dv->paintColor );
+            
             for( k = 0; k < MAX_LIGHTMAPS; k++ )
                 VectorCopy( debugColors[( ds - mapDrawSurfs ) % 12 ], dv->lightColor[ k ] );
         }
@@ -3351,10 +3353,13 @@ static void MakeDebugPortalSurfs_r( node_t* node, shaderInfo_t* si )
                 dv->paintColor[2] = 1.0f;
                 dv->paintColor[3] = 1.0f;
                 
+                VectorCopy( debugColors[c % 12], dv->paintColor );
+                dv->paintColor[3] = 32 / 255.0f;
+                
                 for( k = 0; k < MAX_LIGHTMAPS; k++ )
                 {
                     VectorCopy( debugColors[c % 12], dv->lightColor[k] );
-                    dv->lightColor[k][3] = 32;
+                    dv->lightColor[k][3] = 32 / 255.0f;
                 }
             }
         }
@@ -3712,10 +3717,10 @@ int AddSurfaceModels( mapDrawSurface_t* ds )
                 centroid.paintColor[2] = 1.0f;
                 centroid.paintColor[2] = ( alpha > 1.0f ? 1.0f : alpha );
                 
-                centroid.lightColor[0][0] = 0xFF;
-                centroid.lightColor[0][1] = 0xFF;
-                centroid.lightColor[0][2] = 0xFF;
-                centroid.lightColor[0][2] = ( alpha > 255.0f ? 0xFF : alpha );
+                centroid.lightColor[0][0] = 1.0f;
+                centroid.lightColor[0][1] = 1.0f;
+                centroid.lightColor[0][2] = 1.0f;
+                centroid.lightColor[0][2] = ( alpha > 1.0f ? 1.0f : alpha );
                 
                 /* head vert is centroid */
                 tri[ 0 ] = &centroid;

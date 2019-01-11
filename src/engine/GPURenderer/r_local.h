@@ -1960,7 +1960,6 @@ typedef struct
     shaderProgram_t genericShader[GENERICDEF_COUNT];
     shaderProgram_t textureColorShader;
     shaderProgram_t fogShader[FOGDEF_COUNT];
-    shaderProgram_t dlightShader[DLIGHTDEF_COUNT];
     shaderProgram_t lightallShader[LIGHTDEF_COUNT];
     shaderProgram_t shadowmapShader;
     shaderProgram_t pshadowShader;
@@ -2013,6 +2012,7 @@ typedef struct
     shaderProgram_t ssdoBlurShader;
     shaderProgram_t sunPassShader;
     shaderProgram_t bloomRaysShader;
+    shaderProgram_t dlightShader[LIGHTDEF_COUNT];
     
     image_t*        bloomRenderFBOImage[3];
     image_t*        anamorphicRenderFBOImage[3];
@@ -2949,6 +2949,9 @@ extern	S32		max_polyverts;
 
 extern	backEndData_t*	backEndData;	// the second one may not be allocated
 
+extern bool SKIP_CULL_FRAME;
+extern bool SKIP_CULL_FRAME_DONE;
+
 void* R_GetCommandBuffer( S32 bytes );
 void RB_ExecuteRenderCommands( const void* data );
 
@@ -2962,6 +2965,8 @@ void RE_EndFrame( S32* frontEndMsec, S32* backEndMsec );
 void RE_SaveJPG( UTF8* filename, S32 quality, S32 image_width, S32 image_height, U8* image_buffer, S32 padding );
 U64 RE_SaveJPGToBuffer( U8* buffer, U64 bufSize, S32 quality, S32 image_width, S32 image_height, U8* image_buffer, S32 padding );
 image_t* R_CreateNormalMapGLSL( StringEntry name, U8* pic, S32 width, S32 height, S32 flags, image_t*	srcImage );
+
+void R_FBOList_f( void );
 
 class Allocator;
 GPUProgramDesc ParseProgramSource( Allocator& allocator, StringEntry text );
@@ -3008,10 +3013,10 @@ public:
     virtual void ShutdownGPUShaders( void );
     virtual void FBOInit( void );
     virtual void FBOShutdown( void );
-    //virtual void PBOInit( void );
-    //virtual void WriteToPBO( S32 pbo, U8* buffer, S32 DestX, S32 DestY, S32 Width, S32 Height );
-    //virtual U8* ReadPBO( bool readBack );
-    //virtual void UnbindPBO( void );
+    virtual void PBOInit( void );
+    virtual void WriteToPBO( S32 pbo, U8* buffer, S32 DestX, S32 DestY, S32 Width, S32 Height );
+    virtual U8* ReadPBO( bool readBack );
+    virtual void UnbindPBO( void );
 private:
     U8* buffer;
     U32	pboReadbackHandle;

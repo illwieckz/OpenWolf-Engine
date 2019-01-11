@@ -43,7 +43,7 @@ added to the sorting list.
 */
 static bool R_CullSurface( msurface_t* surf, S32 entityNum )
 {
-    if( r_nocull->integer || surf->cullinfo.type == CULLINFO_NONE )
+    if( r_nocull->integer || surf->cullinfo.type == CULLINFO_NONE || SKIP_CULL_FRAME )
     {
         return false;
     }

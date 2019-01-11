@@ -69,6 +69,6 @@ void GLDSA_NamedRenderbufferStorageMultisampleEXT( U32 renderbuffer, S32 samples
 U32 GLDSA_CheckNamedFramebufferStatusEXT( U32 framebuffer, U32 target );
 void GLDSA_NamedFramebufferTexture2DEXT( U32 framebuffer, U32 attachment, U32 textarget, U32 texture, S32 level );
 void GLDSA_NamedFramebufferRenderbufferEXT( U32 framebuffer, U32 attachment, U32 renderbuffertarget, U32 renderbuffer );
-void GLDSA_CopyTexImage2DEXT( U32 framebuffer, U32 target, S32 level, U32 internalformat, S32 x, S32 y, S32 width, S32 height, S32 border );;
+void GLDSA_CopyTexImage2DEXT( U32 framebuffer, U32 target, S32 level, U32 internalformat, S32 x, S32 y, S32 width, S32 height, S32 border );
 
 #endif

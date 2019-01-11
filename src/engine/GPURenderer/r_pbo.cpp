@@ -28,9 +28,6 @@
 
 #include <OWLib/precompiled.h>
 
-//For some future usage :)
-#if 0
-
 /*
 ==============
 idRenderSystemLocal::Init
@@ -40,14 +37,12 @@ void idRenderSystemLocal::PBOInit( void )
 {
     CL_RefPrintf( PRINT_ALL, "------- idRenderSystemLocal::PBOInit -------\n" );
     
-    // query support for pixel buffer objects "GL_ARB_pixel_buffer_object"
-    
     // Generate the pixel buffer object.
-    qglGenBuffersARB( 1, &pboReadbackHandle );
-    qglGenBuffersARB( 2, &pboWriteHandle[0] );
+    qglGenBuffers( 1, &pboReadbackHandle );
+    qglGenBuffers( 2, &pboWriteHandle[0] );
     
-    qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
-    qglBufferDataARB( GL_PIXEL_PACK_BUFFER_ARB, glConfig.vidWidth * glConfig.vidHeight * 4, 0, GL_STREAM_READ_ARB );
+    qglBindBuffer( GL_PIXEL_PACK_BUFFER, pboReadbackHandle );
+    qglBufferData( GL_PIXEL_PACK_BUFFER, glConfig.vidWidth * glConfig.vidHeight * 4, 0, GL_STREAM_READ );
     
     buffer = NULL;
     UnbindPBO();
@@ -59,8 +54,8 @@ idRenderSystemLocal::WriteToPBO
 */
 void idRenderSystemLocal::WriteToPBO( S32 pbo, U8* buffer, S32 DestX, S32 DestY, S32 Width, S32 Height )
 {
-    qglBindBufferARB( GL_PIXEL_UNPACK_BUFFER_ARB, pboWriteHandle[pbo] );
-    //Dushan
+    qglBindBuffer( GL_PIXEL_UNPACK_BUFFER, pboWriteHandle[pbo] );
+    //Dushan - maybe in the future hdr???
     //GL_EXT_subtexture
     qglTexSubImage2D( GL_TEXTURE_2D, 0, DestX, DestY, Width, Height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
 }
@@ -74,17 +69,15 @@ U8* idRenderSystemLocal::ReadPBO( bool readBack )
 {
     if( !readBack )
     {
-        qglReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
-        
-        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
-        
+        qglReadBuffer( GL_COLOR_ATTACHMENT0 );
+        qglBindBuffer( GL_PIXEL_PACK_BUFFER, pboReadbackHandle );
         qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
-        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
+        qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
     }
     else
     {
-        qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, pboReadbackHandle );
-        buffer = ( U8* )qglMapBufferARB( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY_ARB );
+        qglBindBuffer( GL_PIXEL_PACK_BUFFER, pboReadbackHandle );
+        qglMapBuffer( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
     }
     
     return buffer;
@@ -99,9 +92,8 @@ void idRenderSystemLocal::UnbindPBO( void )
 {
     if( buffer != NULL )
     {
-        qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER_ARB );
+        qglUnmapBuffer( GL_PIXEL_PACK_BUFFER );
         
     }
-    qglBindBufferARB( GL_PIXEL_PACK_BUFFER_ARB, 0 );
+    qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
 }
-#endif

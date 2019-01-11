@@ -120,8 +120,7 @@ typedef struct
 #define MAX_FACETS          1024
 #define MAX_PATCH_PLANES    2048
 
-#undef MAX_GRID_SIZE
-#define MAX_GRID_SIZE   129
+#define MAX_GRID_SIZE 65
 
 typedef struct
 {

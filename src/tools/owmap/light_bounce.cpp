@@ -227,7 +227,7 @@ qboolean RadSampleImage( byte* pixels, int width, int height, float st[ 2 ], flo
     
     
     /* clear color first */
-    color[ 0 ] = color[ 1 ] = color[ 2 ] = color[ 3 ] = 255;
+    color[ 0 ] = color[ 1 ] = color[ 2 ] = color[ 3 ] = 1.0f;
     
     /* dummy check */
     if( pixels == NULL || width < 1 || height < 1 )
@@ -410,7 +410,7 @@ static void RadSample( int lightmapNum, bspDrawSurface_t* ds, rawLightmap_t* lm,
                             if( !RadSampleImage( si->lightImage->pixels, si->lightImage->width, si->lightImage->height, st, textureColor ) )
                             {
                                 VectorCopy( si->averageColor, textureColor );
-                                textureColor[3] = 255.f;
+                                textureColor[4] = 1.0f;
                             }
                         }
                         

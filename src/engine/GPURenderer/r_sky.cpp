@@ -868,6 +868,16 @@ void RB_DrawSun( F32 scale, shader_t* shader )
         return;
     }
     
+    if( !( tr.refdef.rdflags & RDF_NOWORLDMODEL ) )
+    {
+        // This fixes some skybox issues... For some wierd reason...
+        if( !SKIP_CULL_FRAME_DONE )
+        {
+            SKIP_CULL_FRAME = true;
+            SKIP_CULL_FRAME_DONE = true;
+        }
+    }
+    
     //qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
     //qglTranslatef (backEnd.viewParms.orientation.origin[0], backEnd.viewParms.orientation.origin[1], backEnd.viewParms.ori.origin[2]);
     {
@@ -1008,15 +1018,35 @@ void DrawSkyDome( shader_t* skyShader )
     GLSL_BindProgram( &tr.skyShader );
     GL_BindToTMU( skyShader->sky.outerbox[0], TB_LEVELSMAP );
     
+    mat4_t trans, model, mvp, invMvp, normalMatrix;
+    
+    Mat4Translation( backEnd.viewParms.orientation.origin, trans );
+    Mat4Multiply( backEnd.viewParms.world.modelMatrix, trans, model );
+    Mat4Multiply( backEnd.viewParms.projectionMatrix, model, mvp );
+    Mat4SimpleInverse( mvp, invMvp );
+    Mat4SimpleInverse( model, normalMatrix );
+    
+    //mat4 normalMatrix = transpose(inverse(modelView));
+    
     GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection );
-    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_INVPROJECTIONMATRIX, glState.invProjection );
+    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_MODELVIEWMATRIX, model );
+    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_INVPROJECTIONMATRIX, invMvp );
+    GLSL_SetUniformMat4( &tr.skyShader, UNIFORM_NORMALMATRIX, normalMatrix );
+    
     GLSL_SetUniformFloat( &tr.skyShader, UNIFORM_TIME, backEnd.refdef.floatTime );
     GLSL_SetUniformVec3( &tr.skyShader, UNIFORM_VIEWORIGIN, backEnd.refdef.vieworg );
     
-    vec4_t vec;
-    VectorCopy( backEnd.currentEntity->lightDir, vec );
-    vec[3] = 0.0f;
-    GLSL_SetUniformVec4( &tr.skyShader, UNIFORM_LIGHTORIGIN, vec );
+    GLSL_SetUniformVec3( &tr.skyShader, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol );
+    GLSL_SetUniformVec3( &tr.skyShader, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol );
+    GLSL_SetUniformVec4( &tr.skyShader, UNIFORM_PRIMARYLIGHTORIGIN, backEnd.refdef.sunDir );
+    
+    vec4_t l0;
+    VectorSet4( l0, r_testshaderValue1->value, r_testshaderValue2->value, r_testshaderValue3->value, r_testshaderValue4->value );
+    GLSL_SetUniformVec4( &tr.skyShader, UNIFORM_LOCAL0, l0 );
+    
+    vec4_t l1;
+    VectorSet4( l1, r_testshaderValue5->value, r_testshaderValue6->value, r_testshaderValue7->value, r_testshaderValue8->value );
+    GLSL_SetUniformVec4( &tr.skyShader, UNIFORM_LOCAL1, l1 );
     
     if( skyShader->sky.outerbox[0] )
     {

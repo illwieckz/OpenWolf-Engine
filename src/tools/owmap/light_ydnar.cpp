@@ -3114,7 +3114,7 @@ void IlluminateVertexes( int num )
 {
     int i, x, y, z, x1, y1, z1, sx, sy, radius, maxRadius, *cluster;
     int lightmapNum, numAvg;
-    float samples, *vertLuxel, *radVertLuxel, *luxel, dirt;
+    float samples, *vertLuxel, *radVertLuxel, *luxel, dirt, *deluxel, *vertDeluxel;
     vec3_t origin, temp, temp2, colors[ MAX_LIGHTMAPS ], avgColors[ MAX_LIGHTMAPS ];
     bspDrawSurface_t*    ds;
     surfaceInfo_t*       info;
@@ -3162,6 +3162,11 @@ void IlluminateVertexes( int num )
             /* get vertex luxel */
             radVertLuxel = RAD_VERTEX_LUXEL( 0, ds->firstVert + i );
             
+            if( deluxemap )
+            {
+                vertDeluxel = VERTEX_DELUXEL( 0, ds->firstVert + i );
+            }
+            
             /* color the luxel with raw lightmap num? */
             if( debugSurfaces )
             {
@@ -3192,6 +3197,11 @@ void IlluminateVertexes( int num )
             {
                 /* clear vertex luxel */
                 VectorSet( radVertLuxel, -1.0f, -1.0f, -1.0f );
+                
+                if( deluxemap )
+                {
+                    VectorClear( vertDeluxel );
+                }
                 
                 /* try at initial origin */
                 trace.cluster = ClusterForPointExtFilter( verts[ i ].xyz, VERTEX_EPSILON, info->numSurfaceClusters, &surfaceClusters[ info->firstSurfaceCluster ] );
@@ -3236,6 +3246,12 @@ void IlluminateVertexes( int num )
                         radVertLuxel = RAD_VERTEX_LUXEL( lightmapNum, ds->firstVert + i );
                         VectorCopy( colors[ lightmapNum ], radVertLuxel );
                         VectorAdd( avgColors[ lightmapNum ], colors[ lightmapNum ], colors[ lightmapNum ] );
+                        
+                        if( deluxemap )
+                        {
+                            vertDeluxel = VERTEX_DELUXEL( lightmapNum, ds->firstVert + i );
+                            VectorCopy( trace.direction, vertDeluxel );
+                        }
                     }
                 }
                 
@@ -3305,6 +3321,12 @@ void IlluminateVertexes( int num )
                                     /* store */
                                     radVertLuxel = RAD_VERTEX_LUXEL( lightmapNum, ds->firstVert + i );
                                     VectorCopy( colors[ lightmapNum ], radVertLuxel );
+                                    
+                                    if( deluxemap )
+                                    {
+                                        vertDeluxel = VERTEX_DELUXEL( lightmapNum, ds->firstVert + i );
+                                        VectorCopy( trace.direction, vertDeluxel );
+                                    }
                                 }
                                 
                                 /* bright enough? */
@@ -3381,9 +3403,25 @@ void IlluminateVertexes( int num )
                 {
                     VectorAdd( vertLuxel, radVertLuxel, vertLuxel );
                 }
+                
+                if( deluxemap )
+                {
+                    vertDeluxel = VERTEX_DELUXEL( lightmapNum, ds->firstVert + i );
+                    VectorNormalize( vertDeluxel, vertDeluxel );
+                }
+                
                 if( !info->si->noVertexLight )
                 {
                     ColorToFloats( vertLuxel, verts[i].lightColor[lightmapNum], info->si->vertexScale );
+                    
+                    if( deluxemap )
+                    {
+                        VectorCopy( vertDeluxel, verts[i].lightDirection[lightmapNum] );
+                    }
+                    else
+                    {
+                        VectorCopy( verts[i].normal, verts[i].lightDirection[lightmapNum] );
+                    }
                 }
             }
         }
@@ -3444,6 +3482,11 @@ void IlluminateVertexes( int num )
             vertLuxel = VERTEX_LUXEL( lightmapNum, ds->firstVert + i );
             radVertLuxel = RAD_VERTEX_LUXEL( lightmapNum, ds->firstVert + i );
             
+            if( deluxemap )
+            {
+                vertDeluxel = VERTEX_DELUXEL( lightmapNum, ds->firstVert + i );
+            }
+            
             /* color the luxel with the normal? */
             if( normalmap )
             {
@@ -3463,6 +3506,12 @@ void IlluminateVertexes( int num )
             {
                 /* increasing radius */
                 VectorClear( radVertLuxel );
+                
+                if( deluxemap )
+                {
+                    VectorClear( vertDeluxel );
+                }
+                
                 samples = 0.0f;
                 for( radius = 0; radius < maxRadius && samples <= 0.0f; radius++ )
                 {
@@ -3496,6 +3545,12 @@ void IlluminateVertexes( int num )
                             /* add its distinctiveness to our own */
                             VectorAdd( radVertLuxel, luxel, radVertLuxel );
                             samples += luxel[ 3 ];
+                            
+                            if( deluxemap )
+                            {
+                                deluxel = SUPER_DELUXEL( sx, sy );
+                                VectorAdd( vertDeluxel, deluxel, vertDeluxel );
+                            }
                         }
                     }
                 }
@@ -3513,12 +3568,25 @@ void IlluminateVertexes( int num )
             
             /* store into floating point storage */
             VectorAdd( vertLuxel, radVertLuxel, vertLuxel );
+            if( deluxemap )
+            {
+                VectorNormalize( vertDeluxel, vertDeluxel );
+            }
             numVertsIlluminated++;
             
             /* store into bytes (for vertex approximation) */
             if( !info->si->noVertexLight )
             {
                 ColorToFloats( vertLuxel, verts[i].lightColor[lightmapNum], 1.0f );
+                
+                if( deluxemap )
+                {
+                    VectorCopy( vertDeluxel, verts[i].lightDirection[lightmapNum] );
+                }
+                else
+                {
+                    VectorCopy( verts[i].normal, verts[i].lightDirection[lightmapNum] );
+                }
             }
         }
     }

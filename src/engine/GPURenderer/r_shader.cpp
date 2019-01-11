@@ -3852,9 +3852,9 @@ static void SortNewShader( void )
     newShader = tr.shaders[ tr.numShaders - 1 ];
     sort = newShader->sort;
     
-    for( i = tr.numShaders - 2; i >= 0; i-- )
+    for( i = tr.numShaders - 2 ; i >= 0 ; i-- )
     {
-        if( tr.sortedShaders[i]->sort <= sort )
+        if( tr.sortedShaders[ i ]->sort <= sort )
         {
             break;
         }
@@ -4698,8 +4698,8 @@ char uniqueGenericShader[] = "{\n"\
 
 shader_t* R_FindShader( StringEntry name, S32 lightmapIndex, bool mipRawImage )
 {
-    UTF8 strippedName[MAX_OSPATH];
-    UTF8 fileName[MAX_OSPATH];
+    UTF8 strippedName[MAX_QPATH];
+    UTF8 fileName[MAX_QPATH];
     S32	hash, len;
     UTF8* shaderText;
     image_t* image;

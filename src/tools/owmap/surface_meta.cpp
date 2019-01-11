@@ -741,7 +741,7 @@ void FanFaceSurface( mapDrawSurface_t* ds )
         for( k = 0; k < MAX_LIGHTMAPS; k++ )
         {
             color[ k ][ j ] /= ds->numVerts;
-            centroid->lightColor[ k ][ j ] = ( color[ k ][ j ] < 255.0f ? color[ k ][ j ] : 255 );
+            centroid->lightColor[k][j] = ( color[k][j] < 1.0f ? color[k][j] : 1.0f );
         }
         if( j < 2 )
         {
@@ -1500,6 +1500,15 @@ int AddMetaVertToSurface( mapDrawSurface_t* ds, bspDrawVert_t* dv1, int* coincid
         {
             continue;
         }
+        
+#if 0
+        if( dv1->paintColor[0][3] != dv2->paintColor[0][3] )
+        {
+            continue;
+        }
+#endif
+        
+        
         if( dv1->lightColor[ 0 ][ 3 ] != dv2->lightColor[ 0 ][ 3 ] )
         {
             continue;

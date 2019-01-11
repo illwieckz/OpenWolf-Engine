@@ -1503,6 +1503,31 @@ void idRenderSystemLocal::InitGPUShaders( void )
     allocator.Reset();
     
     /////////////////////////////////////////////////////////////////////////////
+    programDesc = LoadProgramSource( "dlight", allocator, fallback_null );
+    for( i = 0; i < DLIGHTDEF_COUNT; i++ )
+    {
+        attribs = ATTR_POSITION | ATTR_NORMAL | ATTR_TEXCOORD;
+        extradefines[0] = '\0';
+        
+        if( i & DLIGHTDEF_USE_DEFORM_VERTEXES )
+        {
+            Q_strcat( extradefines, 1024, "#define USE_DEFORM_VERTEXES\n" );
+        }
+        
+        if( !GLSL_InitGPUShader( &tr.dlightShader[i], "dlight", attribs, true, false, false, extradefines, false, *programDesc ) )
+        {
+            Com_Error( ERR_FATAL, "Could not load dlight shader!" );
+        }
+        
+        GLSL_InitUniforms( &tr.dlightShader[i] );
+        GLSL_SetUniformInt( &tr.dlightShader[i], UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP );
+        GLSL_FinishGPUShader( &tr.dlightShader[i] );
+        
+        numEtcShaders++;
+    }
+    allocator.Reset();
+    
+    /////////////////////////////////////////////////////////////////////////////
     programDesc = LoadProgramSource( "lightall", allocator, fallback_null );
     for( i = 0; i < LIGHTDEF_COUNT; i++ )
     {
@@ -1595,6 +1620,12 @@ void idRenderSystemLocal::InitGPUShaders( void )
             if( r_cubeMapping->integer )
             {
                 Q_strcat( extradefines, 1024, "#define USE_CUBEMAP\n" );
+                if( r_cubeMapping->integer == 2 )
+                    Q_strcat( extradefines, 1024, "#define USE_BOX_CUBEMAP_PARALLAX\n" );
+            }
+            else if( r_deluxeSpecular->value > 0.000001f )
+            {
+                Q_strcat( extradefines, 1024, va( "#define r_deluxeSpecular %f\n", r_deluxeSpecular->value ) );
             }
             
             switch( r_glossType->integer )

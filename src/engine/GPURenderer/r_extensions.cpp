@@ -1,4 +1,4 @@
-
+﻿
 ////////////////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2011 James Canete (use.less01@gmail.com)
 // Copyright(C) 2011 - 2018 Dusan Jocic <dusanjocic@msn.com>
@@ -171,7 +171,6 @@ void GLimp_InitExtraExtensions()
     if( !qglGetString )
     {
         Com_Error( ERR_FATAL, "glGetString is NULL" );
-        
     }
     
     // Determine GLSL version

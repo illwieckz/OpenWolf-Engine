@@ -961,7 +961,7 @@ static void GLimp_InitExtensions( void )
             
             if( qglActiveTextureARB )
             {
-                S32 glint = 0;
+                S32 glint = 16; //Dushan
                 qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
                 glConfig.numTextureUnits = ( S32 )glint;
                 

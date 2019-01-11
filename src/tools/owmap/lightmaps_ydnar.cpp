@@ -1321,6 +1321,12 @@ void SetupSurfaceLightmaps( void )
         memset( vertexLuxels[ k ], 0, numBSPDrawVerts * VERTEX_LUXEL_SIZE * sizeof( float ) );
         radVertexLuxels[ k ] = static_cast<float*>( safe_malloc( numBSPDrawVerts * VERTEX_LUXEL_SIZE * sizeof( float ) ) );
         memset( radVertexLuxels[ k ], 0, numBSPDrawVerts * VERTEX_LUXEL_SIZE * sizeof( float ) );
+        
+        if( deluxemap )
+        {
+            vertexDeluxels[k] = static_cast<float*>( safe_malloc( numBSPDrawVerts * VERTEX_DELUXEL_SIZE * sizeof( float ) ) );
+            memset( vertexDeluxels[k], 0, numBSPDrawVerts * VERTEX_DELUXEL_SIZE * sizeof( float ) );
+        }
     }
     
     /* emit some stats */
@@ -2729,7 +2735,7 @@ void FillOutLightmap( outLightmap_t* olm )
    stores the surface lightmaps into the bsp as byte rgb triplets
  */
 
-void StoreSurfaceLightmaps()
+void StoreSurfaceLightmaps( void )
 {
     int i, j, k, x, y, lx, ly, sx, sy, *cluster, mappedSamples;
     int style, size, lightmapNum, lightmapNum2;
@@ -2740,6 +2746,7 @@ void StoreSurfaceLightmaps()
     int numUsed, numTwins, numTwinLuxels, numStored;
     float lmx, lmy, efficiency;
     vec3_t color;
+    vec3_t lightDirection;
     bspDrawSurface_t*    ds, *parent, dsTemp;
     surfaceInfo_t*       info;
     rawLightmap_t*       lm, *lm2;
@@ -3616,6 +3623,7 @@ void StoreSurfaceLightmaps()
             {
                 memcpy( dv[ j ].lightmap, dvParent[ j ].lightmap, sizeof( dv[ j ].lightmap ) );
                 memcpy( dv[ j ].lightColor, dvParent[ j ].lightColor, sizeof( dv[ j ].lightColor ) );
+                memcpy( dv[j].lightDirection, dvParent[j].lightDirection, sizeof( dv[j].lightDirection ) );
             }
             
             /* skip the rest */
@@ -3701,6 +3709,13 @@ void StoreSurfaceLightmaps()
                     luxel = VERTEX_LUXEL( lightmapNum, ds->firstVert + j );
                     VectorCopy( luxel, color );
                     
+                    /* get vertex light direction */
+                    if( deluxemap )
+                    {
+                        deluxel = VERTEX_DELUXEL( lightmapNum, ds->firstVert + j );
+                        VectorCopy( deluxel, lightDirection );
+                    }
+                    
                     /* set minimum light */
                     if( lightmapNum == 0 )
                     {
@@ -3716,6 +3731,15 @@ void StoreSurfaceLightmaps()
                 if( !info->si->noVertexLight )
                 {
                     ColorToFloats( color, dv[j].lightColor[lightmapNum], info->si->vertexScale );
+                    
+                    if( deluxemap )
+                    {
+                        VectorCopy( lightDirection, dv[j].lightDirection[lightmapNum] );
+                    }
+                    else
+                    {
+                        VectorCopy( dv[j].normal, dv[j].lightDirection[lightmapNum] );
+                    }
                 }
             }
         }

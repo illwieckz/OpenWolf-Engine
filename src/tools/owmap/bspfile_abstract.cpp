@@ -246,6 +246,21 @@ void SwapBSPFile( void )
         bspDrawVerts[ i ].normal[ 2 ] = LittleFloat( bspDrawVerts[ i ].normal[ 2 ] );
         bspDrawVerts[ i ].st[ 0 ] = LittleFloat( bspDrawVerts[ i ].st[ 0 ] );
         bspDrawVerts[ i ].st[ 1 ] = LittleFloat( bspDrawVerts[ i ].st[ 1 ] );
+        
+        bspDrawVerts[i].paintColor[0] = LittleFloat( bspDrawVerts[i].paintColor[0] );
+        bspDrawVerts[i].paintColor[1] = LittleFloat( bspDrawVerts[i].paintColor[1] );
+        bspDrawVerts[i].paintColor[2] = LittleFloat( bspDrawVerts[i].paintColor[2] );
+        bspDrawVerts[i].paintColor[3] = LittleFloat( bspDrawVerts[i].paintColor[3] );
+        
+        bspDrawVerts[i].lightColor[0][0] = LittleFloat( bspDrawVerts[i].lightColor[0][0] );
+        bspDrawVerts[i].lightColor[1][1] = LittleFloat( bspDrawVerts[i].lightColor[1][1] );
+        bspDrawVerts[i].lightColor[2][2] = LittleFloat( bspDrawVerts[i].lightColor[2][2] );
+        bspDrawVerts[i].lightColor[3][3] = LittleFloat( bspDrawVerts[i].lightColor[3][3] );
+        
+        bspDrawVerts[i].lightDirection[0][0] = LittleFloat( bspDrawVerts[i].lightDirection[0][0] );
+        bspDrawVerts[i].lightDirection[1][2] = LittleFloat( bspDrawVerts[i].lightDirection[1][1] );
+        bspDrawVerts[i].lightDirection[2][2] = LittleFloat( bspDrawVerts[i].lightDirection[2][2] );
+        
         for( j = 0; j < MAX_LIGHTMAPS; j++ )
         {
             bspDrawVerts[ i ].lightmap[ j ][ 0 ] = LittleFloat( bspDrawVerts[ i ].lightmap[ j ][ 0 ] );

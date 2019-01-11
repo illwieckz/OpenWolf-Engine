@@ -1006,7 +1006,7 @@ int BSPMain( int argc, char** argv )
             options.push_back(
             {
                 argv[i], argv[i + 1],
-                tfm::format( "setting ADEQUATE meta score to %d (see surface_meta.c)", metaAdequateScore )
+                tfm::format( "setting ADEQUATE meta score to %d (see surface_meta.cpp)", metaAdequateScore )
             } );
             i++;
         }
@@ -1020,7 +1020,7 @@ int BSPMain( int argc, char** argv )
             options.push_back(
             {
                 argv[i], argv[i + 1],
-                tfm::format( "setting GOOD meta score to %d (see surface_meta.c)", metaGoodScore )
+                tfm::format( "setting GOOD meta score to %d (see surface_meta.cpp)", metaGoodScore )
             } );
             i++;
         }

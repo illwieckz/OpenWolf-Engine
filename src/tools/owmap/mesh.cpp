@@ -47,7 +47,6 @@ void LerpDrawVert( bspDrawVert_t* a, bspDrawVert_t* b, bspDrawVert_t* out )
 {
     int k;
     
-    
     out->xyz[ 0 ] = 0.5 * ( a->xyz[ 0 ] + b->xyz[ 0 ] );
     out->xyz[ 1 ] = 0.5 * ( a->xyz[ 1 ] + b->xyz[ 1 ] );
     out->xyz[ 2 ] = 0.5 * ( a->xyz[ 2 ] + b->xyz[ 2 ] );

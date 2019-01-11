@@ -302,7 +302,7 @@
 #define MAX_PORTALS             0x20000 /* same as MAX_MAP_PORTALS */
 #define MAX_SEPERATORS          MAX_POINTS_ON_WINDING
 #define MAX_POINTS_ON_FIXED_WINDING 24  /* ydnar: increased this from 12 at the expense of more memory */
-#define MAX_PORTALS_ON_LEAF     1024
+#define MAX_PORTALS_ON_LEAF     4096 //Dushan - increased 4 times
 
 
 /* light */
@@ -346,6 +346,7 @@
 #define CLUSTER_FLOODED         -3
 
 #define VERTEX_LUXEL_SIZE       3
+#define VERTEX_DELUXEL_SIZE     3
 #define BSP_LUXEL_SIZE          3
 #define RAD_LUXEL_SIZE          3
 #define SUPER_LUXEL_SIZE        4
@@ -360,6 +361,7 @@
 
 #define VERTEX_LUXEL( s, v )    ( vertexLuxels[ s ] + ( ( v ) * VERTEX_LUXEL_SIZE ) )
 #define RAD_VERTEX_LUXEL( s, v )( radVertexLuxels[ s ] + ( ( v ) * VERTEX_LUXEL_SIZE ) )
+#define VERTEX_DELUXEL( s, v )  (vertexDeluxels[ s ] + ((v) * VERTEX_DELUXEL_SIZE))
 #define BSP_LUXEL( s, x, y )    ( lm->bspLuxels[ s ] + ( ( ( ( y ) * lm->w ) + ( x ) ) * BSP_LUXEL_SIZE ) )
 #define RAD_LUXEL( s, x, y )    ( lm->radLuxels[ s ] + ( ( ( ( y ) * lm->w ) + ( x ) ) * RAD_LUXEL_SIZE ) )
 #define SUPER_LUXEL( s, x, y )  ( lm->superLuxels[ s ] + ( ( ( ( y ) * lm->sw ) + ( x ) ) * SUPER_LUXEL_SIZE ) )
@@ -2181,6 +2183,14 @@ Q_EXTERN float colorsRGB Q_ASSIGN( qfalse );
 Q_EXTERN float lightmapExposure Q_ASSIGN( 0.0f );
 Q_EXTERN float lightmapCompensate Q_ASSIGN( 1.0f );
 
+/* luminance calculation */
+Q_EXTERN const vec3_t       LUMINANCE_VECTOR	/* should be the same as in XreaL */
+#ifndef MAIN_C
+;
+#else
+    = {0.2125f, 0.7154f, 0.0721f};
+#endif
+
 /* ydnar: for runtime tweaking of falloff tolerance */
 Q_EXTERN float falloffTolerance Q_ASSIGN( 1.0f );
 Q_EXTERN qboolean exactPointToPolygon Q_ASSIGN( qtrue );
@@ -2280,6 +2290,7 @@ Q_EXTERN int*                sortLightmaps Q_ASSIGN( NULL );
 /* vertex luxels */
 Q_EXTERN float*              vertexLuxels[ MAX_LIGHTMAPS ];
 Q_EXTERN float*              radVertexLuxels[ MAX_LIGHTMAPS ];
+Q_EXTERN float*				 vertexDeluxels[MAX_LIGHTMAPS];
 
 /* bsp lightmaps */
 Q_EXTERN int numLightmapShaders Q_ASSIGN( 0 );

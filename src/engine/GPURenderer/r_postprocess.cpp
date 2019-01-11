@@ -1070,7 +1070,7 @@ bool RB_VolumetricLight( FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t l
         else
         {
             // See if this is closer then one of our other lights...
-            S32		farthest_light = 0;
+            S32	farthest_light = 0;
             F32	farthest_distance = 0.0;
             
             for( S32 i = 0; i < NUM_CLOSE_VLIGHTS; i++ )

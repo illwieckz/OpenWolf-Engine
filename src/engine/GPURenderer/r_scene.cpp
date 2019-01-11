@@ -358,6 +358,7 @@ void RE_BeginScene( const refdef_t* fd )
     VectorNormalize( tr.sunDirection );
     
     VectorCopy( tr.sunDirection, tr.refdef.sunDir );
+    
     if( ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) || !( r_depthPrepass->value ) )
     {
         tr.refdef.colorScale = 1.0f;
@@ -539,7 +540,7 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
     RE_BeginScene( fd );
     
     // SmileTheory: playing with shadow mapping
-#if 0
+#if 1
     if( !( fd->rdflags & RDF_NOWORLDMODEL ) && tr.refdef.num_dlights && r_dlightMode->integer >= 2 )
     {
         R_RenderDlightCubemaps( fd );
@@ -640,6 +641,8 @@ void idRenderSystemLocal::RenderScene( const refdef_t* fd )
         R_AddPostProcessCmd();
         
     RE_EndScene();
+    
+    SKIP_CULL_FRAME = false;
     
     tr.frontEndMsec += CL_ScaledMilliseconds() - startTime;
 }

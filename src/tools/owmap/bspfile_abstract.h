@@ -204,9 +204,9 @@ typedef struct
     F32           st[2];
     F32           lightmap[MAX_LIGHTMAPS][2];	/* RBSP */
     vec3_t        normal;
-    F32           paintColor[4];	/* XBSP */
-    F32           lightColor[MAX_LIGHTMAPS][4];	/* XBSP */
-    F32           lightDirection[MAX_LIGHTMAPS][3];	/* XBSP */
+    F32           paintColor[4];	/* OBSP */
+    F32           lightColor[MAX_LIGHTMAPS][4];	/* OBSP */
+    F32           lightDirection[MAX_LIGHTMAPS][3];	/* OBSP */
 }
 bspDrawVert_t;
 

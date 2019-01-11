@@ -308,6 +308,9 @@ Get missing functions from code/SDL2/include/SDL_opengl.h.
 #define QGL_4_0_PROCS \
 	GLE(void, PatchParameteri, GLenum pname, GLint value) \
 	GLE(void, PatchParameterfv, GLenum pname, const GLfloat *values) \
+	GLE(void, ReadBuffer, GLenum mode) \
+	GLE(void, MapBuffer, GLenum target, GLenum access)\
+	GLE(GLboolean, UnmapBuffer, GLenum target) \
  
 #define GLE(ret, name, ...) typedef ret APIENTRY name##proc(__VA_ARGS__);
 QGL_1_1_PROCS;

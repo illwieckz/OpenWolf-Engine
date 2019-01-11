@@ -1089,6 +1089,9 @@ const void*	RB_DrawSurfs( const void* data )
                     GL_BindToTMU( tr.sunShadowDepthImage[2], TB_SHADOWMAP3 );
                     GL_BindToTMU( tr.sunShadowDepthImage[3], TB_SHADOWMAP4 );
                     
+                    GLSL_SetUniformInt( &tr.shadowmaskShader, UNIFORM_RANDOMMAP, TB_RANDOMMAP );
+                    GL_BindToTMU( tr.randomImage, TB_RANDOMMAP );
+                    
                     GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP, backEnd.refdef.sunShadowMvp[0] );
                     GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP2, backEnd.refdef.sunShadowMvp[1] );
                     GLSL_SetUniformMat4( &tr.shadowmaskShader, UNIFORM_SHADOWMVP3, backEnd.refdef.sunShadowMvp[2] );
@@ -1285,11 +1288,9 @@ const void*	RB_DrawSurfs( const void* data )
     return ( const void* )( cmd + 1 );
 }
 
-
 /*
 =============
 RB_DrawBuffer
-
 =============
 */
 const void*	RB_DrawBuffer( const void* data )
@@ -1329,10 +1330,9 @@ Also called by idRenderSystemLocal::EndRegistration
 */
 void RB_ShowImages( void )
 {
-    S32		i;
-    image_t*	image;
+    S32	i, start, end;
+    image_t* image;
     F32	x, y, w, h;
-    S32		start, end;
     
     RB_SetGL2D();
     
@@ -1381,7 +1381,6 @@ void RB_ShowImages( void )
 /*
 =============
 RB_ColorMask
-
 =============
 */
 const void* RB_ColorMask( const void* data )

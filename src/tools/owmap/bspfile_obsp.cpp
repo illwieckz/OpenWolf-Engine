@@ -331,6 +331,7 @@ static void CopyDrawVertsLump( ibspHeader_t* header )
         out->lightDirection[0][0] = in->lightDirection[0];
         out->lightDirection[0][1] = in->lightDirection[1];
         out->lightDirection[0][2] = in->lightDirection[2];
+        out->lightDirection[0][3] = in->lightDirection[3];
         
         in++;
         out++;

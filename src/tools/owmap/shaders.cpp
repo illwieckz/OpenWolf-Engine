@@ -155,11 +155,12 @@ void ColorMod( colorMod_t* cm, int numVerts, bspDrawVert_t* drawVerts )
                     {
                         c = 0;
                     }
-                    else if( c > 255 )
+                    else if( c > 1.0f )
                     {
-                        c = 255;
+                        c = 1.0f;
                     }
-                    dv->lightColor[ j ][ k ] = c;
+                    
+                    dv->lightColor[j][k] = c;
                 }
             }
         }

@@ -152,8 +152,8 @@ cvar_t* r_genNormalMaps;
 cvar_t* r_forceSun;
 cvar_t* r_forceSunLightScale;
 cvar_t* r_forceSunAmbientScale;
-cvar_t*  r_proceduralSun;
-cvar_t*  r_proceduralSunScale;
+cvar_t* r_proceduralSun;
+cvar_t* r_proceduralSunScale;
 cvar_t* r_sunlightMode;
 cvar_t* r_sunlightSpecular;
 cvar_t* r_drawSunRays;
@@ -1338,7 +1338,7 @@ void R_Register( void )
     r_forceSunAmbientScale = cvarSystem->Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
     r_volumeLightStrength = cvarSystem->Get( "r_volumeLightStrength", "0.15", CVAR_ARCHIVE );
     r_proceduralSun = cvarSystem->Get( "r_proceduralSun", "1", CVAR_ARCHIVE );
-    r_proceduralSunScale = cvarSystem->Get( "r_proceduralSunScale", "3.5", CVAR_ARCHIVE );
+    r_proceduralSunScale = cvarSystem->Get( "r_proceduralSunScale", "1.75", CVAR_ARCHIVE );
     r_drawSunRays = cvarSystem->Get( "r_drawSunRays", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_sunlightMode = cvarSystem->Get( "r_sunlightMode", "4", CVAR_ARCHIVE | CVAR_LATCH );
     r_sunlightSpecular = cvarSystem->Get( "r_sunlightSpecular", "1", CVAR_ARCHIVE );
@@ -1346,7 +1346,7 @@ void R_Register( void )
     r_sunShadows = cvarSystem->Get( "r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowFilter = cvarSystem->Get( "r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowBlur = cvarSystem->Get( "r_shadowBlur", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    r_shadowMapSize = cvarSystem->Get( "r_shadowMapSize", "1024", CVAR_ARCHIVE | CVAR_LATCH );
+    r_shadowMapSize = cvarSystem->Get( "r_shadowMapSize", "2048", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowCascadeZNear = cvarSystem->Get( "r_shadowCascadeZNear", "8", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowCascadeZFar = cvarSystem->Get( "r_shadowCascadeZFar", "1024", CVAR_ARCHIVE | CVAR_LATCH );
     r_shadowCascadeZBias = cvarSystem->Get( "r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1536,6 +1536,7 @@ void R_Register( void )
     Cmd_AddCommand( "gfxinfo", GfxInfo_f );
     //Cmd_AddCommand( "minimize", GLimp_Minimize );
     Cmd_AddCommand( "exportCubemaps", R_ExportCubemaps_f );
+    Cmd_AddCommand( "fbolist", R_FBOList_f );
 }
 
 void R_InitQueries( void )
@@ -1697,6 +1698,7 @@ void idRenderSystemLocal::Shutdown( bool destroyWindow )
         {
             FBOShutdown();
         }
+        
         R_DeleteTextures();
         R_ShutdownVaos();
         //

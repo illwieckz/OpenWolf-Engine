@@ -2,7 +2,11 @@
 	* Updated binaries for the Windows platform
 	* Revamped dlight glsl shader
 	* Updated map compiler
-	* Small fixed
+	* Small fixes
+	* Fixed image based lighting
+	* Reimplemented specular lighting based on UE code
+	* Updated ultra config file
+	* Small fixed to the lightall glsl shader
 	
 2018-12-29 Dusan Jocic <dusanjocic@msn.com>
 	* Moved server part of the code into classes and into C++

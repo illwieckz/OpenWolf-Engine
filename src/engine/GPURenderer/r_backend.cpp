@@ -1444,7 +1444,6 @@ const void* RB_ClearDepth( const void* data )
 /*
 =============
 RB_SwapBuffers
-
 =============
 */
 const void*	RB_SwapBuffers( const void* data )

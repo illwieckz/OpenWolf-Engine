@@ -342,8 +342,8 @@ set( AUDIO_SOURCES
 )
 
 set( PLATFORMLIST_SOURCES
-  ${MOUNT_DIR}/platform/Windows/sys_win32.cpp
-  ${MOUNT_DIR}/platform/Linux/sys_unix.cpp
+  ${MOUNT_DIR}/platform/windows/sys_win32.cpp
+  ${MOUNT_DIR}/platform/linux/sys_unix.cpp
   ${MOUNT_DIR}/platform/sys_main.cpp
   ${MOUNT_DIR}/console/con_log.cpp
   ${MOUNT_DIR}/console/con_win32.cpp
@@ -353,11 +353,11 @@ set( PLATFORMLIST_SOURCES
 
 SET ( PLATFORM_DEDICATED_SOURCES
     ${MOUNT_DIR}/platform/sys_main.cpp
-	${MOUNT_DIR}/platform/Windows/sys_win32.cpp
+	${MOUNT_DIR}/platform/windows/sys_win32.cpp
 	${MOUNT_DIR}/console/con_win32.cpp
     ${MOUNT_DIR}/console/con_log.cpp
     ${MOUNT_DIR}/console/con_curses.cpp
-    ${MOUNT_DIR}/platform/Linux/sys_unix.cpp
+    ${MOUNT_DIR}/platform/linux/sys_unix.cpp
     ${MOUNT_DIR}/platform/sys_main.cpp
     ${MOUNT_DIR}/console/con_log.cpp
     ${MOUNT_DIR}/console/con_win32.cpp
@@ -366,7 +366,7 @@ SET ( PLATFORM_DEDICATED_SOURCES
 )
 
 SET ( PLATFORMLIST_HEADERS
-    ${MOUNT_DIR}/platform/Windows/resource.h
+    ${MOUNT_DIR}/platform/windows/resource.h
 	${MOUNT_DIR}/platform/sys_icon.h
 	${MOUNT_DIR}/platform/sys_loadlib.h
 	${MOUNT_DIR}/platform/sys_local.h
@@ -1132,14 +1132,14 @@ endif()
 ################
 # Build OWMap  #
 ################
-if( BUILD_OWMAP )
+if( BUILD_MASTER_SERVER )
   # Dushan - This is how visual studio directories (or filters) are generated
   if( MSVC )
     SOURCE_GROUP( Header\ Files\\OWMaster                                 FILES ${OWMASTERSERVERLIST_HEADERS} )
     SOURCE_GROUP( Source\ Files\\OWMaster                                 FILES ${OWMASTERSERVERLIST_SOURCES} )
   endif( MSVC )
 
-   # Setup OWMap target
+   # Setup OWMaster target
   add_executable( OWMaster ${OWMASTERSERVERLIST_SOURCES} ${OWMASTERSERVERLIST_HEADERS} )
   if(WIN32)
   set_property( TARGET OWMaster APPEND PROPERTY COMPILE_DEFINITIONS _AMD64_ NDEBUG _WIN32 WIN32 _AMD64 _WIN64 __WIN64__  )

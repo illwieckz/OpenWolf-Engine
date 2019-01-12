@@ -1,3 +1,7 @@
+2018-01-12 Dusan Jocic <dusanjocic@msn.com>
+    * Fixed compiling on the Linux platform
+    * Updated binaries for the Linux platform
+	
 2018-01-11 Dusan Jocic <dusanjocic@msn.com>
 	* Updated binaries for the Windows platform
 	* Revamped dlight glsl shader

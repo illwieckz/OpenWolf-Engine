@@ -30,10 +30,10 @@
 //  Suite 120, Rockville, Maryland 20850 USA.
 //
 // -------------------------------------------------------------------------
-//  File name:   physics_main.cpp
-//  Version:     v1.00
+//  File name:   cmfile.cpp
+//  Version:     v1.01
 //  Created:
-//  Compilers:   Visual Studio 2015
+//  Compilers:   Visual Studio 2015, gcc 7.3.0
 //  Description:
 // -------------------------------------------------------------------------
 //  History:
@@ -48,7 +48,7 @@
 
 #include "q3map2.h"
 
-#include <cm/cm_tracemodel.h>
+#include <cm/cm_traceModel.h>
 #include <cm/cm_header.h>
 #include <API/physics_api.h>
 
